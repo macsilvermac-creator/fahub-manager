@@ -3,7 +3,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';
 
-// Simplified Lazy Loading
+// Lazy Loading das Páginas (Carrega apenas quando o usuário acessa)
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
@@ -43,15 +43,17 @@ const App: React.FC = () => {
     <HashRouter>
       <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
         <Routes>
+          {/* Rotas Públicas (Sem Layout) */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/public/league" element={<PublicLeague />} />
           <Route path="/broadcast/:gameId" element={<BroadcastOverlay />} />
           <Route path="/onboarding" element={<Onboarding />} />
           
+          {/* Rotas Protegidas (Com Layout do App) */}
           <Route path="/*" element={
             <Layout>
-              <Suspense fallback={<LoadingScreen />}>
+              <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LoadingScreen /></div>}>
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<Dashboard />} />
