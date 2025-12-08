@@ -1,4 +1,3 @@
-
 import React, { useContext, useEffect, useState, useMemo, Suspense } from 'react';
 import Card from '../components/Card';
 import { TeamSettings, SocialFeedPost, Player } from '../types';
@@ -27,7 +26,7 @@ const Dashboard: React.FC = () => {
     const [rawCoachStats, setRawCoachStats] = useState<any>({ activePlayers: 0, injuredPlayers: 0, nextGame: null });
     const [activeHub, setActiveHub] = useState<string | null>(null);
     const [activeModule, setActiveModule] = useState<string>('');
-    const [systemHealth, setSystemHealth] = useState({ api: false, db: 'LOCAL', version: '2.0.1' });
+    const [systemHealth, setSystemHealth] = useState({ api: false, db: 'LOCAL', version: '2.0.2' });
     
     // State for other roles
     const [recentNews, setRecentNews] = useState<SocialFeedPost[]>([]);
@@ -45,7 +44,7 @@ const Dashboard: React.FC = () => {
             setSystemHealth({ 
                 api: hasKey, 
                 db: 'MIGRATION_READY', // Indicating we are ready to switch
-                version: '2.0.1' 
+                version: '2.0.2' 
             });
         } else if (isPlayer) {
             const user = authService.getCurrentUser();
@@ -92,7 +91,7 @@ const Dashboard: React.FC = () => {
                                 <div className="p-2 bg-yellow-500/10 rounded-full"><LockIcon className="text-yellow-400 w-5 h-5" /></div>
                                 <div>
                                     <h3 className="text-xs font-bold text-text-secondary uppercase">Banco de Dados</h3>
-                                    <p className="text-yellow-400 font-bold text-sm">Híbrido (85%)</p>
+                                    <p className="text-yellow-400 font-bold text-sm">Híbrido (90%)</p>
                                 </div>
                             </div>
                         </div>
