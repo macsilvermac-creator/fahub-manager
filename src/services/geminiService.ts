@@ -1,14 +1,12 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem } from "../types";
 
 // @ts-ignore
 const API_KEY = process.env.API_KEY;
 
-if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. Gemini features will not work.");
-}
-
 // Inicialização segura
+// Se não houver chave, não crashamos o app, apenas retornamos mensagens amigáveis
 const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key_to_prevent_crash" });
 
 // Função auxiliar para limpar o JSON que a IA retorna (remove ```json e ```)
@@ -25,7 +23,10 @@ const cleanJsonString = (input: string): string => {
 
 // Helper to handle JSON response safely
 const generateJson = async (prompt: string): Promise<any> => {
-    if (!API_KEY) return null;
+    if (!API_KEY) {
+        console.warn("Gemini Service: API Key ausente.");
+        return null; // Retorna null graciosamente
+    }
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -55,7 +56,9 @@ const generateJson = async (prompt: string): Promise<any> => {
 
 // Helper for text response
 const generateText = async (prompt: string): Promise<string> => {
-    if (!API_KEY) return "Erro: API Key não configurada. Verifique suas variáveis de ambiente no Vercel.";
+    if (!API_KEY) {
+        return "⚠️ Configuração Necessária: A Inteligência Artificial (Gemini) está desativada. Por favor, adicione a API_KEY nas variáveis de ambiente do projeto para ativar este recurso.";
+    }
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
@@ -64,7 +67,7 @@ const generateText = async (prompt: string): Promise<string> => {
         return response.text || "";
     } catch (e) {
         console.error("Gemini Text Error", e);
-        return "Erro ao gerar conteúdo. Tente novamente em instantes.";
+        return "Erro temporário na IA. Por favor, tente novamente em instantes.";
     }
 };
 
@@ -191,6 +194,7 @@ export const generateCourseCurriculum = async (topic: string, level: string): Pr
     `;
     // Aqui usamos generateText mas tentamos parsear manualmente pois courses usa JSON complexo
     const raw = await generateText(prompt);
+    if(raw.startsWith('⚠️')) return JSON.stringify({title: "Erro de Configuração", description: raw, modules: []});
     return cleanJsonString(raw); 
 };
 
