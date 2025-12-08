@@ -2,16 +2,30 @@ import { GoogleGenAI } from "@google/genai";
 import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem } from "../types";
 
 // @ts-ignore
-const API_KEY = process.env.API_KEY;
+const ENV_KEY = process.env.API_KEY;
+// Chave de Fallback (Cópia da chave do Firebase para garantir funcionamento imediato)
+// NOTA: Esta chave pode não ter permissões de Generative Language API ativadas.
+const FALLBACK_KEY = "AIzaSyB6VDLKBK9Siz81DC_bEm54oMILT-Hd6wA";
 
-// Inicialização segura
-// Se não houver chave, não crashamos o app, apenas retornamos mensagens amigáveis
-const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy_key_to_prevent_crash" });
+const API_KEY = ENV_KEY || FALLBACK_KEY;
+
+// Variável para armazenar chave temporária inserida pelo usuário na UI
+let runtimeKey: string | null = null;
+
+export const setRuntimeKey = (key: string) => {
+    console.log("🔑 Chave de API atualizada manualmente!");
+    runtimeKey = key;
+};
+
+// Função para obter o cliente correto (Prioridade: Manual > Vercel > Fallback)
+const getClient = () => {
+    const activeKey = runtimeKey || API_KEY;
+    return new GoogleGenAI({ apiKey: activeKey });
+};
 
 // Função auxiliar para limpar o JSON que a IA retorna (remove ```json e ```)
 const cleanJsonString = (input: string): string => {
     let clean = input.trim();
-    // Remove wrapping markdown code blocks if present
     if (clean.startsWith('```json')) {
         clean = clean.replace(/^```json\s*/, '').replace(/\s*```$/, '');
     } else if (clean.startsWith('```')) {
@@ -22,17 +36,14 @@ const cleanJsonString = (input: string): string => {
 
 // Helper to handle JSON response safely
 const generateJson = async (prompt: string): Promise<any> => {
-    if (!API_KEY) {
-        console.warn("Gemini Service: API Key ausente.");
-        return null; // Retorna null graciosamente
-    }
     try {
+        console.log("🤖 Gemini: Iniciando requisição JSON...");
+        const ai = getClient();
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
             config: { 
                 responseMimeType: "application/json",
-                // Aumentar temperatura para criatividade, mas manter topP baixo para coerência
                 temperature: 0.4 
             }
         });
@@ -42,37 +53,50 @@ const generateJson = async (prompt: string): Promise<any> => {
                 const cleanedText = cleanJsonString(response.text);
                 return JSON.parse(cleanedText);
             } catch (jsonError) {
-                console.error("Falha ao fazer parse do JSON da IA:", response.text);
+                console.error("🤖 Gemini: Falha ao fazer parse do JSON:", response.text);
                 return null;
             }
         }
         return null;
-    } catch (e) {
-        console.error("Gemini JSON Error", e);
+    } catch (e: any) {
+        console.error("🤖 Gemini JSON Error:", e);
         return null;
     }
 };
 
-// Helper for text response
+// Helper for text response com tratamento de erro explícito
 const generateText = async (prompt: string): Promise<string> => {
-    if (!API_KEY) {
-        return "⚠️ Configuração Necessária: A Inteligência Artificial (Gemini) está desativada. Por favor, adicione a API_KEY nas variáveis de ambiente do projeto para ativar este recurso.";
-    }
     try {
+        const activeKey = runtimeKey || API_KEY;
+        console.log("🤖 Gemini: Iniciando requisição Texto. Chave em uso:", activeKey ? activeKey.substring(0, 5) + '...' : "NENHUMA");
+        
+        const ai = getClient();
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,
         });
         return response.text || "";
-    } catch (e) {
-        console.error("Gemini Text Error", e);
-        return "Erro temporário na IA. Por favor, tente novamente em instantes.";
+    } catch (e: any) {
+        console.error("🤖 Gemini Text Error Detalhado:", e);
+        
+        let errorMsg = "Erro desconhecido na IA.";
+        const errorString = JSON.stringify(e);
+        
+        if (errorString.includes('403') || e.status === 403 || errorString.includes('PERMISSION_DENIED')) {
+            errorMsg = "ERRO 403 (PERMISSÃO): A chave atual não tem permissão para usar o Gemini. Crie uma nova chave no Google AI Studio.";
+        } else if (errorString.includes('400') || e.status === 400 || errorString.includes('INVALID_ARGUMENT')) {
+            errorMsg = "ERRO 400 (CHAVE INVÁLIDA): A chave informada não existe ou está mal formatada.";
+        } else if (errorString.includes('fetch failed')) {
+            errorMsg = "ERRO DE CONEXÃO: Verifique sua internet.";
+        } else {
+            errorMsg = `Erro na IA: ${e.message || 'Falha na resposta'}`;
+        }
+
+        return `⚠️ ${errorMsg}`;
     }
 };
 
 export const generateInstallSchedule = async (coachContext: string, weekInfo: string): Promise<InstallMatrixItem[]> => {
-    if (!API_KEY) return [];
-
     const prompt = `
     Aja como um Coordenador Tático experiente de Futebol Americano.
     Seu Head Coach te passou a seguinte visão estratégica para a semana:
@@ -103,8 +127,6 @@ export const generatePracticePlan = async (prompt: string): Promise<string> => {
 };
 
 export const generatePracticeScript = async (focus: string, duration: string): Promise<PracticeScriptItem[]> => {
-    if (!API_KEY) return [];
-    
     const prompt = `
     Aja como um treinador de futebol americano.
     Crie um roteiro de treino (Practice Script) detalhado.
@@ -191,10 +213,15 @@ export const generateCourseCurriculum = async (topic: string, level: string): Pr
       ]
     }
     `;
-    // Aqui usamos generateText mas tentamos parsear manualmente pois courses usa JSON complexo
     const raw = await generateText(prompt);
-    if(raw.startsWith('⚠️')) return JSON.stringify({title: "Erro de Configuração", description: raw, modules: []});
-    return cleanJsonString(raw); 
+    // Se vier mensagem de erro (começa com warning), retorna estrutura vazia com o erro
+    if(raw.startsWith('⚠️')) return JSON.stringify({title: "Erro na IA", description: raw, modules: []});
+    
+    try {
+        return cleanJsonString(raw);
+    } catch {
+        return JSON.stringify({title: "Erro de Formatação", description: "IA retornou dados inválidos.", modules: []});
+    }
 };
 
 export const generateGymPlan = async (goal: string, equipment: string, profile: string): Promise<string> => {

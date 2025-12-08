@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Card from '../components/Card';
-import { generatePracticePlan } from '../services/geminiService';
-import { SparklesIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
+import { generatePracticePlan, setRuntimeKey } from '../services/geminiService';
+import { SparklesIcon, AlertTriangleIcon, LinkIcon, KeyIcon } from '../components/icons/UiIcons';
 import { VideoIcon } from '../components/icons/NavIcons';
 
 const POSITIONS = [
@@ -22,12 +22,18 @@ const GeminiPlaybook: React.FC = () => {
   const [generatedPlan, setGeneratedPlan] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [manualKey, setManualKey] = useState('');
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setIsLoading(true);
     setGeneratedPlan('');
     setErrorMessage('');
+    
+    // Se o usuário inseriu uma chave manual, configura no serviço
+    if (manualKey) {
+        setRuntimeKey(manualKey);
+    }
     
     const targetAudience = POSITIONS.find(p => p.value === selectedPosition)?.label || 'Time Completo';
     
@@ -172,11 +178,41 @@ const GeminiPlaybook: React.FC = () => {
           )}
           
           {!isLoading && errorMessage && (
-              <div className="p-6 bg-red-500/10 border border-red-500/30 rounded-xl text-center">
+              <div className="p-6 bg-red-500/10 border border-red-500/30 rounded-xl text-center w-full">
                   <AlertTriangleIcon className="w-12 h-12 text-red-400 mx-auto mb-3" />
-                  <h3 className="text-red-400 font-bold mb-2">Falha na Geração</h3>
+                  <h3 className="text-red-400 font-bold mb-2">Chave API Inválida ou Sem Permissão</h3>
                   <p className="text-sm text-white/80 mb-4">{errorMessage}</p>
-                  <p className="text-xs text-text-secondary">Dica: Verifique se sua chave API tem permissão para 'Generative AI' no console do Google Cloud.</p>
+                  
+                  {/* MANUAL KEY OVERRIDE */}
+                  <div className="bg-black/40 p-4 rounded-lg text-left text-sm space-y-3 mt-4 border border-white/10">
+                      <p className="font-bold text-white uppercase text-xs flex items-center gap-2">
+                          <KeyIcon className="w-4 h-4"/> Solução Rápida (Teste Agora):
+                      </p>
+                      <p className="text-text-secondary text-xs">
+                          Cole sua chave API do Google AI Studio abaixo para testar imediatamente sem redeploy.
+                      </p>
+                      <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            className="flex-1 bg-white/5 border border-white/10 rounded p-2 text-white text-xs font-mono focus:border-highlight focus:outline-none"
+                            placeholder="Cole sua API Key aqui (começa com AIza...)"
+                            value={manualKey}
+                            onChange={(e) => setManualKey(e.target.value)}
+                          />
+                          <button 
+                            onClick={handleGenerate} 
+                            disabled={!manualKey}
+                            className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold disabled:opacity-50"
+                          >
+                              Testar
+                          </button>
+                      </div>
+                      <div className="pt-2 border-t border-white/10">
+                          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1">
+                              <LinkIcon className="w-3 h-3" /> Obter Chave no Google AI Studio
+                          </a>
+                      </div>
+                  </div>
               </div>
           )}
 
