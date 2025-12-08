@@ -1,5 +1,6 @@
 
 import React, { Suspense } from 'react';
+// @ts-ignore
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';

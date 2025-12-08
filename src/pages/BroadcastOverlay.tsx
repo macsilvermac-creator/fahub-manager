@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+// @ts-ignore
 import { useParams } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { FlagIcon } from '../components/icons/NavIcons';

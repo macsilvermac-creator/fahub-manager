@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+// @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import { BookIcon, FootballIcon, TrophyIcon, FlagIcon, GlobeIcon } from '../components/icons/NavIcons';

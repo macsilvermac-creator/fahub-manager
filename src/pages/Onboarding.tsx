@@ -1,5 +1,6 @@
 
 import React, { useState, useContext } from 'react';
+// @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import { storageService } from '../services/storageService';

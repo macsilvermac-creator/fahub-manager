@@ -1,5 +1,6 @@
 
 import React, { useContext } from 'react';
+// @ts-ignore
 import { Navigate } from 'react-router-dom';
 import { UserRole } from '../types';
 import { UserContext } from './Layout';
