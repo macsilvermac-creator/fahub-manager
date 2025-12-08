@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Player } from '../types';
-import { TrashIcon } from '@/components/icons/UiIcons';
+import { TrashIcon } from './icons/UiIcons';
 
 interface AthleteCardProps {
   player: Player;
