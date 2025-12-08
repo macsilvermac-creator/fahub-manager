@@ -1,5 +1,6 @@
 
 import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, League, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, Championship, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, VideoPermissionGroup, EquipmentItem, EventSale, SavedWorkout, NationalTeamCandidate, Affiliate, KanbanTask } from '../types';
+import { firebaseDataService } from './firebaseDataService';
 
 // Chaves do LocalStorage
 const PLAYERS_KEY = 'gridiron_players';
@@ -61,18 +62,74 @@ const saveList = <T>(key: string, list: T[]) => {
 };
 
 export const storageService = {
+    // --- CORE SYNC FUNCTION (A "Antena") ---
+    syncFromCloud: async () => {
+        console.log("📡 Iniciando sincronização com a nuvem...");
+        try {
+            // 1. Players
+            const cloudPlayers = await firebaseDataService.getPlayers();
+            if (cloudPlayers && cloudPlayers.length > 0) {
+                saveList(PLAYERS_KEY, cloudPlayers);
+                console.log(`✅ ${cloudPlayers.length} atletas sincronizados.`);
+            }
+
+            // 2. Games
+            const cloudGames = await firebaseDataService.getGames();
+            if (cloudGames && cloudGames.length > 0) {
+                saveList(GAMES_KEY, cloudGames);
+                console.log(`✅ ${cloudGames.length} jogos sincronizados.`);
+            }
+
+            // 3. Transactions
+            const cloudTxs = await firebaseDataService.getTransactions();
+            if (cloudTxs && cloudTxs.length > 0) {
+                saveList(TRANSACTIONS_KEY, cloudTxs);
+                console.log(`✅ ${cloudTxs.length} transações sincronizadas.`);
+            }
+            
+            return true;
+        } catch (error) {
+            console.error("⚠️ Erro na sincronização (Usando dados locais):", error);
+            return false;
+        }
+    },
+
     // --- PLAYERS ---
     getPlayers: () => getList<Player>(PLAYERS_KEY),
-    savePlayers: (players: Player[]) => saveList(PLAYERS_KEY, players),
+    savePlayers: (players: Player[]) => {
+        saveList(PLAYERS_KEY, players);
+        // Background Sync (Optimistic UI)
+        firebaseDataService.syncPlayers(players).catch(e => console.warn("Sync failed", e));
+    },
     registerAthlete: (player: Player) => {
         const current = storageService.getPlayers();
         const newPlayer = { ...player, teamId: 'ts-1', rosterCategory: 'ACTIVE' as const };
-        storageService.savePlayers([...current, newPlayer]);
+        const updated = [...current, newPlayer];
+        storageService.savePlayers(updated);
+    },
+    
+    // --- GAMIFICATION (XP) ---
+    addPlayerXP: (playerId: number, amount: number, reason: string) => {
+        const players = storageService.getPlayers();
+        const updated = players.map(p => {
+            if (p.id === playerId) {
+                const newXp = (p.xp || 0) + amount;
+                // Simple Level Up Logic: Every 100 XP = 1 Level
+                const newLevel = Math.floor(newXp / 100) + 1;
+                return { ...p, xp: newXp, level: newLevel };
+            }
+            return p;
+        });
+        storageService.savePlayers(updated);
+        storageService.logAuditAction('GAMIFICATION', `Atleta ID ${playerId} recebeu ${amount} XP: ${reason}`);
     },
 
     // --- GAMES ---
     getGames: () => getList<Game>(GAMES_KEY),
-    saveGames: (games: Game[]) => saveList(GAMES_KEY, games),
+    saveGames: (games: Game[]) => {
+        saveList(GAMES_KEY, games);
+        firebaseDataService.syncGames(games).catch(e => console.warn("Sync failed", e));
+    },
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const games = storageService.getGames();
         const updated = games.map(g => g.id === gameId ? { ...g, ...updates } : g);
@@ -99,11 +156,17 @@ export const storageService = {
         const stored = localStorage.getItem(TEAM_SETTINGS_KEY);
         return stored ? JSON.parse(stored, dateReviver) : INITIAL_TEAM_SETTINGS;
     },
-    saveTeamSettings: (s: TeamSettings) => localStorage.setItem(TEAM_SETTINGS_KEY, JSON.stringify(s)),
+    saveTeamSettings: (s: TeamSettings) => {
+        localStorage.setItem(TEAM_SETTINGS_KEY, JSON.stringify(s));
+        firebaseDataService.saveTeamSettings(s).catch(e => console.warn("Sync failed", e));
+    },
 
     // --- FINANCE ---
     getTransactions: () => getList<Transaction>(TRANSACTIONS_KEY),
-    saveTransactions: (t: Transaction[]) => saveList(TRANSACTIONS_KEY, t),
+    saveTransactions: (t: Transaction[]) => {
+        saveList(TRANSACTIONS_KEY, t);
+        firebaseDataService.syncTransactions(t).catch(e => console.warn("Sync failed", e));
+    },
     getInvoices: () => getList<Invoice>(INVOICES_KEY),
     saveInvoices: (i: Invoice[]) => saveList(INVOICES_KEY, i),
     createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string, iId?: string) => {
@@ -130,7 +193,28 @@ export const storageService = {
     getStaff: () => getList<StaffMember>(STAFF_KEY),
     saveStaff: (s: StaffMember[]) => saveList(STAFF_KEY, s),
 
-    // --- IMPLEMENTED FEATURES (Previously Mocks) ---
+    // --- DASHBOARD REAL STATS ---
+    getCoachDashboardStats: () => {
+        const players = getList<Player>(PLAYERS_KEY);
+        const games = getList<Game>(GAMES_KEY);
+        
+        const activePlayers = players.filter(p => p.status === 'ACTIVE').length;
+        const injuredPlayers = players.filter(p => p.status === 'INJURED' || p.status === 'IR').length;
+        
+        // Find next scheduled game
+        const now = new Date();
+        const nextGame = games
+            .filter(g => new Date(g.date) > now && g.status === 'SCHEDULED')
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+
+        return { 
+            activePlayers, 
+            injuredPlayers, 
+            nextGame: nextGame || null 
+        };
+    },
+
+    // --- SOCIAL & COMMS ---
     getSocialFeed: () => getList<SocialFeedPost>(SOCIAL_FEED_KEY),
     saveSocialFeedPost: (p: SocialFeedPost) => {
         const current = storageService.getSocialFeed();
@@ -151,12 +235,14 @@ export const storageService = {
     getChatMessages: () => getList<ChatMessage>(CHAT_KEY),
     saveChatMessages: (m: ChatMessage[]) => saveList(CHAT_KEY, m),
 
+    // --- RESOURCES ---
     getDocuments: () => getList<TeamDocument>(DOCUMENTS_KEY),
     saveDocuments: (d: TeamDocument[]) => saveList(DOCUMENTS_KEY, d),
 
     getInventory: () => getList<EquipmentItem>(INVENTORY_KEY),
     saveInventory: (i: EquipmentItem[]) => saveList(INVENTORY_KEY, i),
 
+    // --- COMMERCIAL & MARKETING ---
     getSponsors: () => getList<SponsorDeal>(SPONSORS_KEY),
     saveSponsors: (s: SponsorDeal[]) => saveList(SPONSORS_KEY, s),
 
@@ -169,6 +255,7 @@ export const storageService = {
     getEventSales: () => getList<EventSale>(SALES_KEY),
     saveEventSales: (s: EventSale[]) => saveList(SALES_KEY, s),
 
+    // --- ACADEMY & TACTICAL ---
     getCourses: () => getList<Course>(COURSES_KEY),
     saveCourses: (c: Course[]) => saveList(COURSES_KEY, c),
 
@@ -195,14 +282,13 @@ export const storageService = {
 
     getCoachProfile: (id: string) => {
         const profiles = getList<CoachCareer>(COACH_PROFILES_KEY);
-        // Simple mock mapping for single user context or store by ID in future
         return profiles[0] || null; 
     },
     saveCoachProfile: (id: string, p: CoachCareer) => {
-        // Simple singleton save for demo
         saveList(COACH_PROFILES_KEY, [p]);
     },
 
+    // --- SYSTEM & AUDIT ---
     getAuditLogs: () => getList<AuditLog>(AUDIT_LOGS_KEY),
     logAuditAction: (action: string, detail: string) => {
         const logs = storageService.getAuditLogs();
@@ -219,9 +305,19 @@ export const storageService = {
         saveList(AUDIT_LOGS_KEY, [newLog, ...logs]);
     },
 
-    // --- PLACEHOLDERS / MOCKS (No persistence needed yet) ---
+    // --- MOCKS (For Federation/External that we don't persist locally yet) ---
     getPermissions: (): VideoPermissionGroup[] => [],
-    seedDatabaseToCloud: async () => { console.log("Seeding local storage..."); },
+    seedDatabaseToCloud: async () => { 
+        // Force sync of current local data to cloud
+        const players = getList<Player>(PLAYERS_KEY);
+        const games = getList<Game>(GAMES_KEY);
+        const txs = getList<Transaction>(TRANSACTIONS_KEY);
+        
+        await firebaseDataService.syncPlayers(players);
+        await firebaseDataService.syncGames(games);
+        await firebaseDataService.syncTransactions(txs);
+        console.log("Seeding complete"); 
+    },
     exportFullDatabase: () => {
         const data = JSON.stringify(localStorage);
         const blob = new Blob([data], {type: 'application/json'});
@@ -240,7 +336,6 @@ export const storageService = {
     getAffiliatesStatus: (): Affiliate[] => [],
     getTransferRequests: (): TransferRequest[] => [],
     processTransfer: (id: string, decision: string, by: string) => {},
-    getCoachDashboardStats: () => ({ activePlayers: 45, injuredPlayers: 2, nextGame: null }),
     
     getLeague: () => ({ id: 'lg-1', name: 'Liga Nacional', season: '2025', teams: [] }),
     getPublicLeagueStats: () => ({ name: 'Liga Nacional', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),

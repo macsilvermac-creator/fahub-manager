@@ -5,6 +5,7 @@ import Header from './Header';
 import { MenuIcon, XIcon } from './icons/UiIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
+import { storageService } from '../services/storageService';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -23,6 +24,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           setUser(u);
           setRole(u.role);
       }
+      
+      // Auto-Sync Trigger
+      const syncData = async () => {
+          await storageService.syncFromCloud();
+      };
+      syncData();
   }, []);
 
   return (

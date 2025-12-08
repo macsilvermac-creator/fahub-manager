@@ -2,7 +2,7 @@
 import React, { useContext, useEffect, useState, useMemo, Suspense } from 'react';
 import Card from '../components/Card';
 import { TeamSettings, SocialFeedPost, Player } from '../types';
-import { CalendarIcon, UsersIcon, AlertTriangleIcon, BankIcon, PlayCircleIcon, ClipboardIcon, MedicalIcon, DumbbellIcon, WifiIcon, CheckCircleIcon, SparklesIcon, LockIcon } from '../components/icons/UiIcons';
+import { CalendarIcon, UsersIcon, AlertTriangleIcon, BankIcon, PlayCircleIcon, ClipboardIcon, MedicalIcon, DumbbellIcon, WifiIcon, CheckCircleIcon, SparklesIcon, LockIcon, StarIcon } from '../components/icons/UiIcons';
 import { MegaphoneIcon, WhistleIcon, TrophyIcon, BookIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 import { storageService } from '../services/storageService';
@@ -29,6 +29,7 @@ const Dashboard: React.FC = () => {
     const [activeHub, setActiveHub] = useState<string | null>(null);
     const [activeModule, setActiveModule] = useState<string>('');
     const [systemHealth, setSystemHealth] = useState({ api: true, db: 'LOCAL', version: '2.0.4' });
+    const [xpLeaders, setXpLeaders] = useState<Player[]>([]);
     
     // State for other roles
     const [recentNews, setRecentNews] = useState<SocialFeedPost[]>([]);
@@ -40,14 +41,18 @@ const Dashboard: React.FC = () => {
     useEffect(() => {
         if (isHeadCoach) {
             setRawCoachStats(storageService.getCoachDashboardStats());
-            // Check System Health - Agora assumimos TRUE pois temos Fallback Key no geminiService
+            // Top 3 XP Leaders
+            const players = storageService.getPlayers();
+            const sorted = [...players].sort((a, b) => (b.xp || 0) - (a.xp || 0)).slice(0, 3);
+            setXpLeaders(sorted);
+
+            // Check System Health
             // @ts-ignore
             const envKey = process.env.API_KEY;
-            // Se tiver chave no ENV ou se estivermos rodando com fallback (que sempre é true agora), está operacional.
             setSystemHealth({ 
                 api: true, 
-                db: 'CONECTADO', 
-                version: '2.0.4' 
+                db: 'SINC', 
+                version: '2.0.5' 
             });
         } else if (isPlayer) {
             const user = authService.getCurrentUser();
@@ -65,7 +70,7 @@ const Dashboard: React.FC = () => {
         if (!activeHub) {
             return (
                 <div className="space-y-6 animate-fade-in pb-20">
-                    {/* System Status Widget (New for Migration Tracking) */}
+                    {/* System Status Widget */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="bg-secondary p-4 rounded-xl border border-white/5 shadow-lg flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -84,7 +89,7 @@ const Dashboard: React.FC = () => {
                                 <div>
                                     <h3 className="text-xs font-bold text-text-secondary uppercase">IA Gemini</h3>
                                     <p className={`font-bold ${systemHealth.api ? 'text-green-400' : 'text-red-400'}`}>
-                                        {systemHealth.api ? 'IA Ativa (Modo Seguro)' : 'Sem Chave'}
+                                        {systemHealth.api ? 'IA Ativa (Segura)' : 'Sem Chave'}
                                     </p>
                                 </div>
                             </div>
@@ -93,8 +98,8 @@ const Dashboard: React.FC = () => {
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-green-500/10 rounded-full"><CheckCircleIcon className="text-green-400 w-5 h-5" /></div>
                                 <div>
-                                    <h3 className="text-xs font-bold text-text-secondary uppercase">Banco de Dados</h3>
-                                    <p className="text-green-400 font-bold text-sm">Sincronizado</p>
+                                    <h3 className="text-xs font-bold text-text-secondary uppercase">Nuvem</h3>
+                                    <p className="text-green-400 font-bold text-sm">Conectado</p>
                                 </div>
                             </div>
                         </div>
@@ -109,23 +114,45 @@ const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Header Status */}
-                    <div className="bg-secondary p-4 rounded-xl border border-white/5 flex justify-between items-center shadow-lg">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-white/5 rounded-full"><WhistleIcon className="text-red-500 w-6 h-6" /></div>
-                            <div>
-                                <h2 className="text-lg font-bold text-white uppercase">Command Center</h2>
-                                <p className="text-xs text-text-secondary">Visão Geral da Temporada</p>
+                    {/* Header Status + Gamification Leaders */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-secondary p-4 rounded-xl border border-white/5 flex flex-col justify-between shadow-lg">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-white/5 rounded-full"><WhistleIcon className="text-red-500 w-6 h-6" /></div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white uppercase">Command Center</h2>
+                                    <p className="text-xs text-text-secondary">Visão Geral da Temporada</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 text-center">
+                                <div><p className="text-[10px] uppercase text-text-secondary font-bold">Ativos</p><p className="text-3xl font-black text-green-400">{coachStats.activePlayers}</p></div>
+                                <div><p className="text-[10px] uppercase text-text-secondary font-bold">Lesão</p><p className="text-3xl font-black text-red-400">{coachStats.injuredPlayers}</p></div>
                             </div>
                         </div>
-                        <div className="flex gap-4 text-center">
-                            <div><p className="text-[10px] uppercase text-text-secondary font-bold">Ativos</p><p className="text-lg font-black text-green-400">{coachStats.activePlayers}</p></div>
-                            <div><p className="text-[10px] uppercase text-text-secondary font-bold">Lesão</p><p className="text-lg font-black text-red-400">{coachStats.injuredPlayers}</p></div>
+
+                        {/* XP Leaders Widget */}
+                        <div className="bg-gradient-to-br from-yellow-900/20 to-secondary p-4 rounded-xl border border-yellow-500/20 shadow-lg">
+                            <h3 className="text-xs font-bold text-yellow-400 uppercase mb-3 flex items-center gap-2">
+                                <StarIcon className="w-4 h-4" /> Líderes de XP (Engajamento)
+                            </h3>
+                            <div className="space-y-2">
+                                {xpLeaders.length === 0 && <p className="text-xs text-text-secondary">Sem dados de XP ainda.</p>}
+                                {xpLeaders.map((p, idx) => (
+                                    <div key={p.id} className="flex items-center justify-between bg-black/20 p-2 rounded">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-yellow-500 w-4">{idx + 1}</span>
+                                            <img src={p.avatarUrl} className="w-6 h-6 rounded-full" />
+                                            <span className="text-xs font-bold text-white">{p.name}</span>
+                                        </div>
+                                        <span className="text-xs font-mono text-highlight">{p.xp} XP</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
 
                     {/* 4 BIG BUTTONS (Launcher) */}
-                    <div className="grid grid-cols-1 gap-4 h-[calc(100vh-300px)]">
+                    <div className="grid grid-cols-1 gap-4 h-[calc(100vh-350px)]">
                          <button onClick={() => { setActiveHub('TRAINING'); setActiveModule('PRACTICE'); }} className="bg-gradient-to-br from-blue-900/40 to-secondary border border-blue-500/30 rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group hover:border-blue-400">
                             <DumbbellIcon className="w-12 h-12 text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
                             <span className="text-2xl font-black text-white uppercase">Dia de Treino</span>
