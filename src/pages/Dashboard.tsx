@@ -1,3 +1,4 @@
+
 import React, { useContext, useEffect, useState, useMemo, Suspense } from 'react';
 import Card from '../components/Card';
 import { TeamSettings, SocialFeedPost, Player } from '../types';
@@ -27,7 +28,7 @@ const Dashboard: React.FC = () => {
     const [rawCoachStats, setRawCoachStats] = useState<any>({ activePlayers: 0, injuredPlayers: 0, nextGame: null });
     const [activeHub, setActiveHub] = useState<string | null>(null);
     const [activeModule, setActiveModule] = useState<string>('');
-    const [systemHealth, setSystemHealth] = useState({ api: true, db: 'LOCAL', version: '2.0.3' });
+    const [systemHealth, setSystemHealth] = useState({ api: true, db: 'LOCAL', version: '2.0.4' });
     
     // State for other roles
     const [recentNews, setRecentNews] = useState<SocialFeedPost[]>([]);
@@ -46,7 +47,7 @@ const Dashboard: React.FC = () => {
             setSystemHealth({ 
                 api: true, 
                 db: 'CONECTADO', 
-                version: '2.0.3' 
+                version: '2.0.4' 
             });
         } else if (isPlayer) {
             const user = authService.getCurrentUser();
@@ -83,7 +84,7 @@ const Dashboard: React.FC = () => {
                                 <div>
                                     <h3 className="text-xs font-bold text-text-secondary uppercase">IA Gemini</h3>
                                     <p className={`font-bold ${systemHealth.api ? 'text-green-400' : 'text-red-400'}`}>
-                                        {systemHealth.api ? 'Operacional' : 'Sem Chave'}
+                                        {systemHealth.api ? 'IA Ativa (Modo Seguro)' : 'Sem Chave'}
                                     </p>
                                 </div>
                             </div>
