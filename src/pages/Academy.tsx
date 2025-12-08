@@ -453,4 +453,3 @@ const Academy: React.FC = () => {
     );
 };
 
-export default AcademyPage;

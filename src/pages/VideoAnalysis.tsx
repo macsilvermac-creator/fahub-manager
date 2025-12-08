@@ -863,4 +863,4 @@ const VideoAnalysis: React.FC = () => {
         </div>
     );
 };
-export default VideoAnalysisPage;
+export default VideoAnalysis;

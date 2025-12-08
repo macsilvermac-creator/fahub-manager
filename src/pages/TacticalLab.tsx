@@ -474,4 +474,4 @@ const TacticalLab: React.FC = () => {
     );
 };
 
-export default TacticalLabPage;
+export default TacticalLab;

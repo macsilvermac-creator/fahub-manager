@@ -258,4 +258,4 @@ const PerformanceLab: React.FC = () => {
     );
 };
 
-export default PerformanceLabPage;
+export default PerformanceLab;
