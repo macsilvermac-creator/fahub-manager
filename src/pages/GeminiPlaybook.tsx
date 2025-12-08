@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import Card from '../components/Card';
 import { generatePracticePlan } from '../services/geminiService';
-import { SparklesIcon } from '../components/icons/UiIcons';
+import { SparklesIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
 import { VideoIcon } from '../components/icons/NavIcons';
 
 const POSITIONS = [
@@ -22,15 +21,16 @@ const GeminiPlaybook: React.FC = () => {
   const [selectedPosition, setSelectedPosition] = useState('ALL');
   const [generatedPlan, setGeneratedPlan] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setIsLoading(true);
     setGeneratedPlan('');
+    setErrorMessage('');
     
     const targetAudience = POSITIONS.find(p => p.value === selectedPosition)?.label || 'Time Completo';
     
-    // Construct a specific prompt based on selection
     const finalPrompt = `
       Atue como um treinador especialista. Gere um plano de treino detalhado.
       
@@ -44,8 +44,16 @@ const GeminiPlaybook: React.FC = () => {
       4. Condicionamento Final.
     `;
 
-    const plan = await generatePracticePlan(finalPrompt);
-    setGeneratedPlan(plan);
+    const result = await generatePracticePlan(finalPrompt);
+    
+    if (result.startsWith('⚠️')) {
+        setErrorMessage(result);
+        setGeneratedPlan('');
+    } else {
+        setGeneratedPlan(result);
+        setErrorMessage('');
+    }
+    
     setIsLoading(false);
   };
 
@@ -54,7 +62,6 @@ const GeminiPlaybook: React.FC = () => {
     setSelectedPosition(position);
   };
   
-  // Custom parser to inject search links for suggested videos
   const formatPlanWithLinks = (text: string) => {
       let formatted = text.replace(/(\*\*|###|##|#)(.*?)\1/g, (match, p1, p2) => {
         if (p1 === '**') return `<strong class="text-highlight">${p2}</strong>`;
@@ -64,8 +71,6 @@ const GeminiPlaybook: React.FC = () => {
         return match;
       }).replace(/\* (.*?)\n/g, '<li class="ml-5 list-disc">$1</li>');
 
-      // Inject Video Search Links
-      // Regex looks for patterns like: (Busca sugerida: Drill Name) or (Video: Drill Name)
       formatted = formatted.replace(/\((Busca sugerida|Video Search): (.*?)\)/gi, (match, p1, term) => {
           const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(term)}`;
           return ` <a href="${url}" target="_blank" class="inline-flex items-center gap-1 text-xs bg-red-600/20 text-red-400 hover:text-red-300 px-2 py-0.5 rounded border border-red-500/30 no-underline ml-1">🎥 Buscar Vídeo: "${term}"</a>`;
@@ -89,7 +94,6 @@ const GeminiPlaybook: React.FC = () => {
         <Card title="Configurar Plano de Treino">
           <div className="space-y-5">
             
-            {/* Position Selector */}
             <div>
                 <label className="block text-sm font-medium text-text-secondary mb-2">
                     Grupo / Posição Alvo
@@ -100,7 +104,7 @@ const GeminiPlaybook: React.FC = () => {
                     className="w-full bg-primary border border-tertiary rounded-lg p-3 text-text-primary focus:ring-2 focus:ring-highlight focus:outline-none"
                 >
                     {POSITIONS.map(pos => (
-                        <option key={pos.value} value={pos.value}>{pos.label}</option>
+                        <option key={pos.value} value={pos.label}>{pos.label}</option>
                     ))}
                 </select>
             </div>
@@ -163,12 +167,22 @@ const GeminiPlaybook: React.FC = () => {
               <div className="text-center p-8">
                   <SparklesIcon className="w-12 h-12 text-highlight mx-auto mb-4 animate-pulse" />
                   <p className="text-text-primary font-bold text-lg">Consultando Base de Conhecimento...</p>
-                  <p className="text-sm text-text-secondary mt-2">Criando exercícios específicos para {POSITIONS.find(p => p.value === selectedPosition)?.label}...</p>
+                  <p className="text-sm text-text-secondary mt-2">Criando exercícios específicos para {selectedPosition}...</p>
               </div>
           )}
+          
+          {!isLoading && errorMessage && (
+              <div className="p-6 bg-red-500/10 border border-red-500/30 rounded-xl text-center">
+                  <AlertTriangleIcon className="w-12 h-12 text-red-400 mx-auto mb-3" />
+                  <h3 className="text-red-400 font-bold mb-2">Falha na Geração</h3>
+                  <p className="text-sm text-white/80 mb-4">{errorMessage}</p>
+                  <p className="text-xs text-text-secondary">Dica: Verifique se sua chave API tem permissão para 'Generative AI' no console do Google Cloud.</p>
+              </div>
+          )}
+
           {generatedPlan ? (
             <div className="prose prose-invert max-w-none prose-p:text-text-secondary prose-li:text-text-secondary custom-scrollbar max-h-[600px] overflow-y-auto pr-2" dangerouslySetInnerHTML={{ __html: formatPlanWithLinks(generatedPlan) }}></div>
-          ) : !isLoading && (
+          ) : !isLoading && !errorMessage && (
               <div className="text-center p-8 text-text-secondary opacity-60">
                   <SparklesIcon className="w-12 h-12 mx-auto mb-3" />
                   <p>Selecione uma posição e um tema para gerar seu treino.</p>
