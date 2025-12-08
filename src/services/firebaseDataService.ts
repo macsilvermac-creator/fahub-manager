@@ -1,12 +1,26 @@
 
-import { db } from './apiConnection';
+import { db, storage } from './apiConnection';
 import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Player, Game, TeamSettings, Transaction } from '../types';
 
 // Helper to map Firestore docs to our types
 const mapDocs = (snapshot: any) => snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id }));
 
 export const firebaseDataService = {
+    // --- STORAGE (ARQUIVOS) ---
+    uploadFile: async (file: File, path: string): Promise<string> => {
+        try {
+            const storageRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            return downloadURL;
+        } catch (e) {
+            console.error("Erro no upload:", e);
+            throw new Error("Falha ao enviar arquivo para a nuvem.");
+        }
+    },
+
     // --- PLAYERS ---
     syncPlayers: async (players: Player[]) => {
         try {

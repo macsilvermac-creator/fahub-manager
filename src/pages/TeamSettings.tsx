@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { storageService } from '../services/storageService';
 import { TeamSettings } from '../types';
-import { SettingsNavIcon } from '../components/icons/NavIcons'; // Assuming this exists or using UiIcons
-import { CheckCircleIcon } from '../components/icons/UiIcons';
+import { CheckCircleIcon, ImageIcon } from '../components/icons/UiIcons';
 
 const TeamSettingsPage: React.FC = () => {
     const [settings, setSettings] = useState<TeamSettings | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
@@ -18,6 +18,22 @@ const TeamSettingsPage: React.FC = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!settings) return;
         setSettings({ ...settings, [e.target.name]: e.target.value });
+    };
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0] && settings) {
+            setIsUploading(true);
+            try {
+                const file = e.target.files[0];
+                const url = await storageService.uploadFile(file, 'team_logos');
+                setSettings({ ...settings, logoUrl: url });
+                setSuccessMessage('Logo enviada com sucesso! Clique em Salvar.');
+            } catch (err) {
+                alert("Erro ao enviar logo: " + err);
+            } finally {
+                setIsUploading(false);
+            }
+        }
     };
 
     const handleSave = (e: React.FormEvent) => {
@@ -74,19 +90,31 @@ const TeamSettingsPage: React.FC = () => {
                             <div className="pt-4 border-t border-white/10">
                                 <h4 className="text-sm font-bold text-white mb-3">Identidade Visual (Logo)</h4>
                                 <div className="flex gap-4 items-start">
-                                    <div className="w-24 h-24 bg-white rounded-lg flex items-center justify-center p-2">
-                                        <img src={settings.logoUrl} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
+                                    <div className="w-24 h-24 bg-white rounded-lg flex items-center justify-center p-2 relative overflow-hidden">
+                                        {isUploading ? (
+                                            <div className="animate-spin h-6 w-6 border-2 border-highlight border-t-transparent rounded-full"></div>
+                                        ) : (
+                                            <img src={settings.logoUrl} alt="Logo Preview" className="max-w-full max-h-full object-contain" />
+                                        )}
                                     </div>
                                     <div className="flex-1">
-                                        <label className="text-xs font-bold text-text-secondary block mb-1">URL da Logo (PNG/JPG)</label>
-                                        <input name="logoUrl" className="w-full bg-black/20 border border-white/10 rounded p-3 text-white text-sm focus:border-highlight focus:outline-none" value={settings.logoUrl} onChange={handleChange} placeholder="https://..." />
+                                        <label className="text-xs font-bold text-text-secondary block mb-1">Upload de Logo (PNG/JPG)</label>
+                                        <div className="flex gap-2 items-center">
+                                            <label className="cursor-pointer bg-secondary hover:bg-white/10 border border-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
+                                                <ImageIcon className="w-4 h-4" />
+                                                Escolher Arquivo
+                                                <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                                            </label>
+                                            <span className="text-xs text-text-secondary italic">ou use URL abaixo</span>
+                                        </div>
+                                        <input name="logoUrl" className="w-full bg-black/20 border border-white/10 rounded p-3 text-white text-sm focus:border-highlight focus:outline-none mt-2" value={settings.logoUrl} onChange={handleChange} placeholder="https://..." />
                                         <p className="text-[10px] text-text-secondary mt-1">Recomendamos imagem com fundo transparente.</p>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="flex justify-end pt-4">
-                                <button type="submit" disabled={isSaving} className="bg-highlight hover:bg-highlight-hover text-white px-8 py-3 rounded-lg font-bold shadow-lg transition-all flex items-center gap-2">
+                                <button type="submit" disabled={isSaving || isUploading} className="bg-highlight hover:bg-highlight-hover text-white px-8 py-3 rounded-lg font-bold shadow-lg transition-all flex items-center gap-2 disabled:opacity-50">
                                     {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                                     {successMessage && <CheckCircleIcon className="w-5 h-5 text-white" />}
                                 </button>

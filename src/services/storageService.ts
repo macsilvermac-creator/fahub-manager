@@ -62,6 +62,11 @@ const saveList = <T>(key: string, list: T[]) => {
 };
 
 export const storageService = {
+    // --- CLOUD STORAGE (FILES) ---
+    uploadFile: async (file: File, folder: string = 'general') => {
+        return await firebaseDataService.uploadFile(file, folder);
+    },
+
     // --- CORE SYNC FUNCTION (A "Antena") ---
     syncFromCloud: async () => {
         console.log("📡 Iniciando sincronização com a nuvem...");
