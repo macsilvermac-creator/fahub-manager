@@ -8,7 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import GlobalSearch from './components/GlobalSearch';
 import { ToastProvider } from './contexts/ToastContext';
 
-// FAHUB MANAGER v2.3 - Fixed Circular Dependencies & Toast
+// FAHUB MANAGER v2.4 - Full Architecture Fix
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
