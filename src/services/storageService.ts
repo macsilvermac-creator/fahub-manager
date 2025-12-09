@@ -1,6 +1,7 @@
 
 import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, League, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, Championship, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, VideoPermissionGroup, EquipmentItem, EventSale, SavedWorkout, NationalTeamCandidate, Affiliate, KanbanTask } from '../types';
 import { firebaseDataService } from './firebaseDataService';
+import { syncService } from './syncService';
 
 // Chaves do LocalStorage
 const PLAYERS_KEY = 'gridiron_players';
@@ -52,7 +53,6 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
 };
 
 // --- IN-MEMORY DATABASE (RAM CACHE) ---
-// This prevents blocking I/O on every render
 const RAM_DB: any = {
     players: [],
     games: [],
@@ -135,28 +135,23 @@ export const storageService = {
     syncFromCloud: async () => {
         console.log("📡 Iniciando sincronização (Background)...");
         try {
-            // 1. Players
             const cloudPlayers = await firebaseDataService.getPlayers();
             if (cloudPlayers && cloudPlayers.length > 0) {
-                RAM_DB.players = cloudPlayers; // Update RAM
-                saveListToDisk(PLAYERS_KEY, cloudPlayers); // Persist
-                console.log(`✅ ${cloudPlayers.length} atletas sincronizados.`);
+                RAM_DB.players = cloudPlayers;
+                saveListToDisk(PLAYERS_KEY, cloudPlayers);
             }
 
-            // 2. Games
             const cloudGames = await firebaseDataService.getGames();
             if (cloudGames && cloudGames.length > 0) {
                 RAM_DB.games = cloudGames;
                 saveListToDisk(GAMES_KEY, cloudGames);
             }
 
-            // 3. Transactions
             const cloudTxs = await firebaseDataService.getTransactions();
             if (cloudTxs && cloudTxs.length > 0) {
                 RAM_DB.transactions = cloudTxs;
                 saveListToDisk(TRANSACTIONS_KEY, cloudTxs);
             }
-            
             return true;
         } catch (error) {
             console.error("⚠️ Erro na sincronização:", error);
@@ -164,14 +159,19 @@ export const storageService = {
         }
     },
 
-    // --- ACCESSORS (Instant RAM Access) ---
+    // --- ACCESSORS (Instant RAM Access with Offline Queue) ---
 
     // PLAYERS
     getPlayers: (): Player[] => RAM_DB.players,
     savePlayers: (players: Player[]) => {
         RAM_DB.players = players;
         saveListToDisk(PLAYERS_KEY, players);
-        firebaseDataService.syncPlayers(players).catch(e => console.warn("Sync failed", e));
+        
+        if (syncService.getConnectionStatus()) {
+            firebaseDataService.syncPlayers(players).catch(e => console.warn("Sync failed", e));
+        } else {
+            syncService.enqueueAction('SYNC_PLAYERS', players);
+        }
     },
     registerAthlete: (player: Player) => {
         const newPlayer = { ...player, teamId: 'ts-1', rosterCategory: 'ACTIVE' as const };
@@ -196,7 +196,12 @@ export const storageService = {
     saveGames: (games: Game[]) => {
         RAM_DB.games = games;
         saveListToDisk(GAMES_KEY, games);
-        firebaseDataService.syncGames(games).catch(e => console.warn("Sync failed", e));
+        
+        if (syncService.getConnectionStatus()) {
+            firebaseDataService.syncGames(games).catch(e => console.warn("Sync failed", e));
+        } else {
+            syncService.enqueueAction('SYNC_GAMES', games);
+        }
     },
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const updated = RAM_DB.games.map((g: Game) => g.id === gameId ? { ...g, ...updates } : g);
@@ -225,7 +230,9 @@ export const storageService = {
     saveTeamSettings: (s: TeamSettings) => {
         RAM_DB.settings = s;
         localStorage.setItem(TEAM_SETTINGS_KEY, JSON.stringify(s));
-        firebaseDataService.saveTeamSettings(s).catch(e => console.warn("Sync failed", e));
+        if (syncService.getConnectionStatus()) {
+            firebaseDataService.saveTeamSettings(s).catch(e => console.warn("Sync failed", e));
+        }
     },
 
     // FINANCE
@@ -233,7 +240,11 @@ export const storageService = {
     saveTransactions: (t: Transaction[]) => {
         RAM_DB.transactions = t;
         saveListToDisk(TRANSACTIONS_KEY, t);
-        firebaseDataService.syncTransactions(t).catch(e => console.warn("Sync failed", e));
+        if (syncService.getConnectionStatus()) {
+            firebaseDataService.syncTransactions(t).catch(e => console.warn("Sync failed", e));
+        } else {
+            syncService.enqueueAction('SYNC_TRANSACTIONS', t);
+        }
     },
     getInvoices: (): Invoice[] => RAM_DB.invoices,
     saveInvoices: (i: Invoice[]) => {
