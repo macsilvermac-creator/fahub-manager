@@ -178,7 +178,7 @@ const Dashboard: React.FC = () => {
                 setSystemHealth({ 
                     api: true, 
                     db: 'RAM', 
-                    version: '2.1.0 GPU' 
+                    version: '2.5.0 Stable' 
                 });
             }
         }, 300);
@@ -258,3 +258,4 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+    
