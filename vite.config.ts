@@ -1,3 +1,4 @@
+
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -19,7 +20,18 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      sourcemap: false
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Separa bibliotecas grandes em chunks independentes
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            charts: ['recharts'],
+            firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+            ai: ['@google/genai']
+          }
+        }
+      }
     }
   };
 });
