@@ -1,6 +1,6 @@
 
 import { Player, StaffMember, UserRole } from '../types';
-import { firebaseDataService } from './services/firebaseDataService';
+import { firebaseDataService } from './firebaseDataService';
 import { validators } from '../utils/validators';
 
 const PLAYERS_KEY = 'gridiron_players';
