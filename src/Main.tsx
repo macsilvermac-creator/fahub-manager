@@ -4,9 +4,11 @@ import React, { Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';
+import ErrorBoundary from './components/ErrorBoundary';
+import GlobalSearch from './components/GlobalSearch';
 
-// FAHUB MANAGER v2.0
-// Main Router Configuration
+// FAHUB MANAGER v2.1
+// Main Router Configuration with Robustness Layer
 
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
@@ -44,57 +46,62 @@ const BroadcastOverlay = React.lazy(() => import('./pages/BroadcastOverlay'));
 
 const Main: React.FC = () => {
   return (
-    <HashRouter>
-      <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
-        <Routes>
-          {/* Rotas Públicas (Sem Layout) */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/public/league" element={<PublicLeague />} />
-          <Route path="/broadcast/:gameId" element={<BroadcastOverlay />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          
-          {/* Rotas Protegidas (Com Layout/Sidebar) */}
-          <Route path="/*" element={
-            <Layout>
-              <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LoadingScreen /></div>}>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/roster" element={<Roster />} />
-                  <Route path="/finance" element={<Finance />} />
-                  <Route path="/practice" element={<PracticePlan />} />
-                  <Route path="/schedule" element={<Schedule />} />
-                  <Route path="/staff" element={<Staff />} />
-                  <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/tasks" element={<TeamTasks />} />
-                  <Route path="/communications" element={<Communications />} />
-                  <Route path="/resources" element={<Resources />} />
-                  <Route path="/settings" element={<TeamSettingsPage />} />
-                  <Route path="/admin" element={<AdminPanel />} />
-                  <Route path="/profile" element={<MyProfile />} />
-                  <Route path="/officiating" element={<Officiating />} />
-                  <Route path="/league" element={<LeagueManager />} />
-                  <Route path="/confederation" element={<Confederation />} />
-                  <Route path="/gemini-playbook" element={<GeminiPlaybook />} />
-                  <Route path="/tactical-lab" element={<TacticalLab />} />
-                  <Route path="/video" element={<VideoAnalysis />} />
-                  <Route path="/academy" element={<Academy />} />
-                  <Route path="/marketplace" element={<Marketplace />} />
-                  <Route path="/commercial" element={<Commercial />} />
-                  <Route path="/marketing" element={<Marketing />} />
-                  <Route path="/locker-room" element={<LockerRoom />} />
-                  <Route path="/youth" element={<YouthProgram />} />
-                  <Route path="/event-desk" element={<EventDesk />} />
-                  <Route path="/help" element={<HelpCenter />} />
-                  <Route path="/roadmap" element={<Roadmap />} />
-                </Routes>
-              </Suspense>
-            </Layout>
-          } />
-        </Routes>
-      </Suspense>
-    </HashRouter>
+    <ErrorBoundary>
+        <HashRouter>
+          <GlobalSearch />
+          <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
+            <Routes>
+              {/* Rotas Públicas (Sem Layout) */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/public/league" element={<PublicLeague />} />
+              <Route path="/broadcast/:gameId" element={<BroadcastOverlay />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              
+              {/* Rotas Protegidas (Com Layout/Sidebar) */}
+              <Route path="/*" element={
+                <Layout>
+                  <ErrorBoundary>
+                      <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LoadingScreen /></div>}>
+                        <Routes>
+                          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route path="/roster" element={<Roster />} />
+                          <Route path="/finance" element={<Finance />} />
+                          <Route path="/practice" element={<PracticePlan />} />
+                          <Route path="/schedule" element={<Schedule />} />
+                          <Route path="/staff" element={<Staff />} />
+                          <Route path="/inventory" element={<Inventory />} />
+                          <Route path="/tasks" element={<TeamTasks />} />
+                          <Route path="/communications" element={<Communications />} />
+                          <Route path="/resources" element={<Resources />} />
+                          <Route path="/settings" element={<TeamSettingsPage />} />
+                          <Route path="/admin" element={<AdminPanel />} />
+                          <Route path="/profile" element={<MyProfile />} />
+                          <Route path="/officiating" element={<Officiating />} />
+                          <Route path="/league" element={<LeagueManager />} />
+                          <Route path="/confederation" element={<Confederation />} />
+                          <Route path="/gemini-playbook" element={<GeminiPlaybook />} />
+                          <Route path="/tactical-lab" element={<TacticalLab />} />
+                          <Route path="/video" element={<VideoAnalysis />} />
+                          <Route path="/academy" element={<Academy />} />
+                          <Route path="/marketplace" element={<Marketplace />} />
+                          <Route path="/commercial" element={<Commercial />} />
+                          <Route path="/marketing" element={<Marketing />} />
+                          <Route path="/locker-room" element={<LockerRoom />} />
+                          <Route path="/youth" element={<YouthProgram />} />
+                          <Route path="/event-desk" element={<EventDesk />} />
+                          <Route path="/help" element={<HelpCenter />} />
+                          <Route path="/roadmap" element={<Roadmap />} />
+                        </Routes>
+                      </Suspense>
+                  </ErrorBoundary>
+                </Layout>
+              } />
+            </Routes>
+          </Suspense>
+        </HashRouter>
+    </ErrorBoundary>
   );
 };
 
