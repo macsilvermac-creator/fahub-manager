@@ -19,13 +19,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [user, setUser] = useState(authService.getCurrentUser());
 
   useEffect(() => {
+      // 1. CRITICAL: Initialize RAM DB from Disk immediately on mount
+      // This prevents "white screens" or empty states on first render
+      storageService.initializeRAM();
+
       const u = authService.getCurrentUser();
       if(u) {
           setUser(u);
           setRole(u.role);
       }
       
-      // Auto-Sync Trigger
+      // 2. Background Sync (Fire & Forget)
+      // Updates RAM automatically when cloud data arrives
       const syncData = async () => {
           await storageService.syncFromCloud();
       };
