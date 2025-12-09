@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
       'process.env.API_KEY': JSON.stringify(env.API_KEY)
     },
     build: {
+      target: 'esnext', // OTIMIZAÇÃO: Alvo moderno para melhor performance
+      minify: 'esbuild', // OTIMIZAÇÃO: Minificação mais rápida e eficiente
       outDir: 'dist',
       sourcemap: false,
       chunkSizeWarningLimit: 1000,
@@ -25,6 +27,7 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: (id) => {
             if (id.includes('node_modules')) {
+              // Separação agressiva de bibliotecas pesadas
               if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
                 return 'vendor-react';
               }

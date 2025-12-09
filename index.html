@@ -28,9 +28,8 @@
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
             },
-            // Shadows removed for performance
             boxShadow: {
-              'glow': 'none', 
+              'glow': '0 0 20px rgba(5, 150, 105, 0.3)', 
               'sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
             }
           }
@@ -50,20 +49,27 @@
       ::-webkit-scrollbar-track { background: #0f172a; }
       ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
       
-      /* Performance Optimized Panel: Solid Color, No Blur */
+      /* GPU ACCELERATED GLASSMORPHISM */
+      /* O segredo da performance: translateZ(0) joga o elemento para a GPU */
       .glass-panel { 
-        background-color: #1e293b; 
-        border: 1px solid #334155; 
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
+        background-color: rgba(30, 41, 59, 0.7); 
+        border: 1px solid rgba(255, 255, 255, 0.08); 
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transform: translateZ(0);
+        will-change: transform, opacity;
+        backface-visibility: hidden;
       }
       
-      /* Disable animations globally for performance */
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
+      /* Smooth Animations enabled but hardware accelerated */
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+        will-change: opacity;
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
       }
     </style>
 </head>
