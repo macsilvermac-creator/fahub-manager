@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import { Player, RosterCategory } from '../types';
 import AthleteCard from '../components/AthleteCard';
@@ -6,7 +5,7 @@ import AddPlayerModal from '../components/AddPlayerModal';
 import PlayerDetailsModal from '../components/PlayerDetailsModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Modal from '../components/Modal';
-import { UsersIcon, ClipboardIcon } from '../components/icons/UiIcons';
+import { UsersIcon, ClipboardIcon, ChevronDownIcon } from '../components/icons/UiIcons';
 import { storageService } from '../services/storageService';
 import PrintLayout from '../components/PrintLayout';
 import { UserContext } from '../components/Layout';
@@ -18,6 +17,9 @@ const Roster: React.FC = () => {
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
     const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
     const [viewMode, setViewMode] = useState<'CARDS' | 'DEPTH_CHART'>('CARDS');
+    
+    // Performance: Paginação
+    const [visibleCount, setVisibleCount] = useState(12);
     
     // Squad Management State
     const [activeCategory, setActiveCategory] = useState<RosterCategory>('ACTIVE');
@@ -36,6 +38,11 @@ const Roster: React.FC = () => {
         // Players forced to card view
         if (isPlayer) setViewMode('CARDS');
     }, [isPlayer]);
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setVisibleCount(12);
+    }, [activeCategory, unitFilter, viewMode]);
 
     const handleAddPlayer = (newPlayerData: Omit<Player, 'id' | 'level' | 'xp' | 'badges' | 'rating' | 'status'>) => {
         try {
@@ -90,6 +97,10 @@ const Roster: React.FC = () => {
         }
     };
 
+    const handleLoadMore = () => {
+        setVisibleCount(prev => prev + 12);
+    };
+
     // Filter players by current squad tab AND unit filter
     const filteredPlayers = players.filter(p => {
         // 1. Squad Filter
@@ -103,6 +114,8 @@ const Roster: React.FC = () => {
         if (unitFilter === 'ST') return ['K','P','LS'].includes(pos);
         return true;
     });
+
+    const displayedPlayers = filteredPlayers.slice(0, visibleCount);
 
     // --- Depth Chart Helpers ---
     const getPlayersByUnit = (unit: 'OFFENSE' | 'DEFENSE' | 'SPECIAL') => {
@@ -269,7 +282,7 @@ const Roster: React.FC = () => {
                 <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:items-center md:justify-between border-b border-white/10 mb-4 no-print">
                     <div className="flex overflow-x-auto">
                         <button onClick={() => setActiveCategory('ACTIVE')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'ACTIVE' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
-                            Active Roster (53)
+                            Active Roster ({players.filter(p => p.rosterCategory === 'ACTIVE').length})
                         </button>
                         <button onClick={() => setActiveCategory('PRACTICE_SQUAD')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'PRACTICE_SQUAD' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
                             Practice Squad
@@ -295,7 +308,9 @@ const Roster: React.FC = () => {
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {filteredPlayers.length === 0 && <p className="col-span-full text-center text-text-secondary py-12 italic">Nenhum atleta nesta categoria/filtro.</p>}
-                            {filteredPlayers.map(player => (
+                            
+                            {/* Render only visible players */}
+                            {displayedPlayers.map(player => (
                                 <div key={player.id} className="relative group">
                                     <AthleteCard 
                                         player={player} 
@@ -320,6 +335,18 @@ const Roster: React.FC = () => {
                                 </div>
                             ))}
                         </div>
+
+                        {/* Load More Button */}
+                        {visibleCount < filteredPlayers.length && (
+                            <div className="flex justify-center mt-8">
+                                <button 
+                                    onClick={handleLoadMore}
+                                    className="px-6 py-2 bg-secondary border border-white/10 hover:bg-white/5 rounded-full text-sm font-bold text-text-secondary flex items-center gap-2 transition-all"
+                                >
+                                    Carregar Mais ({filteredPlayers.length - visibleCount} restantes) <ChevronDownIcon className="w-4 h-4"/>
+                                </button>
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-x-auto">

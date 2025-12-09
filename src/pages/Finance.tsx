@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Invoice, AffiliateEarnings, Player, EventSale, Transaction, FinancialAttachment, EquipmentItem, TransactionCategory } from '../types';
 import { storageService, LEGAL_DOCUMENTS } from '../services/storageService';
 import { FinanceIcon } from '../components/icons/NavIcons';
-import { WalletIcon, CheckCircleIcon, AlertCircleIcon, SparklesIcon, FileTextIcon, ClipboardIcon } from '../components/icons/UiIcons';
+import { WalletIcon, CheckCircleIcon, AlertCircleIcon, SparklesIcon, FileTextIcon, ClipboardIcon, ChevronDownIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
 import ComplianceModal from '../components/ComplianceModal';
 import Modal from '../components/Modal';
@@ -20,6 +19,9 @@ const Finance: React.FC = () => {
     const [players, setPlayers] = useState<Player[]>([]);
     const [inventory, setInventory] = useState<EquipmentItem[]>([]);
     
+    // Performance State
+    const [visibleTxCount, setVisibleTxCount] = useState(20);
+
     // View State
     const [viewMode, setViewMode] = useState<'OVERVIEW' | 'EXPENSES' | 'RECEIVABLES'>('OVERVIEW');
     
@@ -80,6 +82,15 @@ const Finance: React.FC = () => {
         }
         
     }, [isCoach, isPlayer]);
+
+    // Reset pagination on tab change
+    useEffect(() => {
+        setVisibleTxCount(20);
+    }, [viewMode]);
+
+    const handleLoadMoreTx = () => {
+        setVisibleTxCount(prev => prev + 20);
+    };
 
     // --- PLAYER VIEW: SIMPLE WALLET ---
     if (isPlayer) {
@@ -248,6 +259,10 @@ const Finance: React.FC = () => {
     const totalExpense = transactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
     const balance = totalIncome - totalExpense;
 
+    // Filter Logic for View Mode
+    const filteredTransactions = transactions.filter(t => viewMode === 'OVERVIEW' || t.type === 'EXPENSE');
+    const displayedTransactions = filteredTransactions.slice(0, visibleTxCount);
+
     return (
         <div className="space-y-6 pb-12 animate-fade-in relative">
              {showComplianceModal && <ComplianceModal document={complianceDoc} onSign={handleSignTerms} />}
@@ -342,7 +357,7 @@ const Finance: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {transactions.filter(t => viewMode === 'OVERVIEW' || t.type === 'EXPENSE').map((tx) => (
+                                {displayedTransactions.map((tx) => (
                                     <tr key={tx.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                                         <td className="px-4 py-3">{new Date(tx.date).toLocaleDateString()}</td>
                                         <td className="px-4 py-3">
@@ -360,6 +375,16 @@ const Finance: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
+                    {visibleTxCount < filteredTransactions.length && (
+                        <div className="flex justify-center">
+                            <button 
+                                onClick={handleLoadMoreTx}
+                                className="px-6 py-2 bg-secondary border border-white/10 hover:bg-white/5 rounded-full text-sm font-bold text-text-secondary flex items-center gap-2 transition-all"
+                            >
+                                Ver Mais Antigos ({filteredTransactions.length - visibleTxCount} restantes) <ChevronDownIcon className="w-4 h-4"/>
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 
