@@ -1,10 +1,10 @@
 
 import { db, storage } from './apiConnection';
-import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc, query, where, getDoc, limit, orderBy } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, query, orderBy, limit, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Player, Game, TeamSettings, Transaction } from '../types';
-import { cacheService } from './cacheService';
-import { compressImage } from '../utils/imageOptimizer';
+import { cacheService } from '@/services/cacheService';
+import { compressImage } from '@/utils/imageOptimizer';
 
 // Helper to map Firestore docs to our types
 const mapDocs = (snapshot: any) => snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id }));
@@ -14,10 +14,9 @@ export const firebaseDataService = {
     uploadFile: async (file: File, path: string): Promise<string> => {
         try {
             // OTIMIZAÇÃO #4: Compressão automática antes do upload
-            // Reduz imagens > 5MB para ~300KB
             const optimizedFile = await compressImage(file);
 
-            // Otimização: Adicionar timestamp para evitar colisão e cache do navegador em imagens antigas
+            // Otimização: Adicionar timestamp para evitar colisão
             const storageRef = ref(storage, `${path}/${Date.now()}_${optimizedFile.name}`);
             
             const snapshot = await uploadBytes(storageRef, optimizedFile);
@@ -47,7 +46,6 @@ export const firebaseDataService = {
 
         try {
             // 2. Se não tiver, busca no Firebase
-            // Otimização: Buscar apenas jogadores ativos ou limitar se a lista for gigante (futuro)
             const snapshot = await getDocs(collection(db, 'players'));
             const data = mapDocs(snapshot);
             
@@ -77,8 +75,7 @@ export const firebaseDataService = {
         if (cached) return cached;
 
         try {
-            // Otimização: Ordenar por data para garantir consistência
-            const q = query(collection(db, 'games'), orderBy('date', 'desc')); // Pega os mais recentes primeiro
+            const q = query(collection(db, 'games'), orderBy('date', 'desc'));
             const snapshot = await getDocs(q);
             
             const data = mapDocs(snapshot).map((g: any) => ({
@@ -110,8 +107,6 @@ export const firebaseDataService = {
         if (cached) return cached;
 
         try {
-            // Otimização: Limitar a 100 últimas transações para não travar o dashboard
-            // MELHORIA #1 (Parcial): Já preparamos o terreno para paginação limitando a query
             const q = query(collection(db, 'transactions'), orderBy('date', 'desc'), limit(100));
             const snapshot = await getDocs(q);
             const data = mapDocs(snapshot).map((t: any) => ({
@@ -140,7 +135,7 @@ export const firebaseDataService = {
             const snap = await getDoc(doc(db, 'settings', 'team_config'));
             if (snap.exists()) {
                 const data = snap.data() as TeamSettings;
-                cacheService.set('settings_config', data, 10 * 60 * 1000); // Cache maior (10 min) para configs
+                cacheService.set('settings_config', data, 10 * 60 * 1000); 
                 return data;
             }
             return null;
