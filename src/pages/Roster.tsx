@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import { Player, RosterCategory } from '../types';
 import AthleteCard from '../components/AthleteCard';
@@ -9,9 +10,11 @@ import { UsersIcon, ClipboardIcon, ChevronDownIcon } from '../components/icons/U
 import { storageService } from '../services/storageService';
 import PrintLayout from '../components/PrintLayout';
 import { UserContext } from '../components/Layout';
+import { useToast } from '../contexts/ToastContext'; // Import Toast
 
 const Roster: React.FC = () => {
     const { currentRole } = useContext(UserContext);
+    const toast = useToast(); // Hook Toast
     const [players, setPlayers] = useState<Player[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -62,8 +65,9 @@ const Roster: React.FC = () => {
             storageService.registerAthlete(newPlayer);
             setPlayers(storageService.getPlayers());
             setIsAddModalOpen(false);
+            toast.success(`Atleta ${newPlayer.name} recrutado com sucesso!`); // Toast
         } catch (error: any) {
-            alert(error.message);
+            toast.error(error.message); // Toast Error
         }
     };
 
@@ -76,6 +80,7 @@ const Roster: React.FC = () => {
             const updatedPlayers = players.filter(p => p.id !== playerToDelete.id);
             setPlayers(updatedPlayers);
             storageService.savePlayers(updatedPlayers);
+            toast.info(`${playerToDelete.name} removido do elenco.`); // Toast Info
             setPlayerToDelete(null);
         }
     };
@@ -85,6 +90,7 @@ const Roster: React.FC = () => {
         const updated = players.map(p => p.id === player.id ? { ...p, rosterCategory: newCategory } : p);
         setPlayers(updated);
         storageService.savePlayers(updated);
+        toast.success(`${player.name} movido para ${newCategory}`); // Toast
     };
 
     const toggleCompareSelect = (id: number) => {
@@ -93,6 +99,8 @@ const Roster: React.FC = () => {
         } else {
             if (compareSelection.length < 2) {
                 setCompareSelection(prev => [...prev, id]);
+            } else {
+                toast.warning("Selecione no máximo 2 atletas para comparar.");
             }
         }
     };
