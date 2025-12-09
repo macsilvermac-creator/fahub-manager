@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Invoice, AffiliateEarnings, Player, EventSale, Transaction, FinancialAttachment, EquipmentItem, TransactionCategory } from '../types';
@@ -8,9 +9,11 @@ import { UserContext } from '../components/Layout';
 import ComplianceModal from '../components/ComplianceModal';
 import Modal from '../components/Modal';
 import { authService } from '../services/authService';
+import { useToast } from '../contexts/ToastContext';
 
 const Finance: React.FC = () => {
     const { currentRole } = useContext(UserContext);
+    const toast = useToast();
     
     // Data State
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -196,7 +199,7 @@ const Finance: React.FC = () => {
     const handleCreateBulkReceivable = () => {
         const targets = getTargetPlayers();
         if (targets.length === 0) {
-            alert("Selecione pelo menos um atleta.");
+            toast.warning("Selecione pelo menos um atleta.");
             return;
         }
         
@@ -215,12 +218,13 @@ const Finance: React.FC = () => {
         setInvoices(storageService.getInvoices());
         setIsRecModalOpen(false);
         setRecStep(1); setRecTitle(''); setRecAmount(0); setSelectedPlayerIds([]);
-        alert(`Sucesso! ${targets.length} cobranças geradas.`);
+        toast.success(`Sucesso! ${targets.length} cobranças geradas.`);
     };
 
     const handleSignTerms = () => {
         storageService.signLegalDocument(complianceDoc.id);
         setShowComplianceModal(false);
+        toast.success("Termos de Conformidade assinados.");
     };
 
     const handleSaveTransaction = (e: React.FormEvent) => {
@@ -251,6 +255,7 @@ const Finance: React.FC = () => {
         setIsTxModalOpen(false);
         setTxTitle(''); setTxAmount(''); setTxDocName('');
         storageService.logAuditAction('TRANSACTION_ADD', `Nova ${txType}: ${txTitle} R$ ${txAmount}`);
+        toast.success("Transação registrada com sucesso.");
     };
 
     const totalIncome = transactions.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0) 

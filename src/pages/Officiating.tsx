@@ -9,6 +9,8 @@ import { askRefereeBot, generateJudicialReport } from '../services/geminiService
 import { voiceService } from '../services/voiceService';
 import { UserContext } from '../components/Layout';
 import Modal from '../components/Modal';
+import { useToast } from '../contexts/ToastContext'; // UX Padronizada
+import LazyImage from '@/components/LazyImage'; // Performance Mobile
 
 // Regras 2025: 100L de agua, Ambulancia 30min antes
 const REGULATION_AMBULANCE_TOLERANCE_MIN = 30; 
@@ -39,6 +41,7 @@ const INITIAL_INFRASTRUCTURE: GameInfrastructureChecklist = {
 
 const Officiating: React.FC = () => {
     const { currentRole } = useContext(UserContext);
+    const toast = useToast();
     const [viewMode, setViewMode] = useState<'CAREER' | 'WORKFLOW' | 'FIELD' | 'ADMIN'>('CAREER');
     const [games, setGames] = useState<Game[]>([]);
     const [players, setPlayers] = useState<Player[]>([]);
@@ -101,8 +104,6 @@ const Officiating: React.FC = () => {
         }
     }, []);
 
-    // ... (Existing syncLiveState, timers, updateScore logic maintained)
-    
     // --- SCOREBOARD HANDLERS ---
     const syncLiveState = (updates: Partial<Game>) => {
         if(!selectedGame) return;
@@ -122,11 +123,13 @@ const Officiating: React.FC = () => {
     const updateQuarter = (q: number) => {
         setPendingFoul({...pendingFoul, quarter: q});
         syncLiveState({ currentQuarter: q });
+        toast.info(`Quarto alterado para Q${q}`);
     };
 
     const handleGameStart = () => {
         if(confirm("Iniciar cronômetro oficial e marcar jogo como EM ANDAMENTO?")) {
             syncLiveState({ status: 'IN_PROGRESS' });
+            toast.success("Jogo iniciado! Bom trabalho, equipe.");
         }
     };
 
@@ -136,6 +139,7 @@ const Officiating: React.FC = () => {
         if (field === 'ambulancePresent' && value === true) {
             updated.ambulanceArrivalTime = new Date().toLocaleTimeString();
             setIsAmbulanceTimerRunning(false);
+            toast.success("Ambulância registrada. Jogo liberado.");
         }
         setGameReport(prev => {
             const newState = { ...prev, infrastructure: updated };
@@ -162,27 +166,28 @@ const Officiating: React.FC = () => {
                         playerNumber: number,
                         team: 'HOME' 
                     }));
+                    toast.success(`Falta Detectada: ${detectedFoul.label}`);
                 } else {
-                    alert(`Não entendi a falta. Ouvi: "${text}"`);
+                    toast.warning(`Não entendi a falta. Ouvi: "${text}"`);
                 }
             },
             (err) => {
                 setIsListening(false);
-                alert("Erro no reconhecimento de voz: " + err);
+                toast.error("Erro no reconhecimento de voz: " + err);
             }
         );
     };
 
     const handleFinalizeGame = () => {
         if (!gameReport.infrastructure.ambulancePresent) {
-            alert("ERRO: Não é possível finalizar jogo sem registro de ambulância. Use W.O. se necessário.");
+            toast.error("ERRO CRÍTICO: Não é possível finalizar jogo sem registro de ambulância. Use W.O. se necessário.");
             return;
         }
         if (window.confirm("Confirmar resultado final e assinar súmula digital?")) {
             if (selectedGame) {
                 const winner = homeScore > awayScore ? 'HOME' : awayScore > homeScore ? 'AWAY' : 'TIE';
                 storageService.finalizeGameReport(selectedGame.id, gameReport, `${homeScore}-${awayScore}`, winner);
-                alert("Súmula enviada com sucesso.");
+                toast.success("Súmula enviada com sucesso à Federação.");
                 setGameReport({ ...gameReport, isFinalized: true });
                 setSelectedGame(null); 
             }
@@ -439,14 +444,14 @@ const Officiating: React.FC = () => {
                             {/* TAB 2: ROSTER */}
                             {activeTab === 'ROSTER' && (
                                 <Card title="Conferência de Identidade">
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto p-1">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto p-1 custom-scrollbar">
                                         {players.map(player => (
                                             <div 
                                                 key={player.id} 
                                                 onClick={() => setCheckedPlayers(prev => ({...prev, [player.id]: !prev[player.id]}))}
                                                 className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${checkedPlayers[player.id] ? 'bg-green-600/20 border-green-500' : 'bg-secondary border-white/5 opacity-60'}`}
                                             >
-                                                <img src={player.avatarUrl} className="w-10 h-10 rounded-full bg-black" />
+                                                <LazyImage src={player.avatarUrl} className="w-10 h-10 rounded-full bg-black object-cover" />
                                                 <div>
                                                     <p className="font-bold text-white text-sm">{player.name}</p>
                                                     <span className="text-text-secondary text-xs">#{player.jerseyNumber}</span>

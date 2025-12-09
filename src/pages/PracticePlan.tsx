@@ -11,9 +11,11 @@ import PrintLayout from '../components/PrintLayout';
 import { UserContext } from '../components/Layout';
 import Button from '../components/Button'; // ATOMIC
 import Input from '../components/Input';   // ATOMIC
+import { useToast } from '../contexts/ToastContext';
 
 const PracticePlan: React.FC = () => {
     const { currentRole } = useContext(UserContext);
+    const toast = useToast();
     const [practices, setPractices] = useState<PracticeSession[]>([]);
     const [players, setPlayers] = useState<Player[]>([]);
     const [isCreating, setIsCreating] = useState(false);
@@ -71,13 +73,18 @@ const PracticePlan: React.FC = () => {
         setPractices(updated);
         storageService.savePracticeSessions(updated);
         setIsCreating(false);
+        toast.success("Treino agendado com sucesso!");
     };
 
     const handleAiGenerateScript = async () => {
-        if (!newFocus) return;
+        if (!newFocus) {
+            toast.warning("Defina um foco principal primeiro.");
+            return;
+        }
+        toast.info("A IA está gerando o roteiro...");
         const script = await generatePracticeScript(newFocus, "2 hours");
-        // In a real scenario, we would auto-populate the script. For now, alert.
-        alert("Script gerado pela IA (Simulação): " + JSON.stringify(script));
+        // In a real scenario, we would auto-populate the script. For now, alert via toast.
+        toast.success("Roteiro gerado pela IA (Simulação): " + script.length + " atividades criadas.");
     };
 
     const startDrillTimer = (item: PracticeScriptItem) => {
