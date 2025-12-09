@@ -5,14 +5,13 @@ import { storageService } from '../services/storageService';
 import { SocialFeedPost, User } from '../types';
 import { authService } from '../services/authService';
 import { HeartIcon, MessageIcon, ShareIcon, ImageIcon, LinkIcon, SparklesIcon, CheckCircleIcon } from '../components/icons/UiIcons';
-import LazyImage from '../components/LazyImage';
+import LazyImage from '@/components/LazyImage';
 
 const LockerRoom: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const [feed, setFeed] = useState<SocialFeedPost[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     
-    // Posting State
     const [content, setContent] = useState('');
     const [mediaUrl, setMediaUrl] = useState('');
     const [isOfficialPost, setIsOfficialPost] = useState(false);
@@ -42,16 +41,12 @@ const LockerRoom: React.FC = () => {
         };
 
         storageService.saveSocialFeedPost(newPost);
-        setFeed(storageService.getSocialFeed()); // Refresh
+        setFeed(storageService.getSocialFeed()); 
         
-        // Gamification Logic
         if (isOfficialPost) {
-            storageService.addTeamXP(50); // Team gets XP for official communication
-        } else {
-            // Player XP logic would go here (e.g. storageService.addPlayerXP(currentUser.id, 10))
+            storageService.addTeamXP(50);
         }
 
-        // Reset
         setContent('');
         setMediaUrl('');
         setShowMediaInput(false);
@@ -67,7 +62,6 @@ const LockerRoom: React.FC = () => {
 
     return (
         <div className="max-w-2xl mx-auto space-y-6 pb-20 animate-fade-in">
-            {/* Header */}
             <div className="text-center py-4">
                 <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
                     <span className="text-3xl">🏟️</span> Vestiário Digital
@@ -75,7 +69,6 @@ const LockerRoom: React.FC = () => {
                 <p className="text-text-secondary text-sm">Onde o time se conecta e celebra.</p>
             </div>
 
-            {/* Create Post Widget */}
             <div className={`bg-secondary rounded-xl p-4 border ${isOfficialPost ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'border-white/10'} transition-all duration-300`}>
                 <div className="flex gap-3">
                     <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
@@ -134,7 +127,6 @@ const LockerRoom: React.FC = () => {
                 </div>
             </div>
 
-            {/* Feed */}
             <div className="space-y-4">
                 {feed.map(post => (
                     <div key={post.id} className={`bg-secondary rounded-xl p-4 border ${post.isOfficialTeamPost ? 'border-yellow-500/30 bg-gradient-to-br from-secondary to-yellow-900/10' : 'border-white/5'} transition-all hover:border-white/20`}>
@@ -171,7 +163,6 @@ const LockerRoom: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Interactions */}
                         <div className="flex items-center gap-6 pt-3 border-t border-white/5">
                             <button 
                                 onClick={() => handleLike(post.id)}

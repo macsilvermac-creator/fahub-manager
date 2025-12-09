@@ -6,18 +6,16 @@ import { storageService } from '../services/storageService';
 import { UserContext } from '../components/Layout';
 import PaymentModal from '../components/PaymentModal';
 import Modal from '../components/Modal';
-import LazyImage from '../components/LazyImage';
+import LazyImage from '@/components/LazyImage';
 
 const Marketplace: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const [items, setItems] = useState<MarketplaceItem[]>([]);
     const [viewFilter, setViewFilter] = useState<'ALL' | 'TEAM_STORE' | 'USED'>('ALL');
     
-    // Payment State
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
 
-    // Add Item State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newItemTitle, setNewItemTitle] = useState('');
     const [newItemPrice, setNewItemPrice] = useState('');
@@ -30,7 +28,7 @@ const Marketplace: React.FC = () => {
     }, []);
 
     const filteredItems = items.filter(item => {
-        if (item.isSold) return false; // Hide sold items
+        if (item.isSold) return false; 
         if (viewFilter === 'ALL') return true;
         if (viewFilter === 'TEAM_STORE') return item.sellerType === 'TEAM_STORE';
         if (viewFilter === 'USED') return item.sellerType === 'PLAYER';
@@ -46,7 +44,6 @@ const Marketplace: React.FC = () => {
 
     const onPaymentSuccess = () => {
         if(selectedItem) {
-            // Mark as sold in storage
             const updated = items.map(i => i.id === selectedItem.id ? { ...i, isSold: true } : i);
             setItems(updated);
             storageService.saveMarketplaceItems(updated);
@@ -66,7 +63,7 @@ const Marketplace: React.FC = () => {
             price: Number(newItemPrice),
             category: newItemCategory,
             sellerType: newItemType,
-            sellerName: newItemType === 'TEAM_STORE' ? 'Loja Oficial' : 'Atleta', // Mock name
+            sellerName: newItemType === 'TEAM_STORE' ? 'Loja Oficial' : 'Atleta',
             imageUrl: `https://source.unsplash.com/random/400x300/?football,${newItemCategory}`,
             isSold: false
         };
@@ -106,7 +103,6 @@ const Marketplace: React.FC = () => {
                 </div>
             </div>
 
-            {/* Filters */}
             <div className="flex border-b border-white/10 overflow-x-auto">
                 <button 
                     onClick={() => setViewFilter('ALL')}
@@ -128,14 +124,12 @@ const Marketplace: React.FC = () => {
                 </button>
             </div>
 
-            {/* Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredItems.map(item => (
                     <div 
                         key={item.id} 
                         className={`group bg-secondary rounded-xl overflow-hidden shadow-lg hover:shadow-glow transition-all hover:-translate-y-1 relative ${item.sellerType === 'TEAM_STORE' ? 'border-2 border-yellow-500/30' : 'border border-white/5'}`}
                     >
-                        {/* Image */}
                         <div className="h-48 overflow-hidden relative">
                              {item.sellerType === 'TEAM_STORE' && (
                                 <div className="absolute top-2 right-2 bg-yellow-500 text-black text-[10px] font-black uppercase px-2 py-1 rounded shadow-lg z-10">
@@ -148,7 +142,6 @@ const Marketplace: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Content */}
                         <div className="p-4">
                             <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">{item.category}</p>
                             <h3 className="font-bold text-white mb-2 leading-tight">{item.title}</h3>
@@ -176,7 +169,6 @@ const Marketplace: React.FC = () => {
                 </div>
             )}
 
-            {/* Payment Modal */}
             <PaymentModal 
                 isOpen={paymentModalOpen}
                 onClose={() => setPaymentModalOpen(false)}
@@ -185,7 +177,6 @@ const Marketplace: React.FC = () => {
                 description={selectedItem?.title || 'Produto'}
             />
 
-            {/* Add Item Modal */}
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title={newItemType === 'TEAM_STORE' ? "Novo Produto na Loja" : "Anunciar Produto"}>
                 <form onSubmit={handleAddItem} className="space-y-4">
                     <div>

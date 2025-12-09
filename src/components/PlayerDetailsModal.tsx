@@ -6,7 +6,7 @@ import { UserContext } from './Layout';
 import { generatePlayerAnalysis } from '../services/geminiService';
 import { SparklesIcon } from './icons/UiIcons';
 import { storageService } from '../services/storageService';
-import LazyImage from '../components/LazyImage';
+import LazyImage from '@/components/LazyImage';
 
 interface PlayerDetailsModalProps {
   isOpen: boolean;
@@ -21,13 +21,11 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [planFeedback, setPlanFeedback] = useState('');
   
-  // Permissions
   const isStaff = currentRole !== 'PLAYER';
   const isMedicalOrHC = currentRole === 'MEDICAL_STAFF' || currentRole === 'HEAD_COACH';
 
   if (!player) return null;
 
-  // Mock stats generation for overview
   const getMockSeasonStats = (player: Player) => {
     const seed = player.id;
     if (['QB'].includes(player.position)) {
@@ -81,7 +79,6 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
   const handleGenerateAnalysis = async () => {
       setIsLoadingAi(true);
 
-      // Gather Game Performance for Context
       const games = storageService.getGames();
       const playerGames = games.filter(g => g.playerGrades?.some(pg => pg.playerId === player.id));
       
@@ -101,7 +98,7 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
       if (!aiAnalysis) return;
       
       const deadline = new Date();
-      deadline.setDate(deadline.getDate() + 28); // 4 weeks
+      deadline.setDate(deadline.getDate() + 28); 
 
       const newPlan: DevelopmentPlan = {
           id: Date.now().toString(),
@@ -123,9 +120,8 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
       });
       storageService.savePlayers(updatedPlayers);
       
-      // Update local state to reflect change immediately if this modal is open
       player.developmentPlans = [newPlan, ...(player.developmentPlans || [])];
-      setAiAnalysis(''); // Clear generation area
+      setAiAnalysis(''); 
   };
 
   const handleCompletePlan = (planId: string) => {
@@ -142,7 +138,6 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
       });
       storageService.savePlayers(updatedPlayers);
       
-       // Mock update local
        if(player.developmentPlans) {
            player.developmentPlans = player.developmentPlans.map(plan => 
              plan.id === planId ? { ...plan, status: 'COMPLETED', coachFeedback: planFeedback } : plan
@@ -161,10 +156,8 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Prontuário & Performance" maxWidth="max-w-6xl">
       <div className="flex flex-col md:flex-row gap-8">
-        {/* Left Column: Player Identity Card */}
         <div className="md:w-1/4 flex flex-col">
           <div className="bg-secondary/40 rounded-xl p-6 border border-white/5 flex flex-col items-center relative overflow-hidden">
-             {/* Status Badge */}
              <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 ${getStatusColor(player.status)} shadow-lg`}>
                 <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
                 {getStatusLabel(player.status)}
@@ -205,7 +198,6 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
              </div>
           </div>
           
-          {/* Simple Info Card */}
           <div className="mt-4 bg-secondary/20 p-4 rounded-xl border border-white/5">
               <h4 className="text-xs text-text-secondary uppercase font-bold mb-2">Hierarquia</h4>
               <div className="flex justify-between items-center">
@@ -217,9 +209,7 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
           </div>
         </div>
 
-        {/* Right Column: Content Tabs */}
         <div className="md:w-3/4 flex flex-col">
-            {/* Tabs */}
             <div className="flex border-b border-white/10 mb-6 overflow-x-auto">
                 <button 
                     onClick={() => setActiveTab('OVERVIEW')}
@@ -251,10 +241,8 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
                 </button>
             </div>
 
-            {/* TAB CONTENT: OVERVIEW */}
             {activeTab === 'OVERVIEW' && (
                 <div className="space-y-6 animate-fade-in">
-                    {/* Season Stats */}
                     <div>
                         <h4 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Estatísticas da Temporada</h4>
                         <div className="grid grid-cols-4 gap-4">
@@ -267,7 +255,6 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
                         </div>
                     </div>
 
-                    {/* XP & Badges */}
                     <div className="bg-secondary/30 p-5 rounded-xl border border-white/5">
                         <div className="flex justify-between items-center mb-4">
                             <h4 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">Progresso do Jogador</h4>
@@ -287,35 +274,29 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
                 </div>
             )}
 
-            {/* TAB CONTENT: SCOUTING */}
             {activeTab === 'SCOUTING' && (
                 <div className="space-y-6 animate-fade-in">
                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {/* 40 Yard Dash */}
                         <div className="bg-secondary/40 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center hover:bg-secondary/60 transition-colors">
                             <span className="text-3xl font-black text-white">{player.combineStats?.fortyYards?.toFixed(2) || '--'}</span>
                             <span className="text-xs text-text-secondary font-bold uppercase mt-1">40 Jardas (s)</span>
                         </div>
                         
-                        {/* Bench Press */}
                         <div className="bg-secondary/40 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center hover:bg-secondary/60 transition-colors">
                             <span className="text-3xl font-black text-white">{player.combineStats?.benchPress || '--'}</span>
                             <span className="text-xs text-text-secondary font-bold uppercase mt-1">Supino (Reps)</span>
                         </div>
 
-                        {/* Vertical Jump */}
                         <div className="bg-secondary/40 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center hover:bg-secondary/60 transition-colors">
                             <span className="text-3xl font-black text-white">{player.combineStats?.verticalJump || '--'}</span>
                             <span className="text-xs text-text-secondary font-bold uppercase mt-1">Vertical (in)</span>
                         </div>
 
-                         {/* Broad Jump */}
                          <div className="bg-secondary/40 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center hover:bg-secondary/60 transition-colors">
                             <span className="text-3xl font-black text-white">{player.combineStats?.broadJump || '--'}</span>
                             <span className="text-xs text-text-secondary font-bold uppercase mt-1">Broad Jump (in)</span>
                         </div>
 
-                        {/* Shuttle */}
                         <div className="bg-secondary/40 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center hover:bg-secondary/60 transition-colors">
                             <span className="text-3xl font-black text-white">{player.combineStats?.shuttle?.toFixed(2) || '--'}</span>
                             <span className="text-xs text-text-secondary font-bold uppercase mt-1">Shuttle (s)</span>
@@ -333,7 +314,6 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
                 </div>
             )}
 
-            {/* TAB CONTENT: MEDICAL & PSYCH */}
             {activeTab === 'MEDICAL' && (
                 <div className="space-y-6 animate-fade-in">
                     <div className="bg-red-900/10 border border-red-500/20 rounded-lg p-4 mb-4">
@@ -377,11 +357,9 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
                 </div>
             )}
 
-            {/* TAB CONTENT: AI PERFORMANCE */}
             {activeTab === 'AI_PERFORMANCE' && (
                 <div className="space-y-6 animate-fade-in h-full flex flex-col">
                     
-                    {/* --- Action Area: Create New Plan (STAFF ONLY) --- */}
                     {isStaff && !aiAnalysis && (
                         <div className="bg-gradient-to-br from-cyan-900/20 to-secondary p-6 rounded-xl border border-cyan-500/20">
                             <div className="flex justify-between items-center mb-4">
@@ -411,7 +389,6 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
                          </div>
                     )}
 
-                    {/* --- Generated Preview Area (STAFF ONLY) --- */}
                     {aiAnalysis && isStaff && (
                         <div className="bg-secondary/30 rounded-xl p-6 border border-cyan-500/20 animate-fade-in relative">
                              <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
@@ -435,7 +412,6 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
                         </div>
                     )}
 
-                    {/* --- History / Active Plans List --- */}
                     {player.developmentPlans && player.developmentPlans.length > 0 && (
                         <div className="mt-4">
                              <h4 className="text-sm font-bold text-text-secondary uppercase mb-3">Planos de Ação (Ativos e Histórico)</h4>
@@ -452,7 +428,6 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
                                              <span className="text-xs text-text-secondary">Prazo: {new Date(plan.deadline!).toLocaleDateString()}</span>
                                          </div>
                                          
-                                         {/* Content Summary */}
                                           <div className="prose prose-invert max-w-none prose-p:text-xs prose-li:text-xs text-text-secondary mb-4 max-h-40 overflow-y-auto custom-scrollbar">
                                               <div dangerouslySetInnerHTML={{ __html: formattedAnalysis(plan.generatedContent) }} />
                                          </div>

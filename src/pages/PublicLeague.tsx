@@ -3,13 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { storageService } from '../services/storageService';
 import { TrophyIcon, GlobeIcon } from '../components/icons/NavIcons';
 import { UsersIcon, StarIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
-import LazyImage from '../components/LazyImage';
+import LazyImage from '@/components/LazyImage';
 
 const PublicLeague: React.FC = () => {
     const [data, setData] = useState<any>(null);
 
     useEffect(() => {
-        // Fetch aggregated data
         setData(storageService.getPublicLeagueStats());
     }, []);
 
@@ -19,10 +18,8 @@ const PublicLeague: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-primary text-white font-sans overflow-x-hidden">
-            {/* HERO SECTION */}
             <div className="relative h-[400px] flex items-center justify-center bg-gradient-to-b from-gray-900 to-primary border-b border-highlight/20 overflow-hidden">
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
-                {/* Decorative Glows */}
                 <div className="absolute top-0 left-1/4 w-96 h-96 bg-highlight/20 rounded-full blur-[100px]"></div>
                 <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-[100px]"></div>
 
@@ -40,10 +37,8 @@ const PublicLeague: React.FC = () => {
                 </div>
             </div>
 
-            {/* MAIN CONTENT */}
             <div className="max-w-7xl mx-auto px-6 -mt-20 relative z-20">
                 
-                {/* STANDINGS CARD */}
                 <div className="bg-secondary/80 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden mb-12">
                     <div className="p-6 border-b border-white/10 bg-black/40 flex justify-between items-center">
                         <h3 className="text-2xl font-bold flex items-center gap-3">
@@ -89,13 +84,11 @@ const PublicLeague: React.FC = () => {
                     </div>
                 </div>
 
-                {/* LEADERS GRID (The "Winners") */}
                 <h3 className="text-3xl font-black text-white mb-8 flex items-center gap-3">
                     <StarIcon className="w-8 h-8 text-yellow-400" /> Líderes da Temporada
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-                    {/* PASSING */}
                     <div className="bg-secondary rounded-xl border border-white/10 overflow-hidden group hover:border-blue-500 transition-all">
                         <div className="p-4 bg-gradient-to-r from-blue-900 to-secondary border-b border-white/10">
                             <h4 className="font-bold text-blue-400 uppercase tracking-wider text-sm">Passando (Jardas)</h4>
@@ -120,7 +113,6 @@ const PublicLeague: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* RUSHING */}
                     <div className="bg-secondary rounded-xl border border-white/10 overflow-hidden group hover:border-green-500 transition-all">
                         <div className="p-4 bg-gradient-to-r from-green-900 to-secondary border-b border-white/10">
                             <h4 className="font-bold text-green-400 uppercase tracking-wider text-sm">Correndo (Jardas)</h4>
@@ -145,7 +137,6 @@ const PublicLeague: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* DEFENSE */}
                     <div className="bg-secondary rounded-xl border border-white/10 overflow-hidden group hover:border-red-500 transition-all">
                         <div className="p-4 bg-gradient-to-r from-red-900 to-secondary border-b border-white/10">
                             <h4 className="font-bold text-red-400 uppercase tracking-wider text-sm">Defesa (Tackles)</h4>
@@ -171,7 +162,6 @@ const PublicLeague: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div className="text-center pb-12 text-gray-500 text-sm">
                     <p>Desenvolvido por FAHUB MANAGER © 2025. Todos os direitos reservados.</p>
                     <p className="mt-2 text-xs">Dados atualizados em tempo real via Súmula Digital.</p>

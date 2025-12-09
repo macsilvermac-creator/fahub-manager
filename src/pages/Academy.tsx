@@ -8,7 +8,7 @@ import { AcademyIcon, VideoIcon, FolderIcon } from '../components/icons/NavIcons
 import { SparklesIcon, ChevronDownIcon, DumbbellIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
 import { authService } from '../services/authService';
-import LazyImage from '../components/LazyImage';
+import LazyImage from '@/components/LazyImage';
 
 const Academy: React.FC = () => {
     const { currentRole } = useContext(UserContext);
@@ -16,13 +16,11 @@ const Academy: React.FC = () => {
     const [activeCourse, setActiveCourse] = useState<Course | null>(null);
     const [viewMode, setViewMode] = useState<'CATALOG' | 'LEARNING' | 'GYM' | 'MY_WORKOUTS'>('CATALOG');
     
-    // Generator State
     const [topic, setTopic] = useState('');
     const [level, setLevel] = useState<CourseLevel>('FAN');
     const [isGenerating, setIsGenerating] = useState(false);
     const [showGenerator, setShowGenerator] = useState(false);
 
-    // Iron Athlete (Gym) State
     const [gymGoal, setGymGoal] = useState('');
     const [gymEquipment, setGymEquipment] = useState('ACADEMIA');
     const [generatedWorkout, setGeneratedWorkout] = useState('');
@@ -168,7 +166,6 @@ const Academy: React.FC = () => {
                 </div>
             </div>
 
-            {/* === IRON ATHLETE (GYM AI) VIEW === */}
             {viewMode === 'GYM' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
                     <div className="lg:col-span-1 space-y-6">
@@ -238,7 +235,6 @@ const Academy: React.FC = () => {
                 </div>
             )}
 
-            {/* === MY WORKOUTS (SAVED) === */}
             {viewMode === 'MY_WORKOUTS' && (
                 <div className="animate-fade-in">
                     <Card title="Histórico de Treinos Salvos">
@@ -259,10 +255,8 @@ const Academy: React.FC = () => {
                 </div>
             )}
 
-            {/* ... (Existing CATALOG/LEARNING views remain same) ... */}
             {(viewMode === 'CATALOG' || viewMode === 'LEARNING') && (
                 <>
-                    {/* Catalog Actions - HIDDEN FOR PLAYER */}
                     {!isPlayer && viewMode === 'CATALOG' && (
                         <div className="flex justify-end mb-6">
                             <button 
@@ -275,7 +269,6 @@ const Academy: React.FC = () => {
                         </div>
                     )}
 
-                    {/* AI Generator Wizard */}
                     {showGenerator && viewMode === 'CATALOG' && (
                         <div className="bg-gradient-to-br from-secondary to-primary border border-highlight/30 rounded-2xl p-6 animate-slide-in relative overflow-hidden mb-8">
                             <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -320,7 +313,6 @@ const Academy: React.FC = () => {
                         </div>
                     )}
 
-                    {/* CATALOG VIEW */}
                     {viewMode === 'CATALOG' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                             {courses.map(course => {
@@ -360,10 +352,8 @@ const Academy: React.FC = () => {
                         </div>
                     )}
 
-                    {/* LEARNING VIEW */}
                     {viewMode === 'LEARNING' && activeCourse && (
                         <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-12rem)]">
-                            {/* Sidebar / Curriculum */}
                             <div className="w-full lg:w-1/3 bg-secondary rounded-xl border border-white/5 overflow-y-auto custom-scrollbar">
                                 <div className="p-4 border-b border-white/5 bg-secondary/80 sticky top-0 backdrop-blur-sm z-10">
                                     <button onClick={() => setViewMode('CATALOG')} className="text-xs text-text-secondary hover:text-white mb-2">← Voltar</button>
@@ -398,7 +388,6 @@ const Academy: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Content Area */}
                             <div className="flex-1 bg-secondary rounded-xl border border-white/5 overflow-y-auto p-8 custom-scrollbar relative">
                                 <div className="max-w-3xl mx-auto space-y-12">
                                     <div className="text-center mb-10">
@@ -443,7 +432,7 @@ const Academy: React.FC = () => {
                                         </div>
                                     ))}
                                     
-                                    <div className="h-20"></div> {/* Spacer */}
+                                    <div className="h-20"></div>
                                 </div>
                             </div>
                         </div>

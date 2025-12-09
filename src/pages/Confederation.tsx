@@ -7,7 +7,7 @@ import { GlobeIcon, TrophyIcon, FlagIcon } from '../components/icons/NavIcons';
 import { UsersIcon, MapIcon, BuildingIcon, CheckCircleIcon, AlertTriangleIcon, GavelIcon, ShieldCheckIcon, SwapIcon, LockIcon, FileTextIcon } from '../components/icons/UiIcons';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { authService } from '../services/authService';
-import LazyImage from '../components/LazyImage';
+import LazyImage from '@/components/LazyImage';
 
 const Confederation: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'NATIONAL_TEAM' | 'AFFILIATES' | 'BID' | 'STJD' | 'SECURITY'>('DASHBOARD');
@@ -38,7 +38,6 @@ const Confederation: React.FC = () => {
 
     const filteredCandidates = selectedPos === 'ALL' ? candidates : candidates.filter(c => c.position === selectedPos);
 
-    // Mock Chart Data
     const growthData = [
         { name: '2021', athletes: 3200 },
         { name: '2022', athletes: 3800 },
@@ -48,7 +47,6 @@ const Confederation: React.FC = () => {
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
-            {/* Header */}
             <div className="bg-gradient-to-r from-yellow-900 to-green-900 p-6 rounded-2xl border border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
                 <div className="flex items-center gap-4 relative z-10">
@@ -73,7 +71,6 @@ const Confederation: React.FC = () => {
                 </div>
             </div>
 
-            {/* Navigation */}
             <div className="flex border-b border-white/10 overflow-x-auto">
                 <button onClick={() => setActiveTab('DASHBOARD')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${activeTab === 'DASHBOARD' ? 'border-yellow-500 text-yellow-500' : 'border-transparent text-text-secondary'}`}>
                     <MapIcon className="w-4 h-4" /> Censo & Estratégia
@@ -95,7 +92,6 @@ const Confederation: React.FC = () => {
                 </button>
             </div>
 
-            {/* === DASHBOARD === */}
             {activeTab === 'DASHBOARD' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card title="Crescimento Nacional (Atletas Federados)">
@@ -133,7 +129,6 @@ const Confederation: React.FC = () => {
                 </div>
             )}
 
-            {/* === NATIONAL TEAM (BRASIL ONÇAS) === */}
             {activeTab === 'NATIONAL_TEAM' && (
                 <div className="space-y-6">
                     <Card title="Brasil Onças War Room (Shadow Roster)">
@@ -180,7 +175,6 @@ const Confederation: React.FC = () => {
                 </div>
             )}
 
-            {/* === AFFILIATES (GOVERNANCE) === */}
             {activeTab === 'AFFILIATES' && (
                 <div className="space-y-6">
                     <Card title="Governança de Federações Estaduais">
@@ -220,7 +214,6 @@ const Confederation: React.FC = () => {
                 </div>
             )}
 
-            {/* === BID (TRANSFERS) === */}
             {activeTab === 'BID' && (
                 <Card title="Boletim Informativo Diário (BID) - Gestão de Transferências">
                     <div className="space-y-4">
@@ -289,7 +282,6 @@ const Confederation: React.FC = () => {
                 </Card>
             )}
 
-            {/* === SECURITY (AUDIT) === */}
             {activeTab === 'SECURITY' && (
                 <div className="space-y-6">
                     <div className="bg-red-900/10 border-l-4 border-red-500 p-4 rounded-r-lg flex items-center gap-4">
@@ -336,7 +328,6 @@ const Confederation: React.FC = () => {
                 </div>
             )}
 
-            {/* === STJD === */}
             {activeTab === 'STJD' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card title="Corte Suprema (STJD)">

@@ -11,7 +11,7 @@ import {
 } from '../components/icons/UiIcons';
 import { TicketIcon, TrophyIcon, ShopIcon, VideoIcon, BriefcaseIcon } from '../components/icons/NavIcons';
 import Modal from '../components/Modal';
-import LazyImage from '../components/LazyImage';
+import LazyImage from '@/components/LazyImage';
 
 const MyProfile: React.FC = () => {
     const { currentRole } = useContext(UserContext);
@@ -20,23 +20,20 @@ const MyProfile: React.FC = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [activeTab, setActiveTab] = useState<'PROFILE' | 'CAREER' | 'HIGHLIGHTS' | 'TROPHIES'>('PROFILE');
     
-    // Edit State
     const [isEditing, setIsEditing] = useState(false);
     const [showCardModal, setShowCardModal] = useState(false);
     const [loading, setLoading] = useState(true);
     
-    // KYC State
     const [isKycModalOpen, setIsKycModalOpen] = useState(false);
     const [kycStep, setKycStep] = useState(1);
 
-    // Form State
     const [formData, setFormData] = useState({
         weight: 0,
         height: '',
         instagram: '',
         bio: '',
-        philosophy: '', // For Coaches
-        specialties: '' // For Coaches
+        philosophy: '', 
+        specialties: '' 
     });
 
     const isCoach = currentRole === 'HEAD_COACH' || currentRole === 'MASTER';
@@ -45,7 +42,6 @@ const MyProfile: React.FC = () => {
         const user = authService.getCurrentUser();
         
         if (isCoach) {
-            // Load Coach Profile
             const profile = storageService.getCoachProfile(user?.id || '');
             setCoachProfile(profile);
             setFormData({
@@ -57,7 +53,6 @@ const MyProfile: React.FC = () => {
                 specialties: profile?.specialties?.join(', ') || ''
             });
         } else {
-            // Load Athlete Profile
             const allPlayers = storageService.getPlayers();
             const myPlayer = allPlayers.find(p => p.name === user?.name) || allPlayers[0];
             
@@ -74,12 +69,10 @@ const MyProfile: React.FC = () => {
             }
         }
 
-        // Get Real Wallet Balance from Transactions
-        const myTxs = storageService.getTransactions().filter(t => t.type === 'INCOME'); // Simplify for wallet logic
+        const myTxs = storageService.getTransactions().filter(t => t.type === 'INCOME'); 
         if(myTxs.length > 0) {
              setTransactions(myTxs);
         } else {
-             // Fallback mock if empty
              setTransactions([
                 { id: 't1', title: 'Venda de Capacete', amount: 450.00, type: 'INCOME', date: new Date('2023-10-01'), category: 'STORE', status: 'PAID' },
                 { id: 't2', title: 'Comissão Afiliado (Curso)', amount: 45.90, type: 'INCOME', date: new Date('2023-10-05'), category: 'OTHER', status: 'PAID' }
@@ -107,7 +100,6 @@ const MyProfile: React.FC = () => {
         if (!player) return;
         const updatedPlayer = { ...player, weight: formData.weight, height: formData.height };
         setPlayer(updatedPlayer);
-        // Persist
         storageService.savePlayers(storageService.getPlayers().map(p => p.id === player.id ? updatedPlayer : p));
         setIsEditing(false);
         alert("Perfil atualizado com sucesso!");
@@ -119,15 +111,12 @@ const MyProfile: React.FC = () => {
     };
 
     const handleUploadDoc = () => {
-        // Simulate upload delay
         setTimeout(() => {
             setKycStep(2);
-            // Auto approve after delay for demo
             setTimeout(() => {
                 if(player) {
                     const updated = { ...player, verificationStatus: 'VERIFIED' as const };
                     setPlayer(updated);
-                    // Update global storage
                     storageService.savePlayers(storageService.getPlayers().map(p => p.id === player.id ? updated : p));
                 }
                 setKycStep(3);
@@ -153,7 +142,6 @@ const MyProfile: React.FC = () => {
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
-            {/* ... (Previous Styles) ... */}
             <style>{`
                 @media print {
                     body * { visibility: hidden; }
@@ -166,7 +154,6 @@ const MyProfile: React.FC = () => {
                 }
             `}</style>
 
-            {/* Header Profile */}
             <div className="bg-gradient-to-r from-secondary to-primary p-6 rounded-2xl border border-white/10 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-highlight/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                 
@@ -202,7 +189,6 @@ const MyProfile: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Status & Verification */}
                 <div className="flex flex-col gap-2 items-center md:items-end">
                     {isCoach ? (
                         <div className="bg-black/30 p-4 rounded-xl border border-white/10 text-center min-w-[150px]">
@@ -222,7 +208,6 @@ const MyProfile: React.FC = () => {
                 </div>
             </div>
 
-            {/* Navigation Tabs */}
             <div className="flex border-b border-white/10 overflow-x-auto">
                 <button onClick={() => setActiveTab('PROFILE')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeTab === 'PROFILE' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary hover:text-white'}`}>
                     Dados & Carteira
@@ -246,7 +231,6 @@ const MyProfile: React.FC = () => {
                 </button>
             </div>
 
-            {/* === TAB: PROFILE (Wallet & KYC) === */}
             {activeTab === 'PROFILE' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
                     <div className="lg:col-span-2 space-y-6">
@@ -293,7 +277,6 @@ const MyProfile: React.FC = () => {
                 </div>
             )}
 
-            {/* === TAB: CAREER (Coach vs Athlete) === */}
             {activeTab === 'CAREER' && (
                 <div className="space-y-6 animate-slide-in">
                     {isCoach ? (
@@ -348,7 +331,6 @@ const MyProfile: React.FC = () => {
                 </div>
             )}
 
-            {/* === TAB: HIGHLIGHTS === */}
             {activeTab === 'HIGHLIGHTS' && !isCoach && (
                 <div className="space-y-6 animate-slide-in">
                     <Card title="Meus Melhores Momentos">
@@ -378,7 +360,6 @@ const MyProfile: React.FC = () => {
                 </div>
             )}
 
-            {/* === TAB: TROPHIES === */}
             {activeTab === 'TROPHIES' && (
                 <div className="space-y-6 animate-slide-in">
                     <Card title="Sala de Troféus & Conquistas">
@@ -402,8 +383,6 @@ const MyProfile: React.FC = () => {
                 </div>
             )}
 
-            {/* KYC MODAL and CARD GENERATOR (Existing logic) */}
-            {/* ... Only rendered if not coach for now or adjusted ... */}
             {!isCoach && showCardModal && player && (
                 <Modal isOpen={showCardModal} onClose={() => setShowCardModal(false)} title="Seu Card Oficial (Panini Style)" maxWidth="max-w-xl">
                     <div className="flex flex-col items-center gap-6 max-h-[80vh] overflow-y-auto custom-scrollbar p-2">

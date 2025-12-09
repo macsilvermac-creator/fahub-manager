@@ -5,7 +5,7 @@ import { authService } from '../services/authService';
 import { User, AuditLog } from '../types';
 import { CheckCircleIcon, TrashIcon, ShieldCheckIcon, LockIcon, SparklesIcon } from '../components/icons/UiIcons';
 import { storageService } from '../services/storageService';
-import LazyImage from '../components/LazyImage';
+import LazyImage from '@/components/LazyImage';
 
 const AdminPanel: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -182,7 +182,6 @@ const AdminPanel: React.FC = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* SEED BUTTON - CRITICAL FOR FIRST RUN */}
                             <div className="bg-gradient-to-br from-green-900/30 to-black p-6 rounded-xl border border-green-500/30">
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="p-2 bg-green-500/20 rounded-lg">
@@ -202,7 +201,6 @@ const AdminPanel: React.FC = () => {
                                 </button>
                             </div>
 
-                            {/* EXPORT BUTTON */}
                             <div className="bg-black/20 p-6 rounded-xl border border-white/10">
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="p-2 bg-white/10 rounded-lg">

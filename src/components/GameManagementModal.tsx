@@ -5,7 +5,7 @@ import { Game, Player, GameScoutingReport, PlayerPerformance, CallSheetSection }
 import { storageService } from '../services/storageService';
 import Card from './Card';
 import { PrinterIcon } from './icons/UiIcons';
-import LazyImage from '../components/LazyImage';
+import LazyImage from '@/components/LazyImage';
 
 interface GameManagementModalProps {
   isOpen: boolean;
@@ -61,6 +61,9 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
   };
 
   const exportWristband = () => {
+      const settings = storageService.getTeamSettings();
+      const sportMode = settings?.sportType || 'FULLPADS';
+
       let content = "QB WRISTBAND - " + (game?.opponent || 'OPPONENT') + "\n\n";
       callSheet.forEach(section => {
           content += `--- ${section.title} ---\n`;
@@ -74,7 +77,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Wristband_VS_${game?.opponent}.txt`;
+      a.download = `Wristband_${sportMode}.txt`;
       a.click();
   };
 

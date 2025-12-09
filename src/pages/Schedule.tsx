@@ -8,14 +8,13 @@ import GameManagementModal from '../components/GameManagementModal';
 import { storageService } from '../services/storageService';
 import Modal from '../components/Modal';
 import { UserContext } from '../components/Layout';
-import LazyImage from '../components/LazyImage';
+import LazyImage from '@/components/LazyImage';
 
 const GameCard: React.FC<{ game: Game; isPlayer: boolean; onDelete: (game: Game) => void; onClick: (game: Game) => void }> = ({ game, isPlayer, onDelete, onClick }) => {
     const isPast = game.date < new Date();
     const resultColor = game.result === 'W' ? 'text-green-400' : game.result === 'L' ? 'text-red-400' : 'text-gray-400';
     const locationText = game.location === 'Home' ? 'Casa' : 'Fora';
     
-    // Mock RSVP State for visual feedback
     const [confirmed, setConfirmed] = useState(false);
 
     return (
@@ -75,7 +74,6 @@ const Schedule: React.FC = () => {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    // New Game Form State
     const [newOpponent, setNewOpponent] = useState('');
     const [newDate, setNewDate] = useState('');
     const [newLocation, setNewLocation] = useState<'Home' | 'Away'>('Home');
@@ -103,7 +101,7 @@ const Schedule: React.FC = () => {
         const updatedSchedule = schedule.map(g => g.id === updatedGame.id ? updatedGame : g);
         setSchedule(updatedSchedule);
         storageService.saveGames(updatedSchedule);
-        setSelectedGame(null); // Close modal
+        setSelectedGame(null); 
     };
 
     const handleCreateGame = (e: React.FormEvent) => {
@@ -120,7 +118,6 @@ const Schedule: React.FC = () => {
         setSchedule(updated);
         storageService.saveGames(updated);
         
-        // Reset
         setIsAddModalOpen(false);
         setNewOpponent('');
         setNewDate('');
@@ -172,7 +169,6 @@ const Schedule: React.FC = () => {
                 />
             )}
 
-            {/* ADD GAME MODAL */}
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Novo Jogo">
                 <form onSubmit={handleCreateGame} className="space-y-4">
                     <div>
