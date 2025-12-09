@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { storageService } from '../services/storageService';
 import { TrophyIcon, GlobeIcon } from '../components/icons/NavIcons';
 import { UsersIcon, StarIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
+import LazyImage from '../components/LazyImage';
 
 const PublicLeague: React.FC = () => {
     const [data, setData] = useState<any>(null);
@@ -69,7 +70,9 @@ const PublicLeague: React.FC = () => {
                                     <tr key={team.teamId} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${idx < 4 ? 'bg-highlight/5' : ''}`}>
                                         <td className="p-4 font-black text-lg text-gray-500">{idx + 1}</td>
                                         <td className="p-4 flex items-center gap-4">
-                                            <img src={team.logoUrl} className="w-10 h-10 rounded-full shadow-md" />
+                                            <div className="w-10 h-10 flex-shrink-0">
+                                                <LazyImage src={team.logoUrl} className="w-full h-full rounded-full shadow-md" />
+                                            </div>
                                             <span className="text-lg font-bold">{team.teamName}</span>
                                             {idx < 4 && <span className="text-[10px] bg-highlight text-white px-2 py-0.5 rounded font-bold uppercase ml-2">Playoffs</span>}
                                         </td>
@@ -101,7 +104,9 @@ const PublicLeague: React.FC = () => {
                             {leaders.passing.map((p: any, idx: number) => (
                                 <div key={p.id} className="flex items-center gap-4">
                                     <span className={`w-6 text-center font-bold ${idx === 0 ? 'text-yellow-400 text-xl' : 'text-gray-500'}`}>{idx + 1}</span>
-                                    <img src={p.avatarUrl} className="w-12 h-12 rounded-full border-2 border-secondary" />
+                                    <div className="w-12 h-12 flex-shrink-0">
+                                        <LazyImage src={p.avatarUrl} className="w-full h-full rounded-full border-2 border-secondary" />
+                                    </div>
                                     <div className="flex-1">
                                         <p className="font-bold text-white leading-tight">{p.name}</p>
                                         <p className="text-xs text-gray-400">QB • {p.jerseyNumber}</p>
@@ -124,7 +129,9 @@ const PublicLeague: React.FC = () => {
                             {leaders.rushing.map((p: any, idx: number) => (
                                 <div key={p.id} className="flex items-center gap-4">
                                     <span className={`w-6 text-center font-bold ${idx === 0 ? 'text-yellow-400 text-xl' : 'text-gray-500'}`}>{idx + 1}</span>
-                                    <img src={p.avatarUrl} className="w-12 h-12 rounded-full border-2 border-secondary" />
+                                    <div className="w-12 h-12 flex-shrink-0">
+                                        <LazyImage src={p.avatarUrl} className="w-full h-full rounded-full border-2 border-secondary" />
+                                    </div>
                                     <div className="flex-1">
                                         <p className="font-bold text-white leading-tight">{p.name}</p>
                                         <p className="text-xs text-gray-400">RB • {p.jerseyNumber}</p>
@@ -147,7 +154,9 @@ const PublicLeague: React.FC = () => {
                             {leaders.defense.map((p: any, idx: number) => (
                                 <div key={p.id} className="flex items-center gap-4">
                                     <span className={`w-6 text-center font-bold ${idx === 0 ? 'text-yellow-400 text-xl' : 'text-gray-500'}`}>{idx + 1}</span>
-                                    <img src={p.avatarUrl} className="w-12 h-12 rounded-full border-2 border-secondary" />
+                                    <div className="w-12 h-12 flex-shrink-0">
+                                        <LazyImage src={p.avatarUrl} className="w-full h-full rounded-full border-2 border-secondary" />
+                                    </div>
                                     <div className="flex-1">
                                         <p className="font-bold text-white leading-tight">{p.name}</p>
                                         <p className="text-xs text-gray-400">{p.position} • {p.jerseyNumber}</p>

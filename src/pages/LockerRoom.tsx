@@ -5,6 +5,7 @@ import { storageService } from '../services/storageService';
 import { SocialFeedPost, User } from '../types';
 import { authService } from '../services/authService';
 import { HeartIcon, MessageIcon, ShareIcon, ImageIcon, LinkIcon, SparklesIcon, CheckCircleIcon } from '../components/icons/UiIcons';
+import LazyImage from '../components/LazyImage';
 
 const LockerRoom: React.FC = () => {
     const { currentRole } = useContext(UserContext);
@@ -77,7 +78,9 @@ const LockerRoom: React.FC = () => {
             {/* Create Post Widget */}
             <div className={`bg-secondary rounded-xl p-4 border ${isOfficialPost ? 'border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'border-white/10'} transition-all duration-300`}>
                 <div className="flex gap-3">
-                    <img src={isOfficialPost ? storageService.getTeamSettings().logoUrl : currentUser?.avatarUrl} className="w-10 h-10 rounded-full object-cover" />
+                    <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                        <LazyImage src={isOfficialPost ? storageService.getTeamSettings().logoUrl : (currentUser?.avatarUrl || '')} className="w-full h-full object-cover" />
+                    </div>
                     <form onSubmit={handlePost} className="flex-1">
                         <textarea 
                             className="w-full bg-transparent text-white placeholder-gray-500 focus:outline-none resize-none min-h-[80px]"
@@ -138,7 +141,7 @@ const LockerRoom: React.FC = () => {
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center gap-3">
                                 <div className="relative">
-                                    <img src={post.authorAvatar} className={`w-10 h-10 rounded-full object-cover ${post.isOfficialTeamPost ? 'border-2 border-yellow-500' : ''}`} />
+                                    <LazyImage src={post.authorAvatar} className={`w-10 h-10 rounded-full object-cover ${post.isOfficialTeamPost ? 'border-2 border-yellow-500' : ''}`} />
                                     {post.isOfficialTeamPost && (
                                         <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-black rounded-full p-0.5" title="Oficial">
                                             <CheckCircleIcon className="w-3 h-3" />
@@ -164,7 +167,7 @@ const LockerRoom: React.FC = () => {
 
                         {post.mediaUrl && (
                             <div className="rounded-lg overflow-hidden mb-3 border border-white/5">
-                                <img src={post.mediaUrl} alt="Post media" className="w-full h-auto object-cover max-h-96" />
+                                <LazyImage src={post.mediaUrl} alt="Post media" className="w-full h-auto object-cover max-h-96" />
                             </div>
                         )}
 

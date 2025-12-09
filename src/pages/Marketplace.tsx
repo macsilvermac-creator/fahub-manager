@@ -6,6 +6,7 @@ import { storageService } from '../services/storageService';
 import { UserContext } from '../components/Layout';
 import PaymentModal from '../components/PaymentModal';
 import Modal from '../components/Modal';
+import LazyImage from '../components/LazyImage';
 
 const Marketplace: React.FC = () => {
     const { currentRole } = useContext(UserContext);
@@ -141,7 +142,7 @@ const Marketplace: React.FC = () => {
                                     Oficial
                                 </div>
                             )}
-                            <img src={item.imageUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                            <LazyImage src={item.imageUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                             <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
                                 <p className="font-bold text-white text-lg">R$ {item.price.toFixed(2)}</p>
                             </div>
