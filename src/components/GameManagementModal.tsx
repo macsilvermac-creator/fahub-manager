@@ -5,6 +5,7 @@ import { Game, Player, GameScoutingReport, PlayerPerformance, CallSheetSection }
 import { storageService } from '../services/storageService';
 import Card from './Card';
 import { PrinterIcon } from './icons/UiIcons';
+import LazyImage from '../components/LazyImage';
 
 interface GameManagementModalProps {
   isOpen: boolean;
@@ -240,7 +241,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
                         return (
                             <div key={player.id} className="flex flex-col md:flex-row items-center gap-4 bg-secondary/20 p-3 rounded-lg border border-white/5">
                                 <div className="flex items-center gap-3 w-full md:w-1/4">
-                                    <img src={player.avatarUrl} className="w-10 h-10 rounded-full" />
+                                    <LazyImage src={player.avatarUrl} className="w-10 h-10 rounded-full" />
                                     <div>
                                         <p className="font-bold text-white text-sm">{player.name}</p>
                                         <p className="text-xs text-text-secondary">{player.position} #{player.jerseyNumber}</p>

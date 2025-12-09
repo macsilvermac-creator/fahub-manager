@@ -6,6 +6,7 @@ import { UserContext } from './Layout';
 import { generatePlayerAnalysis } from '../services/geminiService';
 import { SparklesIcon } from './icons/UiIcons';
 import { storageService } from '../services/storageService';
+import LazyImage from '../components/LazyImage';
 
 interface PlayerDetailsModalProps {
   isOpen: boolean;
@@ -171,7 +172,7 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
 
              <div className="relative group mt-4">
                  <div className="absolute inset-0 bg-gradient-to-br from-highlight to-purple-500 rounded-full blur opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                 <img 
+                 <LazyImage 
                     src={player.avatarUrl} 
                     alt={player.name} 
                     className="w-40 h-40 rounded-full object-cover border-4 border-secondary relative z-10 shadow-2xl" 
@@ -230,7 +231,7 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
                     onClick={() => setActiveTab('SCOUTING')}
                     className={`px-4 py-3 text-xs md:text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'SCOUTING' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary hover:text-white'}`}
                 >
-                    Scouting & Físico
+                    Scout & Físico
                 </button>
                 {isMedicalOrHC && (
                     <button 

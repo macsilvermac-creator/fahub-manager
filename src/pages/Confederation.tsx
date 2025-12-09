@@ -7,6 +7,7 @@ import { GlobeIcon, TrophyIcon, FlagIcon } from '../components/icons/NavIcons';
 import { UsersIcon, MapIcon, BuildingIcon, CheckCircleIcon, AlertTriangleIcon, GavelIcon, ShieldCheckIcon, SwapIcon, LockIcon, FileTextIcon } from '../components/icons/UiIcons';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { authService } from '../services/authService';
+import LazyImage from '../components/LazyImage';
 
 const Confederation: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'NATIONAL_TEAM' | 'AFFILIATES' | 'BID' | 'STJD' | 'SECURITY'>('DASHBOARD');
@@ -152,7 +153,7 @@ const Confederation: React.FC = () => {
                             {filteredCandidates.map(player => (
                                 <div key={player.id} className="bg-secondary p-4 rounded-xl border border-white/5 flex items-center gap-4 hover:border-yellow-500/50 transition-all group">
                                     <div className="relative">
-                                        <img src={player.avatarUrl} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-yellow-500 transition-colors" />
+                                        <LazyImage src={player.avatarUrl} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-yellow-500 transition-colors" />
                                         <div className="absolute -bottom-1 -right-1 bg-black text-white text-[10px] font-bold px-1 rounded border border-white/20">{player.rating}</div>
                                     </div>
                                     <div className="flex-1">
@@ -161,7 +162,7 @@ const Confederation: React.FC = () => {
                                             <span className="text-xs font-bold bg-white/10 px-2 py-0.5 rounded text-yellow-400">{player.position}</span>
                                         </div>
                                         <div className="flex items-center gap-2 mt-1">
-                                            <img src={player.teamLogo} className="w-4 h-4 rounded-full" />
+                                            <LazyImage src={player.teamLogo} className="w-4 h-4 rounded-full" />
                                             <span className="text-xs text-text-secondary">{player.teamName}</span>
                                         </div>
                                         <div className="mt-2 flex gap-3 text-[10px] text-text-secondary">

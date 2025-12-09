@@ -8,6 +8,7 @@ import GameManagementModal from '../components/GameManagementModal';
 import { storageService } from '../services/storageService';
 import Modal from '../components/Modal';
 import { UserContext } from '../components/Layout';
+import LazyImage from '../components/LazyImage';
 
 const GameCard: React.FC<{ game: Game; isPlayer: boolean; onDelete: (game: Game) => void; onClick: (game: Game) => void }> = ({ game, isPlayer, onDelete, onClick }) => {
     const isPast = game.date < new Date();
@@ -23,7 +24,7 @@ const GameCard: React.FC<{ game: Game; isPlayer: boolean; onDelete: (game: Game)
             className="bg-secondary rounded-lg p-4 flex items-center justify-between shadow-md hover:bg-accent transition-colors group cursor-pointer border border-transparent hover:border-highlight/30"
         >
             <div className="flex items-center">
-                <img src={game.opponentLogoUrl} alt={game.opponent} className="w-12 h-12 rounded-full object-cover" />
+                <LazyImage src={game.opponentLogoUrl} alt={game.opponent} className="w-12 h-12 rounded-full object-cover" />
                 <div className="ml-4">
                     <p className="font-bold text-text-primary group-hover:text-highlight transition-colors">{game.opponent}</p>
                     <p className="text-sm text-text-secondary">Jogo em {locationText}</p>

@@ -8,6 +8,7 @@ import { AcademyIcon, VideoIcon, FolderIcon } from '../components/icons/NavIcons
 import { SparklesIcon, ChevronDownIcon, DumbbellIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
 import { authService } from '../services/authService';
+import LazyImage from '../components/LazyImage';
 
 const Academy: React.FC = () => {
     const { currentRole } = useContext(UserContext);
@@ -327,7 +328,7 @@ const Academy: React.FC = () => {
                                 return (
                                     <div key={course.id} className="group bg-secondary hover:bg-secondary/80 rounded-xl border border-white/5 overflow-hidden transition-all hover:shadow-glow hover:-translate-y-1">
                                         <div className="h-40 bg-gray-800 relative overflow-hidden">
-                                            <img src={course.thumbnailUrl || 'https://via.placeholder.com/400x200'} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
+                                            <LazyImage src={course.thumbnailUrl || 'https://via.placeholder.com/400x200'} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
                                             <div className="absolute top-2 right-2">
                                                 {getLevelBadge(course.level)}
                                             </div>

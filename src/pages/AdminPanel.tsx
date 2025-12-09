@@ -5,6 +5,7 @@ import { authService } from '../services/authService';
 import { User, AuditLog } from '../types';
 import { CheckCircleIcon, TrashIcon, ShieldCheckIcon, LockIcon, SparklesIcon } from '../components/icons/UiIcons';
 import { storageService } from '../services/storageService';
+import LazyImage from '../components/LazyImage';
 
 const AdminPanel: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -71,7 +72,7 @@ const AdminPanel: React.FC = () => {
                             {pendingUsers.map(user => (
                                 <div key={user.id} className="bg-secondary p-4 rounded-xl border border-white/5 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <img src={user.avatarUrl} className="w-10 h-10 rounded-full" />
+                                        <LazyImage src={user.avatarUrl} className="w-10 h-10 rounded-full" />
                                         <div>
                                             <p className="font-bold text-white">{user.name}</p>
                                             <p className="text-xs text-text-secondary">{user.email} • <span className="text-highlight font-bold">{user.role}</span></p>
@@ -103,7 +104,7 @@ const AdminPanel: React.FC = () => {
                             {activeUsers.map(user => (
                                 <div key={user.id} className="bg-secondary/40 p-3 rounded-lg border border-white/5 flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <img src={user.avatarUrl} className="w-8 h-8 rounded-full grayscale" />
+                                        <LazyImage src={user.avatarUrl} className="w-8 h-8 rounded-full grayscale" />
                                         <div>
                                             <p className="font-bold text-white text-sm">{user.name}</p>
                                             <p className="text-xs text-text-secondary">{user.role}</p>
