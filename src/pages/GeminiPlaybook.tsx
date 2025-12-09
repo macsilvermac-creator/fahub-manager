@@ -1,230 +1,231 @@
-
 import React, { useState } from 'react';
 import Card from '../components/Card';
-import { generatePracticePlan, setRuntimeKey } from '../services/geminiService';
-import { SparklesIcon, AlertTriangleIcon, LinkIcon, KeyIcon } from '../components/icons/UiIcons';
-import { VideoIcon } from '../components/icons/NavIcons';
-
-const POSITIONS = [
-    { value: 'ALL', label: 'Time Completo / Geral' },
-    { value: 'QB', label: 'Quarterbacks (QB)' },
-    { value: 'RB', label: 'Running Backs (RB)' },
-    { value: 'WR', label: 'Wide Receivers (WR)' },
-    { value: 'OL', label: 'Linha Ofensiva (OL)' },
-    { value: 'DL', label: 'Linha Defensiva (DL)' },
-    { value: 'LB', label: 'Linebackers (LB)' },
-    { value: 'DB', label: 'Defensive Backs (DB)' },
-    { value: 'ST', label: 'Special Teams (ST)' }
-];
+import { generatePracticePlan, analyzeOpponentTendencies, suggestPlayConcepts, setRuntimeKey } from '../services/geminiService';
+import { SparklesIcon, AlertTriangleIcon, LinkIcon, KeyIcon, SearchIcon, PlayCircleIcon } from '../components/icons/UiIcons';
+import { useToast } from '../contexts/ToastContext';
 
 const GeminiPlaybook: React.FC = () => {
+  const toast = useToast();
+  const [activeAgent, setActiveAgent] = useState<'DRILLS' | 'SCOUT' | 'TACTICS'>('DRILLS');
+  
+  // Inputs
   const [prompt, setPrompt] = useState('');
-  const [selectedPosition, setSelectedPosition] = useState('ALL');
-  const [generatedPlan, setGeneratedPlan] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [scoutNotes, setScoutNotes] = useState('');
+  const [tacticalSituation, setTacticalSituation] = useState('');
   const [manualKey, setManualKey] = useState('');
 
-  const handleGenerate = async () => {
+  // Outputs
+  const [generatedPlan, setGeneratedPlan] = useState('');
+  const [scoutAnalysis, setScoutAnalysis] = useState<any>(null);
+  const [playSuggestions, setPlaySuggestions] = useState<any[]>([]);
+  
+  const [isLoading, setIsLoading] = useState(false);
+
+  // --- HANDLERS ---
+
+  const handleGenerateDrills = async () => {
     if (!prompt.trim()) return;
     setIsLoading(true);
     setGeneratedPlan('');
-    setErrorMessage('');
     
-    // Se o usuário inseriu uma chave manual, configura no serviço
-    if (manualKey) {
-        setRuntimeKey(manualKey);
-    }
-    
-    const targetAudience = POSITIONS.find(p => p.value === selectedPosition)?.label || 'Time Completo';
+    if (manualKey) setRuntimeKey(manualKey);
     
     const finalPrompt = `
-      Atue como um treinador especialista. Gere um plano de treino detalhado.
-      
-      PÚBLICO ALVO: ${targetAudience}
-      FOCO DO TREINO: ${prompt}
-      
-      Estrutura Obrigatória:
-      1. Aquecimento Específico para ${selectedPosition === 'ALL' ? 'Futebol Americano' : 'a posição de ' + selectedPosition}.
-      2. "Indy Drills" (Exercícios Individuais): Liste 3 drills técnicos detalhados especificamente para ${targetAudience}. Explique o "Porquê" de cada drill. IMPORTANTE: Para cada drill, sugira um TERMO DE BUSCA PARA VÍDEO entre parênteses.
-      3. ${selectedPosition === 'ALL' ? 'Treino Coletivo / Team Period' : 'Aplicação em Situação de Jogo'}: Como aplicar isso no campo.
-      4. Condicionamento Final.
+      Atue como um treinador especialista. Gere um plano de drills técnicos.
+      FOCO: ${prompt}
+      Estrutura: 3 Drills detalhados com explicação do "Porquê" e termos de busca para vídeo.
     `;
 
     const result = await generatePracticePlan(finalPrompt);
-    
-    if (result.startsWith('⚠️')) {
-        setErrorMessage(result);
-        setGeneratedPlan('');
-    } else {
-        setGeneratedPlan(result);
-        setErrorMessage('');
-    }
-    
+    setGeneratedPlan(result);
     setIsLoading(false);
   };
 
-  const handleExampleClick = (examplePrompt: string, position: string = 'ALL') => {
-    setPrompt(examplePrompt);
-    setSelectedPosition(position);
+  const handleAnalyzeScout = async () => {
+      if (!scoutNotes.trim()) return;
+      setIsLoading(true);
+      if (manualKey) setRuntimeKey(manualKey);
+
+      const result = await analyzeOpponentTendencies(scoutNotes);
+      setScoutAnalysis(result);
+      setIsLoading(false);
+      toast.success("Análise de Scout concluída!");
   };
-  
+
+  const handleSuggestPlays = async () => {
+      if (!tacticalSituation.trim()) return;
+      setIsLoading(true);
+      if (manualKey) setRuntimeKey(manualKey);
+
+      const result = await suggestPlayConcepts(tacticalSituation);
+      setPlaySuggestions(result);
+      setIsLoading(false);
+  };
+
+  // --- RENDER HELPERS ---
   const formatPlanWithLinks = (text: string) => {
-      let formatted = text.replace(/(\*\*|###|##|#)(.*?)\1/g, (match, p1, p2) => {
-        if (p1 === '**') return `<strong class="text-highlight">${p2}</strong>`;
-        if (p1 === '###') return `<h3 class="text-lg font-semibold mt-4 mb-2 text-text-primary">${p2}</h3>`;
-        if (p1 === '##') return `<h2 class="text-xl font-bold mt-6 mb-3 text-text-primary border-b border-accent pb-1">${p2}</h2>`;
-        if (p1 === '#') return `<h1 class="text-2xl font-bold mt-8 mb-4 text-text-primary">${p2}</h1>`;
-        return match;
-      }).replace(/\* (.*?)\n/g, '<li class="ml-5 list-disc">$1</li>');
-
-      formatted = formatted.replace(/\((Busca sugerida|Video Search): (.*?)\)/gi, (match, p1, term) => {
-          const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(term)}`;
-          return ` <a href="${url}" target="_blank" class="inline-flex items-center gap-1 text-xs bg-red-600/20 text-red-400 hover:text-red-300 px-2 py-0.5 rounded border border-red-500/30 no-underline ml-1">🎥 Buscar Vídeo: "${term}"</a>`;
-      });
-
+      // Basic formatting for markdown-like text
+      let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-highlight">$1</strong>')
+                          .replace(/### (.*?)\n/g, '<h3 class="text-lg font-bold text-white mt-4">$1</h3>')
+                          .replace(/\n/g, '<br/>');
       return formatted;
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center space-x-3">
-        <SparklesIcon className="h-8 w-8 text-highlight" />
-        <h2 className="text-3xl font-bold text-text-primary">Assistente de Playbook Gemini</h2>
+      <div className="flex items-center space-x-3 mb-6">
+        <div className="p-3 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-lg">
+            <SparklesIcon className="h-8 w-8 text-white" />
+        </div>
+        <div>
+            <h2 className="text-3xl font-bold text-text-primary">Coach Copilot AI</h2>
+            <p className="text-text-secondary">Sua equipe de coordenadores virtuais powered by Gemini 2.5.</p>
+        </div>
       </div>
-      <p className="text-text-secondary max-w-2xl">
-        Aproveite o poder do modelo Google Gemini Pro para gerar planos de treino complexos e detalhados.
-        A IA irá sugerir termos de busca para vídeos de demonstração dos exercícios.
-      </p>
+
+      {/* AGENT SELECTOR */}
+      <div className="flex gap-4 border-b border-white/10 pb-1 overflow-x-auto">
+          <button onClick={() => setActiveAgent('DRILLS')} className={`px-6 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeAgent === 'DRILLS' ? 'border-purple-500 text-purple-400' : 'border-transparent text-text-secondary'}`}>
+              🏈 Drills & Treino
+          </button>
+          <button onClick={() => setActiveAgent('SCOUT')} className={`px-6 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeAgent === 'SCOUT' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary'}`}>
+              🕵️ Scout Decoder
+          </button>
+          <button onClick={() => setActiveAgent('TACTICS')} className={`px-6 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeAgent === 'TACTICS' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary'}`}>
+              🧠 Oráculo Tático
+          </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card title="Configurar Plano de Treino">
+        
+        {/* INPUT AREA */}
+        <Card title={activeAgent === 'DRILLS' ? "Gerador de Exercícios" : activeAgent === 'SCOUT' ? "Analisador de Tendências" : "Consultor de Chamadas"}>
           <div className="space-y-5">
-            
-            <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                    Grupo / Posição Alvo
-                </label>
-                <select
-                    value={selectedPosition}
-                    onChange={(e) => setSelectedPosition(e.target.value)}
-                    className="w-full bg-primary border border-tertiary rounded-lg p-3 text-text-primary focus:ring-2 focus:ring-highlight focus:outline-none"
-                >
-                    {POSITIONS.map(pos => (
-                        <option key={pos.value} value={pos.label}>{pos.label}</option>
-                    ))}
-                </select>
-            </div>
-
-            <div>
-                <label htmlFor="prompt" className="block text-sm font-medium text-text-secondary mb-2">
-                Objetivo / Foco do Treino
-                </label>
-                <textarea
-                id="prompt"
-                rows={4}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="w-full bg-primary border border-tertiary rounded-lg p-3 text-text-primary focus:ring-2 focus:ring-highlight focus:outline-none placeholder-gray-600"
-                placeholder={selectedPosition === 'ALL' 
-                    ? "ex: Instalação de Cover 2, Red Zone Offense..." 
-                    : `ex: ${selectedPosition === 'WR' ? 'Release na linha de scrimmage, rotas profundas...' : 'Técnica de pés, leitura de bloqueio...'}`
-                }
-                />
-            </div>
-            
-            <div className="text-sm text-text-secondary">
-              <span className="font-bold text-white">Sugestões Rápidas:</span>
-              <div className="flex flex-wrap gap-2 mt-2">
-                  <button onClick={() => handleExampleClick('Pass Rush Moves (Swim & Rip)', 'DL')} className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-xs text-cyan-400 border border-white/10">
-                      DL: Pass Rush
-                  </button>
-                  <button onClick={() => handleExampleClick('Leitura de Zone Coverage e Quebra de Rota', 'WR')} className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-xs text-cyan-400 border border-white/10">
-                      WR: Zone Read
-                  </button>
-                  <button onClick={() => handleExampleClick('Footwork no Pocket e Progressão de Leitura', 'QB')} className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-xs text-cyan-400 border border-white/10">
-                      QB: Footwork
-                  </button>
-                  <button onClick={() => handleExampleClick('Cobertura Man-to-Man Press', 'DB')} className="px-2 py-1 bg-white/5 hover:bg-white/10 rounded text-xs text-cyan-400 border border-white/10">
-                      DB: Press Man
-                  </button>
-              </div>
-            </div>
-
-            <button
-              onClick={handleGenerate}
-              disabled={isLoading}
-              className="w-full flex justify-center items-center px-4 py-3 bg-gradient-to-r from-highlight to-highlight-hover text-white rounded-lg font-bold shadow-lg hover:shadow-glow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
+            {activeAgent === 'DRILLS' && (
                 <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Gerando Drills & Plano...
+                    <label className="text-xs font-bold text-text-secondary uppercase">Foco Técnico</label>
+                    <textarea 
+                        className="w-full bg-primary border border-tertiary rounded-lg p-3 text-white h-32 focus:border-purple-500 focus:outline-none"
+                        placeholder="Ex: Linebackers lendo Run vs Pass, WRs saindo da Press..."
+                        value={prompt}
+                        onChange={e => setPrompt(e.target.value)}
+                    />
+                    <button onClick={handleGenerateDrills} disabled={isLoading} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2">
+                        {isLoading ? 'Criando Drills...' : 'Gerar Plano de Drills'}
+                    </button>
                 </>
-              ) : 'Gerar Plano com IA'}
-            </button>
+            )}
+
+            {activeAgent === 'SCOUT' && (
+                <>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Notas Brutas do Adversário</label>
+                    <textarea 
+                        className="w-full bg-primary border border-tertiary rounded-lg p-3 text-white h-40 focus:border-blue-500 focus:outline-none text-sm font-mono"
+                        placeholder={`Cole suas anotações aqui...\nEx: "Eles gostam de correr em descidas curtas. O QB não sabe lançar pra esquerda. A secundária joga muito em Cover 3."`}
+                        value={scoutNotes}
+                        onChange={e => setScoutNotes(e.target.value)}
+                    />
+                    <button onClick={handleAnalyzeScout} disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2">
+                        {isLoading ? 'Decodificando...' : 'Gerar Relatório Estratégico'}
+                    </button>
+                </>
+            )}
+
+            {activeAgent === 'TACTICS' && (
+                <>
+                    <label className="text-xs font-bold text-text-secondary uppercase">Situação de Jogo</label>
+                    <input 
+                        className="w-full bg-primary border border-tertiary rounded-lg p-3 text-white focus:border-green-500 focus:outline-none"
+                        placeholder="Ex: 3rd & 12 na Redzone Adversária"
+                        value={tacticalSituation}
+                        onChange={e => setTacticalSituation(e.target.value)}
+                    />
+                    <button onClick={handleSuggestPlays} disabled={isLoading} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2">
+                        {isLoading ? 'Consultando Playbook...' : 'Sugerir Conceitos'}
+                    </button>
+                </>
+            )}
+
+            {/* Configuração de Chave Manual (Debug) */}
+            <div className="pt-4 border-t border-white/10">
+                <details className="text-xs text-text-secondary cursor-pointer">
+                    <summary>Configurações Avançadas (API Key)</summary>
+                    <div className="mt-2">
+                        <input 
+                            type="text" 
+                            className="w-full bg-black/20 border border-white/10 rounded p-2 text-white"
+                            placeholder="Chave API Personalizada (Opcional)"
+                            value={manualKey}
+                            onChange={e => setManualKey(e.target.value)}
+                        />
+                    </div>
+                </details>
+            </div>
           </div>
         </Card>
 
-        <Card title="Plano Gerado pela IA" className={generatedPlan || isLoading ? 'bg-secondary/40' : 'flex items-center justify-center bg-secondary/20 border-dashed border-white/10'}>
-          {isLoading && (
-              <div className="text-center p-8">
-                  <SparklesIcon className="w-12 h-12 text-highlight mx-auto mb-4 animate-pulse" />
-                  <p className="text-text-primary font-bold text-lg">Consultando Base de Conhecimento...</p>
-                  <p className="text-sm text-text-secondary mt-2">Criando exercícios específicos para {selectedPosition}...</p>
-              </div>
-          )}
-          
-          {!isLoading && errorMessage && (
-              <div className="p-6 bg-red-500/10 border border-red-500/30 rounded-xl text-center w-full">
-                  <AlertTriangleIcon className="w-12 h-12 text-red-400 mx-auto mb-3" />
-                  <h3 className="text-red-400 font-bold mb-2">Chave API Inválida ou Sem Permissão</h3>
-                  <p className="text-sm text-white/80 mb-4">{errorMessage}</p>
-                  
-                  {/* MANUAL KEY OVERRIDE */}
-                  <div className="bg-black/40 p-4 rounded-lg text-left text-sm space-y-3 mt-4 border border-white/10">
-                      <p className="font-bold text-white uppercase text-xs flex items-center gap-2">
-                          <KeyIcon className="w-4 h-4"/> Solução Rápida (Teste Agora):
-                      </p>
-                      <p className="text-text-secondary text-xs">
-                          Cole sua chave API do Google AI Studio abaixo para testar imediatamente sem redeploy.
-                      </p>
-                      <div className="flex gap-2">
-                          <input 
-                            type="text" 
-                            className="flex-1 bg-white/5 border border-white/10 rounded p-2 text-white text-xs font-mono focus:border-highlight focus:outline-none"
-                            placeholder="Cole sua API Key aqui (começa com AIza...)"
-                            value={manualKey}
-                            onChange={(e) => setManualKey(e.target.value)}
-                          />
-                          <button 
-                            onClick={handleGenerate} 
-                            disabled={!manualKey}
-                            className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-xs font-bold disabled:opacity-50"
-                          >
-                              Testar
-                          </button>
-                      </div>
-                      <div className="pt-2 border-t border-white/10">
-                          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-400 hover:text-blue-300 text-xs underline flex items-center gap-1">
-                              <LinkIcon className="w-3 h-3" /> Obter Chave no Google AI Studio
-                          </a>
-                      </div>
-                  </div>
-              </div>
-          )}
+        {/* OUTPUT AREA */}
+        <Card title="Resultado da IA" className="bg-secondary/30 border-dashed border-white/10 min-h-[300px]">
+            {isLoading && (
+                <div className="h-full flex flex-col items-center justify-center text-text-secondary animate-pulse">
+                    <SparklesIcon className="w-12 h-12 mb-4 text-highlight" />
+                    <p>Processando inteligência...</p>
+                </div>
+            )}
 
-          {generatedPlan ? (
-            <div className="prose prose-invert max-w-none prose-p:text-text-secondary prose-li:text-text-secondary custom-scrollbar max-h-[600px] overflow-y-auto pr-2" dangerouslySetInnerHTML={{ __html: formatPlanWithLinks(generatedPlan) }}></div>
-          ) : !isLoading && !errorMessage && (
-              <div className="text-center p-8 text-text-secondary opacity-60">
-                  <SparklesIcon className="w-12 h-12 mx-auto mb-3" />
-                  <p>Selecione uma posição e um tema para gerar seu treino.</p>
-              </div>
-          )}
+            {!isLoading && activeAgent === 'DRILLS' && generatedPlan && (
+                <div className="prose prose-invert max-w-none text-sm custom-scrollbar max-h-[500px] overflow-y-auto">
+                    <div dangerouslySetInnerHTML={{ __html: formatPlanWithLinks(generatedPlan) }} />
+                </div>
+            )}
+
+            {!isLoading && activeAgent === 'SCOUT' && scoutAnalysis && (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-500">
+                        <h4 className="font-bold text-blue-300 uppercase text-xs mb-1">Identidade do Adversário</h4>
+                        <p className="text-white text-sm">{scoutAnalysis.summary}</p>
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-white mb-2 flex items-center gap-2"><KeyIcon className="w-4 h-4 text-yellow-400"/> Chaves para a Vitória</h4>
+                        <ul className="space-y-2">
+                            {scoutAnalysis.keysToVictory?.map((key: string, idx: number) => (
+                                <li key={idx} className="flex gap-2 text-sm text-text-secondary bg-black/20 p-2 rounded">
+                                    <span className="text-yellow-500 font-bold">{idx + 1}.</span> {key}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-white mb-2">Conceitos Sugeridos</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {scoutAnalysis.suggestedConcepts?.map((c: string, i: number) => (
+                                <span key={i} className="bg-white/10 text-white text-xs px-3 py-1 rounded-full border border-white/10">{c}</span>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {!isLoading && activeAgent === 'TACTICS' && playSuggestions.length > 0 && (
+                <div className="space-y-4 animate-fade-in">
+                    {playSuggestions.map((play, idx) => (
+                        <div key={idx} className="bg-secondary p-4 rounded-xl border border-white/5 hover:border-green-500/50 transition-colors group">
+                            <h4 className="font-bold text-green-400 text-lg mb-1 group-hover:text-green-300">{play.name}</h4>
+                            <p className="text-sm text-text-secondary">{play.reason}</p>
+                            <div className="mt-3 flex justify-end">
+                                <button className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded">Copiar para Playbook</button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {!isLoading && !generatedPlan && !scoutAnalysis && playSuggestions.length === 0 && (
+                <div className="h-full flex flex-col items-center justify-center text-text-secondary opacity-50">
+                    <SearchIcon className="w-16 h-16 mb-4" />
+                    <p>Aguardando comando...</p>
+                </div>
+            )}
         </Card>
       </div>
     </div>
