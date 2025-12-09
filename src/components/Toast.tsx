@@ -15,7 +15,7 @@ const Toast: React.FC<ToastProps> = ({ id, message, type, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose(id);
-    }, 4000); // Auto dismiss em 4s
+    }, 4000);
 
     return () => clearTimeout(timer);
   }, [id, onClose]);
@@ -39,7 +39,7 @@ const Toast: React.FC<ToastProps> = ({ id, message, type, onClose }) => {
   };
 
   return (
-    <div className={`flex items-center gap-3 p-4 rounded-xl glass-panel border-l-4 ${getBorderColor()} shadow-2xl mb-3 animate-fade-in min-w-[300px] max-w-md relative overflow-hidden group`}>
+    <div className={`flex items-center gap-3 p-4 rounded-xl bg-secondary border-l-4 ${getBorderColor()} shadow-2xl mb-3 animate-fade-in min-w-[300px] max-w-md relative overflow-hidden group`}>
       <div className="absolute inset-0 bg-black/40 -z-10"></div>
       <div className="shrink-0">
         {getIcon()}

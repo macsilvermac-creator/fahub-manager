@@ -6,6 +6,8 @@ import { MenuIcon, XIcon } from './icons/UiIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
 import { storageService } from '../services/storageService';
+import { syncService } from '../services/syncService';
+import { ToastProvider } from '../contexts/ToastContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -19,22 +21,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [user, setUser] = useState(authService.getCurrentUser());
 
   useEffect(() => {
-      // 1. CRITICAL: Initialize RAM DB from Disk immediately on mount
-      // This prevents "white screens" or empty states on first render
+      // 1. Inicializa RAM
       storageService.initializeRAM();
+
+      // 2. INJEÇÃO DE DEPENDÊNCIA (A mágica que destrava o VS Code)
+      // Conectamos o storageService dentro do syncService aqui, evitando loop nos arquivos
+      syncService.registerProcessor(async () => {
+          return await storageService.syncFromCloud();
+      });
+      syncService.init();
 
       const u = authService.getCurrentUser();
       if(u) {
           setUser(u);
           setRole(u.role);
       }
-      
-      // 2. Background Sync (Fire & Forget)
-      // Updates RAM automatically when cloud data arrives
-      const syncData = async () => {
-          await storageService.syncFromCloud();
-      };
-      syncData();
   }, []);
 
   return (

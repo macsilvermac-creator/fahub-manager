@@ -1,115 +1,78 @@
 
-interface PendingAction {
-    id: string;
-    type: string;
-    payload: any;
-    timestamp: number;
-}
+type SyncProcessor = () => Promise<boolean>;
 
 class SyncService {
     private isOnline: boolean = navigator.onLine;
-    private syncInterval: any = null;
     private queueKey = 'gridiron_offline_queue';
+    private processor: SyncProcessor | null = null;
 
     constructor() {
-        window.addEventListener('online', this.handleOnline);
-        window.addEventListener('offline', this.handleOffline);
+        window.addEventListener('online', () => this.handleConnectionChange(true));
+        window.addEventListener('offline', () => this.handleConnectionChange(false));
     }
 
-    private getQueue(): PendingAction[] {
-        const stored = localStorage.getItem(this.queueKey);
-        return stored ? JSON.parse(stored) : [];
+    // Método para registrar a função de sync sem importar o arquivo (Quebra de Loop)
+    public registerProcessor(fn: SyncProcessor) {
+        this.processor = fn;
+        console.log('✅ Sync Processor registrado com sucesso.');
     }
 
-    private saveQueue(queue: PendingAction[]) {
+    private handleConnectionChange(status: boolean) {
+        this.isOnline = status;
+        console.log(status ? '🌐 Online' : '📴 Offline');
+        if (status) {
+            this.processQueue();
+        }
+    }
+
+    private getQueue(): any[] {
+        try {
+            const stored = localStorage.getItem(this.queueKey);
+            return stored ? JSON.parse(stored) : [];
+        } catch { return []; }
+    }
+
+    private saveQueue(queue: any[]) {
         localStorage.setItem(this.queueKey, JSON.stringify(queue));
     }
 
-    // Adiciona uma ação à fila (usado pelo storageService quando offline)
     public enqueueAction(type: string, payload: any) {
         const queue = this.getQueue();
-        const action: PendingAction = {
+        queue.push({
             id: `act-${Date.now()}-${Math.random()}`,
             type,
             payload,
             timestamp: Date.now()
-        };
-        queue.push(action);
+        });
         this.saveQueue(queue);
-        console.log(`📥 [OFFLINE QUEUE] Ação agendada: ${type}`);
     }
 
-    private async processQueue() {
+    public async processQueue() {
         const queue = this.getQueue();
         if (queue.length === 0) return;
 
-        console.log(`🔄 [SYNC] Processando fila offline (${queue.length} itens)...`);
+        console.log('Tentando processar fila...');
         
-        // Importação Dinâmica para evitar Ciclo de Dependência (Fix VS Code Freeze)
-        const { storageService } = await import('./storageService');
-        
-        const remainingQueue: PendingAction[] = [];
-
-        // Processa item a item (FIFO)
-        for (const action of queue) {
+        if (this.processor) {
             try {
-                // Lógica de Replay
-                if (action.type === 'SYNC_PLAYERS') {
-                    // Tenta sincronizar novamente
-                    // Nota: Na arquitetura atual, forçamos um sync geral
-                    await storageService.syncFromCloud();
+                // Chama a função injetada pelo Layout
+                const success = await this.processor();
+                if (success) {
+                    console.log('Fila processada com sucesso.');
+                    this.saveQueue([]); // Limpa fila
                 }
-                console.log(`✅ [SYNC] Ação processada: ${action.type}`);
             } catch (e) {
-                console.error(`❌ [SYNC] Falha na ação ${action.type}`, e);
-                // Se falhar, poderia manter na fila, mas por segurança limpamos para não travar
+                console.error("Erro ao processar fila:", e);
             }
-        }
-
-        // Limpa a fila
-        this.saveQueue(remainingQueue);
-        
-        if (remainingQueue.length === 0) {
-            console.log('🎉 [SYNC] Fila offline processada com sucesso!');
+        } else {
+            console.warn("Processador de Sync não registrado ainda.");
         }
     }
 
-    private handleOnline = () => {
-        this.isOnline = true;
-        console.log('🌐 [SYNC] Conexão restaurada. Sincronizando dados...');
-        
-        this.processQueue();
-
-        // Importação dinâmica aqui também
-        import('./storageService').then(({ storageService }) => {
-             storageService.syncFromCloud().then(() => {
-                console.log('✅ [SYNC] Sincronização pós-offline concluída.');
-            });
-        });
-    };
-
-    private handleOffline = () => {
-        this.isOnline = false;
-        console.log('📴 [SYNC] Modo Offline ativado. Operando com dados locais (RAM/Disk).');
-    };
-
     public init() {
-        console.log('🛠️ [SYNC] Serviço de Sincronização Iniciado v2.2 (No-Cycle)');
-        
-        // Verifica conexão inicial
         if (this.isOnline) {
-            this.processQueue(); 
-            import('./storageService').then(({ storageService }) => {
-                storageService.syncFromCloud();
-            });
+            this.processQueue();
         }
-
-        // Heartbeat
-        this.syncInterval = setInterval(() => {
-            if (this.isOnline) {
-                // Heartbeat check
-            }
-        }, 2 * 60 * 1000);
     }
 
     public getConnectionStatus(): boolean {
