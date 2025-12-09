@@ -6,9 +6,9 @@ import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlobalSearch from './components/GlobalSearch';
-import { ToastProvider } from './contexts/ToastContext';
+import { ToastProvider } from './contexts/ToastContext'; // Importação corrigida (Context com X)
 
-// FAHUB MANAGER v2.4 - Full Architecture Fix
+// FAHUB MANAGER v2.5 - Fix Typo & Robustez Final
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
