@@ -1,21 +1,33 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
-import { RecruitmentCandidate } from '../types';
+import { RecruitmentCandidate, CombineStats } from '../types';
 import { storageService } from '../services/storageService';
-import { UserPlusIcon, CheckCircleIcon, TrashIcon, UsersIcon } from '../components/icons/UiIcons';
+import { analyzeCombineStats } from '../services/geminiService';
+import { UserPlusIcon, CheckCircleIcon, TrashIcon, UsersIcon, SparklesIcon, DumbbellIcon, ClipboardIcon } from '../components/icons/UiIcons';
 import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
+import LazyImage from '@/components/LazyImage';
 
 const Recruitment: React.FC = () => {
     const toast = useToast();
     const [candidates, setCandidates] = useState<RecruitmentCandidate[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     
+    // Combine Mode State
+    const [selectedCandidate, setSelectedCandidate] = useState<RecruitmentCandidate | null>(null);
+    const [isCombineOpen, setIsCombineOpen] = useState(false);
+    const [combineStats, setCombineStats] = useState<CombineStats>({});
+    const [scoutAnalysis, setScoutAnalysis] = useState<{ rating: number, potential: string, analysis: string } | null>(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+    // Filter State
+    const [viewMode, setViewMode] = useState<'ALL' | 'CHECKED_IN'>('ALL');
+
     // Form State
     const [newName, setNewName] = useState('');
     const [newPhone, setNewPhone] = useState('');
-    const [newPosition, setNewPosition] = useState('ATH'); // Athlete (Generic)
+    const [newPosition, setNewPosition] = useState('ATH');
 
     useEffect(() => {
         setCandidates(storageService.getCandidates());
@@ -33,7 +45,7 @@ const Recruitment: React.FC = () => {
             height: '',
             weight: 0,
             experience: 'ROOKIE',
-            status: 'NEW',
+            status: 'NEW', // Starts as New Lead
             createdAt: new Date()
         };
         const updated = [...candidates, newCandidate];
@@ -42,7 +54,15 @@ const Recruitment: React.FC = () => {
         setIsAddModalOpen(false);
         setNewName('');
         setNewPhone('');
-        toast.success("Candidato inscrito no funil!");
+        toast.success("Candidato adicionado manualmente!");
+    };
+
+    const handleCheckIn = (id: string) => {
+        // Move status 'NEW' -> 'TRYOUT' (Presente no campo)
+        const updated = candidates.map(c => c.id === id ? { ...c, status: 'TRYOUT' as const } : c);
+        setCandidates(updated);
+        storageService.saveCandidates(updated);
+        toast.info("Check-in realizado!");
     };
 
     const moveCandidate = (id: string, newStatus: RecruitmentCandidate['status']) => {
@@ -54,31 +74,48 @@ const Recruitment: React.FC = () => {
     const promoteToRoster = (candidate: RecruitmentCandidate) => {
         try {
             storageService.registerAthlete({
-                id: Date.now(), // Will be overwritten by logic inside registerAthlete but good to have
+                id: Date.now(),
                 name: candidate.name,
                 position: candidate.position,
-                jerseyNumber: 0, // TBD
+                jerseyNumber: 0,
                 height: candidate.height || '',
                 weight: candidate.weight || 0,
                 class: 'Rookie',
                 avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}`,
                 level: 1,
                 xp: 0,
-                rating: 65,
+                rating: scoutAnalysis?.rating || 65, // Use AI Rating if available
                 status: 'ACTIVE',
-                rosterCategory: 'ACTIVE',
-                depthChartOrder: 3
-            } as any); // Cast to partial player to satisfy TS strictness if needed
+                rosterCategory: 'PRACTICE_SQUAD', // Start in Practice Squad
+                depthChartOrder: 4,
+                combineStats: combineStats // Carry over stats
+            } as any);
             
-            // Remove from funnel or mark converted
             moveCandidate(candidate.id, 'CONVERTED');
             toast.success(`${candidate.name} promovido ao Elenco Oficial!`);
+            setIsCombineOpen(false);
         } catch (e: any) {
             toast.error("Erro ao promover: " + e.message);
         }
     };
 
+    const openCombine = (c: RecruitmentCandidate) => {
+        setSelectedCandidate(c);
+        setCombineStats({});
+        setScoutAnalysis(null);
+        setIsCombineOpen(true);
+    };
+
+    const runAiScout = async () => {
+        if(!selectedCandidate) return;
+        setIsAnalyzing(true);
+        const result = await analyzeCombineStats(combineStats, selectedCandidate.position);
+        setScoutAnalysis(result);
+        setIsAnalyzing(false);
+    };
+
     const renderColumn = (status: string, title: string, color: string) => {
+        // Simple filter based on status
         const list = candidates.filter(c => c.status === status);
         return (
             <div className="bg-secondary/40 rounded-xl p-4 border border-white/5 min-w-[280px] flex-1">
@@ -94,17 +131,44 @@ const Recruitment: React.FC = () => {
                                     <p className="text-xs text-text-secondary">{c.position} • {c.phone}</p>
                                 </div>
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                    {status !== 'NEW' && <button onClick={() => moveCandidate(c.id, getPrevStatus(status))} className="text-xs bg-white/10 px-2 py-1 rounded hover:bg-white/20">←</button>}
-                                    {status !== 'ONBOARDING' && <button onClick={() => moveCandidate(c.id, getNextStatus(status))} className="text-xs bg-white/10 px-2 py-1 rounded hover:bg-white/20">→</button>}
+                                    <button onClick={() => { if(confirm('Remover candidato?')) moveCandidate(c.id, 'REJECTED')}} className="text-xs text-red-400 hover:text-white p-1"><TrashIcon className="w-4 h-4"/></button>
                                 </div>
                             </div>
                             
+                            {/* Actions per Status */}
+                            {status === 'NEW' && (
+                                <button 
+                                    onClick={() => handleCheckIn(c.id)}
+                                    className="w-full mt-3 bg-white/10 hover:bg-white/20 text-white py-1.5 rounded text-xs font-bold border border-white/10 flex items-center justify-center gap-2"
+                                >
+                                    <ClipboardIcon className="w-3 h-3" /> Fazer Check-in (Chegou)
+                                </button>
+                            )}
+
+                            {status === 'TRYOUT' && (
+                                <button 
+                                    onClick={() => openCombine(c)}
+                                    className="w-full mt-3 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 py-1.5 rounded text-xs font-bold flex items-center justify-center gap-2 border border-blue-500/30"
+                                >
+                                    <DumbbellIcon className="w-3 h-3" /> Testar (Combine)
+                                </button>
+                            )}
+
+                            {status === 'SELECTED' && (
+                                <button 
+                                    onClick={() => moveCandidate(c.id, 'ONBOARDING')}
+                                    className="w-full mt-3 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-300 py-1.5 rounded text-xs font-bold border border-yellow-500/30"
+                                >
+                                    Iniciar Matrícula
+                                </button>
+                            )}
+
                             {status === 'ONBOARDING' && (
                                 <button 
                                     onClick={() => promoteToRoster(c)}
                                     className="w-full mt-3 bg-green-600 hover:bg-green-500 text-white py-1.5 rounded text-xs font-bold flex items-center justify-center gap-2"
                                 >
-                                    <CheckCircleIcon className="w-3 h-3" /> Promover a Atleta
+                                    <CheckCircleIcon className="w-3 h-3" /> Finalizar & Promover
                                 </button>
                             )}
                         </div>
@@ -115,20 +179,6 @@ const Recruitment: React.FC = () => {
         );
     };
 
-    const getNextStatus = (current: string): any => {
-        if (current === 'NEW') return 'TRYOUT';
-        if (current === 'TRYOUT') return 'SELECTED';
-        if (current === 'SELECTED') return 'ONBOARDING';
-        return current;
-    };
-
-    const getPrevStatus = (current: string): any => {
-        if (current === 'TRYOUT') return 'NEW';
-        if (current === 'SELECTED') return 'TRYOUT';
-        if (current === 'ONBOARDING') return 'SELECTED';
-        return current;
-    };
-
     return (
         <div className="space-y-6 pb-12 animate-fade-in h-[calc(100vh-8rem)]">
             <div className="flex justify-between items-center">
@@ -137,45 +187,89 @@ const Recruitment: React.FC = () => {
                         <UsersIcon className="h-8 w-8 text-highlight" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-bold text-text-primary">Funil de Recrutamento</h2>
-                        <p className="text-text-secondary">CRM de Novos Talentos (Tryouts & Seletivas).</p>
+                        <h2 className="text-3xl font-bold text-text-primary">Combine & Seletiva</h2>
+                        <p className="text-text-secondary">Operação Técnica de Campo.</p>
                     </div>
                 </div>
-                <button onClick={() => setIsAddModalOpen(true)} className="bg-highlight hover:bg-highlight-hover text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2">
-                    <UserPlusIcon className="w-5 h-5" /> Novo Candidato
-                </button>
+                <div className="flex gap-2">
+                    <button onClick={() => setIsAddModalOpen(true)} className="bg-secondary hover:bg-white/10 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 border border-white/10 text-sm">
+                        <UserPlusIcon className="w-4 h-4" /> Add Manual (Walk-in)
+                    </button>
+                </div>
             </div>
 
             <div className="flex gap-4 overflow-x-auto pb-4 h-full">
-                {renderColumn('NEW', 'Inscritos', 'text-text-secondary')}
-                {renderColumn('TRYOUT', 'Em Avaliação (Tryout)', 'text-yellow-400')}
-                {renderColumn('SELECTED', 'Aprovados', 'text-blue-400')}
-                {renderColumn('ONBOARDING', 'Matrícula (Docs)', 'text-purple-400')}
-                {renderColumn('CONVERTED', 'Convertidos (Sucesso)', 'text-green-400')}
+                {renderColumn('NEW', 'Pré-Inscritos (Check-in)', 'text-text-secondary')}
+                {renderColumn('TRYOUT', 'Em Teste (Combine)', 'text-blue-400')}
+                {renderColumn('SELECTED', 'Aprovados (Técnico)', 'text-yellow-400')}
+                {renderColumn('ONBOARDING', 'Matrícula (Admin)', 'text-purple-400')}
+                {renderColumn('CONVERTED', 'Elenco Oficial', 'text-green-400')}
             </div>
 
-            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Adicionar Candidato">
+            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Adicionar Candidato (Balcão)">
                 <form onSubmit={handleAddCandidate} className="space-y-4">
-                    <div>
-                        <label className="text-xs font-bold text-text-secondary uppercase">Nome Completo</label>
-                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" required value={newName} onChange={e => setNewName(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-text-secondary uppercase">WhatsApp</label>
-                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newPhone} onChange={e => setNewPhone(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-text-secondary uppercase">Posição Pretendida</label>
-                        <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newPosition} onChange={e => setNewPosition(e.target.value)}>
-                            <option value="ATH">Atleta (Geral)</option>
-                            <option value="QB">Quarterback</option>
-                            <option value="WR">Receiver</option>
-                            <option value="LINEMAN">Linha</option>
-                            <option value="DEFENSE">Defensor</option>
-                        </select>
-                    </div>
-                    <button type="submit" className="w-full bg-green-600 text-white font-bold py-2 rounded mt-4">Inscrever</button>
+                    <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" required value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nome Completo" />
+                    <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="WhatsApp" />
+                    <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newPosition} onChange={e => setNewPosition(e.target.value)}>
+                        <option value="ATH">Atleta (Geral)</option>
+                        <option value="QB">Quarterback</option>
+                        <option value="WR">Receiver</option>
+                        <option value="LINEMAN">Linha</option>
+                        <option value="DEFENSE">Defensor</option>
+                    </select>
+                    <button type="submit" className="w-full bg-highlight text-white font-bold py-2 rounded mt-4">Inscrever & Check-in</button>
                 </form>
+            </Modal>
+
+            {/* COMBINE MODAL (TECHNICAL ONLY) */}
+            <Modal isOpen={isCombineOpen} onClose={() => setIsCombineOpen(false)} title={`Avaliação Física: ${selectedCandidate?.name}`} maxWidth="max-w-2xl">
+                <div className="space-y-6">
+                    <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/20 text-center mb-4">
+                        <p className="text-xs text-blue-300 font-bold uppercase">Posição Declarada</p>
+                        <p className="text-2xl font-black text-white">{selectedCandidate?.position}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-xs text-text-secondary uppercase block mb-1">40 Jardas (s)</label>
+                            <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={combineStats.fortyYards || ''} onChange={e => setCombineStats({...combineStats, fortyYards: Number(e.target.value)})} placeholder="4.50" />
+                        </div>
+                        <div>
+                            <label className="text-xs text-text-secondary uppercase block mb-1">Supino (Reps)</label>
+                            <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={combineStats.benchPress || ''} onChange={e => setCombineStats({...combineStats, benchPress: Number(e.target.value)})} placeholder="15" />
+                        </div>
+                        <div>
+                            <label className="text-xs text-text-secondary uppercase block mb-1">Salto Vertical (in)</label>
+                            <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={combineStats.verticalJump || ''} onChange={e => setCombineStats({...combineStats, verticalJump: Number(e.target.value)})} placeholder="30" />
+                        </div>
+                        <div>
+                            <label className="text-xs text-text-secondary uppercase block mb-1">Shuttle (s)</label>
+                            <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={combineStats.shuttle || ''} onChange={e => setCombineStats({...combineStats, shuttle: Number(e.target.value)})} placeholder="4.20" />
+                        </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-white/10">
+                        <button onClick={runAiScout} disabled={isAnalyzing} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-bold flex justify-center items-center gap-2">
+                            {isAnalyzing ? 'Analisando...' : <><SparklesIcon className="w-4 h-4"/> Gerar Relatório de Scout (IA)</>}
+                        </button>
+                    </div>
+
+                    {scoutAnalysis && (
+                        <div className="bg-black/30 p-4 rounded-xl border border-white/10 animate-fade-in">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-bold text-white uppercase">Grade IA</span>
+                                <span className="text-2xl font-black text-highlight">{scoutAnalysis.rating}</span>
+                            </div>
+                            <p className="text-sm text-white mb-2"><strong className="text-blue-400">Potencial:</strong> {scoutAnalysis.potential}</p>
+                            <p className="text-xs text-text-secondary italic">"{scoutAnalysis.analysis}"</p>
+                            
+                            <div className="mt-4 flex gap-2">
+                                <button onClick={() => { moveCandidate(selectedCandidate!.id, 'SELECTED'); setIsCombineOpen(false); }} className="flex-1 bg-green-600 text-white py-2 rounded font-bold text-sm">Aprovar</button>
+                                <button onClick={() => { moveCandidate(selectedCandidate!.id, 'REJECTED'); setIsCombineOpen(false); }} className="flex-1 bg-red-600 text-white py-2 rounded font-bold text-sm">Dispensar</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </Modal>
         </div>
     );

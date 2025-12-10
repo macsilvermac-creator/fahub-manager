@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement } from "../types";
+import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement, CombineStats } from "../types";
 
 // @ts-ignore
 const ENV_KEY = process.env.API_KEY;
@@ -242,6 +242,76 @@ export const importPlaybookFromImage = async (base64Image: string): Promise<Play
         console.error("Gemini Vision Error:", e);
         return [];
     }
+};
+
+// --- AGENTE 6: DOCUMENT SCANNER (Financeiro) ---
+export const scanFinancialDocument = async (base64Image: string): Promise<{ title: string, amount: number, date: string, category: string, description: string }> => {
+    try {
+        const ai = getClient();
+        const prompt = `
+        Você é um auditor financeiro. Analise esta imagem de um comprovante, recibo ou nota fiscal.
+        Extraia os dados para lançamento contábil.
+        
+        Se não encontrar data, use hoje. Se não encontrar descrição, crie uma baseada no fornecedor.
+        Categorias Possíveis: 'TRANSPORT', 'EQUIPMENT', 'REFEREE', 'FIELD_RENTAL', 'EVENT', 'OTHER'.
+        
+        Retorne JSON:
+        {
+            "title": "Nome do Fornecedor / Estabelecimento",
+            "amount": 0.00 (Número float, cuidado com vírgulas),
+            "date": "YYYY-MM-DD",
+            "category": "Uma das categorias acima",
+            "description": "Breve descrição dos itens"
+        }
+        `;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
+                    ],
+                },
+            ],
+            config: { responseMimeType: "application/json" }
+        });
+
+        if (response.text) {
+            const clean = cleanJsonString(response.text);
+            return JSON.parse(clean);
+        }
+        throw new Error("Não foi possível ler o documento.");
+    } catch (e) {
+        console.error("Scanner Error:", e);
+        throw e;
+    }
+};
+
+// --- AGENTE 7: COMBINE ANALYZER (Recrutamento) ---
+export const analyzeCombineStats = async (stats: CombineStats, position: string): Promise<{ rating: number, potential: string, analysis: string, comparison: string }> => {
+    const prompt = `
+    Atue como um Scout da NFL. Analise os testes físicos deste candidato para a posição de ${position}.
+    
+    Dados:
+    - 40 Jardas: ${stats.fortyYards || 'N/A'}s
+    - Supino (Reps): ${stats.benchPress || 'N/A'}
+    - Salto Vertical: ${stats.verticalJump || 'N/A'} in
+    - Shuttle: ${stats.shuttle || 'N/A'}s
+    
+    Retorne JSON:
+    {
+        "rating": (0-100, baseado em padrões reais da posição),
+        "potential": "Elite / Starter / Backup / Practice Squad",
+        "analysis": "Análise técnica de 2 frases sobre os pontos fortes/fracos físicos.",
+        "comparison": "Comparação com um estilo de jogador famoso (Ex: Estilo Derrick Henry)"
+    }
+    `;
+
+    const result = await generateJson(prompt);
+    return result || { rating: 50, potential: "Unknown", analysis: "Dados insuficientes.", comparison: "-" };
 };
 
 // --- LEGACY FUNCTIONS (Mantidas para compatibilidade) ---

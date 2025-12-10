@@ -1,19 +1,21 @@
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import Card from '../components/Card';
-import { Invoice, AffiliateEarnings, Player, EventSale, Transaction, FinancialAttachment, EquipmentItem, TransactionCategory } from '../types';
+import { Invoice, AffiliateEarnings, Player, EventSale, Transaction, FinancialAttachment, EquipmentItem, TransactionCategory, UserRole } from '../types';
 import { storageService, LEGAL_DOCUMENTS } from '../services/storageService';
 import { FinanceIcon } from '../components/icons/NavIcons';
-import { WalletIcon, CheckCircleIcon, AlertCircleIcon, SparklesIcon, FileTextIcon, ClipboardIcon, ChevronDownIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
+import { WalletIcon, CheckCircleIcon, AlertCircleIcon, SparklesIcon, FileTextIcon, ClipboardIcon, ChevronDownIcon, AlertTriangleIcon, ScanIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
 import ComplianceModal from '../components/ComplianceModal';
 import Modal from '../components/Modal';
 import { authService } from '../services/authService';
 import { useToast } from '../contexts/ToastContext';
+import { scanFinancialDocument } from '../services/geminiService';
 
 const Finance: React.FC = () => {
-    const { currentRole } = useContext(UserContext);
+    const { currentRole } = useContext(UserContext) as { currentRole: UserRole };
     const toast = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     // Data State
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -35,8 +37,7 @@ const Finance: React.FC = () => {
     const [txAmount, setTxAmount] = useState('');
     const [txCategory, setTxCategory] = useState<any>('OTHER');
     const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
-    const [txDocName, setTxDocName] = useState('');
-    const [txDocType, setTxDocType] = useState<'INVOICE' | 'RECEIPT' | 'CONTRACT'>('RECEIPT');
+    const [isScanning, setIsScanning] = useState(false);
 
     // Wizard State
     const [isRecModalOpen, setIsRecModalOpen] = useState(false);
@@ -90,10 +91,90 @@ const Finance: React.FC = () => {
         setVisibleTxCount(prev => prev + 20);
     };
 
+    // --- SMART SCANNER LOGIC ---
+    const handleScanClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setIsScanning(true);
+            toast.info("A IA está analisando o documento...");
+
+            try {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    const base64 = reader.result as string;
+                    try {
+                        const data = await scanFinancialDocument(base64);
+                        setTxTitle(data.title);
+                        setTxAmount(String(data.amount));
+                        setTxDate(data.date);
+                        setTxCategory(data.category);
+                        setTxDesc(data.description);
+                        toast.success("Dados extraídos com sucesso!");
+                    } catch (aiError) {
+                        toast.error("IA não conseguiu ler o documento com clareza.");
+                    }
+                    setIsScanning(false);
+                };
+            } catch (err) {
+                toast.error("Erro ao processar arquivo.");
+                setIsScanning(false);
+            }
+        }
+    };
+
     // --- PLAYER VIEW: SIMPLE WALLET ---
     if (isPlayer) {
-        // ... (Keep existing player view)
-        return (/* ...existing player code... */ <div>Player View Placeholder</div>);
+        return (
+            <div className="space-y-6 pb-12 animate-fade-in">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 bg-secondary rounded-xl">
+                        <WalletIcon className="text-highlight w-8 h-8" />
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-bold text-text-primary">Minha Carteira</h2>
+                        <p className="text-text-secondary">Mensalidades e Pagamentos.</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card title="Mensalidades Pendentes">
+                        <div className="space-y-3">
+                            {invoices.filter(i => i.status !== 'PAID').length === 0 && <p className="text-text-secondary italic">Tudo pago! Parabéns.</p>}
+                            {invoices.filter(i => i.status !== 'PAID').map(inv => (
+                                <div key={inv.id} className="bg-secondary p-4 rounded-xl border border-red-500/30 flex justify-between items-center">
+                                    <div>
+                                        <p className="font-bold text-white">{inv.title}</p>
+                                        <p className="text-xs text-red-400">Vence: {new Date(inv.dueDate).toLocaleDateString()}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-mono font-bold text-white">R$ {inv.amount.toFixed(2)}</p>
+                                        <button className="bg-green-600 text-white text-xs px-3 py-1 rounded mt-1">Pagar Agora</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                    <Card title="Histórico de Pagamentos">
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar">
+                            {invoices.filter(i => i.status === 'PAID').map(inv => (
+                                <div key={inv.id} className="flex justify-between items-center p-2 border-b border-white/5">
+                                    <div>
+                                        <p className="text-sm text-white">{inv.title}</p>
+                                        <p className="text-xs text-text-secondary">{new Date(inv.dueDate).toLocaleDateString()}</p>
+                                    </div>
+                                    <span className="text-green-400 font-bold text-sm">Pago</span>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                </div>
+            </div>
+        );
     }
 
     // --- COACH / ADMIN LOGIC BELOW ---
@@ -127,7 +208,6 @@ const Finance: React.FC = () => {
 
     const delinquentList = getDelinquentPlayers();
 
-    // ... (Keep rest of logic)
     const handleCreateBulkReceivable = () => {
         const targets = players; // Simplify target logic for brevity
         const amountPerPerson = recAmount;
@@ -165,6 +245,11 @@ const Finance: React.FC = () => {
         storageService.saveTransactions(updated);
         setIsTxModalOpen(false);
         toast.success("Transação registrada com sucesso.");
+        
+        // Clear form
+        setTxTitle('');
+        setTxAmount('');
+        setTxDesc('');
     };
 
     const totalIncome = transactions.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0) 
@@ -295,11 +380,38 @@ const Finance: React.FC = () => {
                 </div>
             )}
 
-            {/* Modal Components (Simplified for Demo) */}
             <Modal isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} title="Nova Transação">
                 <form onSubmit={handleSaveTransaction} className="space-y-4">
+                    <div className="flex gap-2 mb-4 bg-black/20 p-1 rounded-lg">
+                        <button type="button" onClick={() => setTxType('EXPENSE')} className={`flex-1 py-2 text-sm font-bold rounded ${txType === 'EXPENSE' ? 'bg-red-500 text-white' : 'text-text-secondary'}`}>Despesa</button>
+                        <button type="button" onClick={() => setTxType('INCOME')} className={`flex-1 py-2 text-sm font-bold rounded ${txType === 'INCOME' ? 'bg-green-500 text-white' : 'text-text-secondary'}`}>Receita</button>
+                    </div>
+
+                    <div className="bg-secondary/50 border border-dashed border-white/20 p-4 rounded-xl text-center mb-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={handleScanClick}>
+                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                        <div className="flex flex-col items-center gap-2">
+                            {isScanning ? (
+                                <div className="animate-spin h-6 w-6 border-2 border-highlight border-t-transparent rounded-full"></div>
+                            ) : (
+                                <ScanIcon className="w-6 h-6 text-highlight" />
+                            )}
+                            <span className="text-xs font-bold text-white">{isScanning ? 'Analisando Imagem...' : 'Ler Comprovante (IA)'}</span>
+                            <span className="text-[10px] text-text-secondary">Foto de Nota Fiscal ou Recibo</span>
+                        </div>
+                    </div>
+
                     <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Título" value={txTitle} onChange={e => setTxTitle(e.target.value)} required />
                     <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Valor" value={txAmount} onChange={e => setTxAmount(e.target.value)} required />
+                    <input type="date" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={txDate} onChange={e => setTxDate(e.target.value)} required />
+                    
+                    <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={txCategory} onChange={e => setTxCategory(e.target.value)}>
+                        <option value="OTHER">Outros</option>
+                        <option value="TRANSPORT">Transporte</option>
+                        <option value="EQUIPMENT">Equipamento</option>
+                        <option value="REFEREE">Arbitragem</option>
+                        <option value="FIELD_RENTAL">Aluguel Campo</option>
+                    </select>
+
                     <button type="submit" className="w-full bg-highlight text-white py-2 rounded font-bold">Salvar</button>
                 </form>
             </Modal>

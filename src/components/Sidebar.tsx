@@ -83,6 +83,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
                 <VideoIcon />
                 <span className="ml-3">Vídeo & Análise</span>
               </NavLink>
+              <NavLink to="/recruitment" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <UserPlusIcon className="w-5 h-5" />
+                <span className="ml-3">Combine & Seletiva</span>
+              </NavLink>
             </>
           )}
 
@@ -101,10 +105,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
               <NavLink to="/staff" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <UsersIcon />
                 <span className="ml-3">Staff & RH</span>
-              </NavLink>
-              <NavLink to="/recruitment" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <UserPlusIcon className="w-5 h-5" />
-                <span className="ml-3">Recrutamento</span>
               </NavLink>
               <NavLink to="/commercial" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <BriefcaseIcon />
@@ -209,6 +209,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
                     className={`text-[10px] py-1.5 rounded font-bold border flex items-center justify-center gap-1 ${currentRole === 'REFEREE' ? 'bg-yellow-500 border-yellow-500 text-black' : 'border-white/10 text-text-secondary hover:text-white'}`}
                 >
                     <FlagIcon className="w-3 h-3" /> Juiz
+                </button>
+                <button 
+                    onClick={() => { setRole('MARKETING_MANAGER'); navigate('/marketing'); }}
+                    className={`text-[10px] py-1.5 rounded font-bold border flex items-center justify-center gap-1 ${currentRole === 'MARKETING_MANAGER' ? 'bg-pink-600 border-pink-600 text-white' : 'border-white/10 text-text-secondary hover:text-white'}`}
+                >
+                    <MegaphoneIcon className="w-3 h-3" /> Mkt
+                </button>
+                <button 
+                    onClick={() => { setRole('FINANCIAL_MANAGER'); navigate('/finance'); }}
+                    className={`text-[10px] py-1.5 rounded font-bold border flex items-center justify-center gap-1 ${currentRole === 'FINANCIAL_MANAGER' ? 'bg-green-700 border-green-700 text-white' : 'border-white/10 text-text-secondary hover:text-white'}`}
+                >
+                    <BriefcaseIcon className="w-3 h-3" /> Fin
                 </button>
             </div>
         </div>

@@ -13,7 +13,13 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-export const UserContext = React.createContext<{ currentRole: UserRole }>({ currentRole: 'HEAD_COACH' });
+export interface UserContextType {
+  currentRole: UserRole;
+}
+
+export const UserContext = React.createContext<UserContextType>({ currentRole: 'HEAD_COACH' });
+
+export const UserContextConsumer = UserContext.Consumer; // Helper if needed
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);

@@ -4,8 +4,9 @@ import { storageService } from '../services/storageService';
 import { generateMarketingContent } from '../services/geminiService';
 import { SocialPost, Announcement, Course } from '../types';
 import { MegaphoneIcon, AcademyIcon } from '../components/icons/NavIcons';
-import { SparklesIcon, UsersIcon, BellIcon, ShareIcon } from '../components/icons/UiIcons';
+import { SparklesIcon, UsersIcon, BellIcon, ShareIcon, GlobeIcon, UserPlusIcon, QrcodeIcon, LinkIcon } from '../components/icons/UiIcons';
 import Card from '../components/Card';
+import LazyImage from '../components/LazyImage';
 
 const Marketing: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'SOCIAL' | 'COMMUNITY' | 'INTERNAL'>('SOCIAL');
@@ -20,11 +21,13 @@ const Marketing: React.FC = () => {
     // Community & Internal Data
     const [courses, setCourses] = useState<Course[]>([]);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [candidateCount, setCandidateCount] = useState(0);
 
     useEffect(() => {
         setPosts(storageService.getSocialPosts());
         setCourses(storageService.getCourses());
         setAnnouncements(storageService.getAnnouncements());
+        setCandidateCount(storageService.getCandidates().length);
     }, []);
 
     // --- SOCIAL GENERATOR ---
@@ -52,6 +55,18 @@ const Marketing: React.FC = () => {
         setTopic('');
     };
 
+    const copyPublicLink = () => {
+        const url = `${window.location.origin}/#/public/team`;
+        navigator.clipboard.writeText(url);
+        alert("Link copiado: " + url);
+    };
+
+    const copyTryoutLink = () => {
+        const url = `${window.location.origin}/#/onboarding?mode=tryout`;
+        navigator.clipboard.writeText(url);
+        alert("Link da Seletiva copiado! Use na Bio do Instagram.");
+    };
+
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -64,6 +79,10 @@ const Marketing: React.FC = () => {
                         <p className="text-text-secondary">Brand Command Center & Engajamento.</p>
                     </div>
                 </div>
+                
+                <button onClick={copyPublicLink} className="bg-white/10 hover:bg-white/20 border border-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2">
+                    <GlobeIcon className="w-4 h-4 text-green-400" /> Copiar Link do Site Oficial
+                </button>
             </div>
 
             {/* Navigation Tabs */}
@@ -72,7 +91,7 @@ const Marketing: React.FC = () => {
                     <ShareIcon className="w-4 h-4"/> Social Media (IA)
                 </button>
                 <button onClick={() => setActiveTab('COMMUNITY')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'COMMUNITY' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
-                    <AcademyIcon className="w-4 h-4"/> Comunidade (Academy)
+                    <AcademyIcon className="w-4 h-4"/> Comunidade & Leads
                 </button>
                 <button onClick={() => setActiveTab('INTERNAL')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'INTERNAL' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
                     <BellIcon className="w-4 h-4"/> Mural Interno
@@ -135,9 +154,40 @@ const Marketing: React.FC = () => {
                 </div>
             )}
 
-            {/* === TAB 2: COMMUNITY (ACADEMY) === */}
+            {/* === TAB 2: COMMUNITY (ACADEMY + TRYOUTS) === */}
             {activeTab === 'COMMUNITY' && (
                 <div className="space-y-6 animate-slide-in">
+                    {/* TRYOUT CAMPAIGN CARD - NEW FEATURE */}
+                    <div className="bg-gradient-to-r from-green-900/40 to-secondary p-6 rounded-2xl border border-green-500/20 relative overflow-hidden">
+                        <div className="absolute right-0 top-0 p-4 opacity-10">
+                            <UserPlusIcon className="w-32 h-32" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                            <UserPlusIcon className="w-6 h-6 text-green-400" />
+                            Campanha de Seletiva (Tryouts)
+                        </h3>
+                        <div className="flex flex-col md:flex-row gap-8 items-center">
+                            <div className="flex-1">
+                                <p className="text-sm text-text-secondary mb-4">
+                                    Use este link para divulgar a próxima peneira nas redes sociais. Os candidatos cairão direto no banco de dados do Coach.
+                                </p>
+                                <div className="flex gap-3">
+                                    <button onClick={copyTryoutLink} className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg">
+                                        <LinkIcon className="w-4 h-4" /> Copiar Link de Inscrição
+                                    </button>
+                                    <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 border border-white/10">
+                                        <QrcodeIcon className="w-4 h-4" /> Baixar QR Code
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="bg-black/30 p-4 rounded-xl border border-white/10 text-center min-w-[200px]">
+                                <p className="text-xs text-text-secondary font-bold uppercase mb-1">Candidatos Inscritos</p>
+                                <p className="text-4xl font-black text-white">{candidateCount}</p>
+                                <p className="text-[10px] text-green-400 mt-1">Funil Ativo</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card className="bg-blue-900/20 border-l-4 border-l-blue-500">
                             <div className="flex items-center gap-4">
@@ -164,7 +214,7 @@ const Marketing: React.FC = () => {
                             {courses.map(course => (
                                 <div key={course.id} className="bg-secondary p-4 rounded-xl border border-white/5 flex gap-3">
                                     <div className="w-16 h-16 bg-black/30 rounded-lg flex-shrink-0 overflow-hidden">
-                                        <img src={course.thumbnailUrl} className="w-full h-full object-cover" />
+                                        <LazyImage src={course.thumbnailUrl} className="w-full h-full object-cover" />
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-white text-sm line-clamp-1">{course.title}</h4>
