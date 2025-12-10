@@ -4,10 +4,11 @@ import Card from '../components/Card';
 import { RecruitmentCandidate, CombineStats } from '../types';
 import { storageService } from '../services/storageService';
 import { analyzeCombineStats } from '../services/geminiService';
-import { UserPlusIcon, CheckCircleIcon, TrashIcon, UsersIcon, SparklesIcon, DumbbellIcon, ClipboardIcon } from '../components/icons/UiIcons';
+import { UserPlusIcon, CheckCircleIcon, TrashIcon, UsersIcon, SparklesIcon, DumbbellIcon, ClipboardIcon, PenIcon } from '../components/icons/UiIcons';
 import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 import LazyImage from '@/components/LazyImage';
+import { authService } from '../services/authService';
 
 const Recruitment: React.FC = () => {
     const toast = useToast();
@@ -18,8 +19,13 @@ const Recruitment: React.FC = () => {
     const [selectedCandidate, setSelectedCandidate] = useState<RecruitmentCandidate | null>(null);
     const [isCombineOpen, setIsCombineOpen] = useState(false);
     const [combineStats, setCombineStats] = useState<CombineStats>({});
+    
+    // Editable AI Analysis State (Human-in-the-loop)
     const [scoutAnalysis, setScoutAnalysis] = useState<{ rating: number, potential: string, analysis: string } | null>(null);
+    const [editedRating, setEditedRating] = useState<number>(0);
+    const [editedAnalysis, setEditedAnalysis] = useState<string>('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
 
     // Form State
     const [newName, setNewName] = useState('');
@@ -70,6 +76,8 @@ const Recruitment: React.FC = () => {
 
     const promoteToRoster = (candidate: RecruitmentCandidate) => {
         try {
+            const user = authService.getCurrentUser();
+            
             storageService.registerAthlete({
                 id: Date.now(),
                 name: candidate.name,
@@ -81,11 +89,12 @@ const Recruitment: React.FC = () => {
                 avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate.name)}`,
                 level: 1,
                 xp: 0,
-                rating: scoutAnalysis?.rating || 65, // Use AI Rating if available
+                rating: candidate.rating || 65,
                 status: 'ACTIVE',
                 rosterCategory: 'PRACTICE_SQUAD', // Start in Practice Squad
                 depthChartOrder: 4,
-                combineStats: combineStats // Carry over stats
+                combineStats: combineStats,
+                hcNotes: `Promovido via Combine. Análise: ${candidate.aiAnalysis} (Validado por: ${candidate.verifiedBy || user?.name})`
             } as any);
             
             moveCandidate(candidate.id, 'CONVERTED');
@@ -101,14 +110,39 @@ const Recruitment: React.FC = () => {
         setCombineStats({});
         setScoutAnalysis(null);
         setIsCombineOpen(true);
+        setIsEditingAnalysis(false);
     };
 
     const runAiScout = async () => {
         if(!selectedCandidate) return;
         setIsAnalyzing(true);
         const result = await analyzeCombineStats(combineStats, selectedCandidate.position);
+        
+        // Populate edit state immediately
         setScoutAnalysis(result);
+        setEditedRating(result.rating);
+        setEditedAnalysis(result.analysis);
+        setIsEditingAnalysis(true); // Enable edit mode by default for review
+        
         setIsAnalyzing(false);
+    };
+
+    const saveAnalysisAndApprove = () => {
+        if (!selectedCandidate) return;
+        const user = authService.getCurrentUser();
+
+        const updated = candidates.map(c => c.id === selectedCandidate.id ? { 
+            ...c, 
+            status: 'SELECTED' as const,
+            rating: editedRating,
+            aiAnalysis: editedAnalysis,
+            verifiedBy: user?.name || 'Coach'
+        } : c);
+        
+        setCandidates(updated);
+        storageService.saveCandidates(updated);
+        setIsCombineOpen(false);
+        toast.success("Candidato Aprovado e Avaliação Salva!");
     };
 
     const renderColumn = (status: string, title: string, color: string) => {
@@ -152,12 +186,17 @@ const Recruitment: React.FC = () => {
                             )}
 
                             {status === 'SELECTED' && (
-                                <button 
-                                    onClick={() => moveCandidate(c.id, 'ONBOARDING')}
-                                    className="w-full mt-3 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-300 py-1.5 rounded text-xs font-bold border border-yellow-500/30"
-                                >
-                                    Iniciar Matrícula
-                                </button>
+                                <>
+                                    <div className="mt-2 text-xs text-green-400 bg-green-900/20 px-2 py-1 rounded">
+                                        Nota: {c.rating} (Validado por {c.verifiedBy})
+                                    </div>
+                                    <button 
+                                        onClick={() => moveCandidate(c.id, 'ONBOARDING')}
+                                        className="w-full mt-2 bg-yellow-600/20 hover:bg-yellow-600/40 text-yellow-300 py-1.5 rounded text-xs font-bold border border-yellow-500/30"
+                                    >
+                                        Iniciar Matrícula
+                                    </button>
+                                </>
                             )}
 
                             {status === 'ONBOARDING' && (
@@ -254,15 +293,51 @@ const Recruitment: React.FC = () => {
                     {scoutAnalysis && (
                         <div className="bg-black/30 p-4 rounded-xl border border-white/10 animate-fade-in">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm font-bold text-white uppercase">Grade IA</span>
-                                <span className="text-2xl font-black text-highlight">{scoutAnalysis.rating}</span>
+                                <span className="text-sm font-bold text-white uppercase flex items-center gap-2">
+                                    <SparklesIcon className="w-4 h-4 text-purple-400"/> Análise Preliminar
+                                </span>
+                                <button onClick={() => setIsEditingAnalysis(!isEditingAnalysis)} className="text-xs text-blue-400 hover:underline flex items-center gap-1">
+                                    <PenIcon className="w-3 h-3"/> {isEditingAnalysis ? 'Visualizar' : 'Editar'}
+                                </button>
                             </div>
-                            <p className="text-sm text-white mb-2"><strong className="text-blue-400">Potencial:</strong> {scoutAnalysis.potential}</p>
-                            <p className="text-xs text-text-secondary italic">"{scoutAnalysis.analysis}"</p>
+
+                            {isEditingAnalysis ? (
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="text-xs text-text-secondary uppercase block mb-1">Nota (0-100)</label>
+                                        <input 
+                                            type="number" 
+                                            className="w-20 bg-black/40 border border-white/20 rounded p-1 text-white font-bold"
+                                            value={editedRating}
+                                            onChange={(e) => setEditedRating(Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-text-secondary uppercase block mb-1">Análise Técnica (Edite se necessário)</label>
+                                        <textarea 
+                                            className="w-full h-24 bg-black/40 border border-white/20 rounded p-2 text-white text-sm"
+                                            value={editedAnalysis}
+                                            onChange={(e) => setEditedAnalysis(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex justify-between items-end mb-2">
+                                        <p className="text-sm text-white"><strong className="text-blue-400">Potencial:</strong> {scoutAnalysis.potential}</p>
+                                        <span className="text-2xl font-black text-highlight">{editedRating}</span>
+                                    </div>
+                                    <p className="text-xs text-text-secondary italic">"{editedAnalysis}"</p>
+                                </>
+                            )}
                             
-                            <div className="mt-4 flex gap-2">
-                                <button onClick={() => { moveCandidate(selectedCandidate!.id, 'SELECTED'); setIsCombineOpen(false); }} className="flex-1 bg-green-600 text-white py-2 rounded font-bold text-sm">Aprovar</button>
-                                <button onClick={() => { moveCandidate(selectedCandidate!.id, 'REJECTED'); setIsCombineOpen(false); }} className="flex-1 bg-red-600 text-white py-2 rounded font-bold text-sm">Dispensar</button>
+                            <div className="mt-4 flex gap-2 pt-4 border-t border-white/10">
+                                <button onClick={saveAnalysisAndApprove} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-2 rounded font-bold text-sm flex items-center justify-center gap-2">
+                                    <CheckCircleIcon className="w-4 h-4"/> Validar & Aprovar
+                                </button>
+                                <button onClick={() => { moveCandidate(selectedCandidate!.id, 'REJECTED'); setIsCombineOpen(false); }} className="flex-1 bg-red-600 text-white py-2 rounded font-bold text-sm">
+                                    Dispensar
+                                </button>
                             </div>
                         </div>
                     )}

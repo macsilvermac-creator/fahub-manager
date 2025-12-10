@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { Invoice, Player, EventSale, Transaction, EquipmentItem, TransactionCategory, UserRole } from '../types';
 import { storageService, LEGAL_DOCUMENTS } from '../services/storageService';
 import { FinanceIcon } from '../components/icons/NavIcons';
-import { WalletIcon, AlertCircleIcon, SparklesIcon, AlertTriangleIcon, ScanIcon } from '../components/icons/UiIcons';
+import { WalletIcon, AlertCircleIcon, SparklesIcon, AlertTriangleIcon, ScanIcon, CheckCircleIcon } from '../components/icons/UiIcons';
 import { UserContext, UserContextType } from '../components/Layout';
 import ComplianceModal from '../components/ComplianceModal';
 import Modal from '../components/Modal';
@@ -39,6 +39,7 @@ const Finance: React.FC = () => {
     const [txCategory, setTxCategory] = useState<TransactionCategory>('OTHER');
     const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
     const [isScanning, setIsScanning] = useState(false);
+    const [isAiFilled, setIsAiFilled] = useState(false); // Flag para indicar revisão
 
     // Wizard State
     const [isRecModalOpen, setIsRecModalOpen] = useState(false);
@@ -107,7 +108,8 @@ const Finance: React.FC = () => {
                         // @ts-ignore
                         setTxCategory(data.category);
                         setTxDesc(data.description);
-                        toast.success("Dados extraídos com sucesso!");
+                        setIsAiFilled(true); // Ativa modo de revisão
+                        toast.success("Dados extraídos! Por favor, REVISE antes de salvar.");
                     } catch (aiError) {
                         toast.error("IA não conseguiu ler o documento com clareza.");
                     }
@@ -171,6 +173,8 @@ const Finance: React.FC = () => {
 
     const handleSaveTransaction = (e: React.FormEvent) => {
         e.preventDefault();
+        const user = authService.getCurrentUser();
+        
         const newTx: Transaction = {
             id: `tx-${Date.now()}`,
             title: txTitle,
@@ -180,14 +184,17 @@ const Finance: React.FC = () => {
             category: txCategory,
             date: new Date(txDate),
             status: 'PAID',
-            attachments: []
+            attachments: [],
+            aiGenerated: isAiFilled,
+            verifiedBy: user?.name || 'Sistema'
         };
 
         const updated = [newTx, ...transactions];
         setTransactions(updated);
         storageService.saveTransactions(updated);
         setIsTxModalOpen(false);
-        toast.success("Transação registrada com sucesso.");
+        setIsAiFilled(false);
+        toast.success("Transação validada e registrada.");
         
         // Clear form
         setTxTitle('');
@@ -298,17 +305,22 @@ const Finance: React.FC = () => {
                                 <th className="px-4 py-3">Descrição</th>
                                 <th className="px-4 py-3">Categoria</th>
                                 <th className="px-4 py-3 text-right">Valor</th>
+                                <th className="px-4 py-3 text-right">Validado Por</th>
                             </tr>
                         </thead>
                         <tbody>
                             {transactions.slice(0, 10).map((tx) => (
                                 <tr key={tx.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                                     <td className="px-4 py-3">{new Date(tx.date).toLocaleDateString()}</td>
-                                    <td className="px-4 py-3"><p className="text-white font-bold">{tx.title}</p></td>
+                                    <td className="px-4 py-3">
+                                        <p className="text-white font-bold">{tx.title}</p>
+                                        {tx.aiGenerated && <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 rounded">IA + {tx.verifiedBy}</span>}
+                                    </td>
                                     <td className="px-4 py-3"><span className="text-[10px] bg-white/10 px-2 py-0.5 rounded uppercase">{tx.category}</span></td>
                                     <td className={`px-4 py-3 text-right font-bold font-mono ${tx.type === 'INCOME' ? 'text-green-400' : 'text-red-400'}`}>
                                         {tx.type === 'INCOME' ? '+' : '-'} R$ {tx.amount.toFixed(2)}
                                     </td>
+                                    <td className="px-4 py-3 text-right text-xs text-text-secondary">{tx.verifiedBy || 'Sistema'}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -323,22 +335,30 @@ const Finance: React.FC = () => {
                         <button type="button" onClick={() => setTxType('INCOME')} className={`flex-1 py-2 text-sm font-bold rounded ${txType === 'INCOME' ? 'bg-green-500 text-white' : 'text-text-secondary'}`}>Receita</button>
                     </div>
 
-                    <div className="bg-secondary/50 border border-dashed border-white/20 p-4 rounded-xl text-center mb-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={handleScanClick}>
+                    <div className={`bg-secondary/50 border border-dashed p-4 rounded-xl text-center mb-4 cursor-pointer hover:bg-white/5 transition-colors ${isAiFilled ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-white/20'}`} onClick={handleScanClick}>
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                         <div className="flex flex-col items-center gap-2">
                             {isScanning ? (
                                 <div className="animate-spin h-6 w-6 border-2 border-highlight border-t-transparent rounded-full"></div>
                             ) : (
-                                <ScanIcon className="w-6 h-6 text-highlight" />
+                                <ScanIcon className={`w-6 h-6 ${isAiFilled ? 'text-yellow-400' : 'text-highlight'}`} />
                             )}
-                            <span className="text-xs font-bold text-white">{isScanning ? 'Analisando Imagem...' : 'Ler Comprovante (IA)'}</span>
+                            <span className="text-xs font-bold text-white">
+                                {isScanning ? 'Analisando Imagem...' : isAiFilled ? 'Documento Lido! Revise abaixo.' : 'Ler Comprovante (IA)'}
+                            </span>
                             <span className="text-[10px] text-text-secondary">Foto de Nota Fiscal ou Recibo</span>
                         </div>
                     </div>
 
-                    <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Título" value={txTitle} onChange={e => setTxTitle(e.target.value)} required />
-                    <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Valor" value={txAmount} onChange={e => setTxAmount(e.target.value)} required />
-                    <input type="date" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={txDate} onChange={e => setTxDate(e.target.value)} required />
+                    {isAiFilled && (
+                        <div className="bg-yellow-900/20 p-2 rounded text-xs text-yellow-300 text-center mb-2 font-bold border border-yellow-500/30">
+                            ⚠ Atenção: Verifique os valores preenchidos pela IA antes de salvar.
+                        </div>
+                    )}
+
+                    <input className={`w-full bg-black/20 border rounded p-2 text-white transition-colors ${isAiFilled ? 'border-yellow-500/50 shadow-glow' : 'border-white/10'}`} placeholder="Título" value={txTitle} onChange={e => setTxTitle(e.target.value)} required />
+                    <input type="number" className={`w-full bg-black/20 border rounded p-2 text-white transition-colors ${isAiFilled ? 'border-yellow-500/50 shadow-glow' : 'border-white/10'}`} placeholder="Valor" value={txAmount} onChange={e => setTxAmount(e.target.value)} required />
+                    <input type="date" className={`w-full bg-black/20 border rounded p-2 text-white transition-colors ${isAiFilled ? 'border-yellow-500/50 shadow-glow' : 'border-white/10'}`} value={txDate} onChange={e => setTxDate(e.target.value)} required />
                     
                     <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={txCategory} onChange={e => setTxCategory(e.target.value as any)}>
                         <option value="OTHER">Outros</option>
@@ -348,7 +368,10 @@ const Finance: React.FC = () => {
                         <option value="FIELD_RENTAL">Aluguel Campo</option>
                     </select>
 
-                    <button type="submit" className="w-full bg-highlight text-white py-2 rounded font-bold">Salvar</button>
+                    <button type="submit" className="w-full bg-highlight hover:bg-highlight-hover text-white py-2 rounded font-bold flex items-center justify-center gap-2">
+                        {isAiFilled && <CheckCircleIcon className="w-4 h-4" />}
+                        {isAiFilled ? 'Validar & Salvar' : 'Salvar'}
+                    </button>
                 </form>
             </Modal>
 

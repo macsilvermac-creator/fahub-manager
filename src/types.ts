@@ -17,6 +17,8 @@ export interface RecruitmentCandidate {
     status: 'NEW' | 'TRYOUT' | 'SELECTED' | 'ONBOARDING' | 'CONVERTED' | 'REJECTED';
     tryoutDate?: Date;
     rating?: number; // 1-5 stars
+    aiAnalysis?: string; // Texto gerado pela IA
+    verifiedBy?: string; // ID do coach que validou
     notes?: string;
     createdAt: Date;
 }
@@ -345,6 +347,8 @@ export interface Transaction {
     netAmount?: number;
     method?: PaymentMethod;
     createdAt?: Date;
+    aiGenerated?: boolean; // Se foi criado via Scanner
+    verifiedBy?: string; // ID do usuário que salvou
 }
 
 export interface EquipmentItem {
