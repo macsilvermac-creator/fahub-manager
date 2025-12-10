@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Player, PracticeSession, PracticeCategory, PracticeScriptItem } from '../types';
