@@ -60,24 +60,75 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       onSave({ ...game, callSheet: callSheet });
   };
 
+  // QB WRISTBAND EXPORT (HTML GRID)
   const exportWristband = () => {
       const settings = storageService.getTeamSettings();
       const sportMode = settings?.sportType || 'FULLPADS';
+      const opponent = game?.opponent || 'OPPONENT';
 
-      let content = "QB WRISTBAND - " + (game?.opponent || 'OPPONENT') + "\n\n";
+      // Generate Table Rows
+      let tableRows = '';
       callSheet.forEach(section => {
-          content += `--- ${section.title} ---\n`;
+          tableRows += `<tr class="section-header"><td colspan="2">${section.title}</td></tr>`;
           section.plays.forEach((play, i) => {
-              if(play) content += `${i+1}. ${play}\n`;
+              if(play) {
+                  tableRows += `
+                    <tr>
+                        <td class="play-idx">${i+1}</td>
+                        <td class="play-name">${play}</td>
+                    </tr>
+                  `;
+              }
           });
-          content += "\n";
       });
 
-      const blob = new Blob([content], { type: 'text/plain' });
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>QB Wristband - VS ${opponent}</title>
+            <style>
+                body { font-family: 'Arial', sans-serif; -webkit-print-color-adjust: exact; padding: 10px; }
+                .wristband-container {
+                    width: 300px; /* Standard wristband width approx */
+                    border: 2px solid black;
+                    display: inline-block;
+                }
+                table { width: 100%; border-collapse: collapse; font-size: 10px; }
+                th, td { border: 1px solid #000; padding: 2px 4px; }
+                .section-header { 
+                    background-color: #000; 
+                    color: #fff; 
+                    font-weight: bold; 
+                    text-transform: uppercase; 
+                    text-align: center;
+                    font-size: 11px;
+                }
+                .play-idx { width: 20px; text-align: center; font-weight: bold; background: #eee; }
+                .play-name { font-weight: bold; }
+                .header { text-align: center; font-weight: bold; font-size: 12px; margin-bottom: 5px; text-transform: uppercase; }
+            </style>
+        </head>
+        <body>
+            <div class="wristband-container">
+                <div class="header">VS ${opponent}</div>
+                <table>
+                    ${tableRows}
+                </table>
+            </div>
+            <div style="margin-top:20px; font-size: 10px; color: #555;">
+                * Recorte nas linhas pretas e insira na pulseira.
+            </div>
+            <script>window.onload = function() { window.print(); }</script>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob([htmlContent], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Wristband_${sportMode}.txt`;
+      a.download = `Wristband_Grid_${opponent}.html`;
       a.click();
   };
 
@@ -187,7 +238,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
                         <strong>Estratégia de Jogo:</strong> Preencha as jogadas prioritárias para cada situação.
                     </p>
                     <button onClick={exportWristband} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold transition-colors">
-                        <PrinterIcon className="w-4 h-4" /> Exportar Wristband
+                        <PrinterIcon className="w-4 h-4" /> Imprimir Pulseira (QB)
                     </button>
                 </div>
                 

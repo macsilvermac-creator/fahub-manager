@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { Game, PlayElement, TacticalPlay, TacticalFrame, InstallMatrixItem } from '../types';
 import { storageService } from '../services/storageService';
 import { analyzePlayMatchup, generateInstallSchedule } from '../services/geminiService';
-import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon } from '../components/icons/UiIcons';
+import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon, EyeIcon } from '../components/icons/UiIcons';
 import { WhistleIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 
@@ -49,10 +49,6 @@ const TacticalLab: React.FC = () => {
         setSportMode(initialMode);
         resetTokens(initialMode);
     }, []);
-
-    // ... (Existing Playbook Logic: resetTokens, handleModeSwitch, Animation Loop, Canvas Rendering, Mouse Events) ...
-    // REPEATING LOGIC TO KEEP FILE INTEGRITY - ASSUME PREVIOUS LOGIC IS HERE BUT HIDDEN FOR BREVITY IN XML
-    // I will include the full component logic to ensure it works correctly.
 
     const resetTokens = (mode: 'FULLPADS' | 'FLAG') => {
         if (mode === 'FLAG') {
@@ -154,7 +150,7 @@ const TacticalLab: React.FC = () => {
             ctx.fillText(el.label, el.x, el.y - 12);
         });
 
-    }, [elements, sportMode, activeTab]); // Redraw when activeTab changes
+    }, [elements, sportMode, activeTab]);
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (isPlaying || currentFrameIndex !== -1 || isPlayer) return; 
@@ -230,9 +226,68 @@ const TacticalLab: React.FC = () => {
         a.click();
     };
 
+    // --- SCOUT CARD GENERATOR (COACH BILL FEATURE) ---
+    const handlePrintScoutCard = () => {
+        if (!canvasRef.current) return;
+        
+        // Capture canvas image
+        const dataUrl = canvasRef.current.toDataURL('image/png');
+        
+        const win = window.open('', '_blank');
+        if (!win) return;
+
+        win.document.write(`
+            <html>
+                <head>
+                    <title>Scout Card - ${playName || 'Jogada'}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+                        h1 { font-size: 48px; margin-bottom: 10px; text-transform: uppercase; }
+                        h2 { font-size: 24px; color: #555; margin-bottom: 30px; }
+                        .card-container { 
+                            border: 4px solid black; 
+                            padding: 20px; 
+                            display: inline-block;
+                            width: 100%;
+                            max-width: 800px;
+                        }
+                        img { 
+                            width: 100%; 
+                            height: auto; 
+                            filter: grayscale(100%) contrast(150%); /* High Contrast for B&W Print */
+                            border: 2px solid #ccc;
+                        }
+                        .notes {
+                            margin-top: 20px;
+                            text-align: left;
+                            font-size: 18px;
+                            border-top: 2px dashed black;
+                            padding-top: 10px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="card-container">
+                        <h1>${playName || 'JOGADA SEM NOME'}</h1>
+                        <h2>${conceptDescription || 'Conceito Tático'}</h2>
+                        <img src="${dataUrl}" />
+                        <div class="notes">
+                            <strong>COACH NOTES:</strong>
+                            <p>${simulationResult || 'Imprimir e usar no treino. Focar no alinhamento da defesa.'}</p>
+                        </div>
+                    </div>
+                    <script>window.onload = function() { window.print(); }</script>
+                </body>
+            </html>
+        `);
+        win.document.close();
+    };
+
     const loadPlay = (play: TacticalPlay) => {
         setElements(play.elements);
         if(play.frames) setFrames(play.frames);
+        setPlayName(play.name);
+        setConceptDescription(play.concept);
         setActiveTab('PLAYBOOK');
     };
 
@@ -352,6 +407,7 @@ const TacticalLab: React.FC = () => {
                                 <div className="flex justify-between items-center mb-4 px-2">
                                     <h3 className="font-bold text-white flex items-center gap-2">Prancheta Digital <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-text-secondary">{sportMode === 'FULLPADS' ? '11 vs 11' : '5 vs 5'}</span></h3>
                                     <div className="flex gap-2">
+                                        {!isPlayer && <button onClick={handlePrintScoutCard} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold border border-white/20 flex items-center gap-2"><EyeIcon className="w-3 h-3"/> Scout Card</button>}
                                         {!isPlayer && <button onClick={captureFrame} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold border border-white/20">+ Frame ({frames.length})</button>}
                                         <button onClick={() => setIsPlaying(!isPlaying)} className={`px-3 py-1 rounded text-xs font-bold border ${isPlaying ? 'bg-red-500/20 text-red-400 border-red-500' : 'bg-green-500/20 text-green-400 border-green-500'}`}>{isPlaying ? 'Parar' : 'Play'}</button>
                                         <button onClick={clearFrames} className="text-text-secondary hover:text-white px-2 text-xs">Reset</button>
@@ -367,7 +423,7 @@ const TacticalLab: React.FC = () => {
                     <div className="flex justify-between items-center mt-8">
                         <h3 className="text-xl font-bold text-white">Biblioteca do Playbook</h3>
                         <button onClick={generateWristband} className="bg-secondary border border-white/10 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
-                            <PrinterIcon className="w-4 h-4"/> Exportar Wristband
+                            <PrinterIcon className="w-4 h-4"/> Exportar Wristband (.txt)
                         </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">

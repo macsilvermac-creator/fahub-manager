@@ -10,11 +10,11 @@ import { UsersIcon, ClipboardIcon, ChevronDownIcon } from '../components/icons/U
 import { storageService } from '../services/storageService';
 import PrintLayout from '../components/PrintLayout';
 import { UserContext } from '../components/Layout';
-import { useToast } from '../contexts/ToastContext'; // Import Toast
+import { useToast } from '../contexts/ToastContext'; 
 
 const Roster: React.FC = () => {
     const { currentRole } = useContext(UserContext);
-    const toast = useToast(); // Hook Toast
+    const toast = useToast();
     const [players, setPlayers] = useState<Player[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -38,11 +38,9 @@ const Roster: React.FC = () => {
 
     useEffect(() => {
         setPlayers(storageService.getPlayers());
-        // Players forced to card view
         if (isPlayer) setViewMode('CARDS');
     }, [isPlayer]);
 
-    // Reset pagination when filters change
     useEffect(() => {
         setVisibleCount(12);
     }, [activeCategory, unitFilter, viewMode]);
@@ -65,9 +63,9 @@ const Roster: React.FC = () => {
             storageService.registerAthlete(newPlayer);
             setPlayers(storageService.getPlayers());
             setIsAddModalOpen(false);
-            toast.success(`Atleta ${newPlayer.name} recrutado com sucesso!`); // Toast
+            toast.success(`Atleta ${newPlayer.name} recrutado com sucesso!`); 
         } catch (error: any) {
-            toast.error(error.message); // Toast Error
+            toast.error(error.message); 
         }
     };
 
@@ -80,7 +78,7 @@ const Roster: React.FC = () => {
             const updatedPlayers = players.filter(p => p.id !== playerToDelete.id);
             setPlayers(updatedPlayers);
             storageService.savePlayers(updatedPlayers);
-            toast.info(`${playerToDelete.name} removido do elenco.`); // Toast Info
+            toast.info(`${playerToDelete.name} removido do elenco.`); 
             setPlayerToDelete(null);
         }
     };
@@ -90,7 +88,7 @@ const Roster: React.FC = () => {
         const updated = players.map(p => p.id === player.id ? { ...p, rosterCategory: newCategory } : p);
         setPlayers(updated);
         storageService.savePlayers(updated);
-        toast.success(`${player.name} movido para ${newCategory}`); // Toast
+        toast.success(`${player.name} movido para ${newCategory}`); 
     };
 
     const toggleCompareSelect = (id: number) => {
@@ -119,7 +117,7 @@ const Roster: React.FC = () => {
         const pos = p.position;
         if (unitFilter === 'OFFENSE') return ['QB','RB','WR','TE','OL','LT','LG','C','RG','RT'].includes(pos);
         if (unitFilter === 'DEFENSE') return ['DL','DE','DT','LB','CB','S','FS','SS'].includes(pos);
-        if (unitFilter === 'ST') return ['K','P','LS'].includes(pos);
+        if (unitFilter === 'ST') return ['K','P','LS','KR','PR'].includes(pos);
         return true;
     });
 
@@ -129,41 +127,39 @@ const Roster: React.FC = () => {
     const getPlayersByUnit = (unit: 'OFFENSE' | 'DEFENSE' | 'SPECIAL') => {
         const offPositions = ['QB', 'RB', 'WR', 'TE', 'OL', 'LT', 'C', 'RT', 'LG', 'RG'];
         const defPositions = ['DL', 'DE', 'DT', 'LB', 'CB', 'S', 'FS', 'SS'];
-        const stPositions = ['K', 'P', 'LS'];
+        // Expanded Special Teams Positions
+        const stPositions = ['K', 'P', 'LS', 'KR', 'PR'];
 
         let positionsToCheck: string[] = [];
         if (unit === 'OFFENSE') positionsToCheck = offPositions;
         if (unit === 'DEFENSE') positionsToCheck = defPositions;
         if (unit === 'SPECIAL') positionsToCheck = stPositions;
 
-        // Filter by ACTIVE category for depth chart
         return players
             .filter(p => (p.rosterCategory || 'ACTIVE') === 'ACTIVE')
             .filter(p => positionsToCheck.includes(p.position))
             .sort((a, b) => {
-                if (a.position === b.position) return a.depthChartOrder - b.depthChartOrder;
-                return a.position.localeCompare(b.position);
+                // Primary Sort: Position Order based on list
+                const idxA = positionsToCheck.indexOf(a.position);
+                const idxB = positionsToCheck.indexOf(b.position);
+                if (idxA !== idxB) return idxA - idxB;
+                
+                // Secondary Sort: Depth
+                return a.depthChartOrder - b.depthChartOrder;
             });
     };
 
-    // Helper to get key stat string based on position
     const getPlayerKeyStat = (player: Player) => {
         if (!player.gameLogs || player.gameLogs.length === 0) return `OVR ${player.rating}`;
         
-        // Sum stats
         const totalYards = player.gameLogs.reduce((acc, log) => acc + (log.stats.yards || 0), 0);
         const totalTDs = player.gameLogs.reduce((acc, log) => acc + (log.stats.tds || 0), 0);
-        const totalTackles = player.gameLogs.reduce((acc, log) => acc + (log.stats.tackles || 0), 0); // Assuming defensive stats exist in logs
-        const totalInts = player.gameLogs.reduce((acc, log) => acc + (log.stats.ints || 0), 0);
-
-        if (['QB', 'WR', 'RB', 'TE'].includes(player.position)) {
-            return `${totalYards} yds, ${totalTDs} TD`;
-        } else if (['LB', 'CB', 'S', 'DL', 'DE', 'DT'].includes(player.position)) {
-            // Mock defensive stat display logic (using TD field as Ints/Sacks for simplicity in this mock)
-            return `${totalTackles || Math.floor(Math.random() * 20)} Tkls`;
-        } else if (['OL', 'C', 'G', 'T'].includes(player.position)) {
-            return `Pancakes: ${Math.floor(Math.random() * 10)}`;
-        }
+        const totalTackles = player.gameLogs.reduce((acc, log) => acc + (log.stats.tackles || 0), 0);
+        
+        if (['QB', 'WR', 'RB', 'TE'].includes(player.position)) return `${totalYards} yds, ${totalTDs} TD`;
+        if (['LB', 'CB', 'S', 'DL', 'DE'].includes(player.position)) return `${totalTackles} Tkls`;
+        if (['K', 'P'].includes(player.position)) return `FG/Punt Avg: 40y`;
+        
         return `OVR ${player.rating}`;
     };
 
@@ -174,43 +170,50 @@ const Roster: React.FC = () => {
             grouped[p.position].push(p);
         });
 
+        // Ensure order matches standard football depth charts
+        const orderedPositions = title.includes('Special') 
+            ? ['K', 'P', 'LS', 'KR', 'PR'] 
+            : Object.keys(grouped).sort();
+
         return (
             <div className="bg-secondary/30 rounded-xl p-4 border border-white/5 print:bg-transparent print:border-black">
                 <h3 className="text-xl font-bold text-white mb-4 border-b border-white/10 pb-2 print:text-black print:border-black">{title}</h3>
                 <div className="space-y-6">
-                    {Object.keys(grouped).map(pos => (
-                        <div key={pos} className="flex flex-col">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-sm font-black bg-white/10 px-2 py-0.5 rounded text-white print:text-black print:bg-gray-200">{pos}</span>
-                            </div>
-                            <div className="space-y-2 pl-2 border-l-2 border-white/5 print:border-black">
-                                {grouped[pos].map(p => (
-                                    <div 
-                                        key={p.id} 
-                                        onClick={() => setSelectedPlayer(p)}
-                                        className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-white/5 transition-colors ${p.depthChartOrder === 1 ? 'bg-highlight/10 border border-highlight/20 print:border-black print:bg-transparent' : ''}`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <span className={`text-[10px] font-bold w-4 ${p.depthChartOrder === 1 ? 'text-highlight print:text-black' : 'text-text-secondary print:text-gray-600'}`}>
-                                                {p.depthChartOrder === 1 ? '1st' : p.depthChartOrder === 2 ? '2nd' : '3rd'}
-                                            </span>
-                                            <div className="flex items-center gap-2">
-                                                <img src={p.avatarUrl} className="w-6 h-6 rounded-full print:hidden" />
-                                                <div className="flex flex-col">
-                                                    <span className={`text-sm leading-none ${p.depthChartOrder === 1 ? 'font-bold text-white print:text-black' : 'text-text-secondary print:text-gray-800'}`}>{p.name}</span>
-                                                    {!isPlayer && <span className="text-[9px] text-text-secondary print:hidden">{getPlayerKeyStat(p)}</span>}
+                    {orderedPositions.map(pos => {
+                        if (!grouped[pos]) return null;
+                        return (
+                            <div key={pos} className="flex flex-col">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-sm font-black bg-white/10 px-2 py-0.5 rounded text-white print:text-black print:bg-gray-200">{pos}</span>
+                                </div>
+                                <div className="space-y-2 pl-2 border-l-2 border-white/5 print:border-black">
+                                    {grouped[pos].map(p => (
+                                        <div 
+                                            key={p.id} 
+                                            onClick={() => setSelectedPlayer(p)}
+                                            className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-white/5 transition-colors ${p.depthChartOrder === 1 ? 'bg-highlight/10 border border-highlight/20 print:border-black print:bg-transparent' : ''}`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <span className={`text-[10px] font-bold w-4 ${p.depthChartOrder === 1 ? 'text-highlight print:text-black' : 'text-text-secondary print:text-gray-600'}`}>
+                                                    {p.depthChartOrder === 1 ? '1st' : p.depthChartOrder === 2 ? '2nd' : '3rd'}
+                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <img src={p.avatarUrl} className="w-6 h-6 rounded-full print:hidden" />
+                                                    <div className="flex flex-col">
+                                                        <span className={`text-sm leading-none ${p.depthChartOrder === 1 ? 'font-bold text-white print:text-black' : 'text-text-secondary print:text-gray-800'}`}>{p.name}</span>
+                                                        {!isPlayer && <span className="text-[9px] text-text-secondary print:hidden">{getPlayerKeyStat(p)}</span>}
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-xs font-bold text-text-secondary print:text-gray-600">{p.rating}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col items-end">
-                                            <span className="text-xs font-bold text-text-secondary print:text-gray-600">{p.rating}</span>
-                                            {p.status !== 'ACTIVE' && <span className="text-[8px] bg-red-500/20 text-red-400 px-1 rounded">{p.status}</span>}
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         );
@@ -219,7 +222,6 @@ const Roster: React.FC = () => {
     return (
         <div className="space-y-8 animate-fade-in pb-12">
             <PrintLayout />
-            
             <style>{`
                 @media print {
                     body { background: white !important; color: black !important; }
@@ -228,12 +230,10 @@ const Roster: React.FC = () => {
                     .text-white { color: black !important; }
                     .text-text-secondary { color: #333 !important; }
                     .bg-secondary { background: none !important; }
-                    /* Push content down for letterhead */
                     .print-safe { margin-top: 150px; }
                 }
             `}</style>
 
-            {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 no-print">
                 <div>
                     <h2 className="text-3xl font-bold text-text-primary bg-clip-text text-transparent bg-gradient-to-r from-white to-text-secondary">Gestão de Elenco</h2>
@@ -259,18 +259,8 @@ const Roster: React.FC = () => {
 
                     {!isPlayer && (
                         <div className="bg-secondary p-1 rounded-lg flex border border-white/10">
-                            <button 
-                                onClick={() => setViewMode('CARDS')}
-                                className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${viewMode === 'CARDS' ? 'bg-highlight text-white shadow-sm' : 'text-text-secondary hover:text-white'}`}
-                            >
-                                Cards
-                            </button>
-                            <button 
-                                onClick={() => setViewMode('DEPTH_CHART')}
-                                className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${viewMode === 'DEPTH_CHART' ? 'bg-highlight text-white shadow-sm' : 'text-text-secondary hover:text-white'}`}
-                            >
-                                Tática
-                            </button>
+                            <button onClick={() => setViewMode('CARDS')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${viewMode === 'CARDS' ? 'bg-highlight text-white shadow-sm' : 'text-text-secondary hover:text-white'}`}>Cards</button>
+                            <button onClick={() => setViewMode('DEPTH_CHART')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${viewMode === 'DEPTH_CHART' ? 'bg-highlight text-white shadow-sm' : 'text-text-secondary hover:text-white'}`}>Tática</button>
                         </div>
                     )}
 
@@ -285,39 +275,28 @@ const Roster: React.FC = () => {
                 </div>
             </div>
 
-            {/* Squad Tabs (Coach Only) */}
             {!isPlayer && viewMode === 'CARDS' && (
                 <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:items-center md:justify-between border-b border-white/10 mb-4 no-print">
                     <div className="flex overflow-x-auto">
-                        <button onClick={() => setActiveCategory('ACTIVE')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'ACTIVE' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
-                            Active Roster ({players.filter(p => p.rosterCategory === 'ACTIVE').length})
-                        </button>
-                        <button onClick={() => setActiveCategory('PRACTICE_SQUAD')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'PRACTICE_SQUAD' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
-                            Practice Squad
-                        </button>
-                        <button onClick={() => setActiveCategory('IR')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'IR' ? 'border-red-500 text-red-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
-                            Injured Reserve / Suspensos
-                        </button>
+                        <button onClick={() => setActiveCategory('ACTIVE')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'ACTIVE' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary hover:text-white'}`}>Active Roster ({players.filter(p => p.rosterCategory === 'ACTIVE').length})</button>
+                        <button onClick={() => setActiveCategory('PRACTICE_SQUAD')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'PRACTICE_SQUAD' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary hover:text-white'}`}>Practice Squad</button>
+                        <button onClick={() => setActiveCategory('IR')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'IR' ? 'border-red-500 text-red-400' : 'border-transparent text-text-secondary hover:text-white'}`}>IR / Suspensos</button>
                     </div>
                     
-                    {/* Unit Filter */}
-                    <div className="flex bg-black/20 rounded-lg p-1 gap-1">
-                        <button onClick={() => setUnitFilter('ALL')} className={`px-3 py-1 text-xs font-bold rounded transition-all ${unitFilter === 'ALL' ? 'bg-white text-black' : 'text-text-secondary hover:text-white'}`}>Tudo</button>
-                        <button onClick={() => setUnitFilter('OFFENSE')} className={`px-3 py-1 text-xs font-bold rounded transition-all ${unitFilter === 'OFFENSE' ? 'bg-blue-600 text-white' : 'text-text-secondary hover:text-white'}`}>ATQ</button>
-                        <button onClick={() => setUnitFilter('DEFENSE')} className={`px-3 py-1 text-xs font-bold rounded transition-all ${unitFilter === 'DEFENSE' ? 'bg-red-600 text-white' : 'text-text-secondary hover:text-white'}`}>DEF</button>
-                        <button onClick={() => setUnitFilter('ST')} className={`px-3 py-1 text-xs font-bold rounded transition-all ${unitFilter === 'ST' ? 'bg-green-600 text-white' : 'text-text-secondary hover:text-white'}`}>ST</button>
+                    <div className="flex bg-black/20 rounded-lg p-1 gap-1 overflow-x-auto">
+                        <button onClick={() => setUnitFilter('ALL')} className={`px-3 py-1 text-xs font-bold rounded whitespace-nowrap ${unitFilter === 'ALL' ? 'bg-white text-black' : 'text-text-secondary hover:text-white'}`}>Tudo</button>
+                        <button onClick={() => setUnitFilter('OFFENSE')} className={`px-3 py-1 text-xs font-bold rounded whitespace-nowrap ${unitFilter === 'OFFENSE' ? 'bg-blue-600 text-white' : 'text-text-secondary hover:text-white'}`}>ATQ</button>
+                        <button onClick={() => setUnitFilter('DEFENSE')} className={`px-3 py-1 text-xs font-bold rounded whitespace-nowrap ${unitFilter === 'DEFENSE' ? 'bg-red-600 text-white' : 'text-text-secondary hover:text-white'}`}>DEF</button>
+                        <button onClick={() => setUnitFilter('ST')} className={`px-3 py-1 text-xs font-bold rounded whitespace-nowrap ${unitFilter === 'ST' ? 'bg-green-600 text-white' : 'text-text-secondary hover:text-white'}`}>ST</button>
                     </div>
                 </div>
             )}
 
-            {/* Content Area */}
             <div className="print-safe">
                 {viewMode === 'CARDS' ? (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {filteredPlayers.length === 0 && <p className="col-span-full text-center text-text-secondary py-12 italic">Nenhum atleta nesta categoria/filtro.</p>}
-                            
-                            {/* Render only visible players */}
                             {displayedPlayers.map(player => (
                                 <div key={player.id} className="relative group">
                                     <AthleteCard 
@@ -327,12 +306,9 @@ const Roster: React.FC = () => {
                                     />
                                     {isCompareMode && (
                                         <div className={`absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center transition-opacity ${compareSelection.includes(player.id) ? 'opacity-100 ring-4 ring-indigo-500' : 'opacity-0 hover:opacity-100 cursor-pointer'}`} onClick={() => toggleCompareSelect(player.id)}>
-                                            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${compareSelection.includes(player.id) ? 'bg-indigo-500 border-white text-white' : 'border-white text-transparent'}`}>
-                                                ✓
-                                            </div>
+                                            <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${compareSelection.includes(player.id) ? 'bg-indigo-500 border-white text-white' : 'border-white text-transparent'}`}>✓</div>
                                         </div>
                                     )}
-                                    {/* Quick Squad Move Actions */}
                                     {canEdit && !isCompareMode && (
                                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 z-20">
                                             {activeCategory !== 'ACTIVE' && <button onClick={(e) => {e.stopPropagation(); handleMovePlayer(player, 'ACTIVE')}} className="bg-green-600 text-white text-[10px] px-2 py-1 rounded shadow" title="Promover para Ativo">▲ Ativo</button>}
@@ -343,14 +319,9 @@ const Roster: React.FC = () => {
                                 </div>
                             ))}
                         </div>
-
-                        {/* Load More Button */}
                         {visibleCount < filteredPlayers.length && (
                             <div className="flex justify-center mt-8">
-                                <button 
-                                    onClick={handleLoadMore}
-                                    className="px-6 py-2 bg-secondary border border-white/10 hover:bg-white/5 rounded-full text-sm font-bold text-text-secondary flex items-center gap-2 transition-all"
-                                >
+                                <button onClick={handleLoadMore} className="px-6 py-2 bg-secondary border border-white/10 hover:bg-white/5 rounded-full text-sm font-bold text-text-secondary flex items-center gap-2 transition-all">
                                     Carregar Mais ({filteredPlayers.length - visibleCount} restantes) <ChevronDownIcon className="w-4 h-4"/>
                                 </button>
                             </div>
@@ -360,98 +331,39 @@ const Roster: React.FC = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-x-auto">
                         {renderDepthChartColumn('Ataque (Offense)', getPlayersByUnit('OFFENSE'))}
                         {renderDepthChartColumn('Defesa (Defense)', getPlayersByUnit('DEFENSE'))}
-                        {renderDepthChartColumn('Special Teams', getPlayersByUnit('SPECIAL'))}
+                        {renderDepthChartColumn('Special Teams (ST)', getPlayersByUnit('SPECIAL'))}
                     </div>
                 )}
             </div>
             
-            <AddPlayerModal 
-                isOpen={isAddModalOpen} 
-                onClose={() => setIsAddModalOpen(false)} 
-                onAdd={handleAddPlayer} 
-            />
+            <AddPlayerModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAdd={handleAddPlayer} />
+            <PlayerDetailsModal isOpen={!!selectedPlayer} onClose={() => setSelectedPlayer(null)} player={selectedPlayer} />
+            <ConfirmationModal isOpen={!!playerToDelete} onClose={() => setPlayerToDelete(null)} onConfirm={confirmDeletePlayer} title="Excluir Jogador?" message={`Tem certeza que deseja remover ${playerToDelete?.name}?`} confirmLabel="Excluir" />
 
-            <PlayerDetailsModal
-                isOpen={!!selectedPlayer}
-                onClose={() => setSelectedPlayer(null)}
-                player={selectedPlayer}
-            />
-
-            <ConfirmationModal
-                isOpen={!!playerToDelete}
-                onClose={() => setPlayerToDelete(null)}
-                onConfirm={confirmDeletePlayer}
-                title="Excluir Jogador?"
-                message={`Tem certeza que deseja remover ${playerToDelete?.name} do elenco? Esta ação não pode ser desfeita.`}
-                confirmLabel="Excluir"
-            />
-
-            {/* COMPARISON MODAL */}
             <Modal isOpen={showCompareModal} onClose={() => setShowCompareModal(false)} title="Comparativo de Atletas" maxWidth="max-w-4xl">
                 {compareSelection.length === 2 && (() => {
                     const p1 = players.find(p => p.id === compareSelection[0]);
                     const p2 = players.find(p => p.id === compareSelection[1]);
                     if (!p1 || !p2) return null;
-
-                    const renderRow = (label: string, v1: any, v2: any, highlightHigher = false) => {
-                        const isN1 = typeof v1 === 'number';
-                        const isN2 = typeof v2 === 'number';
-                        let c1 = 'text-white';
-                        let c2 = 'text-white';
-                        
-                        if (highlightHigher && isN1 && isN2) {
-                            if (v1 > v2) { c1 = 'text-green-400 font-bold'; c2 = 'text-red-400'; }
-                            if (v2 > v1) { c2 = 'text-green-400 font-bold'; c1 = 'text-red-400'; }
-                        }
-                        // For sprint times, lower is better
-                        if (highlightHigher === false && label.includes('40 Yard') && isN1 && isN2) {
-                             if (v1 < v2) { c1 = 'text-green-400 font-bold'; c2 = 'text-red-400'; }
-                             if (v2 < v1) { c2 = 'text-green-400 font-bold'; c1 = 'text-red-400'; }
-                        }
-
-                        return (
-                            <tr className="border-b border-white/5 hover:bg-white/5">
-                                <td className={`p-3 text-center ${c1}`}>{v1 || '--'}</td>
-                                <td className="p-3 text-center text-text-secondary text-sm font-semibold uppercase">{label}</td>
-                                <td className={`p-3 text-center ${c2}`}>{v2 || '--'}</td>
-                            </tr>
-                        );
-                    };
-
                     return (
                         <div className="space-y-6">
                             <div className="grid grid-cols-3 items-center text-center">
                                 <div className="flex flex-col items-center">
                                     <img src={p1.avatarUrl} className="w-24 h-24 rounded-full border-4 border-highlight shadow-lg mb-2" />
                                     <h3 className="text-xl font-bold text-white">{p1.name}</h3>
-                                    <span className="text-text-secondary">{p1.position}</span>
                                 </div>
                                 <div className="text-3xl font-black text-white/20">VS</div>
                                 <div className="flex flex-col items-center">
                                     <img src={p2.avatarUrl} className="w-24 h-24 rounded-full border-4 border-orange-500 shadow-lg mb-2" />
                                     <h3 className="text-xl font-bold text-white">{p2.name}</h3>
-                                    <span className="text-text-secondary">{p2.position}</span>
                                 </div>
                             </div>
-
                             <div className="bg-secondary rounded-xl border border-white/10 overflow-hidden">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="bg-black/20">
-                                            <th className="p-2 text-white">{p1.name.split(' ')[0]}</th>
-                                            <th className="p-2 text-text-secondary">Atributo</th>
-                                            <th className="p-2 text-white">{p2.name.split(' ')[0]}</th>
-                                        </tr>
-                                    </thead>
+                                <table className="w-full text-center">
+                                    <thead><tr className="bg-black/20 text-text-secondary"><th>{p1.name}</th><th>Atributo</th><th>{p2.name}</th></tr></thead>
                                     <tbody>
-                                        {renderRow('Rating (OVR)', p1.rating, p2.rating, true)}
-                                        {renderRow('Nível', p1.level, p2.level, true)}
-                                        {renderRow('Altura', p1.height, p2.height)}
-                                        {renderRow('Peso', p1.weight, p2.weight)}
-                                        {renderRow('Ano Escolar', p1.class, p2.class)}
-                                        {renderRow('40 Yard Dash', p1.combineStats?.fortyYards, p2.combineStats?.fortyYards, false)}
-                                        {renderRow('Supino (Reps)', p1.combineStats?.benchPress, p2.combineStats?.benchPress, true)}
-                                        {renderRow('Vertical Jump', p1.combineStats?.verticalJump, p2.combineStats?.verticalJump, true)}
+                                        <tr><td className="text-white">{p1.rating}</td><td className="text-text-secondary text-sm font-bold uppercase">OVR</td><td className="text-white">{p2.rating}</td></tr>
+                                        <tr><td className="text-white">{p1.level}</td><td className="text-text-secondary text-sm font-bold uppercase">Level</td><td className="text-white">{p2.level}</td></tr>
                                     </tbody>
                                 </table>
                             </div>
