@@ -30,7 +30,6 @@ const StatusWidgets = React.memo(({ systemHealth, navigate }: any) => (
         {[1,2,3,4].map(i => (
             !systemHealth ? <Skeleton key={i} height="80px" /> : 
             <div key={i} className="glass-panel p-4 rounded-xl shadow-lg flex items-center justify-between">
-                {/* Simplified for demo: Logic kept same as before but wrapped in check */}
                 {i === 1 && (
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-500/10 rounded-full"><AlertTriangleIcon className="text-blue-400 w-5 h-5" /></div>
@@ -76,59 +75,61 @@ const StatusWidgets = React.memo(({ systemHealth, navigate }: any) => (
     </div>
 ));
 
-const CommandCenter = React.memo(({ coachStats, xpLeaders }: any) => {
-    if (!coachStats) return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Skeleton height="150px" />
-            <Skeleton height="150px" />
-        </div>
-    );
-
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="glass-panel p-4 rounded-xl flex flex-col justify-between shadow-lg">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-white/5 rounded-full"><WhistleIcon className="text-red-500 w-6 h-6" /></div>
-                    <div>
-                        <h2 className="text-lg font-bold text-white uppercase">Command Center</h2>
-                        <p className="text-xs text-text-secondary">Visão Geral da Temporada</p>
-                    </div>
+const ExecutiveDashboard = React.memo(({ stats, navigate }: any) => (
+    <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-white mb-4">Visão Executiva (Master)</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-secondary p-6 rounded-xl border border-white/5 hover:border-highlight/50 transition-all cursor-pointer" onClick={() => navigate('/finance')}>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-white">Saúde Financeira</h3>
+                    <BankIcon className="w-6 h-6 text-green-400" />
                 </div>
-                <div className="flex gap-4 text-center">
-                    <div><p className="text-[10px] uppercase text-text-secondary font-bold">Ativos</p><p className="text-3xl font-black text-green-400">{coachStats.activePlayers}</p></div>
-                    <div><p className="text-[10px] uppercase text-text-secondary font-bold">Lesão</p><p className="text-3xl font-black text-red-400">{coachStats.injuredPlayers}</p></div>
-                </div>
+                <div className="text-2xl font-bold text-white mb-1">R$ 125.000</div>
+                <p className="text-xs text-text-secondary">Fluxo de Caixa Projetado</p>
             </div>
-
-            <div className="glass-panel p-4 rounded-xl border border-yellow-500/20 shadow-lg relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-20 h-20 bg-yellow-500/10 blur-xl rounded-full"></div>
-                <h3 className="text-xs font-bold text-yellow-400 uppercase mb-3 flex items-center gap-2 relative z-10">
-                    <StarIcon className="w-4 h-4" /> Líderes de XP (Engajamento)
-                </h3>
-                <div className="space-y-2 relative z-10">
-                    {xpLeaders.length === 0 && <p className="text-xs text-text-secondary">Sem dados de XP ainda.</p>}
-                    {xpLeaders.map((p: Player, idx: number) => (
-                        <div key={p.id} className="flex items-center justify-between bg-black/20 p-2 rounded hover:bg-black/30 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-yellow-500 w-4">{idx + 1}</span>
-                                <img src={p.avatarUrl} className="w-6 h-6 rounded-full" />
-                                <span className="text-xs font-bold text-white">{p.name}</span>
-                            </div>
-                            <span className="text-xs font-mono text-highlight">{p.xp} XP</span>
-                        </div>
-                    ))}
+            <div className="bg-secondary p-6 rounded-xl border border-white/5 hover:border-highlight/50 transition-all cursor-pointer" onClick={() => navigate('/staff')}>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-white">Recursos Humanos</h3>
+                    <UsersIcon className="w-6 h-6 text-blue-400" />
                 </div>
+                <div className="text-2xl font-bold text-white mb-1">24 Staff</div>
+                <p className="text-xs text-text-secondary">4 Contratos Pendentes</p>
+            </div>
+            <div className="bg-secondary p-6 rounded-xl border border-white/5 hover:border-highlight/50 transition-all cursor-pointer" onClick={() => navigate('/league')}>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-white">Federação</h3>
+                    <TrophyIcon className="w-6 h-6 text-yellow-400" />
+                </div>
+                <div className="text-2xl font-bold text-white mb-1">Regular</div>
+                <p className="text-xs text-text-secondary">Status de Filiação</p>
             </div>
         </div>
-    );
-});
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card title="Acesso aos Departamentos Operacionais">
+                <div className="grid grid-cols-2 gap-4">
+                    <button onClick={() => navigate('/dashboard?role=COACH')} className="p-4 bg-black/20 rounded-lg border border-white/10 hover:bg-highlight/20 hover:border-highlight transition-all text-left">
+                        <WhistleIcon className="w-8 h-8 text-highlight mb-2" />
+                        <h4 className="font-bold text-white">Modo Treinador</h4>
+                        <p className="text-xs text-text-secondary">Acesso a treinos, scout e playbook.</p>
+                    </button>
+                    <button onClick={() => navigate('/officiating')} className="p-4 bg-black/20 rounded-lg border border-white/10 hover:bg-red-500/20 hover:border-red-500 transition-all text-left">
+                        <AlertTriangleIcon className="w-8 h-8 text-red-500 mb-2" />
+                        <h4 className="font-bold text-white">Modo Arbitragem</h4>
+                        <p className="text-xs text-text-secondary">Súmulas e relatórios de jogo.</p>
+                    </button>
+                </div>
+            </Card>
+        </div>
+    </div>
+));
 
-const LauncherButtons = React.memo(({ setActiveHub, setActiveModule, nextGame }: any) => (
-    <div className="grid grid-cols-1 gap-4 h-[calc(100vh-350px)]">
-            <button onClick={() => { setActiveHub('TRAINING'); setActiveModule('PRACTICE'); }} className="glass-panel bg-gradient-to-br from-blue-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group hover:border-blue-400">
+const CoachHubButtons = React.memo(({ setActiveHub, setActiveModule, nextGame }: any) => (
+    <div className="grid grid-cols-1 gap-4 h-[calc(100vh-250px)]">
+        <button onClick={() => { setActiveHub('TRAINING'); setActiveModule('PRACTICE'); }} className="glass-panel bg-gradient-to-br from-blue-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group hover:border-blue-400">
             <DumbbellIcon className="w-12 h-12 text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
             <span className="text-2xl font-black text-white uppercase">Dia de Treino</span>
-            <span className="text-xs text-blue-300 mt-1">Scripts & Performance</span>
+            <span className="text-xs text-blue-300 mt-1">Scripts, IA & Performance</span>
         </button>
         <button onClick={() => { setActiveHub('GAME'); setActiveModule('MISSION_CONTROL'); }} className="glass-panel bg-gradient-to-br from-red-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group hover:border-red-400">
             <TrophyIcon className="w-12 h-12 text-red-400 mb-2 group-hover:scale-110 transition-transform" />
@@ -139,13 +140,13 @@ const LauncherButtons = React.memo(({ setActiveHub, setActiveModule, nextGame }:
                 }
         </button>
         <div className="grid grid-cols-2 gap-4 h-full">
-                <button onClick={() => { setActiveHub('PLANNING'); setActiveModule('ROSTER'); }} className="glass-panel bg-gradient-to-br from-green-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg active:scale-95 transition-transform group hover:border-green-400">
+            <button onClick={() => { setActiveHub('PLANNING'); setActiveModule('ROSTER'); }} className="glass-panel bg-gradient-to-br from-green-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg active:scale-95 transition-transform group hover:border-green-400">
                 <ClipboardIcon className="w-8 h-8 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
                 <span className="text-lg font-black text-white uppercase">Gestão</span>
             </button>
             <button onClick={() => { setActiveHub('STUDY'); setActiveModule('VIDEO'); }} className="glass-panel bg-gradient-to-br from-yellow-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg active:scale-95 transition-transform group hover:border-yellow-400">
                 <BookIcon className="w-8 h-8 text-yellow-400 mb-2 group-hover:scale-110 transition-transform" />
-                <span className="text-lg font-black text-white uppercase">Estudos</span>
+                <span className="text-lg font-black text-white uppercase">Estudos (IA)</span>
             </button>
         </div>
     </div>
@@ -160,38 +161,53 @@ const Dashboard: React.FC = () => {
     const [systemHealth, setSystemHealth] = useState<any>(null);
     const [xpLeaders, setXpLeaders] = useState<Player[]>([]);
     
-    const isHeadCoach = currentRole === 'HEAD_COACH' || currentRole === 'MASTER';
+    // Check for query param override
+    const searchParams = new URLSearchParams(window.location.search);
+    const roleOverride = searchParams.get('role');
+    const isMasterView = currentRole === 'MASTER' && roleOverride !== 'COACH';
+    const isHeadCoach = currentRole === 'HEAD_COACH' || roleOverride === 'COACH';
 
     useEffect(() => {
-        // Simulação de Loading para demonstrar Skeletons (500ms)
         setTimeout(() => {
-            if (isHeadCoach) {
-                const stats = storageService.getCoachDashboardStats();
-                setRawCoachStats(stats);
-                
-                const players = storageService.getPlayers();
-                const sorted = [...players].sort((a, b) => (b.xp || 0) - (a.xp || 0)).slice(0, 3);
-                setXpLeaders(sorted);
+            const stats = storageService.getCoachDashboardStats();
+            setRawCoachStats(stats);
+            
+            const players = storageService.getPlayers();
+            const sorted = [...players].sort((a, b) => (b.xp || 0) - (a.xp || 0)).slice(0, 3);
+            setXpLeaders(sorted);
 
-                // @ts-ignore
-                const envKey = process.env.API_KEY;
-                setSystemHealth({ 
-                    api: true, 
-                    db: 'RAM', 
-                    version: '2.5.0 Stable' 
-                });
-            }
+            setSystemHealth({ 
+                api: true, 
+                db: 'RAM', 
+                version: '2.5.0 Stable' 
+            });
         }, 300);
-    }, [isHeadCoach, activeHub]);
+    }, [currentRole, activeHub]);
 
-    // --- MAIN RENDER ---
+    // --- MASTER EXECUTIVE DASHBOARD ---
+    if (isMasterView) {
+        return (
+            <div className="space-y-6 animate-fade-in pb-20">
+                <StatusWidgets systemHealth={systemHealth} navigate={navigate} />
+                <ExecutiveDashboard stats={rawCoachStats} navigate={navigate} />
+            </div>
+        );
+    }
+
+    // --- COACH OPERATIONAL DASHBOARD ---
     if (isHeadCoach) {
         if (!activeHub) {
             return (
                 <div className="space-y-6 animate-fade-in pb-20">
-                    <StatusWidgets systemHealth={systemHealth} navigate={navigate} />
-                    <CommandCenter coachStats={rawCoachStats} xpLeaders={xpLeaders} />
-                    <LauncherButtons setActiveHub={setActiveHub} setActiveModule={setActiveModule} nextGame={rawCoachStats?.nextGame} />
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-2xl font-bold text-white">Central do Treinador</h2>
+                        {currentRole === 'MASTER' && (
+                            <button onClick={() => navigate('/dashboard')} className="text-xs text-text-secondary border border-white/10 px-3 py-1 rounded hover:text-white">
+                                Voltar para Master
+                            </button>
+                        )}
+                    </div>
+                    <CoachHubButtons setActiveHub={setActiveHub} setActiveModule={setActiveModule} nextGame={rawCoachStats?.nextGame} />
                 </div>
             );
         }
@@ -220,7 +236,7 @@ const Dashboard: React.FC = () => {
                  <Suspense fallback={<div className="p-4 space-y-4"><Skeleton height="50px" /><Skeleton height="400px" /></div>}>
                     {activeHub === 'TRAINING' && (
                         <>
-                            {renderHeader("Treino", [{id:'PRACTICE', label:'Roteiro'}, {id:'PERFORMANCE', label:'Performance'}])}
+                            {renderHeader("Treino", [{id:'PRACTICE', label:'Roteiro IA'}, {id:'PERFORMANCE', label:'Performance'}])}
                             {activeModule === 'PRACTICE' && <PracticePlan />}
                             {activeModule === 'PERFORMANCE' && <PerformanceLab />}
                         </>
@@ -243,7 +259,7 @@ const Dashboard: React.FC = () => {
                     )}
                     {activeHub === 'STUDY' && (
                          <>
-                             {renderHeader("Estudos", [{id:'VIDEO', label:'Vídeo'}, {id:'TACTICS', label:'Tática'}, {id:'ACADEMY', label:'Cursos'}])}
+                             {renderHeader("Estudos", [{id:'VIDEO', label:'Video Core'}, {id:'TACTICS', label:'Tática'}, {id:'ACADEMY', label:'Cursos'}])}
                              {activeModule === 'VIDEO' && <VideoAnalysis />}
                              {activeModule === 'TACTICS' && <TacticalLab />}
                              {activeModule === 'ACADEMY' && <Academy />}
@@ -258,4 +274,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-    

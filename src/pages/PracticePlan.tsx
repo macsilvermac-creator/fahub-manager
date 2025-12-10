@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Player, PracticeSession, PracticeCategory, PracticeScriptItem } from '../types';
 import { storageService } from '../services/storageService';
-import { generatePracticeScript } from '../services/geminiService'; // Importando a nova função
+import { generatePracticeScript } from '../services/geminiService'; // Nova função importada
 import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
 import Button from '../components/Button'; 
