@@ -21,9 +21,6 @@ const Recruitment: React.FC = () => {
     const [scoutAnalysis, setScoutAnalysis] = useState<{ rating: number, potential: string, analysis: string } | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-    // Filter State
-    const [viewMode, setViewMode] = useState<'ALL' | 'CHECKED_IN'>('ALL');
-
     // Form State
     const [newName, setNewName] = useState('');
     const [newPhone, setNewPhone] = useState('');

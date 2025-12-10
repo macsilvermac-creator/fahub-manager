@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import Card from '../components/Card';
-import { Invoice, AffiliateEarnings, Player, EventSale, Transaction, FinancialAttachment, EquipmentItem, TransactionCategory, UserRole } from '../types';
+import { Invoice, Player, EventSale, Transaction, EquipmentItem, TransactionCategory } from '../types';
 import { storageService, LEGAL_DOCUMENTS } from '../services/storageService';
 import { FinanceIcon } from '../components/icons/NavIcons';
-import { WalletIcon, CheckCircleIcon, AlertCircleIcon, SparklesIcon, FileTextIcon, ClipboardIcon, ChevronDownIcon, AlertTriangleIcon, ScanIcon } from '../components/icons/UiIcons';
-import { UserContext } from '../components/Layout';
+import { WalletIcon, AlertCircleIcon, SparklesIcon, AlertTriangleIcon, ScanIcon } from '../components/icons/UiIcons';
+import { UserContext, UserContextType } from '../components/Layout';
 import ComplianceModal from '../components/ComplianceModal';
 import Modal from '../components/Modal';
 import { authService } from '../services/authService';
@@ -13,7 +13,7 @@ import { useToast } from '../contexts/ToastContext';
 import { scanFinancialDocument } from '../services/geminiService';
 
 const Finance: React.FC = () => {
-    const { currentRole } = useContext(UserContext) as { currentRole: UserRole };
+    const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     
@@ -41,15 +41,10 @@ const Finance: React.FC = () => {
 
     // Wizard State
     const [isRecModalOpen, setIsRecModalOpen] = useState(false);
-    const [recSource, setRecSource] = useState<'INVENTORY' | 'CUSTOM'>('CUSTOM');
-    const [selectedInventoryId, setSelectedInventoryId] = useState('');
     const [recTitle, setRecTitle] = useState('');
     const [recCategory, setRecCategory] = useState<TransactionCategory>('OTHER');
-    const [recPricingType, setRecPricingType] = useState<'FIXED' | 'SPLIT'>('FIXED');
     const [recAmount, setRecAmount] = useState<number>(0);
     const [recDueDate, setRecDueDate] = useState('');
-    const [recTargetType, setRecTargetType] = useState<'ALL' | 'OFFENSE' | 'DEFENSE' | 'MANUAL'>('ALL');
-    const [selectedPlayerIds, setSelectedPlayerIds] = useState<number[]>([]);
 
     const [showComplianceModal, setShowComplianceModal] = useState(false);
 
@@ -87,10 +82,6 @@ const Finance: React.FC = () => {
         setVisibleTxCount(20);
     }, [viewMode]);
 
-    const handleLoadMoreTx = () => {
-        setVisibleTxCount(prev => prev + 20);
-    };
-
     // --- SMART SCANNER LOGIC ---
     const handleScanClick = () => {
         fileInputRef.current?.click();
@@ -126,56 +117,6 @@ const Finance: React.FC = () => {
             }
         }
     };
-
-    // --- PLAYER VIEW: SIMPLE WALLET ---
-    if (isPlayer) {
-        return (
-            <div className="space-y-6 pb-12 animate-fade-in">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-secondary rounded-xl">
-                        <WalletIcon className="text-highlight w-8 h-8" />
-                    </div>
-                    <div>
-                        <h2 className="text-3xl font-bold text-text-primary">Minha Carteira</h2>
-                        <p className="text-text-secondary">Mensalidades e Pagamentos.</p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card title="Mensalidades Pendentes">
-                        <div className="space-y-3">
-                            {invoices.filter(i => i.status !== 'PAID').length === 0 && <p className="text-text-secondary italic">Tudo pago! Parabéns.</p>}
-                            {invoices.filter(i => i.status !== 'PAID').map(inv => (
-                                <div key={inv.id} className="bg-secondary p-4 rounded-xl border border-red-500/30 flex justify-between items-center">
-                                    <div>
-                                        <p className="font-bold text-white">{inv.title}</p>
-                                        <p className="text-xs text-red-400">Vence: {new Date(inv.dueDate).toLocaleDateString()}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-mono font-bold text-white">R$ {inv.amount.toFixed(2)}</p>
-                                        <button className="bg-green-600 text-white text-xs px-3 py-1 rounded mt-1">Pagar Agora</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </Card>
-                    <Card title="Histórico de Pagamentos">
-                        <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar">
-                            {invoices.filter(i => i.status === 'PAID').map(inv => (
-                                <div key={inv.id} className="flex justify-between items-center p-2 border-b border-white/5">
-                                    <div>
-                                        <p className="text-sm text-white">{inv.title}</p>
-                                        <p className="text-xs text-text-secondary">{new Date(inv.dueDate).toLocaleDateString()}</p>
-                                    </div>
-                                    <span className="text-green-400 font-bold text-sm">Pago</span>
-                                </div>
-                            ))}
-                        </div>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
 
     // --- COACH / ADMIN LOGIC BELOW ---
 
@@ -256,6 +197,8 @@ const Finance: React.FC = () => {
         + invoices.filter(i => i.status === 'PAID').reduce((acc, i) => acc + i.amount, 0);
     const totalExpense = transactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
     const balance = totalIncome - totalExpense;
+
+    if (isPlayer) return <div>Acesso Restrito</div>;
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in relative">
@@ -340,15 +283,6 @@ const Finance: React.FC = () => {
                             <h4 className="font-bold text-blue-300 mb-2">Política de Bloqueio</h4>
                             <p className="text-sm text-text-secondary">O sistema bloqueia automaticamente a presença em treinos e jogos para atletas com dívida superior a R$ 200,00 por mais de 30 dias.</p>
                         </div>
-                        <Card title="Previsão de Receita (Recuperação)">
-                            <div className="text-center py-8">
-                                <p className="text-sm text-text-secondary uppercase">Valor Total em Atraso</p>
-                                <p className="text-4xl font-black text-white mt-2">R$ {delinquentList.reduce((acc, i) => acc + i.totalDebt, 0).toFixed(2)}</p>
-                                <button className="mt-6 bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-lg font-bold">
-                                    Iniciar Régua de Cobrança Automática
-                                </button>
-                            </div>
-                        </Card>
                     </div>
                 </div>
             )}
