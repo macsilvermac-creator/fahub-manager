@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip } from "../types";
+import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement } from "../types";
 
 // @ts-ignore
 const ENV_KEY = process.env.API_KEY;
@@ -187,6 +187,61 @@ export const predictPlayCall = async (historyClips: VideoClip[], currentDown: nu
 
     const result = await generateJson(prompt);
     return result || { prediction: "Dados insuficientes", confidence: "Baixa", reason: "Poucos clips tagueados." };
+};
+
+// --- AGENTE 5: PLAYBOOK DIGITIZER (Multimodal) ---
+export const importPlaybookFromImage = async (base64Image: string): Promise<PlayElement[]> => {
+    try {
+        const ai = getClient();
+        const prompt = `
+        You are an Offensive Coordinator. Analyze this image of a football play.
+        Identify the positions of offensive (O) and defensive (X) players.
+        
+        The image represents a field.
+        Top-Left is (0,0). Bottom-Right is (600, 400).
+        
+        Return a JSON array of elements:
+        [
+            { "id": "generated-1", "type": "OFFENSE", "label": "QB", "x": 300, "y": 250 },
+            { "id": "generated-2", "type": "DEFENSE", "label": "LB", "x": 300, "y": 150 }
+        ]
+        
+        Use standard labels: QB, RB, WR, TE, OL, C for Offense. LB, CB, S, DL for Defense.
+        Approximate the coordinates to fit a 600x400 canvas.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
+                    ],
+                },
+            ],
+            config: { responseMimeType: "application/json" }
+        });
+
+        if (response.text) {
+            const clean = cleanJsonString(response.text);
+            const elements = JSON.parse(clean);
+            if (Array.isArray(elements)) {
+                return elements.map((el: any) => ({
+                    ...el,
+                    id: `gen-${Date.now()}-${Math.random()}`,
+                    // Ensure coordinates are within bounds
+                    x: Math.min(580, Math.max(20, el.x)),
+                    y: Math.min(380, Math.max(20, el.y))
+                }));
+            }
+        }
+        return [];
+    } catch (e) {
+        console.error("Gemini Vision Error:", e);
+        return [];
+    }
 };
 
 // --- LEGACY FUNCTIONS (Mantidas para compatibilidade) ---

@@ -3,10 +3,11 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import Card from '../components/Card';
 import { Game, PlayElement, TacticalPlay, TacticalFrame, InstallMatrixItem } from '../types';
 import { storageService } from '../services/storageService';
-import { analyzePlayMatchup, generateInstallSchedule } from '../services/geminiService';
-import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon, EyeIcon } from '../components/icons/UiIcons';
+import { analyzePlayMatchup, generateInstallSchedule, importPlaybookFromImage } from '../services/geminiService';
+import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon, EyeIcon, ScanIcon } from '../components/icons/UiIcons';
 import { WhistleIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
+import { useToast } from '../contexts/ToastContext';
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 400;
@@ -16,7 +17,9 @@ const CATEGORIES = ['RUN', 'PASS', 'DEFENSE', 'SITUATION'];
 
 const TacticalLab: React.FC = () => {
     const { currentRole } = useContext(UserContext);
+    const toast = useToast();
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [activeTab, setActiveTab] = useState<'PLAYBOOK' | 'INSTALL'>('PLAYBOOK');
     
     // Playbook State
@@ -33,6 +36,9 @@ const TacticalLab: React.FC = () => {
     const [simulationResult, setSimulationResult] = useState('');
     const [isSimulating, setIsSimulating] = useState(false);
     const [savedPlays, setSavedPlays] = useState<TacticalPlay[]>([]);
+    
+    // Import State
+    const [isImporting, setIsImporting] = useState(false);
 
     // Install Matrix State
     const [installItems, setInstallItems] = useState<InstallMatrixItem[]>([]);
@@ -214,6 +220,7 @@ const TacticalLab: React.FC = () => {
         setSavedPlays(updated);
         storageService.saveTacticalPlays(updated);
         setPlayName('');
+        toast.success("Jogada salva na biblioteca!");
     };
 
     const generateWristband = () => {
@@ -224,6 +231,39 @@ const TacticalLab: React.FC = () => {
         a.href = url;
         a.download = `Wristband_${sportMode}.txt`;
         a.click();
+    };
+
+    // --- IMPORT PLAYBOOK FROM IMAGE (AI OCR) ---
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setIsImporting(true);
+            toast.info("Processando imagem com IA Vision...");
+
+            try {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    const base64 = reader.result as string;
+                    const detectedElements = await importPlaybookFromImage(base64);
+                    
+                    if (detectedElements.length > 0) {
+                        setElements(detectedElements);
+                        toast.success(`Sucesso! ${detectedElements.length} jogadores identificados.`);
+                    } else {
+                        toast.error("IA não identificou jogadores. Tente uma imagem mais clara.");
+                    }
+                    setIsImporting(false);
+                };
+            } catch (err) {
+                toast.error("Erro ao importar.");
+                setIsImporting(false);
+            }
+        }
     };
 
     // --- SCOUT CARD GENERATOR (COACH BILL FEATURE) ---
@@ -407,6 +447,14 @@ const TacticalLab: React.FC = () => {
                                 <div className="flex justify-between items-center mb-4 px-2">
                                     <h3 className="font-bold text-white flex items-center gap-2">Prancheta Digital <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-text-secondary">{sportMode === 'FULLPADS' ? '11 vs 11' : '5 vs 5'}</span></h3>
                                     <div className="flex gap-2">
+                                        {!isPlayer && (
+                                            <>
+                                                <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+                                                <button onClick={handleImportClick} disabled={isImporting} className="bg-purple-600/20 text-purple-400 border border-purple-500/50 hover:bg-purple-600 hover:text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-2 transition-colors">
+                                                    {isImporting ? 'Lendo...' : <><ScanIcon className="w-3 h-3"/> Importar (AI)</>}
+                                                </button>
+                                            </>
+                                        )}
                                         {!isPlayer && <button onClick={handlePrintScoutCard} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold border border-white/20 flex items-center gap-2"><EyeIcon className="w-3 h-3"/> Scout Card</button>}
                                         {!isPlayer && <button onClick={captureFrame} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold border border-white/20">+ Frame ({frames.length})</button>}
                                         <button onClick={() => setIsPlaying(!isPlaying)} className={`px-3 py-1 rounded text-xs font-bold border ${isPlaying ? 'bg-red-500/20 text-red-400 border-red-500' : 'bg-green-500/20 text-green-400 border-green-500'}`}>{isPlaying ? 'Parar' : 'Play'}</button>
