@@ -4,8 +4,6 @@ export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
 export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH';
 
-// ... (existing types)
-
 export interface RecruitmentCandidate {
     id: string;
     name: string;
@@ -363,6 +361,30 @@ export interface EquipmentItem {
     assignedToPlayerId?: number;
     cost?: number;
     size?: string;
+    qrCodeUrl?: string;
+    location?: string;
+    manufactureDate?: Date;
+}
+
+export interface KeyResult {
+    id: string;
+    title: string;
+    currentValue: number;
+    targetValue: number;
+    unit: string; // '%', 'R$', '#'
+    lastUpdated: Date;
+}
+
+export interface Objective {
+    id: string;
+    title: string;
+    description?: string;
+    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING' | 'STRUCTURAL';
+    status: 'ON_TRACK' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
+    progress: number;
+    deadline: Date;
+    owner: string; // Department
+    keyResults: KeyResult[];
 }
 
 export interface InstallMatrixItem {

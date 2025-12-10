@@ -1,5 +1,5 @@
 
-import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, League, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, Championship, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, VideoPermissionGroup, EquipmentItem, EventSale, SavedWorkout, NationalTeamCandidate, Affiliate, KanbanTask, RecruitmentCandidate } from '../types';
+import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, League, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, Championship, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, VideoPermissionGroup, EquipmentItem, EventSale, SavedWorkout, NationalTeamCandidate, Affiliate, KanbanTask, RecruitmentCandidate, Objective } from '../types';
 import { firebaseDataService } from './firebaseDataService';
 import { syncService } from './syncService';
 
@@ -30,6 +30,7 @@ const COACH_NOTES_KEY = 'gridiron_coach_notes';
 const SOCIAL_FEED_KEY = 'gridiron_social_feed';
 const AUDIT_LOGS_KEY = 'gridiron_audit_logs';
 const CANDIDATES_KEY = 'gridiron_candidates';
+const OBJECTIVES_KEY = 'gridiron_objectives';
 
 const dateReviver = (key: string, value: any) => {
     if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
@@ -80,7 +81,8 @@ const RAM_DB: any = {
     coachProfiles: [],
     feed: [],
     logs: [],
-    candidates: []
+    candidates: [],
+    objectives: []
 };
 
 // Generic Helper for Disk I/O
@@ -126,6 +128,7 @@ export const storageService = {
         RAM_DB.feed = getListFromDisk(SOCIAL_FEED_KEY);
         RAM_DB.logs = getListFromDisk(AUDIT_LOGS_KEY);
         RAM_DB.candidates = getListFromDisk(CANDIDATES_KEY);
+        RAM_DB.objectives = getListFromDisk(OBJECTIVES_KEY);
         console.timeEnd("RAM_INIT");
     },
 
@@ -199,6 +202,13 @@ export const storageService = {
     saveCandidates: (candidates: RecruitmentCandidate[]) => {
         RAM_DB.candidates = candidates;
         saveListToDisk(CANDIDATES_KEY, candidates);
+    },
+
+    // OKRS (GOALS)
+    getObjectives: (): Objective[] => RAM_DB.objectives,
+    saveObjectives: (objectives: Objective[]) => {
+        RAM_DB.objectives = objectives;
+        saveListToDisk(OBJECTIVES_KEY, objectives);
     },
 
     // GAMES

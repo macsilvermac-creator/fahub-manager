@@ -10,7 +10,7 @@ import {
 } from './icons/NavIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
-import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, UserPlusIcon } from './icons/UiIcons';
+import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, UserPlusIcon, TargetIcon } from './icons/UiIcons';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -94,6 +94,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
           {(currentRole === 'MASTER' || currentRole === 'FINANCIAL_MANAGER' || currentRole === 'MARKETING_MANAGER') && (
             <>
               <p className="px-3 text-[10px] font-bold text-text-secondary/50 uppercase mt-4 mb-1">Administrativo</p>
+              <NavLink to="/goals" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <TargetIcon className="w-5 h-5" />
+                <span className="ml-3">Metas & OKRs</span>
+              </NavLink>
               <NavLink to="/finance" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <FinanceIcon />
                 <span className="ml-3">Financeiro</span>

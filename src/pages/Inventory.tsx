@@ -3,10 +3,12 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { EquipmentItem, Player } from '../types';
 import { storageService } from '../services/storageService';
-import { ClipboardIcon, AlertTriangleIcon, CheckCircleIcon, TrashIcon } from '../components/icons/UiIcons';
+import { ClipboardIcon, AlertTriangleIcon, CheckCircleIcon, TrashIcon, QrcodeIcon, PrinterIcon, SmartphoneIcon, BarcodeIcon } from '../components/icons/UiIcons';
 import Modal from '../components/Modal';
+import { useToast } from '../contexts/ToastContext';
 
 const Inventory: React.FC = () => {
+    const toast = useToast();
     const [items, setItems] = useState<EquipmentItem[]>([]);
     const [players, setPlayers] = useState<Player[]>([]);
     const [filter, setFilter] = useState<'ASSETS' | 'SALES'>('ASSETS');
@@ -19,6 +21,9 @@ const Inventory: React.FC = () => {
     // New Item State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newItem, setNewItem] = useState<Partial<EquipmentItem>>({ category: 'HELMET', condition: 'NEW', quantity: 1, forSale: false });
+
+    // Print State
+    const [printMode, setPrintMode] = useState(false);
 
     useEffect(() => {
         setItems(storageService.getInventory());
@@ -41,7 +46,7 @@ const Inventory: React.FC = () => {
         setIsAssignModalOpen(false);
         setSelectedItem(null);
         setSelectedPlayerId('');
-        alert("Equipamento atribuído com sucesso. Recibo gerado no sistema.");
+        toast.success("Equipamento atribuído com sucesso!");
     };
 
     const handleReturn = (itemId: string) => {
@@ -52,6 +57,7 @@ const Inventory: React.FC = () => {
         );
         setItems(updatedItems);
         storageService.saveInventory(updatedItems);
+        toast.info("Item devolvido ao estoque.");
     };
 
     const handleAddItem = (e: React.FormEvent) => {
@@ -65,38 +71,105 @@ const Inventory: React.FC = () => {
             forSale: filter === 'SALES',
             salePrice: newItem.salePrice ? Number(newItem.salePrice) : undefined,
             brand: newItem.brand,
-            acquisitionDate: new Date()
+            acquisitionDate: new Date(),
+            expiryDate: newItem.expiryDate ? new Date(newItem.expiryDate) : undefined,
+            qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ASSET:${Date.now()}`
         };
         const updated = [...items, item];
         setItems(updated);
         storageService.saveInventory(updated);
         setIsAddModalOpen(false);
         setNewItem({ category: 'HELMET', condition: 'NEW', quantity: 1, forSale: false });
+        toast.success("Item cadastrado!");
+    };
+
+    const handleCopyReport = () => {
+        const report = `📦 *RELATÓRIO DE INVENTÁRIO - FAHUB STARS*
+📅 Data: ${new Date().toLocaleDateString()}
+
+🚨 *ITENS VENCIDOS:*
+${items.filter(i => i.expiryDate && new Date(i.expiryDate) < new Date()).map(i => `- ${i.name} (Venc: ${new Date(i.expiryDate!).toLocaleDateString()})`).join('\n') || 'Nenhum'}
+
+📊 *RESUMO GERAL:*
+- Total Ativos: ${items.filter(i => !i.forSale).length}
+- Valor Patrimonial: R$ ${totalAssetValue.toFixed(2)}
+- Emprestados: ${items.filter(i => i.assignedToPlayerId).length}
+
+Assinado: Gestão de Patrimônio`;
+
+        navigator.clipboard.writeText(report);
+        toast.success("Relatório copiado! Cole no WhatsApp da Diretoria.");
     };
 
     const totalAssetValue = items.filter(i => !i.forSale).reduce((acc, i) => acc + ((i.cost || 0) * i.quantity), 0);
     const expiredItems = items.filter(i => i.expiryDate && new Date(i.expiryDate) < new Date()).length;
 
     return (
-        <div className="space-y-6 pb-12 animate-fade-in">
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+        <div className="space-y-6 pb-12 animate-fade-in relative">
+            {/* THERMAL PRINTER STYLES */}
+            <style>{`
+                @media print {
+                    body * { visibility: hidden; }
+                    #thermal-labels, #thermal-labels * { visibility: visible; }
+                    #thermal-labels {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                    }
+                    .label-item {
+                        width: 50mm;
+                        height: 30mm;
+                        border: 1px dashed black;
+                        padding: 2mm;
+                        page-break-after: always;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        font-family: Arial, sans-serif;
+                    }
+                    .no-print { display: none !important; }
+                }
+            `}</style>
+
+            {/* HIDDEN PRINT AREA */}
+            <div id="thermal-labels" className="hidden print:block">
+                {items.filter(i => !i.forSale).map(item => (
+                    <div key={item.id} className="label-item">
+                        <div style={{width: '60%'}}>
+                            <div style={{fontSize: '10px', fontWeight: 'bold'}}>{item.category}</div>
+                            <div style={{fontSize: '12px', overflow: 'hidden', whiteSpace: 'nowrap'}}>{item.name}</div>
+                            <div style={{fontSize: '8px'}}>ID: {item.id}</div>
+                            <div style={{fontSize: '8px'}}>Venc: {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'N/A'}</div>
+                        </div>
+                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${item.id}`} style={{width: '20mm', height: '20mm'}} />
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 no-print">
                 <div>
-                    <h2 className="text-3xl font-bold text-text-primary">Gestão de Inventário</h2>
+                    <h2 className="text-3xl font-bold text-text-primary">Gestão de Inventário 2.0</h2>
                     <p className="text-text-secondary mt-1 flex items-center gap-2">
                         <ClipboardIcon className="w-4 h-4" />
-                        Almoxarifado, Patrimônio e Estoque de Vendas.
+                        Almoxarifado Inteligente & Ciclo de Vida.
                     </p>
                 </div>
-                <button 
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="px-6 py-2 bg-highlight hover:bg-highlight-hover text-white rounded-xl font-semibold shadow-lg"
-                >
-                    + Novo Item
-                </button>
+                <div className="flex gap-2">
+                    <button onClick={handleCopyReport} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 text-sm">
+                        <SmartphoneIcon className="w-4 h-4" /> Relatório WhatsApp
+                    </button>
+                    <button onClick={() => window.print()} className="bg-secondary border border-white/10 hover:bg-white/5 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm">
+                        <BarcodeIcon className="w-4 h-4" /> Imprimir Etiquetas (50x30mm)
+                    </button>
+                    <button onClick={() => setIsAddModalOpen(true)} className="bg-highlight hover:bg-highlight-hover text-white px-4 py-2 rounded-xl font-bold shadow-lg text-sm">
+                        + Novo Item
+                    </button>
+                </div>
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 no-print">
                 <Card className="bg-gradient-to-br from-blue-900/40 to-secondary border-l-4 border-l-blue-500">
                     <div className="flex items-center">
                         <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400">
@@ -115,14 +188,14 @@ const Inventory: React.FC = () => {
                         </div>
                         <div className="ml-4">
                             <p className="text-xs text-text-secondary font-bold uppercase">Itens Vencidos</p>
-                            <p className="text-2xl font-bold text-white">{expiredItems} <span className="text-sm font-normal text-text-secondary">Alertas</span></p>
+                            <p className="text-2xl font-bold text-white">{expiredItems} <span className="text-sm font-normal text-text-secondary">Risco Legal</span></p>
                         </div>
                     </div>
                 </Card>
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-white/10">
+            <div className="flex border-b border-white/10 no-print">
                 <button 
                     onClick={() => setFilter('ASSETS')}
                     className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${filter === 'ASSETS' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary hover:text-white'}`}
@@ -138,7 +211,7 @@ const Inventory: React.FC = () => {
             </div>
 
             {/* Table */}
-            <Card>
+            <Card className="no-print">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-text-secondary">
                         <thead className="text-xs text-text-secondary uppercase bg-black/20 border-b border-white/5">
@@ -146,8 +219,8 @@ const Inventory: React.FC = () => {
                                 <th className="px-4 py-3">Item</th>
                                 <th className="px-4 py-3">Categoria</th>
                                 <th className="px-4 py-3">Qtd</th>
-                                <th className="px-4 py-3">Status/Validade</th>
-                                {filter === 'ASSETS' && <th className="px-4 py-3">Em Posse De</th>}
+                                <th className="px-4 py-3">Validade</th>
+                                {filter === 'ASSETS' && <th className="px-4 py-3">Responsável</th>}
                                 {filter === 'SALES' && <th className="px-4 py-3">Preço Venda</th>}
                                 <th className="px-4 py-3 text-right">Ações</th>
                             </tr>
@@ -159,9 +232,12 @@ const Inventory: React.FC = () => {
 
                                 return (
                                     <tr key={item.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                                        <td className="px-4 py-3">
-                                            <p className="font-bold text-white">{item.name}</p>
-                                            <p className="text-xs">{item.brand} • {item.size}</p>
+                                        <td className="px-4 py-3 flex items-center gap-3">
+                                            {item.qrCodeUrl && <QrcodeIcon className="w-4 h-4 text-text-secondary" />}
+                                            <div>
+                                                <p className="font-bold text-white">{item.name}</p>
+                                                <p className="text-xs">{item.brand} • {item.size}</p>
+                                            </div>
                                         </td>
                                         <td className="px-4 py-3">
                                             <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded uppercase">{item.category}</span>
@@ -169,21 +245,21 @@ const Inventory: React.FC = () => {
                                         <td className="px-4 py-3 font-bold text-white">{item.quantity}</td>
                                         <td className="px-4 py-3">
                                             {isExpired ? (
-                                                <span className="text-red-400 font-bold flex items-center gap-1"><AlertTriangleIcon className="w-3 h-3"/> Vencido</span>
+                                                <span className="text-red-400 font-bold flex items-center gap-1 text-xs bg-red-900/20 px-2 py-1 rounded"><AlertTriangleIcon className="w-3 h-3"/> Vencido</span>
                                             ) : (
-                                                <span className="text-green-400">OK</span>
+                                                <span className="text-green-400 text-xs">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'Indefinido'}</span>
                                             )}
                                         </td>
                                         
                                         {filter === 'ASSETS' && (
                                             <td className="px-4 py-3">
                                                 {assignee ? (
-                                                    <span className="text-highlight font-bold flex items-center gap-1">
-                                                        <span className="w-2 h-2 rounded-full bg-highlight"></span>
+                                                    <span className="text-highlight font-bold flex items-center gap-1 text-xs">
+                                                        <div className="w-2 h-2 rounded-full bg-highlight"></div>
                                                         {assignee.name}
                                                     </span>
                                                 ) : (
-                                                    <span className="opacity-50">-</span>
+                                                    <span className="opacity-50 text-xs">Em Estoque</span>
                                                 )}
                                             </td>
                                         )}
@@ -278,6 +354,20 @@ const Inventory: React.FC = () => {
                             <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} required />
                         </div>
                     </div>
+                    
+                    {/* LIFECYCLE FIELDS */}
+                    <div className="grid grid-cols-2 gap-4 bg-white/5 p-3 rounded-lg border border-white/10">
+                        <div>
+                            <label className="text-xs font-bold text-text-secondary">Data Fabricação (Opcional)</label>
+                            <input type="date" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-text-secondary">Data Validade</label>
+                            <input type="date" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" onChange={e => setNewItem({...newItem, expiryDate: e.target.value as any})} />
+                        </div>
+                        <p className="col-span-2 text-[10px] text-text-secondary">Essencial para Capacetes (Validade 5-10 anos) para evitar processos.</p>
+                    </div>
+
                     {filter === 'SALES' && (
                         <div>
                             <label className="text-xs font-bold text-text-secondary">Preço de Venda (R$)</label>
