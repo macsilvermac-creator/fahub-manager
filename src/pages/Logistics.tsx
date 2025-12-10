@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { Player, StaffMember, Game } from '../types';
 import { storageService } from '../services/storageService';
-import { BusIcon, BedIcon, MapPinIcon, UsersIcon, CheckCircleIcon, PrinterIcon } from '../components/icons/UiIcons';
+import { BusIcon, BedIcon, MapPinIcon, CheckCircleIcon, PrinterIcon } from '../components/icons/UiIcons';
 import { useToast } from '../contexts/ToastContext';
 import LazyImage from '@/components/LazyImage';
 
