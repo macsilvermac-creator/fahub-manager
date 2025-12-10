@@ -1,214 +1,287 @@
 
-import React, { useState, useEffect, useContext } from 'react';
-import { UserRole, TeamDocument } from '../types';
+import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
-import { TrashIcon, FileSignatureIcon, CheckCircleIcon, PrinterIcon } from '../components/icons/UiIcons';
-import { FolderIcon } from '../components/icons/NavIcons';
-import { UserContext } from '../components/Layout';
+import { generateSponsorshipProposal } from '../services/geminiService';
+import { SponsorDeal, MarketplaceItem, EventSale } from '../types';
+import { BriefcaseIcon, ShopIcon, TicketIcon } from '../components/icons/NavIcons';
 import Card from '../components/Card';
+import { TrendingUpIcon, WalletIcon, CheckCircleIcon } from '../components/icons/UiIcons';
 
-const CATEGORIES = ['ALL', 'CONTRACTS', 'PLAYBOOK', 'MEDICAL', 'ADMIN', 'SCOUT'];
-
-const Resources: React.FC = () => {
-    const { currentRole } = useContext(UserContext);
-    const [documents, setDocuments] = useState<TeamDocument[]>([]);
-    const [filter, setFilter] = useState('ALL');
-    const [isUploading, setIsUploading] = useState(false);
+const Commercial: React.FC = () => {
+    const [activeTab, setActiveTab] = useState<'CRM' | 'RETAIL' | 'TICKETS'>('CRM');
     
-    // Upload form state
-    const [newDocTitle, setNewDocTitle] = useState('');
-    const [newDocCategory, setNewDocCategory] = useState('PLAYBOOK');
+    // CRM State
+    const [deals, setDeals] = useState<SponsorDeal[]>([]);
+    const [companyName, setCompanyName] = useState('');
+    const [askValue, setAskValue] = useState(1000);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [proposal, setProposal] = useState('');
 
-    const isPlayer = currentRole === 'PLAYER';
-    const canUpload = !isPlayer; 
+    // Retail & Ticket Data
+    const [storeItems, setStoreItems] = useState<MarketplaceItem[]>([]);
+    const [eventSales, setEventSales] = useState<EventSale[]>([]);
 
     useEffect(() => {
-        setDocuments(storageService.getDocuments());
+        // Carregando dados com proteção contra null/undefined
+        const loadedDeals = storageService.getSponsors() || [];
+        setDeals(loadedDeals);
+
+        const loadedItems = storageService.getMarketplaceItems() || [];
+        setStoreItems(loadedItems.filter(i => i && i.sellerType === 'TEAM_STORE'));
+
+        const loadedSales = storageService.getEventSales() || [];
+        setEventSales(loadedSales);
     }, []);
 
-    const filteredDocs = filter === 'ALL' ? documents : documents.filter(d => d.category === filter);
+    // --- CRM LOGIC ---
+    const handleGenerate = async () => {
+        if (!companyName) return;
+        setIsGenerating(true);
+        const text = await generateSponsorshipProposal(companyName, askValue);
+        setProposal(text);
+        setIsGenerating(false);
+    };
 
-    const handleUpload = (e: React.FormEvent) => {
-        e.preventDefault();
-        const newDoc: TeamDocument = {
+    const handleSaveDeal = () => {
+        const newDeal: SponsorDeal = {
             id: Date.now().toString(),
-            title: newDocTitle,
-            type: 'PDF', 
-            category: newDocCategory as any,
-            uploadDate: new Date(),
-            size: '2.5 MB',
-            url: '#'
+            companyName,
+            contactPerson: 'TBD',
+            status: 'PROSPECT',
+            value: askValue,
+            lastInteraction: new Date()
         };
-        const updated = [...documents, newDoc];
-        setDocuments(updated);
-        storageService.saveDocuments(updated);
-        setIsUploading(false);
-        setNewDocTitle('');
+        const updated = [newDeal, ...deals];
+        setDeals(updated);
+        storageService.saveSponsors(updated);
+        setProposal('');
+        setCompanyName('');
     };
 
-    const handleDelete = (id: string) => {
-        const updated = documents.filter(d => d.id !== id);
-        setDocuments(updated);
-        storageService.saveDocuments(updated);
+    const getStatusColor = (s: string) => {
+        if (s === 'CLOSED_WON') return 'text-green-400';
+        if (s === 'NEGOTIATION') return 'text-yellow-400';
+        return 'text-text-secondary';
     };
 
-    const handleGenerateContract = (type: string) => {
-        const name = prompt("Nome do Contratado:");
-        if (!name) return;
-        const newDoc: TeamDocument = {
-            id: `cont-${Date.now()}`,
-            title: `Contrato ${type} - ${name}`,
-            type: 'DOC',
-            category: 'CONTRACTS',
-            uploadDate: new Date(),
-            size: '150 KB',
-            url: '#'
-        };
-        const updated = [...documents, newDoc];
-        setDocuments(updated);
-        storageService.saveDocuments(updated);
-        alert("Contrato gerado e salvo na lista. Aguardando assinatura.");
-    };
+    // --- CALCULATIONS (BLINDADOS) ---
+    // Usamos .filter(Boolean) e verificações de propriedade para evitar crash
+    const totalSponsorships = deals
+        .filter(d => d && d.status === 'CLOSED_WON')
+        .reduce((acc, d) => acc + (d.value || 0), 0);
 
-    const getIconForType = (type: string) => {
-        if(type === 'PDF') return <span className="text-red-400 font-bold text-xs">PDF</span>;
-        if(type === 'DOC') return <span className="text-blue-400 font-bold text-xs">DOC</span>;
-        return <span className="text-gray-400 font-bold text-xs">FILE</span>;
-    };
+    const totalStoreSales = storeItems
+        .filter(i => i && i.isSold)
+        .reduce((acc, i) => acc + (i.price || 0), 0);
+
+    const totalTicketSales = eventSales
+        .filter(s => s && s.totalAmount)
+        .reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+
+    const totalRevenue = totalSponsorships + totalStoreSales + totalTicketSales;
 
     return (
-        <div className="space-y-6 animate-fade-in">
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
-                <div>
-                    <h2 className="text-3xl font-bold text-text-primary">Arquivos & Contratos</h2>
-                    <p className="text-text-secondary mt-1 flex items-center gap-2">
-                        <FolderIcon className="w-4 h-4" />
-                        Gestão documental centralizada e segura.
-                    </p>
-                </div>
-                {canUpload && (
-                    <button 
-                        onClick={() => setIsUploading(!isUploading)}
-                        className="px-6 py-2 bg-secondary border border-white/10 hover:bg-white/5 text-white rounded-xl font-semibold transition-all"
-                    >
-                        {isUploading ? 'Cancelar' : 'Upload Manual'}
-                    </button>
-                )}
-            </div>
-
-            {/* Contract Generator Widget */}
-            {!isPlayer && (
-                <div className="bg-gradient-to-r from-blue-900/30 to-secondary p-6 rounded-2xl border border-blue-500/20">
-                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                        <FileSignatureIcon className="w-5 h-5 text-blue-400" />
-                        Contract Vault (Gerador Automático)
-                    </h3>
-                    <div className="flex gap-4 overflow-x-auto pb-2">
-                        <button onClick={() => handleGenerateContract('Atleta')} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg whitespace-nowrap">
-                            + Contrato Atleta
-                        </button>
-                        <button onClick={() => handleGenerateContract('Staff')} className="bg-secondary border border-white/10 hover:bg-white/5 text-white px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap">
-                            + Contrato Staff
-                        </button>
-                        <button onClick={() => handleGenerateContract('Patrocínio')} className="bg-secondary border border-white/10 hover:bg-white/5 text-white px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap">
-                            + Contrato Patrocínio
-                        </button>
+        <div className="space-y-6 pb-12 animate-fade-in">
+             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 bg-secondary rounded-xl">
+                        <BriefcaseIcon className="h-8 w-8 text-highlight" />
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-bold text-text-primary">Diretoria Comercial</h2>
+                        <p className="text-text-secondary">Gestão de Receita Integrada (Revenue Hub).</p>
                     </div>
                 </div>
-            )}
-
-            {/* Upload Area */}
-            {isUploading && canUpload && (
-                <div className="bg-secondary/50 border border-dashed border-white/20 rounded-xl p-6 animate-slide-in">
-                    <h3 className="font-bold text-white mb-4">Novo Arquivo</h3>
-                    <form onSubmit={handleUpload} className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-1 w-full">
-                            <label className="block text-xs text-text-secondary mb-1">Nome do Arquivo</label>
-                            <input 
-                                className="w-full bg-primary border border-tertiary rounded-lg p-2 focus:border-highlight focus:outline-none"
-                                placeholder="ex: Playbook Ataque v3.pdf"
-                                value={newDocTitle}
-                                onChange={e => setNewDocTitle(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="w-full md:w-48">
-                            <label className="block text-xs text-text-secondary mb-1">Categoria</label>
-                            <select 
-                                className="w-full bg-primary border border-tertiary rounded-lg p-2 focus:border-highlight focus:outline-none"
-                                value={newDocCategory}
-                                onChange={e => setNewDocCategory(e.target.value)}
-                            >
-                                <option value="PLAYBOOK">Playbook</option>
-                                <option value="CONTRACTS">Contratos</option>
-                                <option value="MEDICAL">Médico</option>
-                                <option value="SCOUT">Scouting</option>
-                                <option value="ADMIN">Administrativo</option>
-                            </select>
-                        </div>
-                        <button type="submit" className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                            Salvar
-                        </button>
-                    </form>
+                
+                <div className="bg-gradient-to-r from-green-900/40 to-secondary border border-green-500/30 px-6 py-3 rounded-xl text-right">
+                    <p className="text-xs text-green-300 font-bold uppercase">Receita Total Gerada</p>
+                    <p className="text-2xl font-black text-white">R$ {totalRevenue.toFixed(2)}</p>
                 </div>
-            )}
-
-            {/* Filters */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-                {CATEGORIES.map(cat => (
-                    <button
-                        key={cat}
-                        onClick={() => setFilter(cat)}
-                        className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filter === cat ? 'bg-highlight text-white shadow-glow' : 'bg-secondary text-text-secondary hover:bg-accent'}`}
-                    >
-                        {cat === 'ALL' ? 'Todos' : cat}
-                    </button>
-                ))}
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredDocs.map(doc => (
-                    <div key={doc.id} className="group bg-secondary hover:bg-secondary/80 border border-white/5 rounded-xl p-4 transition-all hover:scale-[1.02] cursor-pointer relative">
-                         {!isPlayer && (
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); handleDelete(doc.id); }}
-                                className="absolute top-2 right-2 p-1.5 rounded-full text-text-secondary hover:bg-red-500/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                                <TrashIcon className="w-4 h-4" />
-                            </button>
-                        )}
-                        
-                        <div className="flex items-start gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-lg bg-black/30 flex items-center justify-center border border-white/10">
-                                {getIconForType(doc.type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="text-white font-medium truncate" title={doc.title}>{doc.title}</h4>
-                                <div className="flex gap-2 mt-1">
-                                    <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-text-secondary uppercase tracking-wider">{doc.category}</span>
-                                    {doc.category === 'CONTRACTS' && (
-                                        <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded font-bold uppercase">Pendente</span>
-                                    )}
+            {/* Navigation Tabs */}
+            <div className="flex border-b border-white/10 overflow-x-auto">
+                <button onClick={() => setActiveTab('CRM')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'CRM' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
+                    <BriefcaseIcon className="w-4 h-4"/> Patrocínios (CRM)
+                </button>
+                <button onClick={() => setActiveTab('RETAIL')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'RETAIL' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
+                    <ShopIcon className="w-4 h-4"/> Loja & Merch
+                </button>
+                <button onClick={() => setActiveTab('TICKETS')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'TICKETS' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
+                    <TicketIcon className="w-4 h-4"/> Bilheteria & Eventos
+                </button>
+            </div>
+
+            {/* === TAB 1: CRM (SPONSORS) === */}
+            {activeTab === 'CRM' && (
+                <div className="space-y-6 animate-slide-in">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <Card title="Assistente de Prospecção (IA)">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-xs font-bold text-text-secondary block mb-1">Empresa Alvo</label>
+                                    <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Ex: Padaria Central" value={companyName} onChange={e => setCompanyName(e.target.value)} />
                                 </div>
+                                <div>
+                                    <label className="text-xs font-bold text-text-secondary block mb-1">Valor Solicitado (R$)</label>
+                                    <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={askValue} onChange={e => setAskValue(Number(e.target.value))} />
+                                </div>
+                                <button onClick={handleGenerate} disabled={isGenerating || !companyName} className="w-full bg-gradient-to-r from-highlight to-cyan-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 disabled:opacity-50">
+                                     {isGenerating ? 'Escrevendo...' : 'Gerar Email de Prospecção'}
+                                </button>
+                            </div>
+                        </Card>
+
+                        <Card title="Rascunho do Email">
+                             {proposal ? (
+                                <div className="space-y-4">
+                                    <textarea className="w-full h-40 bg-black/20 border border-white/10 rounded p-3 text-white text-sm whitespace-pre-wrap" value={proposal} onChange={e => setProposal(e.target.value)} />
+                                    <button onClick={handleSaveDeal} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded">
+                                        Salvar no Pipeline
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="h-full flex items-center justify-center text-text-secondary opacity-50">
+                                    Gere uma proposta para visualizar.
+                                </div>
+                            )}
+                        </Card>
+                    </div>
+
+                    <Card title="Pipeline de Patrocínios">
+                        <div className="bg-secondary rounded-xl border border-white/5 overflow-hidden">
+                            <table className="w-full text-sm text-left text-text-secondary">
+                                <thead className="bg-black/20 uppercase text-xs font-bold text-text-secondary">
+                                    <tr>
+                                        <th className="px-6 py-3">Empresa</th>
+                                        <th className="px-6 py-3">Status</th>
+                                        <th className="px-6 py-3">Valor</th>
+                                        <th className="px-6 py-3">Última Interação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {deals.filter(d => d && d.id).map(deal => (
+                                        <tr key={deal.id} className="border-b border-white/5 hover:bg-white/5">
+                                            <td className="px-6 py-4 font-bold text-white">{deal.companyName}</td>
+                                            <td className={`px-6 py-4 font-bold text-xs ${getStatusColor(deal.status)}`}>{deal.status}</td>
+                                            <td className="px-6 py-4 text-white">R$ {deal.value?.toFixed(2)}</td>
+                                            <td className="px-6 py-4 text-xs">{deal.lastInteraction ? new Date(deal.lastInteraction).toLocaleDateString() : '-'}</td>
+                                        </tr>
+                                    ))}
+                                    {deals.filter(d => d && d.id).length === 0 && (
+                                        <tr>
+                                            <td colSpan={4} className="px-6 py-8 text-center text-text-secondary italic">
+                                                Nenhum patrocínio cadastrado.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+            )}
+
+            {/* === TAB 2: RETAIL (STORE) === */}
+            {activeTab === 'RETAIL' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-in">
+                    <Card title="Performance da Loja Oficial">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="p-4 bg-yellow-500/20 rounded-full">
+                                <ShopIcon className="w-8 h-8 text-yellow-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-text-secondary">Faturamento Varejo</p>
+                                <p className="text-3xl font-black text-white">R$ {totalStoreSales.toFixed(2)}</p>
                             </div>
                         </div>
-                        
-                        <div className="flex justify-between items-center text-[10px] text-text-secondary border-t border-white/5 pt-3 mt-1">
-                            <span>{new Date(doc.uploadDate).toLocaleDateString()}</span>
-                            <span>{doc.size}</span>
+                        <div className="space-y-3">
+                            <div className="flex justify-between text-sm border-b border-white/5 pb-2">
+                                <span className="text-text-secondary">Itens Cadastrados</span>
+                                <span className="text-white font-bold">{storeItems.length}</span>
+                            </div>
+                            <div className="flex justify-between text-sm border-b border-white/5 pb-2">
+                                <span className="text-text-secondary">Itens Vendidos</span>
+                                <span className="text-white font-bold">{storeItems.filter(i => i && i.isSold).length}</span>
+                            </div>
+                            <div className="flex justify-between text-sm border-b border-white/5 pb-2">
+                                <span className="text-text-secondary">Taxa de Conversão</span>
+                                <span className="text-green-400 font-bold">{storeItems.length > 0 ? ((storeItems.filter(i => i && i.isSold).length / storeItems.length) * 100).toFixed(1) : 0}%</span>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card title="Top Produtos (Estoque)">
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar">
+                            {storeItems.filter(i => i && i.id).slice(0, 5).map(item => (
+                                <div key={item.id} className="flex items-center gap-3 bg-secondary/50 p-2 rounded-lg border border-white/5">
+                                    <div className="w-10 h-10 bg-black/40 rounded flex items-center justify-center text-xs">
+                                        <ShopIcon className="w-5 h-5 text-gray-500"/>
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-bold text-white line-clamp-1">{item.title}</p>
+                                        <p className="text-xs text-text-secondary">{item.isSold ? 'Vendido' : 'Em Estoque'}</p>
+                                    </div>
+                                    <span className="font-mono text-sm text-white">R$ {item.price}</span>
+                                </div>
+                            ))}
+                            {storeItems.length === 0 && <p className="text-center text-text-secondary italic">Nenhum produto em estoque.</p>}
+                        </div>
+                        <button className="w-full mt-4 text-xs text-highlight hover:underline" onClick={() => window.location.href='#/marketplace'}>Gerenciar Produtos no Marketplace →</button>
+                    </Card>
+                </div>
+            )}
+
+            {/* === TAB 3: TICKETS (EVENT DESK) === */}
+            {activeTab === 'TICKETS' && (
+                <div className="grid grid-cols-1 gap-6 animate-slide-in">
+                    <div className="bg-gradient-to-r from-green-900/30 to-secondary p-6 rounded-2xl border border-green-500/20">
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <h3 className="text-xl font-bold text-white mb-1">Bilheteria & Game Day</h3>
+                                <p className="text-sm text-text-secondary">Vendas realizadas via PDV (Event Desk).</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-sm text-text-secondary">Total Arrecadado</p>
+                                <p className="text-4xl font-black text-green-400">R$ {totalTicketSales.toFixed(2)}</p>
+                            </div>
                         </div>
                     </div>
-                ))}
-            </div>
-            
-            {filteredDocs.length === 0 && (
-                <div className="text-center py-12 bg-secondary/20 rounded-xl border border-dashed border-white/10">
-                    <p className="text-text-secondary">Nenhum arquivo encontrado nesta categoria.</p>
+
+                    <Card title="Últimas Vendas Realizadas">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left text-text-secondary">
+                                <thead className="bg-black/20 uppercase text-xs font-bold">
+                                    <tr>
+                                        <th className="px-4 py-2">Data</th>
+                                        <th className="px-4 py-2">Item</th>
+                                        <th className="px-4 py-2">Tipo</th>
+                                        <th className="px-4 py-2 text-right">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {eventSales.filter(s => s && s.id).slice(0, 10).map(sale => (
+                                        <tr key={sale.id} className="border-b border-white/5 hover:bg-white/5">
+                                            <td className="px-4 py-2 text-xs">{sale.timestamp ? new Date(sale.timestamp).toLocaleDateString() : '-'}</td>
+                                            <td className="px-4 py-2 font-bold text-white">{sale.itemName}</td>
+                                            <td className="px-4 py-2">
+                                                <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${sale.type === 'TICKET' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                                                    {sale.type}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-2 text-right text-green-400 font-mono">+ R$ {sale.totalAmount?.toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                    {eventSales.length === 0 && (
+                                        <tr><td colSpan={4} className="text-center py-8 text-text-secondary italic">Nenhuma venda registrada.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
                 </div>
             )}
         </div>
     );
 };
-
-export default Resources;
+export default Commercial;
