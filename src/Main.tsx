@@ -6,9 +6,9 @@ import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlobalSearch from './components/GlobalSearch';
-import { ToastProvider } from './contexts/ToastContext'; // Importação corrigida (Context com X)
+import { ToastProvider } from './contexts/ToastContext';
 
-// FAHUB MANAGER v2.5 - Fix Typo & Robustez Final
+// FAHUB MANAGER v2.6 - Logistics & Elite Management
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
@@ -42,6 +42,7 @@ const HelpCenter = React.lazy(() => import('./pages/HelpCenter'));
 const Roadmap = React.lazy(() => import('./pages/Roadmap'));
 const Onboarding = React.lazy(() => import('./pages/Onboarding'));
 const BroadcastOverlay = React.lazy(() => import('./pages/BroadcastOverlay'));
+const Logistics = React.lazy(() => import('./pages/Logistics'));
 
 const Main: React.FC = () => {
   return (
@@ -93,6 +94,7 @@ const Main: React.FC = () => {
                             <Route path="/event-desk" element={<EventDesk />} />
                             <Route path="/help" element={<HelpCenter />} />
                             <Route path="/roadmap" element={<Roadmap />} />
+                            <Route path="/logistics" element={<Logistics />} />
                             </Routes>
                         </Suspense>
                     </ErrorBoundary>

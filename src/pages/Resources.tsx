@@ -2,11 +2,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { UserRole, TeamDocument } from '../types';
 import { storageService } from '../services/storageService';
-import { TrashIcon } from '../components/icons/UiIcons';
+import { TrashIcon, FileSignatureIcon, CheckCircleIcon, PrinterIcon } from '../components/icons/UiIcons';
 import { FolderIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
+import Card from '../components/Card';
 
-const CATEGORIES = ['ALL', 'PLAYBOOK', 'MEDICAL', 'ADMIN', 'SCOUT'];
+const CATEGORIES = ['ALL', 'CONTRACTS', 'PLAYBOOK', 'MEDICAL', 'ADMIN', 'SCOUT'];
 
 const Resources: React.FC = () => {
     const { currentRole } = useContext(UserContext);
@@ -19,7 +20,7 @@ const Resources: React.FC = () => {
     const [newDocCategory, setNewDocCategory] = useState('PLAYBOOK');
 
     const isPlayer = currentRole === 'PLAYER';
-    const canUpload = !isPlayer; // Only non-players can upload
+    const canUpload = !isPlayer; 
 
     useEffect(() => {
         setDocuments(storageService.getDocuments());
@@ -29,14 +30,13 @@ const Resources: React.FC = () => {
 
     const handleUpload = (e: React.FormEvent) => {
         e.preventDefault();
-        // Simulate upload
         const newDoc: TeamDocument = {
             id: Date.now().toString(),
             title: newDocTitle,
-            type: 'PDF', // Simplified for demo
+            type: 'PDF', 
             category: newDocCategory as any,
             uploadDate: new Date(),
-            size: '2.5 MB', // Mock size
+            size: '2.5 MB',
             url: '#'
         };
         const updated = [...documents, newDoc];
@@ -52,6 +52,24 @@ const Resources: React.FC = () => {
         storageService.saveDocuments(updated);
     };
 
+    const handleGenerateContract = (type: string) => {
+        const name = prompt("Nome do Contratado:");
+        if (!name) return;
+        const newDoc: TeamDocument = {
+            id: `cont-${Date.now()}`,
+            title: `Contrato ${type} - ${name}`,
+            type: 'DOC',
+            category: 'CONTRACTS',
+            uploadDate: new Date(),
+            size: '150 KB',
+            url: '#'
+        };
+        const updated = [...documents, newDoc];
+        setDocuments(updated);
+        storageService.saveDocuments(updated);
+        alert("Contrato gerado e salvo na lista. Aguardando assinatura.");
+    };
+
     const getIconForType = (type: string) => {
         if(type === 'PDF') return <span className="text-red-400 font-bold text-xs">PDF</span>;
         if(type === 'DOC') return <span className="text-blue-400 font-bold text-xs">DOC</span>;
@@ -62,23 +80,44 @@ const Resources: React.FC = () => {
         <div className="space-y-6 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-text-primary">Arquivos do Time</h2>
+                    <h2 className="text-3xl font-bold text-text-primary">Arquivos & Contratos</h2>
                     <p className="text-text-secondary mt-1 flex items-center gap-2">
                         <FolderIcon className="w-4 h-4" />
-                        Playbooks, Fichas Médicas e Regulamentos.
+                        Gestão documental centralizada e segura.
                     </p>
                 </div>
                 {canUpload && (
                     <button 
                         onClick={() => setIsUploading(!isUploading)}
-                        className="px-6 py-2 bg-gradient-to-r from-highlight to-highlight-hover text-white rounded-xl font-semibold hover:shadow-glow transition-all"
+                        className="px-6 py-2 bg-secondary border border-white/10 hover:bg-white/5 text-white rounded-xl font-semibold transition-all"
                     >
-                        {isUploading ? 'Cancelar' : 'Upload de Arquivo'}
+                        {isUploading ? 'Cancelar' : 'Upload Manual'}
                     </button>
                 )}
             </div>
 
-            {/* Upload Area (Coach Only) */}
+            {/* Contract Generator Widget */}
+            {!isPlayer && (
+                <div className="bg-gradient-to-r from-blue-900/30 to-secondary p-6 rounded-2xl border border-blue-500/20">
+                    <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <FileSignatureIcon className="w-5 h-5 text-blue-400" />
+                        Contract Vault (Gerador Automático)
+                    </h3>
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                        <button onClick={() => handleGenerateContract('Atleta')} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg whitespace-nowrap">
+                            + Contrato Atleta
+                        </button>
+                        <button onClick={() => handleGenerateContract('Staff')} className="bg-secondary border border-white/10 hover:bg-white/5 text-white px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap">
+                            + Contrato Staff
+                        </button>
+                        <button onClick={() => handleGenerateContract('Patrocínio')} className="bg-secondary border border-white/10 hover:bg-white/5 text-white px-4 py-2 rounded-lg font-bold text-sm whitespace-nowrap">
+                            + Contrato Patrocínio
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Upload Area */}
             {isUploading && canUpload && (
                 <div className="bg-secondary/50 border border-dashed border-white/20 rounded-xl p-6 animate-slide-in">
                     <h3 className="font-bold text-white mb-4">Novo Arquivo</h3>
@@ -101,6 +140,7 @@ const Resources: React.FC = () => {
                                 onChange={e => setNewDocCategory(e.target.value)}
                             >
                                 <option value="PLAYBOOK">Playbook</option>
+                                <option value="CONTRACTS">Contratos</option>
                                 <option value="MEDICAL">Médico</option>
                                 <option value="SCOUT">Scouting</option>
                                 <option value="ADMIN">Administrativo</option>
@@ -145,7 +185,12 @@ const Resources: React.FC = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h4 className="text-white font-medium truncate" title={doc.title}>{doc.title}</h4>
-                                <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-text-secondary uppercase tracking-wider">{doc.category}</span>
+                                <div className="flex gap-2 mt-1">
+                                    <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-text-secondary uppercase tracking-wider">{doc.category}</span>
+                                    {doc.category === 'CONTRACTS' && (
+                                        <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded font-bold uppercase">Pendente</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         

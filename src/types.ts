@@ -1,3 +1,4 @@
+
 export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER';
 
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
@@ -221,7 +222,6 @@ export interface PracticeScriptItem {
     type: 'WARMUP' | 'INDY' | 'GROUP' | 'TEAM' | 'SPECIAL';
     activityName: string;
     description: string;
-    staffOnly?: boolean;
 }
 
 export interface DrillExecutionAnalysis {
@@ -381,7 +381,7 @@ export interface TeamDocument {
     id: string;
     title: string;
     type: 'PDF' | 'DOC' | 'FILE';
-    category: 'PLAYBOOK' | 'MEDICAL' | 'ADMIN' | 'SCOUT';
+    category: 'PLAYBOOK' | 'MEDICAL' | 'ADMIN' | 'SCOUT' | 'CONTRACTS';
     uploadDate: Date;
     size: string;
     url: string;

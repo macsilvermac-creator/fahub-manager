@@ -223,7 +223,7 @@ export const FilterIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export const SettingsIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...iconProps} {...props} viewBox="0 0 24 24">
     <circle cx="12" cy="12" r="3"></circle>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
   </svg>
 );
 
@@ -435,5 +435,40 @@ export const GamepadIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export const FireIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...iconProps} {...props} viewBox="0 0 24 24">
     <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+  </svg>
+);
+
+export const BusIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24">
+    <path d="M19 17h2l.64-2.54c.24-.959.24-1.962 0-2.92l-1.07-4.27A2 2 0 0 0 18.65 6H5.35A2 2 0 0 0 3.43 7.27l-1.07 4.27a8 8 0 0 0 0 2.92L3 17h2"></path>
+    <path d="M6 10h12"></path>
+    <path d="M8 21v-2"></path>
+    <path d="M16 21v-2"></path>
+    <path d="M12 2v2"></path>
+    <rect x="2" y="17" width="20" height="2" rx="1"></rect>
+  </svg>
+);
+
+export const BedIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24">
+    <path d="M2 4v16"></path>
+    <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
+    <path d="M2 17h20"></path>
+    <path d="M6 8v9"></path>
+  </svg>
+);
+
+export const MapPinIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+    <circle cx="12" cy="10" r="3"></circle>
+  </svg>
+);
+
+export const FileSignatureIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24">
+    <path d="M20 19.5v.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8.5L20 7.5V11"></path>
+    <path d="M8 18h1"></path>
+    <path d="M18.42 9.61a2.1 2.1 0 1 1 2.97 2.97L16.85 17.14a2 2 0 0 1-1.03.54l-3 .55.55-3a2 2 0 0 1 .54-1.02z"></path>
   </svg>
 );
