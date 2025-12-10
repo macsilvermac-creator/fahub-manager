@@ -1,12 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { Game, CoachGameNote } from '../types';
 import { storageService } from '../services/storageService';
-import { ClipboardIcon, ClockIcon, AlertTriangleIcon, PlayCircleIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
+import { voiceService } from '../services/voiceService';
+import { ClipboardIcon, ClockIcon, AlertTriangleIcon, PlayCircleIcon, ShieldCheckIcon, MicIcon, StopIcon } from '../components/icons/UiIcons';
 import { FlagIcon, TrophyIcon } from '../components/icons/NavIcons';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import { useToast } from '../contexts/ToastContext';
 
 const CoachGameDay: React.FC = () => {
+    const toast = useToast();
     const [activeGame, setActiveGame] = useState<Game | null>(null);
     const [notes, setNotes] = useState<CoachGameNote[]>([]);
     const [activeTab, setActiveTab] = useState<'GENERAL' | 'HC' | 'OC' | 'DC' | 'ST'>('GENERAL');
@@ -14,6 +18,9 @@ const CoachGameDay: React.FC = () => {
     // Tactical Flow State
     const [currentDown, setCurrentDown] = useState<1 | 2 | 3 | 4>(1);
     const [selectedPlayCall, setSelectedPlayCall] = useState('');
+    
+    // Voice State
+    const [isListening, setIsListening] = useState(false);
 
     useEffect(() => {
         const games = storageService.getGames();
@@ -28,6 +35,11 @@ const CoachGameDay: React.FC = () => {
         let content = `[${currentDown}ª Descida]`;
         if (selectedPlayCall) content += ` Chamada: ${selectedPlayCall} ->`;
         content += ` ${action}`;
+
+        // Add visual cues for Momentum Bar based on keywords
+        if (['TOUCHDOWN', 'FIELD GOAL', 'PUNT', 'TURNOVER'].includes(action)) {
+            content = `[${action}] ${content}`;
+        }
 
         const note: CoachGameNote = {
             id: Date.now().toString(),
@@ -46,8 +58,52 @@ const CoachGameDay: React.FC = () => {
         // Reset state for next play flow
         if (type === 'OFFENSE' || type === 'DEFENSE') {
             setSelectedPlayCall('');
-            // Auto-advance logic could go here, but manual is safer for now
+            // Logic to auto-advance down could go here
+            if (action !== '1st DOWN' && action !== 'TOUCHDOWN' && currentDown < 4) {
+                setCurrentDown((currentDown + 1) as any);
+            } else {
+                setCurrentDown(1);
+            }
         }
+        toast.success(`Log: ${action}`);
+    };
+
+    const handleVoiceNote = () => {
+        if (!voiceService.isSupported()) {
+            toast.error("Navegador não suporta voz.");
+            return;
+        }
+
+        if (isListening) {
+            setIsListening(false); // Stop logic handled by service usually, but here we update UI
+            return;
+        }
+
+        setIsListening(true);
+        toast.info("Ouvindo... (Fale sua nota)");
+        
+        voiceService.listenToCommand(
+            (text) => {
+                setIsListening(false);
+                const note: CoachGameNote = {
+                    id: Date.now().toString(),
+                    gameId: activeGame?.id || 0,
+                    quarter: activeGame?.currentQuarter || 1,
+                    content: `🎤 Voz: ${text}`,
+                    timestamp: new Date(),
+                    category: 'GENERAL',
+                    tags: ['VOICE']
+                };
+                const updated = [note, ...notes];
+                setNotes(updated);
+                storageService.saveCoachGameNotes(updated);
+                toast.success("Nota de voz salva!");
+            },
+            (error) => {
+                setIsListening(false);
+                toast.error("Erro ao ouvir: " + error);
+            }
+        );
     };
 
     // MOCK INTELLIGENCE: Suggestions based on Down & Role
@@ -68,6 +124,14 @@ const CoachGameDay: React.FC = () => {
             return ['Punt Return', 'Kickoff Return', 'Field Goal Block'];
         }
         return [];
+    };
+
+    const getMomentumColor = (noteContent: string) => {
+        if (noteContent.includes('TOUCHDOWN')) return 'bg-green-500';
+        if (noteContent.includes('FIELD GOAL')) return 'bg-yellow-500';
+        if (noteContent.includes('TURNOVER')) return 'bg-red-500';
+        if (noteContent.includes('PUNT')) return 'bg-gray-500';
+        return 'bg-blue-500/20'; // Normal play
     };
 
     if (!activeGame) return <div className="text-center py-20 text-text-secondary">Nenhum jogo ativo no momento.</div>;
@@ -113,19 +177,38 @@ const CoachGameDay: React.FC = () => {
         </div>
     );
 
+    // Extract major events for momentum bar
+    const majorEvents = notes.filter(n => n.content.includes('[TOUCHDOWN]') || n.content.includes('[FIELD GOAL]') || n.content.includes('[PUNT]') || n.content.includes('[TURNOVER]')).slice(0, 10);
+
     return (
         <div className="space-y-4 pb-24 animate-fade-in relative h-full flex flex-col">
             {/* Header (Immersive) */}
-            <div className="bg-black/80 backdrop-blur-md border-b border-white/10 p-4 sticky top-0 z-20 flex justify-between items-center shadow-lg">
-                <div>
-                    <h1 className="text-xl font-black text-white italic tracking-tighter uppercase">{activeGame.opponent}</h1>
-                    <div className="flex gap-3 text-xs font-mono text-text-secondary">
-                        <span className="text-yellow-400">Q{activeGame.currentQuarter}</span>
-                        <span>{activeGame.clock || '12:00'}</span>
+            <div className="bg-black/80 backdrop-blur-md border-b border-white/10 p-4 sticky top-0 z-20 shadow-lg">
+                <div className="flex justify-between items-center mb-2">
+                    <div>
+                        <h1 className="text-xl font-black text-white italic tracking-tighter uppercase">{activeGame.opponent}</h1>
+                        <div className="flex gap-3 text-xs font-mono text-text-secondary">
+                            <span className="text-yellow-400">Q{activeGame.currentQuarter}</span>
+                            <span>{activeGame.clock || '12:00'}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={handleVoiceNote}
+                            className={`p-3 rounded-full transition-all ${isListening ? 'bg-red-600 animate-pulse text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                        >
+                            {isListening ? <StopIcon className="w-5 h-5" /> : <MicIcon className="w-5 h-5" />}
+                        </button>
+                        <span className="block text-3xl font-mono font-bold text-white leading-none">{activeGame.score || '0-0'}</span>
                     </div>
                 </div>
-                <div className="text-right">
-                    <span className="block text-3xl font-mono font-bold text-white leading-none">{activeGame.score || '0-0'}</span>
+
+                {/* LIVE MOMENTUM BAR */}
+                <div className="w-full h-2 bg-white/10 rounded-full flex overflow-hidden">
+                    {majorEvents.map((event, idx) => (
+                        <div key={idx} className={`h-full flex-1 ${getMomentumColor(event.content)} border-r border-black/50`} title={event.content}></div>
+                    ))}
+                    {majorEvents.length === 0 && <div className="w-full h-full bg-blue-500/10"></div>}
                 </div>
             </div>
 
@@ -165,6 +248,12 @@ const CoachGameDay: React.FC = () => {
                             <button onClick={() => handleQuickAction('PASSE COMPLETO', 'OFFENSE')} className="bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-black text-lg shadow-lg active:scale-95 transition-transform">PASSE OK</button>
                             <button onClick={() => handleQuickAction('PASSE INCOMPLETO', 'OFFENSE')} className="bg-gray-700 hover:bg-gray-600 text-white py-4 rounded-xl font-bold active:scale-95 transition-transform">Incompleto</button>
                             <button onClick={() => handleQuickAction('SACK / PERDA', 'OFFENSE')} className="bg-red-600 hover:bg-red-500 text-white py-4 rounded-xl font-bold active:scale-95 transition-transform">SACK</button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 mt-2">
+                            <button onClick={() => handleQuickAction('1st DOWN', 'OFFENSE')} className="bg-white/10 hover:bg-white/20 text-white py-2 rounded font-bold text-xs uppercase border border-white/10">1st DOWN</button>
+                            <button onClick={() => handleQuickAction('TOUCHDOWN', 'OFFENSE')} className="bg-green-500/20 hover:bg-green-500/40 text-green-400 py-2 rounded font-bold text-xs uppercase border border-green-500/30">TOUCHDOWN</button>
+                            <button onClick={() => handleQuickAction('TURNOVER', 'OFFENSE')} className="bg-red-500/20 hover:bg-red-500/40 text-red-400 py-2 rounded font-bold text-xs uppercase border border-red-500/30">TURNOVER</button>
                         </div>
                         
                         <div className="mt-4 p-3 bg-blue-900/20 rounded-xl border border-blue-500/20">
@@ -206,7 +295,7 @@ const CoachGameDay: React.FC = () => {
                 {activeTab === 'ST' && (
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 gap-3">
-                            <button onClick={() => handleQuickAction('PUNT BOM', 'SPECIAL')} className="bg-secondary border border-white/10 hover:bg-white/10 text-white py-3 rounded-xl font-bold">PUNT (Chute)</button>
+                            <button onClick={() => handleQuickAction('PUNT', 'SPECIAL')} className="bg-secondary border border-white/10 hover:bg-white/10 text-white py-3 rounded-xl font-bold">PUNT (Chute)</button>
                             <button onClick={() => handleQuickAction('FIELD GOAL', 'SPECIAL')} className="bg-secondary border border-white/10 hover:bg-white/10 text-white py-3 rounded-xl font-bold">FIELD GOAL</button>
                             <button onClick={() => handleQuickAction('KICKOFF RETURN', 'SPECIAL')} className="bg-secondary border border-white/10 hover:bg-white/10 text-white py-3 rounded-xl font-bold">RETORNO</button>
                         </div>
