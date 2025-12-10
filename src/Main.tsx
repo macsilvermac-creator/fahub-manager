@@ -8,7 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import GlobalSearch from './components/GlobalSearch';
 import { ToastProvider } from './contexts/ToastContext';
 
-// FAHUB MANAGER v2.6 - Logistics & Elite Management
+// FAHUB MANAGER v2.7 - Public Engagement
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
@@ -28,6 +28,7 @@ const Officiating = React.lazy(() => import('./pages/Officiating'));
 const LeagueManager = React.lazy(() => import('./pages/LeagueManager'));
 const Confederation = React.lazy(() => import('./pages/Confederation'));
 const PublicLeague = React.lazy(() => import('./pages/PublicLeague'));
+const PublicTeam = React.lazy(() => import('./pages/PublicTeam')); // NEW
 const GeminiPlaybook = React.lazy(() => import('./pages/GeminiPlaybook'));
 const TacticalLab = React.lazy(() => import('./pages/TacticalLab'));
 const VideoAnalysis = React.lazy(() => import('./pages/VideoAnalysis'));
@@ -57,6 +58,7 @@ const Main: React.FC = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/public/league" element={<PublicLeague />} />
+                <Route path="/public/team" element={<PublicTeam />} /> {/* NEW ROUTE */}
                 <Route path="/broadcast/:gameId" element={<BroadcastOverlay />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 
