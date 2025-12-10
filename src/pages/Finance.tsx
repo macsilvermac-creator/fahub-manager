@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import Card from '../components/Card';
-import { Invoice, Player, EventSale, Transaction, EquipmentItem, TransactionCategory } from '../types';
+import { Invoice, Player, EventSale, Transaction, EquipmentItem, TransactionCategory, UserRole } from '../types';
 import { storageService, LEGAL_DOCUMENTS } from '../services/storageService';
 import { FinanceIcon } from '../components/icons/NavIcons';
 import { WalletIcon, AlertCircleIcon, SparklesIcon, AlertTriangleIcon, ScanIcon } from '../components/icons/UiIcons';
@@ -13,6 +13,7 @@ import { useToast } from '../contexts/ToastContext';
 import { scanFinancialDocument } from '../services/geminiService';
 
 const Finance: React.FC = () => {
+    // TIPAGEM CORRETA DO CONTEXTO
     const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -35,7 +36,7 @@ const Finance: React.FC = () => {
     const [txTitle, setTxTitle] = useState('');
     const [txDesc, setTxDesc] = useState('');
     const [txAmount, setTxAmount] = useState('');
-    const [txCategory, setTxCategory] = useState<any>('OTHER');
+    const [txCategory, setTxCategory] = useState<TransactionCategory>('OTHER');
     const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
     const [isScanning, setIsScanning] = useState(false);
 
@@ -103,6 +104,7 @@ const Finance: React.FC = () => {
                         setTxTitle(data.title);
                         setTxAmount(String(data.amount));
                         setTxDate(data.date);
+                        // @ts-ignore
                         setTxCategory(data.category);
                         setTxDesc(data.description);
                         toast.success("Dados extraídos com sucesso!");
@@ -338,7 +340,7 @@ const Finance: React.FC = () => {
                     <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Valor" value={txAmount} onChange={e => setTxAmount(e.target.value)} required />
                     <input type="date" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={txDate} onChange={e => setTxDate(e.target.value)} required />
                     
-                    <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={txCategory} onChange={e => setTxCategory(e.target.value)}>
+                    <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={txCategory} onChange={e => setTxCategory(e.target.value as any)}>
                         <option value="OTHER">Outros</option>
                         <option value="TRANSPORT">Transporte</option>
                         <option value="EQUIPMENT">Equipamento</option>

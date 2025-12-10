@@ -13,6 +13,7 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+// EXPORTANDO A INTERFACE PARA USO EXTERNO
 export interface UserContextType {
   currentRole: UserRole;
 }
