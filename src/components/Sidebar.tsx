@@ -10,7 +10,7 @@ import {
 } from './icons/NavIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
-import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon } from './icons/UiIcons';
+import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, UserPlusIcon } from './icons/UiIcons';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -87,7 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
           )}
 
           {/* VISÃO GESTÃO (Master e Financeiro) */}
-          {(currentRole === 'MASTER' || currentRole === 'FINANCIAL_MANAGER') && (
+          {(currentRole === 'MASTER' || currentRole === 'FINANCIAL_MANAGER' || currentRole === 'MARKETING_MANAGER') && (
             <>
               <p className="px-3 text-[10px] font-bold text-text-secondary/50 uppercase mt-4 mb-1">Administrativo</p>
               <NavLink to="/finance" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
@@ -101,6 +101,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
               <NavLink to="/staff" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <UsersIcon />
                 <span className="ml-3">Staff & RH</span>
+              </NavLink>
+              <NavLink to="/recruitment" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <UserPlusIcon className="w-5 h-5" />
+                <span className="ml-3">Recrutamento</span>
               </NavLink>
               <NavLink to="/commercial" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <BriefcaseIcon />

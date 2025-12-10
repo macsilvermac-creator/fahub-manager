@@ -43,6 +43,7 @@ const Roadmap = React.lazy(() => import('./pages/Roadmap'));
 const Onboarding = React.lazy(() => import('./pages/Onboarding'));
 const BroadcastOverlay = React.lazy(() => import('./pages/BroadcastOverlay'));
 const Logistics = React.lazy(() => import('./pages/Logistics'));
+const Recruitment = React.lazy(() => import('./pages/Recruitment'));
 
 const Main: React.FC = () => {
   return (
@@ -95,6 +96,7 @@ const Main: React.FC = () => {
                             <Route path="/help" element={<HelpCenter />} />
                             <Route path="/roadmap" element={<Roadmap />} />
                             <Route path="/logistics" element={<Logistics />} />
+                            <Route path="/recruitment" element={<Recruitment />} />
                             </Routes>
                         </Suspense>
                     </ErrorBoundary>

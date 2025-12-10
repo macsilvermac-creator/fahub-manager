@@ -4,6 +4,25 @@ export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
 export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH';
 
+// ... (existing types)
+
+export interface RecruitmentCandidate {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    position: string;
+    age: number;
+    height: string;
+    weight: number;
+    experience: string;
+    status: 'NEW' | 'TRYOUT' | 'SELECTED' | 'ONBOARDING' | 'CONVERTED' | 'REJECTED';
+    tryoutDate?: Date;
+    rating?: number; // 1-5 stars
+    notes?: string;
+    createdAt: Date;
+}
+
 export interface CombineStats {
     fortyYards?: number;
     benchPress?: number;
