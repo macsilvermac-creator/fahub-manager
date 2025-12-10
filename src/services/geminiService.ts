@@ -1,5 +1,6 @@
+
 import { GoogleGenAI } from "@google/genai";
-import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem } from "../types";
+import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip } from "../types";
 
 // @ts-ignore
 const ENV_KEY = process.env.API_KEY;
@@ -151,6 +152,41 @@ export const suggestPlayConcepts = async (situation: string): Promise<{ name: st
     
     const result = await generateJson(prompt);
     return Array.isArray(result) ? result : [];
+};
+
+// --- AGENTE 4: PREDICTIVE PLAY CALLER (Vision Core) ---
+export const predictPlayCall = async (historyClips: VideoClip[], currentDown: number, currentDistance: number): Promise<{ prediction: string, confidence: string, reason: string }> => {
+    // 1. Summarize History Data for the Token Window
+    const simplifiedHistory = historyClips.map(c => ({
+        down: c.tags.down,
+        dist: c.tags.distance,
+        off: c.tags.offensiveFormation,
+        play: c.tags.offensivePlayCall,
+        result: c.tags.result
+    })).slice(0, 30); // Limit to last 30 clips to fit context
+
+    const prompt = `
+    Atue como um Coordenador Defensivo analisando dados do adversário.
+    
+    Histórico de Jogadas Recentes (JSON):
+    ${JSON.stringify(simplifiedHistory)}
+    
+    Situação Atual no Campo:
+    ${currentDown}ª Descida para ${currentDistance} jardas.
+    
+    Tarefa:
+    Com base no padrão histórico acima, preveja qual será a próxima jogada ofensiva.
+    
+    Retorne JSON:
+    {
+        "prediction": "Ex: Corrida Inside Zone ou Passe Curto",
+        "confidence": "Ex: Alta (80%)",
+        "reason": "Ex: Eles correm 90% das vezes em descidas curtas com esta formação."
+    }
+    `;
+
+    const result = await generateJson(prompt);
+    return result || { prediction: "Dados insuficientes", confidence: "Baixa", reason: "Poucos clips tagueados." };
 };
 
 // --- LEGACY FUNCTIONS (Mantidas para compatibilidade) ---
