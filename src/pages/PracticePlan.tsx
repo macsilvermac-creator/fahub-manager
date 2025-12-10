@@ -3,12 +3,23 @@ import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Player, PracticeSession, PracticeCategory, PracticeScriptItem } from '../types';
 import { storageService } from '../services/storageService';
-import { generatePracticeScript } from '../services/geminiService'; // Nova função importada
-import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon } from '../components/icons/UiIcons';
+import { generatePracticeScript } from '../services/geminiService';
+import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
 import Button from '../components/Button'; 
 import Input from '../components/Input';
 import { useToast } from '../contexts/ToastContext';
+
+// PRESETS PARA CONSTRUÇÃO RÁPIDA
+const QUICK_BLOCKS = [
+    { type: 'WARMUP', name: 'Alongamento / Warmup', duration: 15, desc: 'Ativação muscular e mobilidade.', color: 'border-yellow-500 text-yellow-500' },
+    { type: 'INDY', name: 'Individual (Indy)', duration: 20, desc: 'Drills específicos por posição.', color: 'border-blue-500 text-blue-500' },
+    { type: 'GROUP', name: 'Skelly / 7on7', duration: 20, desc: 'Passe vs Cobertura (sem linha).', color: 'border-green-500 text-green-500' },
+    { type: 'GROUP', name: 'Inside Run / 9on7', duration: 15, desc: 'Jogo corrido e bloqueios.', color: 'border-orange-500 text-orange-500' },
+    { type: 'TEAM', name: 'Team (11on11)', duration: 30, desc: 'Situações de jogo completas.', color: 'border-red-500 text-red-500' },
+    { type: 'SPECIAL', name: 'Special Teams', duration: 15, desc: 'Punt/Kickoff focus.', color: 'border-purple-500 text-purple-500' },
+    { type: 'WARMUP', name: 'Conditioning', duration: 10, desc: 'Sprints finais.', color: 'border-gray-400 text-gray-400' },
+];
 
 const PracticePlan: React.FC = () => {
     const { currentRole } = useContext(UserContext);
@@ -67,15 +78,57 @@ const PracticePlan: React.FC = () => {
             attendees: [],
             notes: '',
             drills: [],
-            script: generatedScript.length > 0 ? generatedScript : [], // Use generated script if available
+            script: generatedScript.length > 0 ? generatedScript : [], 
             performances: []
         };
         const updated = [practice, ...practices];
         setPractices(updated);
         storageService.savePracticeSessions(updated);
         setIsCreating(false);
-        setGeneratedScript([]); // Reset script
+        setGeneratedScript([]); 
         toast.success("Treino agendado com sucesso!");
+    };
+
+    // --- MANUAL BUILDER LOGIC ---
+    const addTime = (timeStr: string, minutes: number): string => {
+        const [h, m] = timeStr.split(':').map(Number);
+        const date = new Date();
+        date.setHours(h, m + minutes);
+        return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const handleAddQuickBlock = (block: any) => {
+        let startTime = '19:00'; // Horário padrão inicial
+        
+        // Se já tiver item, pega o horário final do último
+        if (generatedScript.length > 0) {
+            const lastItem = generatedScript[generatedScript.length - 1];
+            startTime = addTime(lastItem.startTime, lastItem.durationMinutes);
+        }
+
+        const newItem: PracticeScriptItem = {
+            id: `blk-${Date.now()}-${Math.random()}`,
+            startTime: startTime,
+            durationMinutes: block.duration,
+            type: block.type,
+            activityName: block.name,
+            description: block.desc
+        };
+
+        setGeneratedScript([...generatedScript, newItem]);
+        toast.info(`Bloco "${block.name}" adicionado.`);
+    };
+
+    const handleRemoveBlock = (id: string) => {
+        const updated = generatedScript.filter(i => i.id !== id);
+        // Recalcular horários
+        let currentTime = '19:00';
+        const recalculated = updated.map(item => {
+            const newItem = { ...item, startTime: currentTime };
+            currentTime = addTime(currentTime, item.durationMinutes);
+            return newItem;
+        });
+        setGeneratedScript(recalculated);
     };
 
     // --- AI WIZARD INTEGRATION ---
@@ -121,7 +174,7 @@ const PracticePlan: React.FC = () => {
              <div className="flex flex-col md:flex-row justify-between items-center gap-4 no-print">
                 <div>
                     <h2 className="text-3xl font-bold text-text-primary">Gestão de Treinos</h2>
-                    <p className="text-text-secondary">Planeje scripts minuto-a-minuto com auxílio da IA.</p>
+                    <p className="text-text-secondary">Planeje scripts minuto-a-minuto com IA ou Manualmente.</p>
                 </div>
                 {canEdit && (
                     <Button onClick={() => setIsCreating(!isCreating)} variant="primary">
@@ -131,73 +184,132 @@ const PracticePlan: React.FC = () => {
             </div>
 
             {isCreating && canEdit && (
-                <Card className="animate-slide-in no-print border border-highlight/20">
-                     <form onSubmit={handleCreatePractice} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input label="Título" value={newTitle} onChange={e => setNewTitle(e.target.value)} required placeholder="Ex: Preparação Playoffs" />
-                            <Input label="Data" type="datetime-local" value={newDate} onChange={e => setNewDate(e.target.value)} required />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="text-xs font-bold text-text-secondary uppercase block mb-1.5 ml-1">Categoria</label>
-                                <select className="w-full bg-secondary/50 border border-white/10 rounded-lg p-3 text-white focus:border-highlight focus:outline-none" value={newCategory} onChange={e => setNewCategory(e.target.value as any)}>
-                                    <option value="TACTICAL">Tático</option>
-                                    <option value="PHYSICAL">Físico</option>
-                                    <option value="MENTAL">Mental</option>
-                                </select>
-                            </div>
-                            <div className="md:col-span-2">
-                                <Input label="Foco Principal (Prompt da IA)" value={newFocus} onChange={e => setNewFocus(e.target.value)} required placeholder="Ex: Instalação de Blitz, Cover 3..." />
-                            </div>
-                        </div>
-                        
-                        <div className="bg-black/20 p-4 rounded-xl border border-white/10">
-                            <div className="flex justify-between items-center mb-3">
-                                <h4 className="font-bold text-white flex items-center gap-2">
-                                    <ClockIcon className="w-4 h-4 text-highlight"/> Roteiro (Script)
-                                </h4>
-                                <div className="flex items-center gap-2">
-                                    <label className="text-xs text-text-secondary">Duração:</label>
-                                    <input type="number" className="w-16 bg-black/40 border border-white/10 rounded p-1 text-center text-white text-xs" value={newDuration} onChange={e => setNewDuration(Number(e.target.value))} />
-                                    <span className="text-xs text-text-secondary">min</span>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left Column: Config & Manual Builder */}
+                    <div className="lg:col-span-2 space-y-6">
+                        <Card className="animate-slide-in no-print border border-highlight/20">
+                             <form onSubmit={handleCreatePractice} className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input label="Título" value={newTitle} onChange={e => setNewTitle(e.target.value)} required placeholder="Ex: Preparação Playoffs" />
+                                    <Input label="Data" type="datetime-local" value={newDate} onChange={e => setNewDate(e.target.value)} required />
                                 </div>
-                            </div>
-
-                            {generatedScript.length > 0 ? (
-                                <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                                    {generatedScript.map((item, idx) => (
-                                        <div key={idx} className="flex gap-3 bg-secondary/50 p-2 rounded text-xs border border-white/5">
-                                            <span className="font-mono text-highlight font-bold w-12">{item.startTime}</span>
-                                            <span className="bg-white/10 px-2 rounded font-bold text-white w-20 text-center flex items-center justify-center">{item.type}</span>
-                                            <div className="flex-1">
-                                                <p className="font-bold text-white">{item.activityName}</p>
-                                                <p className="text-text-secondary truncate">{item.description}</p>
-                                            </div>
-                                            <span className="font-bold text-white">{item.durationMinutes}m</span>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-text-secondary uppercase block mb-1.5 ml-1">Categoria</label>
+                                        <select className="w-full bg-secondary/50 border border-white/10 rounded-lg p-3 text-white focus:border-highlight focus:outline-none" value={newCategory} onChange={e => setNewCategory(e.target.value as any)}>
+                                            <option value="TACTICAL">Tático</option>
+                                            <option value="PHYSICAL">Físico</option>
+                                            <option value="MENTAL">Mental</option>
+                                        </select>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <Input label="Foco Principal" value={newFocus} onChange={e => setNewFocus(e.target.value)} required placeholder="Ex: Instalação de Blitz, Cover 3..." />
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-black/20 p-4 rounded-xl border border-white/10">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h4 className="font-bold text-white flex items-center gap-2">
+                                            <ClockIcon className="w-4 h-4 text-highlight"/> Roteiro (Script)
+                                        </h4>
+                                        <div className="flex items-center gap-2">
+                                            <label className="text-xs text-text-secondary">Duração:</label>
+                                            <input type="number" className="w-16 bg-black/40 border border-white/10 rounded p-1 text-center text-white text-xs" value={newDuration} onChange={e => setNewDuration(Number(e.target.value))} />
+                                            <span className="text-xs text-text-secondary">min</span>
                                         </div>
-                                    ))}
-                                    <button type="button" onClick={() => setGeneratedScript([])} className="text-xs text-red-400 hover:text-white underline w-full text-center mt-2">Limpar Roteiro</button>
+                                    </div>
+
+                                    {generatedScript.length > 0 ? (
+                                        <div className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                            {generatedScript.map((item, idx) => (
+                                                <div key={idx} className="flex gap-3 bg-secondary/50 p-2 rounded text-xs border border-white/5 items-center group">
+                                                    <span className="font-mono text-highlight font-bold w-12">{item.startTime}</span>
+                                                    <span className="bg-white/10 px-2 rounded font-bold text-white w-20 text-center flex items-center justify-center">{item.type}</span>
+                                                    <div className="flex-1">
+                                                        <input 
+                                                            className="bg-transparent font-bold text-white w-full focus:outline-none"
+                                                            value={item.activityName}
+                                                            onChange={(e) => {
+                                                                const updated = [...generatedScript];
+                                                                updated[idx].activityName = e.target.value;
+                                                                setGeneratedScript(updated);
+                                                            }}
+                                                        />
+                                                        <input 
+                                                            className="bg-transparent text-text-secondary w-full text-[10px] focus:outline-none"
+                                                            value={item.description}
+                                                            onChange={(e) => {
+                                                                const updated = [...generatedScript];
+                                                                updated[idx].description = e.target.value;
+                                                                setGeneratedScript(updated);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <span className="font-bold text-white">{item.durationMinutes}m</span>
+                                                    <button type="button" onClick={() => handleRemoveBlock(item.id)} className="text-text-secondary hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <TrashIcon className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <button type="button" onClick={() => setGeneratedScript([])} className="text-xs text-red-400 hover:text-white underline w-full text-center mt-2">Limpar Roteiro</button>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8 border-2 border-dashed border-white/10 rounded-lg">
+                                            <p className="text-text-secondary text-sm">Adicione blocos manualmente ao lado ou use a IA.</p>
+                                        </div>
+                                    )}
                                 </div>
-                            ) : (
-                                <div className="text-center py-8 border-2 border-dashed border-white/10 rounded-lg">
+
+                                <div className="flex justify-end pt-2">
+                                     <Button type="submit">Confirmar Agendamento</Button>
+                                </div>
+                            </form>
+                        </Card>
+                    </div>
+
+                    {/* Right Column: Tools */}
+                    <div className="lg:col-span-1 space-y-4">
+                        {/* Manual Builder Tools */}
+                        <div className="bg-secondary p-4 rounded-xl border border-white/5">
+                            <h4 className="font-bold text-white mb-4 flex items-center gap-2">
+                                <PenIcon className="w-4 h-4 text-blue-400" /> Construtor Rápido
+                            </h4>
+                            <div className="grid grid-cols-1 gap-2">
+                                {QUICK_BLOCKS.map((block, idx) => (
                                     <button 
-                                        type="button" 
-                                        onClick={handleAiGenerateScript}
-                                        disabled={isGeneratingScript || !newFocus}
-                                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 mx-auto transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        key={idx}
+                                        onClick={() => handleAddQuickBlock(block)}
+                                        className={`p-3 rounded-lg border bg-black/20 hover:bg-white/5 transition-all text-left flex items-center justify-between group ${block.color.replace('text-', 'border-').replace('500', '500/30')}`}
                                     >
-                                        {isGeneratingScript ? <><span className="animate-spin">⚙️</span> Criando Roteiro...</> : <><SparklesIcon className="w-5 h-5"/> Gerar Roteiro Automático (IA)</>}
+                                        <div>
+                                            <p className={`font-bold text-xs ${block.color.split(' ')[1]}`}>{block.name}</p>
+                                            <p className="text-[10px] text-text-secondary">{block.duration} min</p>
+                                        </div>
+                                        <span className="text-white opacity-0 group-hover:opacity-100">+</span>
                                     </button>
-                                    <p className="text-[10px] text-text-secondary mt-2">A IA distribuirá o tempo entre Warmup, Indy e Team baseado no foco.</p>
-                                </div>
-                            )}
+                                ))}
+                            </div>
                         </div>
 
-                        <div className="flex justify-end pt-2">
-                             <Button type="submit">Confirmar Agendamento</Button>
+                        {/* AI Generator */}
+                        <div className="bg-gradient-to-br from-purple-900/30 to-secondary p-4 rounded-xl border border-purple-500/30">
+                            <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+                                <SparklesIcon className="w-4 h-4 text-purple-400" /> IA Assistant
+                            </h4>
+                            <p className="text-xs text-text-secondary mb-4">
+                                Deixe a IA distribuir o tempo de forma inteligente baseado no foco.
+                            </p>
+                            <button 
+                                type="button" 
+                                onClick={handleAiGenerateScript}
+                                disabled={isGeneratingScript || !newFocus}
+                                className="w-full bg-purple-600 hover:bg-purple-500 text-white py-2 rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-50"
+                            >
+                                {isGeneratingScript ? <><span className="animate-spin">⚙️</span> Gerando...</> : 'Gerar Roteiro Mágico'}
+                            </button>
                         </div>
-                    </form>
-                </Card>
+                    </div>
+                </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

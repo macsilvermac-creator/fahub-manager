@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { Game, PlayElement, TacticalPlay, TacticalFrame, InstallMatrixItem } from '../types';
 import { storageService } from '../services/storageService';
 import { analyzePlayMatchup, generateInstallSchedule, importPlaybookFromImage } from '../services/geminiService';
-import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon, EyeIcon, ScanIcon } from '../components/icons/UiIcons';
+import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon, EyeIcon, ScanIcon, ImageIcon, EraserIcon } from '../components/icons/UiIcons';
 import { WhistleIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext';
@@ -20,6 +20,7 @@ const TacticalLab: React.FC = () => {
     const toast = useToast();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const traceInputRef = useRef<HTMLInputElement>(null); // Ref para upload de decalque
     const [activeTab, setActiveTab] = useState<'PLAYBOOK' | 'INSTALL'>('PLAYBOOK');
     
     // Playbook State
@@ -39,6 +40,10 @@ const TacticalLab: React.FC = () => {
     
     // Import State
     const [isImporting, setIsImporting] = useState(false);
+
+    // Tracing State
+    const [traceImage, setTraceImage] = useState<HTMLImageElement | null>(null);
+    const [traceOpacity, setTraceOpacity] = useState(0.5);
 
     // Install Matrix State
     const [installItems, setInstallItems] = useState<InstallMatrixItem[]>([]);
@@ -124,25 +129,35 @@ const TacticalLab: React.FC = () => {
         }
     }, [currentFrameIndex, frames]);
 
+    // Canvas Rendering
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        // 1. Background (Green)
         ctx.fillStyle = '#15803d'; 
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // 2. Trace Image (If Active)
+        if (traceImage) {
+            ctx.globalAlpha = traceOpacity;
+            ctx.drawImage(traceImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            ctx.globalAlpha = 1.0; // Reset alpha
+        }
+
+        // 3. Field Lines
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.lineWidth = 2;
-        
         const fieldWidth = CANVAS_WIDTH;
-        
         for (let i = 50; i < CANVAS_HEIGHT; i += 50) {
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(fieldWidth, i); ctx.stroke();
         }
-        ctx.strokeStyle = '#3b82f6'; 
+        ctx.strokeStyle = '#3b82f6'; // LOS
         ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(fieldWidth, 200); ctx.stroke();
 
+        // 4. Players
         elements.forEach(el => {
             ctx.beginPath();
             ctx.arc(el.x, el.y, 10, 0, 2 * Math.PI);
@@ -156,7 +171,7 @@ const TacticalLab: React.FC = () => {
             ctx.fillText(el.label, el.x, el.y - 12);
         });
 
-    }, [elements, sportMode, activeTab]);
+    }, [elements, sportMode, activeTab, traceImage, traceOpacity]);
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (isPlaying || currentFrameIndex !== -1 || isPlayer) return; 
@@ -192,6 +207,7 @@ const TacticalLab: React.FC = () => {
         setCurrentFrameIndex(-1);
         setIsPlaying(false);
         resetTokens(sportMode); 
+        setTraceImage(null); // Limpa imagem de decalque também
     };
 
     const handleSimulate = async () => {
@@ -263,6 +279,27 @@ const TacticalLab: React.FC = () => {
                 toast.error("Erro ao importar.");
                 setIsImporting(false);
             }
+        }
+    };
+
+    // --- TRACING MODE (MANUAL DECALQUE) ---
+    const handleTraceClick = () => {
+        traceInputRef.current?.click();
+    };
+
+    const handleTraceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    setTraceImage(img);
+                    toast.success("Modo Decalque Ativo! Desenhe sobre a imagem.");
+                };
+            };
         }
     };
 
@@ -449,7 +486,14 @@ const TacticalLab: React.FC = () => {
                                     <div className="flex gap-2">
                                         {!isPlayer && (
                                             <>
+                                                {/* Hidden Inputs */}
                                                 <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+                                                <input type="file" accept="image/*" className="hidden" ref={traceInputRef} onChange={handleTraceFileChange} />
+                                                
+                                                <button onClick={handleTraceClick} className="bg-yellow-600/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-600 hover:text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-2 transition-colors">
+                                                    <ImageIcon className="w-3 h-3"/> Decalque (Manual)
+                                                </button>
+
                                                 <button onClick={handleImportClick} disabled={isImporting} className="bg-purple-600/20 text-purple-400 border border-purple-500/50 hover:bg-purple-600 hover:text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-2 transition-colors">
                                                     {isImporting ? 'Lendo...' : <><ScanIcon className="w-3 h-3"/> Importar (AI)</>}
                                                 </button>
@@ -464,6 +508,13 @@ const TacticalLab: React.FC = () => {
                                 <div className="flex-1 bg-black/50 rounded-lg overflow-hidden flex items-center justify-center border border-white/20 shadow-inner relative">
                                     <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} className={`${isPlayer ? 'cursor-default' : 'cursor-move'} touch-none`} style={{ maxWidth: '100%', height: 'auto' }} />
                                 </div>
+                                {traceImage && (
+                                    <div className="px-4 py-2 border-t border-white/10 flex items-center gap-4">
+                                        <span className="text-xs text-text-secondary">Opacidade do Decalque:</span>
+                                        <input type="range" min="0.1" max="1" step="0.1" value={traceOpacity} onChange={e => setTraceOpacity(Number(e.target.value))} className="accent-highlight w-32" />
+                                        <button onClick={() => setTraceImage(null)} className="text-xs text-red-400 hover:text-white ml-auto flex items-center gap-1"><EraserIcon className="w-3 h-3"/> Limpar Imagem</button>
+                                    </div>
+                                )}
                             </Card>
                         </div>
                     </div>
