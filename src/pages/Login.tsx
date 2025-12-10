@@ -22,9 +22,8 @@ const Login: React.FC = () => {
     setLoading(true);
     
     try {
-      // Timeout safety for Firebase connection issues
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Tempo limite de conexão excedido. Verifique sua internet.")), 8000)
+        setTimeout(() => reject(new Error("Tempo limite de conexão excedido.")), 8000)
       );
 
       await Promise.race([authService.login(email, password), timeoutPromise]);
@@ -34,7 +33,7 @@ const Login: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       if (err.message.includes('invalid-credential')) {
-        setError("Senha incorreta ou usuário não encontrado.");
+        setError("Senha incorreta.");
       } else {
         setError(err.message);
       }
@@ -58,117 +57,87 @@ const Login: React.FC = () => {
   };
 
   const handleSeedDatabase = async () => {
-      if(!window.confirm("Isso irá enviar todos os dados de exemplo para o seu Firebase. Use isso apenas se for a primeira vez.")) return;
-      setSeedStatus('Iniciando migração...');
+      if(!window.confirm("Isso irá enviar dados de exemplo para o Firebase.")) return;
+      setSeedStatus('Enviando...');
       try {
           await storageService.seedDatabaseToCloud();
-          setSeedStatus('✅ Concluído!');
-          alert('Dados enviados! Agora crie sua conta ou faça login.');
+          setSeedStatus('✅ Feito!');
+          alert('Dados enviados.');
       } catch (e: any) {
-          setSeedStatus('❌ Erro: ' + e.message);
-      }
-  };
-
-  const handleForgotPassword = async () => {
-      if(!email) {
-          setError("Digite seu e-mail primeiro para recuperar a senha.");
-          return;
-      }
-      try {
-          // In real firebase this would call sendPasswordResetEmail
-          alert(`Email de recuperação enviado para ${email} (Simulado)`);
-      } catch(e) {
-          setError("Erro ao enviar email.");
+          setSeedStatus('❌ Erro');
       }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-primary relative overflow-hidden p-4">
-      {/* Animated Background */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-highlight/10 rounded-full blur-[120px] animate-pulse-slow"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-slow" style={{animationDelay: '1s'}}></div>
-      </div>
-
-      <div className="bg-secondary/40 backdrop-blur-xl p-8 rounded-3xl shadow-2xl border border-white/10 w-full max-w-md relative z-10 animate-fade-in">
-        <div className="text-center mb-8">
-            <div className="flex justify-center mb-6">
-                <div className="w-20 h-20 bg-highlight rounded-2xl transform -skew-x-6 flex items-center justify-center shadow-glow relative group transition-transform hover:scale-105 duration-300">
-                    <div className="absolute inset-0 bg-white/20 rounded-2xl animate-pulse"></div>
-                    <span className="text-white font-black text-4xl transform skew-x-6 tracking-tighter relative z-10">FH</span>
+    <div className="min-h-screen flex items-center justify-center bg-primary p-4 overflow-hidden">
+      {/* Container Compacto: max-w-sm e padding reduzido */}
+      <div className="bg-secondary p-6 rounded-2xl border border-white/10 w-full max-w-sm shadow-2xl">
+        
+        <div className="text-center mb-5">
+            <div className="flex justify-center mb-3">
+                {/* Logo Reduzida */}
+                <div className="w-12 h-12 bg-highlight rounded-xl flex items-center justify-center shadow-glow transform -skew-x-6">
+                    <span className="text-white font-black text-xl transform skew-x-6 tracking-tighter">FH</span>
                 </div>
             </div>
-            <h2 className="text-3xl font-black text-white tracking-tight mb-2">FAHUB MANAGER</h2>
-            <p className="text-text-secondary text-sm font-medium">A Plataforma Definitiva do Futebol Americano</p>
+            <h2 className="text-xl font-bold text-white">FAHUB MANAGER</h2>
+            <p className="text-text-secondary text-[10px] uppercase tracking-widest">Acesso ao Sistema</p>
         </div>
 
         {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-200 p-4 rounded-xl mb-6 text-sm text-center font-medium flex items-center justify-center gap-3 animate-slide-down">
-                <AlertTriangleIcon className="w-5 h-5 shrink-0" />
+            <div className="bg-red-900/50 text-red-200 p-2 rounded mb-3 text-xs text-center border border-red-500/20">
                 {error}
             </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-3">
             <Input 
-                label="Email Profissional"
+                label="Email"
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                autoComplete="email"
+                className="py-2 text-sm" // Input mais compacto
             />
             
             <div>
                 <Input 
-                    label="Senha de Acesso"
+                    label="Senha"
                     type="password"
                     placeholder="••••••••"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    icon={<LockIcon className="w-5 h-5" />}
+                    icon={<LockIcon className="w-4 h-4" />}
                     required
+                    className="py-2 text-sm"
                 />
-                <div className="flex justify-end mt-2">
-                    <button type="button" onClick={handleForgotPassword} className="text-xs text-text-secondary hover:text-highlight transition-colors">
-                        Esqueceu a senha?
-                    </button>
-                </div>
             </div>
 
-            <Button type="submit" isLoading={loading} fullWidth size="lg" className="mt-4">
-                ACESSAR PLATAFORMA
+            <Button type="submit" isLoading={loading} fullWidth size="md" className="mt-2 py-2.5 shadow-glow">
+                ENTRAR
             </Button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-white/10 text-center space-y-4">
-            <div className="bg-black/20 p-4 rounded-xl border border-white/5">
-                <p className="text-text-secondary text-xs mb-3">Ainda não tem acesso?</p>
-                <Link to="/register">
-                    <Button variant="secondary" fullWidth size="sm">
-                        CRIAR CONTA GRATUITA
-                    </Button>
-                </Link>
-            </div>
+        <div className="mt-4 pt-3 border-t border-white/10 text-center space-y-2">
+            <Link to="/register">
+                <Button variant="ghost" fullWidth size="sm" className="text-xs text-text-secondary hover:text-white border border-white/5 hover:bg-white/5">
+                    CRIAR NOVA CONTA
+                </Button>
+            </Link>
             
-            {/* Dev Tools - Only visible in dev environments usually, keeping for testing */}
-            <div className="flex flex-col gap-2 pt-2 opacity-60 hover:opacity-100 transition-opacity">
-                <button onClick={handleEmergencyLogin} className="text-[10px] text-red-400 hover:text-red-300 font-mono uppercase tracking-wider">
-                    [DEV] Login de Emergência (Bypass)
+            {/* Opções de Dev compactas */}
+            <div className="flex justify-center gap-4 pt-1 opacity-60">
+                <button onClick={handleEmergencyLogin} className="text-[10px] text-text-secondary hover:text-highlight transition-colors flex items-center gap-1">
+                    <LockIcon className="w-3 h-3" /> Login Rápido
                 </button>
-                
-                <button onClick={handleSeedDatabase} className="text-[10px] text-highlight hover:text-white font-mono uppercase tracking-wider flex items-center justify-center gap-1">
-                    <SparklesIcon className="w-3 h-3" /> Popular Banco (Seed)
+                <button onClick={handleSeedDatabase} className="text-[10px] text-text-secondary hover:text-highlight transition-colors flex items-center gap-1">
+                    <SparklesIcon className="w-3 h-3" /> Seed Data
                 </button>
-                {seedStatus && <p className="text-[10px] text-green-400">{seedStatus}</p>}
             </div>
+            {seedStatus && <p className="text-[10px] text-green-400">{seedStatus}</p>}
         </div>
       </div>
-      
-      <p className="absolute bottom-4 text-center w-full text-[10px] text-text-secondary opacity-40">
-          v0.9.2 Beta • FAHUB Inc. © 2025
-      </p>
     </div>
   );
 };
