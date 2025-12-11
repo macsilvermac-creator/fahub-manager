@@ -291,7 +291,6 @@ export const storageService = {
     getSocialFeed: () => RAM_DB.feed || [],
     saveSocialFeedPost: (p: SocialFeedPost) => { const u = [p, ...(RAM_DB.feed || [])]; RAM_DB.feed = u; saveListToDisk(SOCIAL_FEED_KEY, u); },
     
-    // FIX: Aceita argumento para satisfazer o erro do TS2554
     toggleLikePost: (postId: string) => { 
         const updated = (RAM_DB.feed || []).map((p: SocialFeedPost) => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
         RAM_DB.feed = updated;
@@ -375,15 +374,12 @@ export const storageService = {
     getLeague: () => ({ id: 'lg-1', name: 'Liga Nacional', season: '2025', teams: [] }),
     getPublicLeagueStats: () => ({ name: 'Liga Nacional', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
     
-    // FIX: Adicionado gameId para resolver TS2554
     getPublicGameData: (gameId: string) => null,
     
     getReferees: () => [],
     
-    // FIX: Adicionado id para resolver TS2554
     getRefereeProfile: (id: string) => null,
     
-    // FIX: Adicionado gameId para resolver TS2554
     getCrewLogistics: (gameId: number) => null,
     
     getAssociationFinancials: () => null,
@@ -399,7 +395,6 @@ export const storageService = {
         storageService.savePlayers(updated);
     },
     
-    // FIX: Adicionados argumentos para resolver TS2554
     createChampionship: (name: string, year: number, division: string) => {}
 };
 
