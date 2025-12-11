@@ -34,6 +34,7 @@ const Schedule: React.FC = () => {
     const isPlayer = currentRole === 'PLAYER';
 
     useEffect(() => {
+        // PERFORMANCE: Load data
         const games = storageService.getGames().map(g => ({
             id: g.id,
             type: 'GAME' as const,
@@ -47,12 +48,13 @@ const Schedule: React.FC = () => {
             id: p.id,
             type: 'PRACTICE' as const,
             date: new Date(p.date),
-            title: p.title,
-            description: `Treino: ${p.focus}`,
+            title: p.title || 'Treino Tático',
+            description: `Foco: ${p.focus}`,
             details: p
         }));
 
-        // Merge and Sort
+        // Merge and Sort by Date (Descending for history, Ascending for future?)
+        // Better: Sort Ascending so upcoming are first, but maybe filter out very old ones
         const merged = [...games, ...practices].sort((a, b) => a.date.getTime() - b.date.getTime());
         setSchedule(merged);
     }, []);
@@ -78,7 +80,7 @@ const Schedule: React.FC = () => {
         const updatedList = currentGames.map(g => g.id === updatedGame.id ? updatedGame : g);
         storageService.saveGames(updatedList);
         setSelectedGame(null);
-        window.location.reload(); // Simple refresh to update merged list
+        window.location.reload(); 
     };
 
     const handleCreateGame = (e: React.FormEvent) => {
@@ -125,7 +127,7 @@ const Schedule: React.FC = () => {
                     </button>
                 )}
             </div>
-            <Card title="Temporada 2025 (Jogos e Treinos)">
+            <Card title="Agenda da Temporada (Jogos & Treinos)">
                 <div className="space-y-4">
                     {schedule.length === 0 && <p className="text-text-secondary italic text-center py-4">Nenhum evento agendado.</p>}
                     
@@ -137,10 +139,10 @@ const Schedule: React.FC = () => {
                             <div 
                                 key={`${item.type}-${item.id}`} 
                                 onClick={() => isGame ? setSelectedGame(item.details) : null}
-                                className={`rounded-lg p-4 flex items-center justify-between shadow-md transition-colors border cursor-pointer group ${isGame ? 'bg-secondary hover:bg-accent border-white/5 hover:border-highlight/30' : 'bg-blue-900/20 hover:bg-blue-900/30 border-blue-500/20 hover:border-blue-500/50'}`}
+                                className={`rounded-lg p-4 flex items-center justify-between shadow-md transition-colors border cursor-pointer group ${isGame ? 'bg-secondary hover:bg-accent border-white/5 hover:border-highlight/30' : 'bg-blue-900/10 hover:bg-blue-900/20 border-blue-500/20 hover:border-blue-500/50'}`}
                             >
                                 <div className="flex items-center">
-                                    <div className={`p-3 rounded-xl mr-4 ${isGame ? 'bg-secondary border border-white/10' : 'bg-blue-600/20'}`}>
+                                    <div className={`p-3 rounded-xl mr-4 ${isGame ? 'bg-secondary border border-white/10' : 'bg-blue-600/20 border border-blue-500/30'}`}>
                                         {isGame ? (
                                             item.details.opponentLogoUrl ? <LazyImage src={item.details.opponentLogoUrl} className="w-8 h-8 rounded-full" /> : <TrophyIcon className="w-8 h-8 text-highlight" />
                                         ) : (
@@ -159,7 +161,7 @@ const Schedule: React.FC = () => {
                                 </div>
                                 <div className="flex items-center space-x-6">
                                     <div className="text-right">
-                                        <p className="font-semibold text-text-primary capitalize">{item.date.toLocaleDateString('pt-BR', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                                        <p className={`font-semibold capitalize ${isPast ? 'text-text-secondary' : 'text-white'}`}>{item.date.toLocaleDateString('pt-BR', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                                         <p className="text-sm text-text-secondary">{item.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                                     </div>
                                     
