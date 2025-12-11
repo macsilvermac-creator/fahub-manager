@@ -1,19 +1,18 @@
 
-import React, { useContext, useEffect, useState, useMemo, Suspense } from 'react';
+import React, { useContext, useEffect, useState, Suspense } from 'react';
 import Card from '../components/Card';
-import { TeamSettings, SocialFeedPost, Player } from '../types';
-import { CalendarIcon, UsersIcon, AlertTriangleIcon, BankIcon, PlayCircleIcon, ClipboardIcon, MedicalIcon, DumbbellIcon, WifiIcon, CheckCircleIcon, SparklesIcon, LockIcon, StarIcon, ActivityIcon, FireIcon, GamepadIcon } from '../components/icons/UiIcons';
-import { MegaphoneIcon, WhistleIcon, TrophyIcon, BookIcon } from '../components/icons/NavIcons';
+import { Player } from '../types';
+import { CalendarIcon, UsersIcon, AlertTriangleIcon, BankIcon, ClipboardIcon, DumbbellIcon, CheckCircleIcon, SparklesIcon, ActivityIcon, TrendingUpIcon } from '../components/icons/UiIcons';
+import { TrophyIcon, BookIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 import { storageService } from '../services/storageService';
 import { authService } from '../services/authService';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
-import LoadingScreen from '../components/LoadingScreen';
 import Skeleton from '../components/Skeleton';
 import LazyImage from '@/components/LazyImage';
 
-// Lazy Load Modules with explicit delays to unblock main thread
+// Lazy Load Modules (Mantendo a performance alta)
 const PracticePlan = React.lazy(() => import('./PracticePlan'));
 const CoachGameDay = React.lazy(() => import('./CoachGameDay'));
 const Roster = React.lazy(() => import('./Roster'));
@@ -24,361 +23,251 @@ const VideoAnalysis = React.lazy(() => import('./VideoAnalysis'));
 const TacticalLab = React.lazy(() => import('./TacticalLab'));
 const Academy = React.lazy(() => import('./Academy'));
 
-// --- MEMOIZED WIDGETS ---
+// --- VIEW 1: ATHLETE EXPERIENCE (Gamified & Simple) ---
+const AthleteDashboard = ({ player, nextGame, nextPractice, navigate }: any) => {
+    if (!player) return <div className="text-white text-center py-10">Carregando Perfil...</div>;
 
-const StatusWidgets = React.memo(({ systemHealth, navigate }: any) => (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[1,2,3,4].map(i => (
-            !systemHealth ? <Skeleton key={i} height="80px" /> : 
-            <div key={i} className="glass-panel p-4 rounded-xl shadow-lg flex items-center justify-between animate-fade-in" style={{animationDelay: `${i * 50}ms`}}>
-                {i === 1 && (
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-500/10 rounded-full"><AlertTriangleIcon className="text-blue-400 w-5 h-5" /></div>
-                        <div>
-                            <h3 className="text-xs font-bold text-text-secondary uppercase">Versão</h3>
-                            <p className="text-white font-mono font-bold">{systemHealth.version}</p>
-                        </div>
+    return (
+        <div className="space-y-8 animate-fade-in pb-20">
+            {/* Header com Identidade Visual */}
+            <div className="flex items-center gap-4 bg-gradient-to-r from-secondary to-primary p-6 rounded-2xl border border-white/10 shadow-lg">
+                <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-br from-highlight to-blue-500 shadow-glow relative">
+                    <LazyImage src={player.avatarUrl || ''} className="w-full h-full rounded-full object-cover border-4 border-[#0B1120]" />
+                    <div className="absolute -bottom-2 -right-2 bg-[#0B1120] text-white text-xs font-bold px-2 py-1 rounded-full border border-white/20">
+                        LVL {player.level}
                     </div>
-                )}
-                {i === 2 && (
-                    <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${systemHealth.api ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
-                            <SparklesIcon className={`w-5 h-5 ${systemHealth.api ? 'text-green-400' : 'text-red-400'}`} />
-                        </div>
-                        <div>
-                            <h3 className="text-xs font-bold text-text-secondary uppercase">IA Gemini</h3>
-                            <p className={`font-bold ${systemHealth.api ? 'text-green-400' : 'text-red-400'}`}>
-                                {systemHealth.api ? 'IA Ativa (GPU)' : 'Sem Chave'}
+                </div>
+                <div>
+                    <h1 className="text-2xl font-black text-white uppercase italic">{player.name}</h1>
+                    <p className="text-text-secondary text-sm font-semibold">{player.position} • {player.class}</p>
+                    <div className="mt-2 w-48 h-2 bg-black/50 rounded-full overflow-hidden">
+                        <div className="h-full bg-highlight" style={{ width: `${(player.xp % 1000) / 10}%` }}></div>
+                    </div>
+                    <p className="text-[10px] text-text-secondary mt-1">XP para o próximo nível</p>
+                </div>
+            </div>
+
+            {/* Ação Primária: O que importa AGORA */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-blue-900/40 to-black p-6 rounded-2xl border-l-4 border-blue-500 shadow-lg relative overflow-hidden group hover:border-blue-400 transition-all cursor-pointer" onClick={() => navigate('/schedule')}>
+                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <CalendarIcon className="w-24 h-24 text-blue-400" />
+                    </div>
+                    <h3 className="text-blue-300 text-xs font-bold uppercase mb-2">Próximos Compromissos</h3>
+                    
+                    {nextGame ? (
+                        <div className="mb-4">
+                            <p className="text-xs text-red-400 font-bold uppercase mb-1">Jogo</p>
+                            <p className="text-2xl font-black text-white mb-1 uppercase italic">vs {nextGame.opponent}</p>
+                            <p className="text-sm text-gray-300 flex items-center gap-2">
+                                <CalendarIcon className="w-4 h-4"/> 
+                                {new Date(nextGame.date).toLocaleDateString()} às {new Date(nextGame.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                             </p>
                         </div>
-                    </div>
-                )}
-                {i === 3 && (
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-500/10 rounded-full"><CheckCircleIcon className="text-green-400 w-5 h-5" /></div>
-                        <div>
-                            <h3 className="text-xs font-bold text-text-secondary uppercase">RAM DB</h3>
-                            <p className="text-green-400 font-bold text-sm">Otimizado</p>
+                    ) : null}
+
+                    {nextPractice ? (
+                        <div className="pt-4 border-t border-white/10">
+                            <p className="text-xs text-blue-400 font-bold uppercase mb-1">Treino</p>
+                            <p className="text-lg font-bold text-white mb-1">{nextPractice.title}</p>
+                            <p className="text-xs text-text-secondary">{nextPractice.focus} • {new Date(nextPractice.date).toLocaleDateString()} às {new Date(nextPractice.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                         </div>
+                    ) : (
+                        !nextGame && <div className="py-4 text-text-secondary">Nenhum evento agendado.</div>
+                    )}
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-900/40 to-black p-6 rounded-2xl border-l-4 border-purple-500 shadow-lg relative overflow-hidden group hover:border-purple-400 transition-all cursor-pointer" onClick={() => navigate('/gemini-playbook')}>
+                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <BookIcon className="w-24 h-24 text-purple-400" />
                     </div>
-                )}
-                {i === 4 && (
-                    <div className="flex items-center gap-3 w-full cursor-pointer hover:bg-white/5 transition-colors" onClick={() => navigate('/admin')}>
-                        <div className="p-2 bg-white/5 rounded-full"><ClipboardIcon className="text-white w-5 h-5" /></div>
-                        <div>
-                            <h3 className="text-xs font-bold text-text-secondary uppercase">Admin</h3>
-                            <p className="text-white font-bold text-sm underline">Configurações →</p>
-                        </div>
-                    </div>
-                )}
+                    <h3 className="text-purple-300 text-xs font-bold uppercase mb-2">Estudo Tático</h3>
+                    <p className="text-2xl font-black text-white mb-1">Playbook Digital</p>
+                    <p className="text-sm text-text-secondary mb-4">Novas jogadas foram adicionadas pelo Coach.</p>
+                    <button className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <SparklesIcon className="w-5 h-5"/> Estudar Agora
+                    </button>
+                </div>
             </div>
-        ))}
+
+            {/* Atalhos Secundários */}
+            <div className="grid grid-cols-2 gap-4">
+                <button onClick={() => navigate('/profile')} className="bg-secondary hover:bg-white/10 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center gap-2 transition-all">
+                    <ActivityIcon className="w-8 h-8 text-green-400" />
+                    <span className="font-bold text-white text-sm">Meus Highlights</span>
+                </button>
+                <button onClick={() => navigate('/finance')} className="bg-secondary hover:bg-white/10 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center gap-2 transition-all">
+                    <BankIcon className="w-8 h-8 text-yellow-400" />
+                    <span className="font-bold text-white text-sm">Mensalidades</span>
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// --- VIEW 2: COACH COMMAND CENTER (Operational) ---
+const CoachDashboard = React.memo(({ setActiveHub, setActiveModule, nextGame, stats }: any) => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in h-[calc(100vh-180px)]">
+        {/* Main Action: Training & Game */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+            <div className="flex-1 bg-gradient-to-br from-highlight/20 to-secondary rounded-3xl p-8 border border-highlight/20 flex flex-col justify-center items-center text-center cursor-pointer hover:border-highlight/50 transition-all group shadow-lg relative overflow-hidden" onClick={() => { setActiveHub('TRAINING'); setActiveModule('PRACTICE'); }}>
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                <div className="bg-highlight/20 p-6 rounded-full mb-4 group-hover:scale-110 transition-transform relative z-10">
+                    <DumbbellIcon className="w-16 h-16 text-highlight" />
+                </div>
+                <h2 className="text-3xl font-black text-white uppercase tracking-tight relative z-10">Gestão de Treino</h2>
+                <p className="text-gray-300 mt-2 text-sm relative z-10">Planejamento, Presença e Scripts</p>
+                <button className="mt-4 px-6 py-2 bg-highlight hover:bg-highlight-hover text-white font-bold rounded-full text-sm relative z-10">
+                    Iniciar Sessão
+                </button>
+            </div>
+            
+            <div className="flex-1 bg-gradient-to-br from-red-900/40 to-secondary rounded-3xl p-8 border border-red-500/20 flex flex-col justify-center items-center text-center cursor-pointer hover:border-red-500/50 transition-all group shadow-lg relative overflow-hidden" onClick={() => { setActiveHub('GAME'); setActiveModule('MISSION_CONTROL'); }}>
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                <div className="bg-red-600/20 p-6 rounded-full mb-4 group-hover:scale-110 transition-transform relative z-10">
+                    <TrophyIcon className="w-16 h-16 text-red-400" />
+                </div>
+                <h2 className="text-3xl font-black text-white uppercase tracking-tight relative z-10">Game Day Mode</h2>
+                <p className="text-red-200 mt-2 text-sm relative z-10">{nextGame ? `Próximo: vs ${nextGame.opponent}` : 'Nenhum jogo agendado'}</p>
+            </div>
+        </div>
+
+        {/* Side Actions: Planning & Analysis */}
+        <div className="flex flex-col gap-4">
+            <div className="flex-1 bg-secondary rounded-2xl p-6 border border-white/5 hover:bg-white/5 transition-colors cursor-pointer flex flex-col items-center justify-center text-center" onClick={() => { setActiveHub('PLANNING'); setActiveModule('ROSTER'); }}>
+                <ClipboardIcon className="w-10 h-10 text-green-400 mb-3" />
+                <h3 className="font-bold text-white text-lg">Elenco & Depth</h3>
+                <p className="text-xs text-text-secondary mt-1">{stats?.activePlayers || 0} Ativos</p>
+            </div>
+            
+            <div className="flex-1 bg-secondary rounded-2xl p-6 border border-white/5 hover:bg-white/5 transition-colors cursor-pointer flex flex-col items-center justify-center text-center" onClick={() => { setActiveHub('STUDY'); setActiveModule('VIDEO'); }}>
+                <BookIcon className="w-10 h-10 text-yellow-400 mb-3" />
+                <h3 className="font-bold text-white text-lg">Vídeo & Scout</h3>
+                <p className="text-xs text-text-secondary mt-1">Análise Tática</p>
+            </div>
+
+            <div className="flex-1 bg-secondary rounded-2xl p-6 border border-white/5 hover:bg-white/5 transition-colors cursor-pointer flex flex-col items-center justify-center text-center" onClick={() => { setActiveHub('TRAINING'); setActiveModule('PERFORMANCE'); }}>
+                <ActivityIcon className="w-10 h-10 text-pink-400 mb-3" />
+                <h3 className="font-bold text-white text-lg">Performance Lab</h3>
+                <p className="text-xs text-text-secondary mt-1">{stats?.injuredPlayers || 0} Lesionados</p>
+            </div>
+        </div>
     </div>
 ));
 
-const ExecutiveDashboard = React.memo(({ stats, navigate }: any) => (
+// --- VIEW 3: OFFICE / ADMIN DASHBOARD (Data & Processes) ---
+const OfficeDashboard = ({ stats, navigate }: any) => (
     <div className="space-y-6 animate-fade-in">
-        <h2 className="text-2xl font-bold text-white mb-4">Visão Executiva (Master)</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-secondary p-6 rounded-xl border border-white/5 hover:border-highlight/50 transition-all cursor-pointer" onClick={() => navigate('/finance')}>
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-white">Saúde Financeira</h3>
-                    <BankIcon className="w-6 h-6 text-green-400" />
+        <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+            <TrendingUpIcon className="w-6 h-6 text-green-400"/> Visão Executiva
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-secondary p-5 rounded-xl border-l-4 border-green-500 shadow-sm cursor-pointer hover:bg-white/5 transition-colors group" onClick={() => navigate('/finance')}>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="text-xs text-text-secondary font-bold uppercase group-hover:text-green-400 transition-colors">Fluxo de Caixa</p>
+                        <p className="text-2xl font-black text-white mt-1">R$ 125k</p>
+                    </div>
+                    <BankIcon className="w-6 h-6 text-green-500" />
                 </div>
-                <div className="text-2xl font-bold text-white mb-1">R$ 125.000</div>
-                <p className="text-xs text-text-secondary">Fluxo de Caixa Projetado</p>
+                <p className="text-[10px] text-green-400 mt-2">▲ 12% vs mês passado</p>
             </div>
-            <div className="bg-secondary p-6 rounded-xl border border-white/5 hover:border-highlight/50 transition-all cursor-pointer" onClick={() => navigate('/staff')}>
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-white">Recursos Humanos</h3>
-                    <UsersIcon className="w-6 h-6 text-blue-400" />
+
+            <div className="bg-secondary p-5 rounded-xl border-l-4 border-blue-500 shadow-sm cursor-pointer hover:bg-white/5 transition-colors group" onClick={() => navigate('/staff')}>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="text-xs text-text-secondary font-bold uppercase group-hover:text-blue-400 transition-colors">Staff & RH</p>
+                        <p className="text-2xl font-black text-white mt-1">24</p>
+                    </div>
+                    <UsersIcon className="w-6 h-6 text-blue-500" />
                 </div>
-                <div className="text-2xl font-bold text-white mb-1">24 Staff</div>
-                <p className="text-xs text-text-secondary">4 Contratos Pendentes</p>
+                <p className="text-[10px] text-orange-400 mt-2">3 Contratos Pendentes</p>
             </div>
-            <div className="bg-secondary p-6 rounded-xl border border-white/5 hover:border-highlight/50 transition-all cursor-pointer" onClick={() => navigate('/league')}>
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-white">Federação</h3>
-                    <TrophyIcon className="w-6 h-6 text-yellow-400" />
+
+            <div className="bg-secondary p-5 rounded-xl border-l-4 border-pink-500 shadow-sm cursor-pointer hover:bg-white/5 transition-colors group" onClick={() => navigate('/marketing')}>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="text-xs text-text-secondary font-bold uppercase group-hover:text-pink-400 transition-colors">Marketing</p>
+                        <p className="text-2xl font-black text-white mt-1">1.2k</p>
+                    </div>
+                    <SparklesIcon className="w-6 h-6 text-pink-500" />
                 </div>
-                <div className="text-2xl font-bold text-white mb-1">Regular</div>
-                <p className="text-xs text-text-secondary">Status de Filiação</p>
+                <p className="text-[10px] text-text-secondary mt-2">Leads de Seletiva</p>
+            </div>
+
+            <div className="bg-secondary p-5 rounded-xl border-l-4 border-yellow-500 shadow-sm cursor-pointer hover:bg-white/5 transition-colors group" onClick={() => navigate('/logistics')}>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="text-xs text-text-secondary font-bold uppercase group-hover:text-yellow-400 transition-colors">Logística</p>
+                        <p className="text-2xl font-black text-white mt-1">Pronta</p>
+                    </div>
+                    <AlertTriangleIcon className="w-6 h-6 text-yellow-500" />
+                </div>
+                <p className="text-[10px] text-text-secondary mt-2">Próxima viagem: Sábado</p>
             </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card title="Acesso aos Departamentos Operacionais">
+            <Card title="Acesso Rápido">
                 <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => navigate('/dashboard?role=COACH')} className="p-4 bg-black/20 rounded-lg border border-white/10 hover:bg-highlight/20 hover:border-highlight transition-all text-left">
-                        <WhistleIcon className="w-8 h-8 text-highlight mb-2" />
-                        <h4 className="font-bold text-white">Modo Treinador</h4>
-                        <p className="text-xs text-text-secondary">Acesso a treinos, scout e playbook.</p>
+                    <button onClick={() => navigate('/tasks')} className="p-4 bg-black/20 rounded-lg border border-white/10 hover:border-highlight text-left">
+                        <h4 className="font-bold text-white">Tarefas & Projetos</h4>
+                        <p className="text-xs text-text-secondary">Kanban Board</p>
                     </button>
-                    <button onClick={() => navigate('/officiating')} className="p-4 bg-black/20 rounded-lg border border-white/10 hover:bg-red-500/20 hover:border-red-500 transition-all text-left">
-                        <AlertTriangleIcon className="w-8 h-8 text-red-500 mb-2" />
-                        <h4 className="font-bold text-white">Modo Arbitragem</h4>
-                        <p className="text-xs text-text-secondary">Súmulas e relatórios de jogo.</p>
+                    <button onClick={() => navigate('/inventory')} className="p-4 bg-black/20 rounded-lg border border-white/10 hover:border-highlight text-left">
+                        <h4 className="font-bold text-white">Inventário</h4>
+                        <p className="text-xs text-text-secondary">Gestão de Equipamentos</p>
                     </button>
                 </div>
             </Card>
         </div>
     </div>
-));
+);
 
-const CoachHubButtons = React.memo(({ setActiveHub, setActiveModule, nextGame }: any) => (
-    <div className="grid grid-cols-1 gap-4 h-[calc(100vh-250px)] animate-fade-in">
-        <button onClick={() => { setActiveHub('TRAINING'); setActiveModule('PRACTICE'); }} className="glass-panel bg-gradient-to-br from-blue-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group hover:border-blue-400">
-            <DumbbellIcon className="w-12 h-12 text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
-            <span className="text-2xl font-black text-white uppercase">Dia de Treino</span>
-            <span className="text-xs text-blue-300 mt-1">Scripts, IA & Performance</span>
-        </button>
-        <button onClick={() => { setActiveHub('GAME'); setActiveModule('MISSION_CONTROL'); }} className="glass-panel bg-gradient-to-br from-red-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group hover:border-red-400">
-            <TrophyIcon className="w-12 h-12 text-red-400 mb-2 group-hover:scale-110 transition-transform" />
-            <span className="text-2xl font-black text-white uppercase">Dia de Jogo</span>
-                {nextGame ? 
-                <span className="text-xs text-red-200 bg-red-900/50 px-2 py-1 rounded mt-2">Próximo: vs {nextGame.opponent}</span> :
-                <span className="text-xs text-red-200 mt-1">Nenhum jogo agendado</span>
-                }
-        </button>
-        <div className="grid grid-cols-2 gap-4 h-full">
-            <button onClick={() => { setActiveHub('PLANNING'); setActiveModule('ROSTER'); }} className="glass-panel bg-gradient-to-br from-green-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg active:scale-95 transition-transform group hover:border-green-400">
-                <ClipboardIcon className="w-8 h-8 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
-                <span className="text-lg font-black text-white uppercase">Gestão</span>
-            </button>
-            <button onClick={() => { setActiveHub('STUDY'); setActiveModule('VIDEO'); }} className="glass-panel bg-gradient-to-br from-yellow-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg active:scale-95 transition-transform group hover:border-yellow-400">
-                <BookIcon className="w-8 h-8 text-yellow-400 mb-2 group-hover:scale-110 transition-transform" />
-                <span className="text-lg font-black text-white uppercase">Estudos (IA)</span>
-            </button>
-        </div>
-    </div>
-));
-
-const PlayerCareerMode = React.memo(({ player, navigate, nextGame, xpLeaders }: any) => {
-    if (!player) return <div className="text-white">Carregando Carreira...</div>;
-
-    return (
-        <div className="space-y-6 pb-20 animate-fade-in">
-            {/* HERO SECTION: PLAYER CARD */}
-            <div className="relative bg-gradient-to-br from-gray-900 to-black rounded-3xl p-6 border border-white/10 overflow-hidden shadow-2xl">
-                {/* Background Decor */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-highlight/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
-                
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-                    {/* Avatar with Level Ring */}
-                    <div className="relative group cursor-pointer" onClick={() => navigate('/profile')}>
-                        <div className="w-28 h-28 rounded-full p-[3px] bg-gradient-to-br from-highlight to-cyan-400">
-                            <LazyImage src={player.avatarUrl} className="w-full h-full rounded-full object-cover border-4 border-black" />
-                        </div>
-                        <div className="absolute -bottom-2 -right-2 bg-black text-white font-black text-xl w-10 h-10 flex items-center justify-center rounded-lg border-2 border-highlight shadow-lg">
-                            {player.level}
-                        </div>
-                    </div>
-
-                    {/* Stats & Progress */}
-                    <div className="flex-1 text-center md:text-left">
-                        <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">{player.name}</h1>
-                        <p className="text-highlight font-bold text-sm mb-4">{player.position} • {player.class} • FAHUB Stars</p>
-                        
-                        <div className="bg-white/5 rounded-xl p-3 border border-white/5 mb-3">
-                            <div className="flex justify-between text-xs font-bold text-text-secondary uppercase mb-1">
-                                <span>XP da Temporada</span>
-                                <span>{player.xp} / 5000</span>
-                            </div>
-                            <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-highlight to-cyan-400" style={{ width: `${(player.xp % 1000) / 10}%` }}></div>
-                            </div>
-                        </div>
-
-                        <button 
-                            onClick={() => navigate('/profile')} 
-                            className="text-xs font-bold text-text-secondary hover:text-white flex items-center gap-1 mx-auto md:mx-0 transition-colors"
-                        >
-                            <ClipboardIcon className="w-3 h-3" /> Atualizar Meus Dados Cadastrais
-                        </button>
-                    </div>
-
-                    {/* OVR Badge */}
-                    <div className="flex flex-col items-center justify-center bg-white/5 p-4 rounded-xl border border-white/10 min-w-[80px]">
-                        <span className="text-xs text-text-secondary font-bold uppercase">OVR</span>
-                        <span className="text-4xl font-black text-white">{player.rating}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* NEXT MISSION */}
-                <div className="lg:col-span-2">
-                    <Card title="Próxima Missão" className="border-l-4 border-l-highlight h-full">
-                        {nextGame ? (
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-4 bg-highlight/10 rounded-2xl">
-                                        <TrophyIcon className="w-8 h-8 text-highlight" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-black text-white uppercase">Jogo vs {nextGame.opponent}</h3>
-                                        <p className="text-sm text-text-secondary">{new Date(nextGame.date).toLocaleDateString()} • {new Date(nextGame.date).toLocaleTimeString()}</p>
-                                        <p className="text-xs text-text-secondary mt-1 flex items-center gap-1">
-                                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                            Presença Obrigatória
-                                        </p>
-                                    </div>
-                                </div>
-                                <button className="w-full md:w-auto bg-highlight hover:bg-highlight-hover text-white px-8 py-4 rounded-xl font-black uppercase tracking-wider shadow-lg transform active:scale-95 transition-all">
-                                    Confirmar Presença
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="text-center py-8 opacity-50">
-                                <TrophyIcon className="w-12 h-12 mx-auto mb-2 text-text-secondary" />
-                                <p>Nenhum jogo agendado.</p>
-                            </div>
-                        )}
-                    </Card>
-                </div>
-
-                {/* BODY STATUS (Check-in Rápido) */}
-                <div className="lg:col-span-1">
-                    <Card title="Status Físico (Hoje)">
-                        <div className="grid grid-cols-3 gap-2">
-                            <button className="flex flex-col items-center gap-2 p-3 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded-xl transition-all" onClick={() => alert("Check-in: 100%")}>
-                                <span className="text-2xl">⚡</span>
-                                <span className="text-[10px] font-bold text-green-400 uppercase">100%</span>
-                            </button>
-                            <button className="flex flex-col items-center gap-2 p-3 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-xl transition-all" onClick={() => alert("Check-in: Cansado")}>
-                                <span className="text-2xl">🥱</span>
-                                <span className="text-[10px] font-bold text-yellow-400 uppercase">Sore</span>
-                            </button>
-                            <button className="flex flex-col items-center gap-2 p-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl transition-all" onClick={() => navigate('/performance')}>
-                                <span className="text-2xl">🚑</span>
-                                <span className="text-[10px] font-bold text-red-400 uppercase">Dor</span>
-                            </button>
-                        </div>
-                    </Card>
-                </div>
-            </div>
-
-            {/* LEADERBOARD & ACTIONS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card title="Leaderboard do Time (XP)">
-                    <div className="space-y-3">
-                        {xpLeaders.map((p: any, idx: number) => (
-                            <div key={p.id} className="flex items-center justify-between bg-secondary p-3 rounded-lg border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <span className={`font-black w-6 text-center ${idx === 0 ? 'text-yellow-400 text-lg' : 'text-gray-500'}`}>{idx + 1}</span>
-                                    <LazyImage src={p.avatarUrl} className="w-8 h-8 rounded-full bg-black" />
-                                    <span className={`font-bold text-sm ${p.id === player.id ? 'text-highlight' : 'text-white'}`}>{p.name}</span>
-                                </div>
-                                <span className="font-mono font-bold text-white text-sm">{p.xp} XP</span>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => navigate('/gemini-playbook')} className="bg-purple-900/40 hover:bg-purple-900/60 border border-purple-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <BookIcon className="w-8 h-8 text-purple-400" />
-                        <span className="font-bold text-white text-sm">Estudar Playbook</span>
-                    </button>
-                    <button onClick={() => navigate('/locker-room')} className="bg-blue-900/40 hover:bg-blue-900/60 border border-blue-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <UsersIcon className="w-8 h-8 text-blue-400" />
-                        <span className="font-bold text-white text-sm">Vestiário</span>
-                    </button>
-                    <button onClick={() => navigate('/marketplace')} className="bg-yellow-900/40 hover:bg-yellow-900/60 border border-yellow-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <TrophyIcon className="w-8 h-8 text-yellow-400" />
-                        <span className="font-bold text-white text-sm">Loja & Itens</span>
-                    </button>
-                    <button onClick={() => navigate('/profile')} className="bg-gray-800 hover:bg-gray-700 border border-white/10 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <ActivityIcon className="w-8 h-8 text-gray-400" />
-                        <span className="font-bold text-white text-sm">Meus Highlights</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-});
-
+// --- MAIN CONTAINER ---
 const Dashboard: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const navigate = useNavigate();
     const [rawCoachStats, setRawCoachStats] = useState<any>(null);
+    const [nextPractice, setNextPractice] = useState<any>(null);
     const [activeHub, setActiveHub] = useState<string | null>(null);
     const [activeModule, setActiveModule] = useState<string>('');
-    const [systemHealth, setSystemHealth] = useState<any>(null);
-    const [xpLeaders, setXpLeaders] = useState<Player[]>([]);
     const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
     
-    // Check for query param override
-    const searchParams = new URLSearchParams(window.location.search);
-    const roleOverride = searchParams.get('role');
-    const isMasterView = currentRole === 'MASTER' && roleOverride !== 'COACH';
-    const isHeadCoach = currentRole === 'HEAD_COACH' || roleOverride === 'COACH';
-    const isPlayerView = currentRole === 'PLAYER';
+    // Role Checks
+    const isBackoffice = ['MASTER', 'FINANCIAL_MANAGER', 'MARKETING_MANAGER', 'COMMERCIAL_MANAGER'].includes(currentRole);
+    const isCoach = ['HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'].includes(currentRole);
+    const isPlayer = currentRole === 'PLAYER';
 
     useEffect(() => {
-        // PERFORMANCE: Defer expensive calculations to next tick
+        // PERFORMANCE: Carregamento assíncrono para liberar a thread principal
         setTimeout(() => {
             const stats = storageService.getCoachDashboardStats();
             setRawCoachStats(stats);
             
-            const players = storageService.getPlayers();
-            // Use simple slice instead of expensive sort on huge arrays initially
-            const top5 = players.slice(0, 5).sort((a, b) => (b.xp || 0) - (a.xp || 0));
-            setXpLeaders(top5);
+            // Fetch next practice
+            const practices = storageService.getPracticeSessions();
+            const now = new Date();
+            const upcoming = practices.filter(p => new Date(p.date) > now).sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            if (upcoming.length > 0) setNextPractice(upcoming[0]);
 
             const user = authService.getCurrentUser();
-            if (isPlayerView && user) {
+            if (isPlayer && user) {
+                const players = storageService.getPlayers();
                 const me = players.find(p => p.name === user.name);
                 setCurrentPlayer(me || players[0]); 
             }
-
-            setSystemHealth({ 
-                api: true, 
-                db: 'RAM', 
-                version: '2.8.0 Turbo' 
-            });
         }, 50);
-    }, [currentRole, activeHub, isPlayerView]);
+    }, [currentRole, activeHub, isPlayer]);
 
-    // --- MASTER EXECUTIVE DASHBOARD ---
-    if (isMasterView) {
-        return (
-            <div className="space-y-6 animate-fade-in pb-20">
-                <StatusWidgets systemHealth={systemHealth} navigate={navigate} />
-                <ExecutiveDashboard stats={rawCoachStats} navigate={navigate} />
-            </div>
-        );
-    }
-
-    // --- PLAYER CAREER DASHBOARD ---
-    if (isPlayerView) {
-        return <PlayerCareerMode player={currentPlayer} navigate={navigate} nextGame={rawCoachStats?.nextGame} xpLeaders={xpLeaders} />;
-    }
-
-    // --- COACH OPERATIONAL DASHBOARD ---
-    if (isHeadCoach) {
-        if (!activeHub) {
-            return (
-                <div className="space-y-6 animate-fade-in pb-20">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-bold text-white">Central do Treinador</h2>
-                        {currentRole === 'MASTER' && (
-                            <button onClick={() => navigate('/dashboard')} className="text-xs text-text-secondary border border-white/10 px-3 py-1 rounded hover:text-white">
-                                Voltar para Master
-                            </button>
-                        )}
-                    </div>
-                    <CoachHubButtons setActiveHub={setActiveHub} setActiveModule={setActiveModule} nextGame={rawCoachStats?.nextGame} />
-                </div>
-            );
-        }
-
-        // --- HUB RENDER ---
+    // --- RENDERIZADORES DE SUB-MÓDULOS DO COACH ---
+    if (activeHub) {
         const renderHeader = (title: string, modules: any[]) => (
             <div className="sticky top-0 z-30 bg-primary pt-2 pb-4">
                 <div className="flex items-center justify-between mb-3">
                      <button onClick={() => setActiveHub(null)} className="text-white flex items-center gap-2 font-bold text-sm bg-secondary px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
-                        ← Voltar
+                        ← Voltar para Dashboard
                     </button>
                     <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">{title} Hub</span>
                 </div>
@@ -397,14 +286,14 @@ const Dashboard: React.FC = () => {
                  <Suspense fallback={<div className="p-4 space-y-4"><Skeleton height="50px" /><Skeleton height="400px" /></div>}>
                     {activeHub === 'TRAINING' && (
                         <>
-                            {renderHeader("Treino", [{id:'PRACTICE', label:'Roteiro IA'}, {id:'PERFORMANCE', label:'Performance'}])}
+                            {renderHeader("Treino & Físico", [{id:'PRACTICE', label:'Roteiro IA'}, {id:'PERFORMANCE', label:'Performance Lab'}])}
                             {activeModule === 'PRACTICE' && <PracticePlan />}
                             {activeModule === 'PERFORMANCE' && <PerformanceLab />}
                         </>
                     )}
                     {activeHub === 'GAME' && (
                         <>
-                             {renderHeader("Jogo", [{id:'MISSION_CONTROL', label:'Ao Vivo'}, {id:'CALL_SHEET', label:'Call Sheet'}, {id:'SCOUT', label:'Scout'}])}
+                             {renderHeader("Dia de Jogo", [{id:'MISSION_CONTROL', label:'Mission Control'}, {id:'CALL_SHEET', label:'Call Sheet'}, {id:'SCOUT', label:'Scout Report'}])}
                              {activeModule === 'MISSION_CONTROL' && <CoachGameDay />}
                              {activeModule === 'CALL_SHEET' && <TacticalLab />}
                              {activeModule === 'SCOUT' && <VideoAnalysis />}
@@ -412,7 +301,7 @@ const Dashboard: React.FC = () => {
                     )}
                     {activeHub === 'PLANNING' && (
                          <>
-                             {renderHeader("Gestão", [{id:'ROSTER', label:'Elenco'}, {id:'SCHEDULE', label:'Agenda'}, {id:'STAFF', label:'Staff'}])}
+                             {renderHeader("Gestão Técnica", [{id:'ROSTER', label:'Elenco & Depth'}, {id:'SCHEDULE', label:'Calendário'}, {id:'STAFF', label:'Staff'}])}
                              {activeModule === 'ROSTER' && <Roster />}
                              {activeModule === 'SCHEDULE' && <Schedule />}
                              {activeModule === 'STAFF' && <Staff />}
@@ -420,7 +309,7 @@ const Dashboard: React.FC = () => {
                     )}
                     {activeHub === 'STUDY' && (
                          <>
-                             {renderHeader("Estudos", [{id:'VIDEO', label:'Video Core'}, {id:'TACTICS', label:'Tática'}, {id:'ACADEMY', label:'Cursos'}])}
+                             {renderHeader("Inteligência", [{id:'VIDEO', label:'Vision Core (Vídeo)'}, {id:'TACTICS', label:'Laboratório Tático'}, {id:'ACADEMY', label:'Playbook Academy'}])}
                              {activeModule === 'VIDEO' && <VideoAnalysis />}
                              {activeModule === 'TACTICS' && <TacticalLab />}
                              {activeModule === 'ACADEMY' && <Academy />}
@@ -431,7 +320,27 @@ const Dashboard: React.FC = () => {
         );
     }
 
-    return <div className="text-center py-20 text-white">Carregando Perfil...</div>;
+    if (isBackoffice) {
+        return <OfficeDashboard stats={rawCoachStats} navigate={navigate} />;
+    }
+
+    if (isPlayer) {
+        return <AthleteDashboard player={currentPlayer} nextGame={rawCoachStats?.nextGame} nextPractice={nextPractice} navigate={navigate} />;
+    }
+
+    return (
+        <div className="space-y-6 animate-fade-in pb-20">
+            <div className="flex justify-between items-center mb-2">
+                <h2 className="text-2xl font-bold text-white">Central de Comando</h2>
+                <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-secondary rounded-full text-xs font-bold text-text-secondary border border-white/10">
+                        {rawCoachStats?.activePlayers || 0} Atletas Prontos
+                    </span>
+                </div>
+            </div>
+            <CoachDashboard setActiveHub={setActiveHub} setActiveModule={setActiveModule} nextGame={rawCoachStats?.nextGame} stats={rawCoachStats} />
+        </div>
+    );
 };
 
 export default Dashboard;
