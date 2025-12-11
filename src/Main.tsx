@@ -8,6 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import GlobalSearch from './components/GlobalSearch';
 import ProtectedRoute from './components/ProtectedRoute'; // Importação da Segurança
 import { ToastProvider } from './contexts/ToastContext';
+import { UserRole } from './types';
 
 // FAHUB MANAGER v3.0 - Unified Architecture with Entity Segregation
 // Lazy Load Modules
@@ -50,13 +51,15 @@ const Recruitment = React.lazy(() => import('./pages/Recruitment'));
 const Goals = React.lazy(() => import('./pages/Goals'));
 
 // --- DEFINIÇÃO DE GRUPOS DE ACESSO (SEGREGATION PROTOCOL) ---
-const ROLES = {
+// Tipagem explícita para evitar erro TS2322
+const ROLES: Record<string, UserRole[]> = {
   MASTER: ['MASTER'],
   FINANCE: ['MASTER', 'FINANCIAL_MANAGER'],
   COACHING: ['MASTER', 'HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'],
   STAFF: ['MASTER', 'HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD', 'FINANCIAL_MANAGER', 'MARKETING_MANAGER', 'COMMERCIAL_MANAGER', 'SPORTS_DIRECTOR'],
   PLAYER_VIEW: ['MASTER', 'HEAD_COACH', 'PLAYER', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'], // Quem pode ver treinos/jogos
-  ALL: undefined // Acesso público/comum
+  COMMERCIAL: ['MASTER', 'COMMERCIAL_MANAGER'],
+  MARKETING: ['MASTER', 'MARKETING_MANAGER']
 };
 
 const Main: React.FC = () => {
@@ -106,8 +109,8 @@ const Main: React.FC = () => {
                             
                             {/* OFFICE / ADMIN (Alta Segurança) */}
                             <Route path="/finance" element={<ProtectedRoute allowedRoles={ROLES.FINANCE}><Finance /></ProtectedRoute>} />
-                            <Route path="/commercial" element={<ProtectedRoute allowedRoles={['MASTER', 'COMMERCIAL_MANAGER']}><Commercial /></ProtectedRoute>} />
-                            <Route path="/marketing" element={<ProtectedRoute allowedRoles={['MASTER', 'MARKETING_MANAGER']}><Marketing /></ProtectedRoute>} />
+                            <Route path="/commercial" element={<ProtectedRoute allowedRoles={ROLES.COMMERCIAL}><Commercial /></ProtectedRoute>} />
+                            <Route path="/marketing" element={<ProtectedRoute allowedRoles={ROLES.MARKETING}><Marketing /></ProtectedRoute>} />
                             <Route path="/logistics" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><Logistics /></ProtectedRoute>} />
                             <Route path="/inventory" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><Inventory /></ProtectedRoute>} />
                             <Route path="/staff" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><Staff /></ProtectedRoute>} />
