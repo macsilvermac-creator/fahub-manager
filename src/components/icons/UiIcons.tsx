@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const iconProps = {
@@ -512,5 +511,27 @@ export const SmartphoneIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...iconProps} {...props} viewBox="0 0 24 24">
     <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
     <line x1="12" y1="18" x2="12.01" y2="18"></line>
+  </svg>
+);
+
+export const PieChartIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24">
+    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+  </svg>
+);
+
+export const HandshakeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24">
+     <path d="M18 11l-2-2-6 6-2-2-4 4"></path>
+     <path d="M2 13l4-4 2 2 4-4 2 2 4-4"></path>
+  </svg>
+);
+
+export const RefreshIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24">
+    <polyline points="23 4 23 10 17 10"></polyline>
+    <polyline points="1 20 1 14 7 14"></polyline>
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
   </svg>
 );
