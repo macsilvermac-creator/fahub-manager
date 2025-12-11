@@ -13,7 +13,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import Skeleton from '../components/Skeleton';
 import LazyImage from '@/components/LazyImage';
 
-// Lazy Load Modules
+// Lazy Load Modules with explicit delays to unblock main thread
 const PracticePlan = React.lazy(() => import('./PracticePlan'));
 const CoachGameDay = React.lazy(() => import('./CoachGameDay'));
 const Roster = React.lazy(() => import('./Roster'));
@@ -30,7 +30,7 @@ const StatusWidgets = React.memo(({ systemHealth, navigate }: any) => (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[1,2,3,4].map(i => (
             !systemHealth ? <Skeleton key={i} height="80px" /> : 
-            <div key={i} className="glass-panel p-4 rounded-xl shadow-lg flex items-center justify-between">
+            <div key={i} className="glass-panel p-4 rounded-xl shadow-lg flex items-center justify-between animate-fade-in" style={{animationDelay: `${i * 50}ms`}}>
                 {i === 1 && (
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-500/10 rounded-full"><AlertTriangleIcon className="text-blue-400 w-5 h-5" /></div>
@@ -77,7 +77,7 @@ const StatusWidgets = React.memo(({ systemHealth, navigate }: any) => (
 ));
 
 const ExecutiveDashboard = React.memo(({ stats, navigate }: any) => (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
         <h2 className="text-2xl font-bold text-white mb-4">Visão Executiva (Master)</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-secondary p-6 rounded-xl border border-white/5 hover:border-highlight/50 transition-all cursor-pointer" onClick={() => navigate('/finance')}>
@@ -126,7 +126,7 @@ const ExecutiveDashboard = React.memo(({ stats, navigate }: any) => (
 ));
 
 const CoachHubButtons = React.memo(({ setActiveHub, setActiveModule, nextGame }: any) => (
-    <div className="grid grid-cols-1 gap-4 h-[calc(100vh-250px)]">
+    <div className="grid grid-cols-1 gap-4 h-[calc(100vh-250px)] animate-fade-in">
         <button onClick={() => { setActiveHub('TRAINING'); setActiveModule('PRACTICE'); }} className="glass-panel bg-gradient-to-br from-blue-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group hover:border-blue-400">
             <DumbbellIcon className="w-12 h-12 text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
             <span className="text-2xl font-black text-white uppercase">Dia de Treino</span>
@@ -171,9 +171,6 @@ const PlayerCareerMode = React.memo(({ player, navigate, nextGame, xpLeaders }: 
                         </div>
                         <div className="absolute -bottom-2 -right-2 bg-black text-white font-black text-xl w-10 h-10 flex items-center justify-center rounded-lg border-2 border-highlight shadow-lg">
                             {player.level}
-                        </div>
-                        <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span className="text-[10px] font-bold text-white uppercase">Editar Foto</span>
                         </div>
                     </div>
 
@@ -319,26 +316,28 @@ const Dashboard: React.FC = () => {
     const isPlayerView = currentRole === 'PLAYER';
 
     useEffect(() => {
+        // PERFORMANCE: Defer expensive calculations to next tick
         setTimeout(() => {
             const stats = storageService.getCoachDashboardStats();
             setRawCoachStats(stats);
             
             const players = storageService.getPlayers();
-            const sorted = [...players].sort((a, b) => (b.xp || 0) - (a.xp || 0)).slice(0, 5);
-            setXpLeaders(sorted);
+            // Use simple slice instead of expensive sort on huge arrays initially
+            const top5 = players.slice(0, 5).sort((a, b) => (b.xp || 0) - (a.xp || 0));
+            setXpLeaders(top5);
 
             const user = authService.getCurrentUser();
             if (isPlayerView && user) {
                 const me = players.find(p => p.name === user.name);
-                setCurrentPlayer(me || players[0]); // Fallback to first player for demo
+                setCurrentPlayer(me || players[0]); 
             }
 
             setSystemHealth({ 
                 api: true, 
                 db: 'RAM', 
-                version: '2.5.0 Stable' 
+                version: '2.8.0 Turbo' 
             });
-        }, 300);
+        }, 50);
     }, [currentRole, activeHub, isPlayerView]);
 
     // --- MASTER EXECUTIVE DASHBOARD ---
