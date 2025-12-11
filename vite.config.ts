@@ -26,13 +26,12 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: (id) => {
-            if (id.includes('node_modules')) {
-                if (id.includes('react')) return 'vendor-react';
-                if (id.includes('firebase')) return 'vendor-firebase';
-                if (id.includes('recharts')) return 'vendor-charts';
-                if (id.includes('@google/genai')) return 'vendor-ai';
-                return 'vendor-core'; // Todo o resto vai pra cá
-            }
+            // Separação Crítica de Vendor (Bibliotecas Pesadas)
+            if (id.includes('node_modules/react')) return 'vendor-react';
+            if (id.includes('node_modules/firebase')) return 'vendor-firebase';
+            if (id.includes('node_modules/recharts')) return 'vendor-charts';
+            if (id.includes('node_modules/@google/genai')) return 'vendor-ai';
+            
             // Separação de Módulos Internos (Lazy Load Real)
             if (id.includes('src/pages/Finance')) return 'page-finance';
             if (id.includes('src/pages/Recruitment')) return 'page-recruitment';
