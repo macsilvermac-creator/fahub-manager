@@ -1,8 +1,7 @@
-
 import React, { useContext, useEffect, useState, Suspense } from 'react';
 import Card from '../components/Card';
 import { Player } from '../types';
-import { CalendarIcon, UsersIcon, AlertTriangleIcon, BankIcon, ClipboardIcon, DumbbellIcon, CheckCircleIcon, SparklesIcon, ActivityIcon, TrendingUpIcon, MapPinIcon, ClockIcon } from '../components/icons/UiIcons';
+import { CalendarIcon, UsersIcon, BankIcon, ClipboardIcon, DumbbellIcon, SparklesIcon, ActivityIcon, TrendingUpIcon, MapPinIcon, ClockIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
 import { TrophyIcon, BookIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 import { storageService } from '../services/storageService';
@@ -12,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import Skeleton from '../components/Skeleton';
 import LazyImage from '@/components/LazyImage';
 
-// Lazy Load Modules (Mantendo a performance alta)
+// Lazy Load Modules
 const PracticePlan = React.lazy(() => import('./PracticePlan'));
 const CoachGameDay = React.lazy(() => import('./CoachGameDay'));
 const Roster = React.lazy(() => import('./Roster'));
@@ -23,43 +22,40 @@ const VideoAnalysis = React.lazy(() => import('./VideoAnalysis'));
 const TacticalLab = React.lazy(() => import('./TacticalLab'));
 const Academy = React.lazy(() => import('./Academy'));
 
-// --- VIEW 1: ATHLETE EXPERIENCE (Gamified & Simple) ---
+// --- CONTEXTUAL DASHBOARD COMPONENTS ---
+
+// 1. ATHLETE: "Onde devo estar?"
 const AthleteDashboard = ({ player, nextGame, nextPractice, navigate }: any) => {
     if (!player) return <div className="text-white text-center py-10">Carregando Perfil...</div>;
 
+    const isGameDay = nextGame && new Date(nextGame.date).toDateString() === new Date().toDateString();
+    const isPracticeDay = nextPractice && new Date(nextPractice.date).toDateString() === new Date().toDateString();
+
     return (
         <div className="space-y-6 animate-fade-in pb-20">
-            {/* Header com Identidade Visual */}
-            <div className="flex items-center gap-4 bg-gradient-to-r from-secondary to-primary p-6 rounded-2xl border border-white/10 shadow-lg">
-                <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-br from-highlight to-blue-500 shadow-glow relative">
-                    <LazyImage src={player.avatarUrl || ''} className="w-full h-full rounded-full object-cover border-4 border-[#0B1120]" />
-                    <div className="absolute -bottom-2 -right-2 bg-[#0B1120] text-white text-xs font-bold px-2 py-1 rounded-full border border-white/20">
-                        LVL {player.level}
+            {/* ALERTAS CRÍTICOS (The "Right Now" Logic) */}
+            {isGameDay && (
+                <div className="bg-red-600 rounded-xl p-6 text-white border-4 border-red-800 shadow-2xl cursor-pointer" onClick={() => navigate('/schedule')}>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-3xl font-black uppercase italic animate-pulse">É GAME DAY!</h2>
+                            <p className="text-lg font-bold">vs {nextGame.opponent}</p>
+                            <p className="text-sm opacity-90">Kickoff: {new Date(nextGame.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                        </div>
+                        <TrophyIcon className="w-16 h-16 opacity-80" />
                     </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-black text-white uppercase italic">{player.name}</h1>
-                    <p className="text-text-secondary text-sm font-semibold">{player.position} • {player.class}</p>
-                    <div className="mt-2 w-48 h-2 bg-black/50 rounded-full overflow-hidden">
-                        <div className="h-full bg-highlight" style={{ width: `${(player.xp % 1000) / 10}%` }}></div>
-                    </div>
-                    <p className="text-[10px] text-text-secondary mt-1">XP para o próximo nível</p>
-                </div>
-            </div>
+            )}
 
-            {/* ALERTAS DE TREINO (FIXED: CRITICAL ALERT VISIBILITY) */}
-            {nextPractice ? (
+            {!isGameDay && nextPractice && (
                 <div 
                     onClick={() => navigate('/practice')}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 border-2 border-blue-400/50 shadow-[0_0_20px_rgba(37,99,235,0.3)] cursor-pointer hover:scale-[1.01] transition-transform relative overflow-hidden"
+                    className={`rounded-xl p-6 border-2 shadow-lg cursor-pointer hover:scale-[1.01] transition-transform relative overflow-hidden ${isPracticeDay ? 'bg-gradient-to-r from-blue-600 to-indigo-700 border-blue-400/50' : 'bg-secondary border-white/5'}`}
                 >
-                    <div className="absolute top-0 right-0 p-4 opacity-20">
-                        <DumbbellIcon className="w-32 h-32 text-white" />
-                    </div>
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-2">
-                            <span className="bg-white text-blue-700 text-xs font-black px-2 py-1 rounded uppercase animate-pulse">
-                                {new Date(nextPractice.date).toDateString() === new Date().toDateString() ? 'TREINO HOJE' : 'PRÓXIMO TREINO'}
+                            <span className={`text-xs font-black px-2 py-1 rounded uppercase ${isPracticeDay ? 'bg-white text-blue-700 animate-pulse' : 'bg-white/10 text-white'}`}>
+                                {isPracticeDay ? 'TREINO HOJE' : 'PRÓXIMO TREINO'}
                             </span>
                             <span className="text-blue-200 text-xs font-bold uppercase">{new Date(nextPractice.date).toLocaleDateString()}</span>
                         </div>
@@ -78,80 +74,58 @@ const AthleteDashboard = ({ player, nextGame, nextPractice, navigate }: any) => 
                         </div>
                     </div>
                 </div>
-            ) : (
-                <div className="p-4 bg-secondary/50 rounded-xl border border-white/5 text-center text-text-secondary text-sm">
-                    Nenhum treino agendado nos próximos dias. Aproveite o descanso! 😴
-                </div>
             )}
 
-            {/* Ação Primária: Jogo */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-gray-900 to-black p-6 rounded-2xl border-l-4 border-red-500 shadow-lg relative overflow-hidden group hover:border-red-400 transition-all cursor-pointer" onClick={() => navigate('/schedule')}>
-                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <TrophyIcon className="w-24 h-24 text-red-400" />
+            {/* Header com Identidade Visual */}
+            <div className="flex items-center gap-4 bg-gradient-to-r from-secondary to-primary p-6 rounded-2xl border border-white/10 shadow-lg">
+                <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-br from-highlight to-blue-500 shadow-glow relative">
+                    <LazyImage src={player.avatarUrl || ''} className="w-full h-full rounded-full object-cover border-4 border-[#0B1120]" />
+                    <div className="absolute -bottom-2 -right-2 bg-[#0B1120] text-white text-xs font-bold px-2 py-1 rounded-full border border-white/20">
+                        LVL {player.level}
                     </div>
-                    <h3 className="text-red-400 text-xs font-bold uppercase mb-2">Próximo Jogo</h3>
-                    
-                    {nextGame ? (
-                        <div className="mb-4">
-                            <p className="text-2xl font-black text-white mb-1 uppercase italic">vs {nextGame.opponent}</p>
-                            <p className="text-sm text-gray-300 flex items-center gap-2">
-                                <CalendarIcon className="w-4 h-4"/> 
-                                {new Date(nextGame.date).toLocaleDateString()} às {new Date(nextGame.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="py-4 text-text-secondary">Nenhum jogo agendado.</div>
-                    )}
                 </div>
-
-                <div className="bg-gradient-to-br from-purple-900/40 to-black p-6 rounded-2xl border-l-4 border-purple-500 shadow-lg relative overflow-hidden group hover:border-purple-400 transition-all cursor-pointer" onClick={() => navigate('/gemini-playbook')}>
-                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <BookIcon className="w-24 h-24 text-purple-400" />
+                <div>
+                    <h1 className="text-2xl font-black text-white uppercase italic">{player.name}</h1>
+                    <p className="text-text-secondary text-sm font-semibold">{player.position} • {player.class}</p>
+                    <div className="mt-2 w-48 h-2 bg-black/50 rounded-full overflow-hidden">
+                        <div className="h-full bg-highlight" style={{ width: `${(player.xp % 1000) / 10}%` }}></div>
                     </div>
-                    <h3 className="text-purple-300 text-xs font-bold uppercase mb-2">Estudo Tático</h3>
-                    <p className="text-2xl font-black text-white mb-1">Playbook Digital</p>
-                    <p className="text-sm text-text-secondary mb-4">Novas jogadas foram adicionadas pelo Coach.</p>
-                    <button className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
-                        <SparklesIcon className="w-5 h-5"/> Estudar Agora
-                    </button>
+                    <p className="text-[10px] text-text-secondary mt-1">XP para o próximo nível</p>
                 </div>
             </div>
 
-            {/* Atalhos Secundários */}
+            {/* Quick Actions Grid */}
             <div className="grid grid-cols-2 gap-4">
+                <button onClick={() => navigate('/gemini-playbook')} className="bg-purple-900/40 hover:bg-purple-900/60 border border-purple-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
+                    <BookIcon className="w-8 h-8 text-purple-400" />
+                    <span className="font-bold text-white text-sm">Estudar Playbook</span>
+                </button>
                 <button onClick={() => navigate('/profile')} className="bg-secondary hover:bg-white/10 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center gap-2 transition-all">
                     <ActivityIcon className="w-8 h-8 text-green-400" />
-                    <span className="font-bold text-white text-sm">Meus Highlights</span>
-                </button>
-                <button onClick={() => navigate('/finance')} className="bg-secondary hover:bg-white/10 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center gap-2 transition-all">
-                    <BankIcon className="w-8 h-8 text-yellow-400" />
-                    <span className="font-bold text-white text-sm">Mensalidades</span>
+                    <span className="font-bold text-white text-sm">Meus Stats</span>
                 </button>
             </div>
         </div>
     );
 };
 
-// --- VIEW 2: COACH COMMAND CENTER (Operational) ---
+// 2. COACH: "Gestão do Caos"
 const CoachDashboard = React.memo(({ setActiveHub, setActiveModule, nextGame, stats }: any) => (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in h-[calc(100vh-180px)]">
         {/* Main Action: Training & Game */}
         <div className="lg:col-span-2 flex flex-col gap-4">
             <div className="flex-1 bg-gradient-to-br from-highlight/20 to-secondary rounded-3xl p-8 border border-highlight/20 flex flex-col justify-center items-center text-center cursor-pointer hover:border-highlight/50 transition-all group shadow-lg relative overflow-hidden" onClick={() => { setActiveHub('TRAINING'); setActiveModule('PRACTICE'); }}>
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
                 <div className="bg-highlight/20 p-6 rounded-full mb-4 group-hover:scale-110 transition-transform relative z-10">
                     <DumbbellIcon className="w-16 h-16 text-highlight" />
                 </div>
-                <h2 className="text-3xl font-black text-white uppercase tracking-tight relative z-10">Gestão de Treino</h2>
-                <p className="text-gray-300 mt-2 text-sm relative z-10">Planejamento, Presença e Scripts</p>
+                <h2 className="text-3xl font-black text-white uppercase tracking-tight relative z-10">Planejar Treino</h2>
+                <p className="text-gray-300 mt-2 text-sm relative z-10">Acesse Scripts, Presença e Performance</p>
                 <button className="mt-4 px-6 py-2 bg-highlight hover:bg-highlight-hover text-white font-bold rounded-full text-sm relative z-10">
-                    Iniciar Sessão
+                    Acessar Módulo
                 </button>
             </div>
             
             <div className="flex-1 bg-gradient-to-br from-red-900/40 to-secondary rounded-3xl p-8 border border-red-500/20 flex flex-col justify-center items-center text-center cursor-pointer hover:border-red-500/50 transition-all group shadow-lg relative overflow-hidden" onClick={() => { setActiveHub('GAME'); setActiveModule('MISSION_CONTROL'); }}>
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
                 <div className="bg-red-600/20 p-6 rounded-full mb-4 group-hover:scale-110 transition-transform relative z-10">
                     <TrophyIcon className="w-16 h-16 text-red-400" />
                 </div>
@@ -265,16 +239,19 @@ const Dashboard: React.FC = () => {
     
     // Role Checks
     const isBackoffice = ['MASTER', 'FINANCIAL_MANAGER', 'MARKETING_MANAGER', 'COMMERCIAL_MANAGER'].includes(currentRole);
-    const isCoach = ['HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'].includes(currentRole);
     const isPlayer = currentRole === 'PLAYER';
 
     useEffect(() => {
-        // PERFORMANCE: Separação de threads e carregamento otimizado
+        // PERFORMANCE: Carregamento assíncrono para liberar a thread principal
         setTimeout(() => {
-            // 1. DADOS DE TREINO (CRÍTICO PARA ATLETA)
+            // 1. DATA FETCHING CENTRALIZADA NO STORAGE SERVICE (OTIMIZADO)
+            const stats = storageService.getCoachDashboardStats();
+            setRawCoachStats(stats);
+            
+            // Fetch next practice
             const practices = storageService.getPracticeSessions();
             const now = new Date();
-            // TOLERÂNCIA EXPANDIDA: Olha 6 horas para trás para pegar treinos que "acabaram de começar" ou estão rolando
+            // Subtrai 6 horas para garantir que treinos "de hoje" ainda apareçam
             const lookback = new Date(now.getTime() - 6 * 60 * 60 * 1000);
             
             const upcoming = practices
@@ -283,27 +260,12 @@ const Dashboard: React.FC = () => {
             
             if (upcoming.length > 0) setNextPractice(upcoming[0]);
 
-            // 2. DADOS DO USUÁRIO (Leve)
             const user = authService.getCurrentUser();
-            const players = storageService.getPlayers();
             if (isPlayer && user) {
+                const players = storageService.getPlayers();
                 const me = players.find(p => p.name === user.name);
                 setCurrentPlayer(me || players[0]); 
             }
-
-            // 3. DADOS DE COACH/ADMIN (Pesado - só carrega se não for atleta)
-            if (!isPlayer) {
-                const stats = storageService.getCoachDashboardStats();
-                setRawCoachStats(stats);
-            } else {
-                // Para atleta, carregamos apenas o próximo jogo de forma leve
-                const games = storageService.getGames();
-                const nextGame = games
-                    .filter(g => new Date(g.date) > now && g.status === 'SCHEDULED')
-                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
-                setRawCoachStats({ nextGame });
-            }
-
         }, 50);
     }, [currentRole, activeHub, isPlayer]);
 
