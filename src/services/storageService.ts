@@ -1,3 +1,4 @@
+
 import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, League, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, Championship, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, VideoPermissionGroup, EquipmentItem, EventSale, SavedWorkout, NationalTeamCandidate, Affiliate, KanbanTask, RecruitmentCandidate, Objective, Subscription, PaymentAgreement, Budget, Bill, Vendor, PurchaseRequest } from '../types';
 import { firebaseDataService } from './firebaseDataService';
 import { syncService } from './syncService';
@@ -286,9 +287,16 @@ export const storageService = {
     // --- OTHER GETTERS (Returning empty if not loaded yet) ---
     getStaff: () => RAM_DB.staff || [],
     saveStaff: (s: StaffMember[]) => { RAM_DB.staff = s; saveListToDisk(STAFF_KEY, s); },
+    
     getSocialFeed: () => RAM_DB.feed || [],
     saveSocialFeedPost: (p: SocialFeedPost) => { const u = [p, ...(RAM_DB.feed || [])]; RAM_DB.feed = u; saveListToDisk(SOCIAL_FEED_KEY, u); },
-    toggleLikePost: (pid: string) => { /* simplified */ },
+    
+    toggleLikePost: (postId: string) => { 
+        const updated = (RAM_DB.feed || []).map((p: SocialFeedPost) => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
+        RAM_DB.feed = updated;
+        saveListToDisk(SOCIAL_FEED_KEY, updated);
+    },
+    
     getTasks: () => RAM_DB.tasks || [],
     saveTasks: (t: KanbanTask[]) => { RAM_DB.tasks = t; saveListToDisk(TASKS_KEY, t); },
     getAnnouncements: () => RAM_DB.announcements || [],
@@ -334,6 +342,10 @@ export const storageService = {
         storageService.savePlayers(updated);
     },
     
+    addTeamXP: (amount: number) => {
+       // Placeholder for gamification logic
+    },
+
     getCoachDashboardStats: () => {
         const activePlayers = (RAM_DB.players || []).filter((p: Player) => p.status === 'ACTIVE').length;
         const injuredPlayers = (RAM_DB.players || []).filter((p: Player) => p.status === 'INJURED' || p.status === 'IR').length;
@@ -346,11 +358,11 @@ export const storageService = {
         return { activePlayers, injuredPlayers, nextGame: nextGame || null };
     },
 
-    // --- MOCKS & UTILS (Keep existing) ---
+    // --- MOCKS & UTILS ---
     getPermissions: () => [],
     seedDatabaseToCloud: async () => {},
     exportFullDatabase: () => {},
-    checkDocumentSigned: () => true,
+    checkDocumentSigned: (docId: string) => true, 
     signLegalDocument: () => {},
     getConfederationStats: () => ({ totalAthletes: 1200, totalTeams: 15, totalGamesThisYear: 45, activeAffiliates: 4, growthRate: 10 }),
     getNationalTeamScouting: () => [],
@@ -361,12 +373,16 @@ export const storageService = {
     },
     getLeague: () => ({ id: 'lg-1', name: 'Liga Nacional', season: '2025', teams: [] }),
     getPublicLeagueStats: () => ({ name: 'Liga Nacional', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
-    getPublicGameData: () => null,
+    
+    getPublicGameData: (gameId: string) => null,
+    
     getReferees: () => [],
-    getRefereeProfile: () => null,
-    getCrewLogistics: () => null,
+    
+    getRefereeProfile: (id: string) => null,
+    
+    getCrewLogistics: (gameId: number) => null,
+    
     getAssociationFinancials: () => null,
-    addTeamXP: () => {},
     savePlayerWorkout: (playerId: number, content: string, title: string) => {
         const updated = RAM_DB.players.map((p: Player) => {
             if(p.id === playerId) {
@@ -378,7 +394,8 @@ export const storageService = {
         });
         storageService.savePlayers(updated);
     },
-    createChampionship: () => {}
+    
+    createChampionship: (name: string, year: number, division: string) => {}
 };
 
 export const LEGAL_DOCUMENTS: any[] = [];
