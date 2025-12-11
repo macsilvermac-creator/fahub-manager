@@ -1,4 +1,3 @@
-
 export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER';
 
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
@@ -826,3 +825,60 @@ export interface Objective {
     owner: string;
     keyResults: KeyResult[];
 }
+
+// --- NEW FINANCIAL TYPES (ERP) ---
+export interface Subscription {
+    id: string;
+    title: string;
+    amount: number;
+    frequency: 'MONTHLY' | 'YEARLY';
+    active: boolean;
+    nextBillingDate: Date;
+    assignedTo: number[]; // Player IDs
+}
+
+export interface PaymentAgreement {
+    id: string;
+    playerId: number;
+    playerName: string;
+    totalDebt: number;
+    installments: number;
+    installmentAmount: number;
+    startDate: Date;
+    status: 'ACTIVE' | 'COMPLETED' | 'DEFAULTED';
+}
+
+export interface Budget {
+    id: string;
+    category: TransactionCategory;
+    limit: number;
+    spent: number;
+    period: string; // "2025-01"
+}
+
+export interface Vendor {
+    id: string;
+    name: string;
+    category: string;
+    rating: number;
+}
+
+export interface Bill {
+    id: string;
+    vendorId: string;
+    vendorName: string;
+    title: string;
+    amount: number;
+    dueDate: Date;
+    status: 'PENDING' | 'PAID' | 'OVERDUE';
+    category: TransactionCategory;
+}
+
+export interface PurchaseRequest {
+    id: string;
+    requesterName: string;
+    itemName: string;
+    estimatedCost: number;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    reason: string;
+    }
