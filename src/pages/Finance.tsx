@@ -1,19 +1,18 @@
 
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import Card from '../components/Card';
-import { Invoice, Player, EventSale, Transaction, EquipmentItem, TransactionCategory, UserRole } from '../types';
+import { Invoice, Player, Transaction, EquipmentItem, TransactionCategory, Subscription, Budget, Bill } from '../types';
 import { storageService, LEGAL_DOCUMENTS } from '../services/storageService';
 import { FinanceIcon } from '../components/icons/NavIcons';
-import { WalletIcon, AlertCircleIcon, SparklesIcon, AlertTriangleIcon, ScanIcon, CheckCircleIcon } from '../components/icons/UiIcons';
+import { WalletIcon, AlertCircleIcon, SparklesIcon, AlertTriangleIcon, ScanIcon, CheckCircleIcon, RefreshIcon, HandshakeIcon, PieChartIcon, BuildingIcon, ClockIcon } from '../components/icons/UiIcons';
 import { UserContext, UserContextType } from '../components/Layout';
-import ComplianceModal from '../components/ComplianceModal';
 import Modal from '../components/Modal';
 import { authService } from '../services/authService';
 import { useToast } from '../contexts/ToastContext';
 import { scanFinancialDocument } from '../services/geminiService';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const Finance: React.FC = () => {
-    // TIPAGEM CORRETA DO CONTEXTO
     const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,13 +21,12 @@ const Finance: React.FC = () => {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [players, setPlayers] = useState<Player[]>([]);
-    const [inventory, setInventory] = useState<EquipmentItem[]>([]);
+    const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+    const [budgets, setBudgets] = useState<Budget[]>([]);
+    const [bills, setBills] = useState<Bill[]>([]);
     
-    // Performance State
-    const [visibleTxCount, setVisibleTxCount] = useState(20);
-
     // View State
-    const [viewMode, setViewMode] = useState<'OVERVIEW' | 'EXPENSES' | 'RECEIVABLES' | 'DELINQUENCY'>('OVERVIEW');
+    const [viewMode, setViewMode] = useState<'OVERVIEW' | 'SUBSCRIPTIONS' | 'BILLS' | 'BUDGET' | 'RECOVERY'>('OVERVIEW');
     
     // Transaction Modal State
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
@@ -39,50 +37,28 @@ const Finance: React.FC = () => {
     const [txCategory, setTxCategory] = useState<TransactionCategory>('OTHER');
     const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
     const [isScanning, setIsScanning] = useState(false);
-    const [isAiFilled, setIsAiFilled] = useState(false); // Flag para indicar revisão
+    const [isAiFilled, setIsAiFilled] = useState(false);
 
-    // Wizard State
-    const [isRecModalOpen, setIsRecModalOpen] = useState(false);
-    const [recTitle, setRecTitle] = useState('');
-    const [recCategory, setRecCategory] = useState<TransactionCategory>('OTHER');
-    const [recAmount, setRecAmount] = useState<number>(0);
-    const [recDueDate, setRecDueDate] = useState('');
-
-    const [showComplianceModal, setShowComplianceModal] = useState(false);
+    // Subscription Modal
+    const [isSubModalOpen, setIsSubModalOpen] = useState(false);
+    const [subTitle, setSubTitle] = useState('');
+    const [subAmount, setSubAmount] = useState(0);
 
     const isPlayer = currentRole === 'PLAYER';
-    const isCoach = !isPlayer;
-    const complianceDoc = LEGAL_DOCUMENTS[0]; 
 
     useEffect(() => {
-        if (isCoach) {
-            const signed = storageService.checkDocumentSigned(complianceDoc.id);
-            if (!signed) setShowComplianceModal(true);
+        if (!isPlayer) {
+            // Load data asynchronously to avoid blocking render
+            setTimeout(() => {
+                setTransactions(storageService.getTransactions());
+                setInvoices(storageService.getInvoices());
+                setPlayers(storageService.getPlayers());
+                setSubscriptions(storageService.getSubscriptions());
+                setBudgets(storageService.getBudgets());
+                setBills(storageService.getBills());
+            }, 0);
         }
-
-        const allInvoices = storageService.getInvoices();
-        const allTransactions = storageService.getTransactions();
-        
-        if (isPlayer) {
-            const user = authService.getCurrentUser();
-            const player = storageService.getPlayers().find(p => p.name === user?.name);
-            
-            if (player) {
-                setInvoices(allInvoices.filter(i => i.playerId === player.id));
-                setTransactions([]); 
-            }
-        } else {
-            setTransactions(allTransactions);
-            setInvoices(allInvoices);
-            setPlayers(storageService.getPlayers());
-            setInventory(storageService.getInventory());
-        }
-        
-    }, [isCoach, isPlayer]);
-
-    useEffect(() => {
-        setVisibleTxCount(20);
-    }, [viewMode]);
+    }, [isPlayer]);
 
     // --- SMART SCANNER LOGIC ---
     const handleScanClick = () => {
@@ -108,10 +84,10 @@ const Finance: React.FC = () => {
                         // @ts-ignore
                         setTxCategory(data.category);
                         setTxDesc(data.description);
-                        setIsAiFilled(true); // Ativa modo de revisão
+                        setIsAiFilled(true);
                         toast.success("Dados extraídos! Por favor, REVISE antes de salvar.");
                     } catch (aiError) {
-                        toast.error("IA não conseguiu ler o documento com clareza.");
+                        toast.error("IA não conseguiu ler o documento.");
                     }
                     setIsScanning(false);
                 };
@@ -120,55 +96,6 @@ const Finance: React.FC = () => {
                 setIsScanning(false);
             }
         }
-    };
-
-    // --- COACH / ADMIN LOGIC BELOW ---
-
-    // Smart Tuition Logic
-    const getDelinquentPlayers = () => {
-        const today = new Date();
-        const overdueInvoices = invoices.filter(inv => inv.status !== 'PAID' && new Date(inv.dueDate) < today);
-        
-        // Group by Player
-        const debtMap = new Map<number, number>();
-        overdueInvoices.forEach(inv => {
-            if(inv.playerId) {
-                const current = debtMap.get(inv.playerId) || 0;
-                debtMap.set(inv.playerId, current + inv.amount);
-            }
-        });
-
-        // Map back to Player Info
-        return Array.from(debtMap.entries()).map(([playerId, debt]) => {
-            const player = players.find(p => p.id === playerId);
-            return {
-                id: playerId,
-                name: player?.name || 'Desconhecido',
-                avatar: player?.avatarUrl,
-                totalDebt: debt,
-                status: debt > 200 ? 'BLOCKED' : 'WARNING' // Rule: Debt > 200 blocks
-            };
-        }).sort((a,b) => b.totalDebt - a.totalDebt);
-    };
-
-    const delinquentList = getDelinquentPlayers();
-
-    const handleCreateBulkReceivable = () => {
-        const targets = players; // Simplify target logic for brevity
-        const amountPerPerson = recAmount;
-        const dueDateObj = new Date(recDueDate);
-
-        storageService.createBulkInvoices(
-            targets.map(p => p.id),
-            recTitle,
-            amountPerPerson,
-            dueDateObj,
-            recCategory
-        );
-
-        setInvoices(storageService.getInvoices());
-        setIsRecModalOpen(false);
-        toast.success(`Sucesso! Cobranças geradas.`);
     };
 
     const handleSaveTransaction = (e: React.FormEvent) => {
@@ -192,20 +119,70 @@ const Finance: React.FC = () => {
         const updated = [newTx, ...transactions];
         setTransactions(updated);
         storageService.saveTransactions(updated);
+        
+        // Update Budget Spent if Expense
+        if (txType === 'EXPENSE') {
+            const budget = budgets.find(b => b.category === txCategory);
+            if (budget) {
+                const updatedBudgets = budgets.map(b => b.category === txCategory ? { ...b, spent: b.spent + Number(txAmount) } : b);
+                setBudgets(updatedBudgets);
+                storageService.saveBudgets(updatedBudgets);
+            }
+        }
+
         setIsTxModalOpen(false);
         setIsAiFilled(false);
-        toast.success("Transação validada e registrada.");
-        
-        // Clear form
-        setTxTitle('');
-        setTxAmount('');
-        setTxDesc('');
+        toast.success("Transação registrada.");
+        setTxTitle(''); setTxAmount(''); setTxDesc('');
     };
 
-    const totalIncome = transactions.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0) 
-        + invoices.filter(i => i.status === 'PAID').reduce((acc, i) => acc + i.amount, 0);
-    const totalExpense = transactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
-    const balance = totalIncome - totalExpense;
+    const handleCreateSubscription = (e: React.FormEvent) => {
+        e.preventDefault();
+        const newSub: Subscription = {
+            id: `sub-${Date.now()}`,
+            title: subTitle,
+            amount: subAmount,
+            frequency: 'MONTHLY',
+            active: true,
+            nextBillingDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+            assignedTo: players.map(p => p.id) // Default all active
+        };
+        const updated = [...subscriptions, newSub];
+        setSubscriptions(updated);
+        storageService.saveSubscriptions(updated);
+        setIsSubModalOpen(false);
+        toast.success("Plano recorrente criado!");
+        
+        // Trigger initial invoices
+        storageService.generateMonthlyInvoices();
+    };
+
+    // CALCULATIONS (Memoized for Performance)
+    const { totalIncome, totalExpense, balance, projectedRevenue, delinquencyTotal, pendingBills } = useMemo(() => {
+        const inc = transactions.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0);
+        const exp = transactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
+        const proj = subscriptions.filter(s => s.active).reduce((acc, s) => acc + (s.amount * s.assignedTo.length), 0);
+        const delinq = invoices.filter(i => i.status === 'OVERDUE').reduce((a,b)=>a+b.amount,0);
+        const billsTotal = bills.filter(b => b.status === 'PENDING').reduce((a,b)=>a+b.amount,0);
+
+        return {
+            totalIncome: inc,
+            totalExpense: exp,
+            balance: inc - exp,
+            projectedRevenue: proj,
+            delinquencyTotal: delinq,
+            pendingBills: billsTotal
+        };
+    }, [transactions, subscriptions, invoices, bills]);
+
+    const budgetData = useMemo(() => {
+        return budgets.map(b => ({
+            name: b.category,
+            spent: b.spent,
+            limit: b.limit,
+            percentage: Math.min(100, (b.spent / b.limit) * 100)
+        }));
+    }, [budgets]);
 
     if (isPlayer) return <div>Acesso Restrito</div>;
 
@@ -218,116 +195,160 @@ const Finance: React.FC = () => {
                     </div>
                     <div>
                         <h2 className="text-3xl font-bold text-text-primary">Gestão Financeira (CFO)</h2>
-                        <p className="text-text-secondary">Fluxo de Caixa, Despesas e Documentação.</p>
+                        <p className="text-text-secondary">ERP: Caixa, Assinaturas e Orçamentos.</p>
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => setIsTxModalOpen(true)} className="bg-secondary border border-white/10 hover:bg-white/5 text-white px-4 py-2.5 rounded-xl font-bold shadow-lg text-sm">
-                        Lançar Despesa
-                    </button>
-                    <button onClick={() => setIsRecModalOpen(true)} className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2.5 rounded-xl font-bold shadow-lg flex items-center gap-2">
-                        <span>+</span> Criar Recebimento
+                    <button onClick={() => setIsTxModalOpen(true)} className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2.5 rounded-xl font-bold shadow-lg flex items-center gap-2">
+                        <span>+</span> Lançar Transação
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* KPI CARDS */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="bg-gradient-to-br from-blue-900/40 to-secondary border-l-4 border-l-blue-500">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400"><SparklesIcon className="h-6 w-6" /></div>
+                        <div><p className="text-xs text-text-secondary font-bold uppercase">Saldo Atual</p><p className={`text-xl font-bold ${balance >= 0 ? 'text-white' : 'text-red-500'}`}>R$ {balance.toFixed(2)}</p></div>
+                    </div>
+                </Card>
                 <Card className="bg-gradient-to-br from-green-900/40 to-secondary border-l-4 border-l-green-500">
-                    <div className="flex items-center">
-                        <div className="p-3 bg-green-500/20 rounded-lg text-green-400"><WalletIcon className="h-8 w-8" /></div>
-                        <div className="ml-4"><p className="text-xs text-text-secondary font-bold uppercase">Entradas</p><p className="text-2xl font-bold text-green-400">R$ {totalIncome.toFixed(2)}</p></div>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-500/20 rounded-lg text-green-400"><RefreshIcon className="h-6 w-6" /></div>
+                        <div><p className="text-xs text-text-secondary font-bold uppercase">Recorrência (ARR)</p><p className="text-xl font-bold text-green-400">R$ {projectedRevenue.toFixed(2)}</p></div>
                     </div>
                 </Card>
                 <Card className="bg-gradient-to-br from-red-900/40 to-secondary border-l-4 border-l-red-500">
-                    <div className="flex items-center">
-                        <div className="p-3 bg-red-500/20 rounded-lg text-red-400"><AlertCircleIcon className="h-8 w-8" /></div>
-                        <div className="ml-4"><p className="text-xs text-text-secondary font-bold uppercase">Saídas</p><p className="text-2xl font-bold text-red-400">R$ {totalExpense.toFixed(2)}</p></div>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-red-500/20 rounded-lg text-red-400"><AlertCircleIcon className="h-6 w-6" /></div>
+                        <div><p className="text-xs text-text-secondary font-bold uppercase">A Pagar (Bills)</p><p className="text-xl font-bold text-red-400">R$ {pendingBills.toFixed(2)}</p></div>
                     </div>
                 </Card>
-                <Card className="bg-gradient-to-br from-blue-900/40 to-secondary border-l-4 border-l-blue-500">
-                    <div className="flex items-center">
-                        <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400"><SparklesIcon className="h-8 w-8" /></div>
-                        <div className="ml-4"><p className="text-xs text-text-secondary font-bold uppercase">Saldo Atual</p><p className={`text-2xl font-bold ${balance >= 0 ? 'text-white' : 'text-red-500'}`}>R$ {balance.toFixed(2)}</p></div>
+                <Card className="bg-gradient-to-br from-yellow-900/40 to-secondary border-l-4 border-l-yellow-500">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-yellow-500/20 rounded-lg text-yellow-400"><AlertTriangleIcon className="h-6 w-6" /></div>
+                        <div><p className="text-xs text-text-secondary font-bold uppercase">Inadimplência</p><p className="text-xl font-bold text-yellow-400">R$ {delinquencyTotal.toFixed(2)}</p></div>
                     </div>
                 </Card>
             </div>
 
+            {/* NAVIGATION TABS */}
             <div className="flex border-b border-white/10 overflow-x-auto">
-                <button onClick={() => setViewMode('OVERVIEW')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'OVERVIEW' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary hover:text-white'}`}>Extrato Geral</button>
-                <button onClick={() => setViewMode('RECEIVABLES')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${viewMode === 'RECEIVABLES' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary hover:text-white'}`}>Recebíveis</button>
-                <button onClick={() => setViewMode('DELINQUENCY')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${viewMode === 'DELINQUENCY' ? 'border-red-500 text-red-400' : 'border-transparent text-text-secondary hover:text-white'}`}>
-                    <AlertTriangleIcon className="w-4 h-4" /> Radar Inadimplência
+                <button onClick={() => setViewMode('OVERVIEW')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${viewMode === 'OVERVIEW' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
+                    <WalletIcon className="w-4 h-4"/> Fluxo de Caixa
+                </button>
+                <button onClick={() => setViewMode('SUBSCRIPTIONS')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${viewMode === 'SUBSCRIPTIONS' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary'}`}>
+                    <RefreshIcon className="w-4 h-4"/> Assinaturas
+                </button>
+                <button onClick={() => setViewMode('BUDGET')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${viewMode === 'BUDGET' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary'}`}>
+                    <PieChartIcon className="w-4 h-4"/> Orçamento
+                </button>
+                <button onClick={() => setViewMode('BILLS')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${viewMode === 'BILLS' ? 'border-red-500 text-red-400' : 'border-transparent text-text-secondary'}`}>
+                    <BuildingIcon className="w-4 h-4"/> Contas a Pagar
+                </button>
+                <button onClick={() => setViewMode('RECOVERY')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${viewMode === 'RECOVERY' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary'}`}>
+                    <HandshakeIcon className="w-4 h-4"/> Acordos
                 </button>
             </div>
 
-            {viewMode === 'DELINQUENCY' && (
+            {/* VIEW: OVERVIEW */}
+            {viewMode === 'OVERVIEW' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-in">
-                    <Card title="Atletas com Pendências (Smart Tuition)">
-                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                            {delinquentList.length === 0 && <p className="text-center text-text-secondary py-8 italic">Parabéns! Nenhuma inadimplência detectada.</p>}
-                            {delinquentList.map(item => (
-                                <div key={item.id} className={`flex items-center justify-between p-4 rounded-xl border ${item.status === 'BLOCKED' ? 'bg-red-900/20 border-red-500/50' : 'bg-secondary border-white/5'}`}>
-                                    <div className="flex items-center gap-4">
-                                        <div className="relative">
-                                            <img src={item.avatar} className="w-12 h-12 rounded-full grayscale" />
-                                            {item.status === 'BLOCKED' && <div className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">BLOQUEADO</div>}
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-white">{item.name}</p>
-                                            <p className="text-xs text-text-secondary">Dívida Total</p>
-                                        </div>
+                    <Card title="Últimas Transações">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left text-text-secondary">
+                                <thead className="bg-black/20 text-xs font-bold uppercase">
+                                    <tr>
+                                        <th className="px-4 py-2">Data</th>
+                                        <th className="px-4 py-2">Descrição</th>
+                                        <th className="px-4 py-2 text-right">Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {transactions.slice(0, 8).map(tx => (
+                                        <tr key={tx.id} className="border-b border-white/5 hover:bg-white/5">
+                                            <td className="px-4 py-2">{new Date(tx.date).toLocaleDateString()}</td>
+                                            <td className="px-4 py-2 text-white">{tx.title}</td>
+                                            <td className={`px-4 py-2 text-right font-mono font-bold ${tx.type === 'INCOME' ? 'text-green-400' : 'text-red-400'}`}>
+                                                {tx.type === 'INCOME' ? '+' : '-'} R$ {tx.amount.toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                    <div className="space-y-6">
+                        <div className="bg-secondary p-6 rounded-xl border border-white/5 text-center">
+                            <h3 className="text-white font-bold text-lg mb-2">Acesso Rápido</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button className="bg-white/5 hover:bg-white/10 p-4 rounded-lg text-sm text-text-secondary hover:text-white transition-colors">
+                                    Relatório DRE
+                                </button>
+                                <button className="bg-white/5 hover:bg-white/10 p-4 rounded-lg text-sm text-text-secondary hover:text-white transition-colors">
+                                    Extrato Bancário
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* VIEW: SUBSCRIPTIONS */}
+            {viewMode === 'SUBSCRIPTIONS' && (
+                <div className="space-y-6 animate-slide-in">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-bold text-white">Planos de Receita Recorrente</h3>
+                        <button onClick={() => setIsSubModalOpen(true)} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                            + Novo Plano
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {subscriptions.map(sub => (
+                            <div key={sub.id} className="bg-secondary p-6 rounded-xl border border-white/5 relative overflow-hidden group hover:border-green-500/50 transition-all">
+                                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <RefreshIcon className="w-16 h-16 text-green-500" />
+                                </div>
+                                <h4 className="text-lg font-bold text-white mb-1">{sub.title}</h4>
+                                <p className="text-3xl font-black text-green-400 mb-4">R$ {sub.amount.toFixed(2)}<span className="text-sm text-text-secondary font-normal">/mês</span></p>
+                                <div className="space-y-2 text-xs text-text-secondary">
+                                    <p>Assinantes: <strong className="text-white">{sub.assignedTo.length}</strong></p>
+                                    <p>Próxima Cobrança: <strong className="text-white">{new Date(sub.nextBillingDate).toLocaleDateString()}</strong></p>
+                                    <p>Status: <span className="text-green-400 font-bold">ATIVO</span></p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* VIEW: BUDGETS */}
+            {viewMode === 'BUDGET' && (
+                <div className="space-y-6 animate-slide-in">
+                    <Card title="Controle Orçamentário (Real vs Orçado)">
+                        <div className="space-y-6">
+                            {budgetData.length === 0 && <p className="text-text-secondary italic">Nenhum orçamento definido.</p>}
+                            {budgetData.map((b, idx) => (
+                                <div key={idx} className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-white font-bold uppercase">{b.name}</span>
+                                        <span className="text-text-secondary">R$ {b.spent.toFixed(2)} / <span className="text-white">R$ {b.limit.toFixed(2)}</span></span>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-xl font-bold text-red-400">R$ {item.totalDebt.toFixed(2)}</p>
-                                        <button className="text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded mt-1">
-                                            Notificar (WhatsApp)
-                                        </button>
+                                    <div className="w-full bg-black/40 h-4 rounded-full overflow-hidden border border-white/5">
+                                        <div 
+                                            className={`h-full transition-all duration-1000 ${b.percentage > 100 ? 'bg-red-500' : b.percentage > 80 ? 'bg-yellow-500' : 'bg-blue-500'}`} 
+                                            style={{width: `${Math.min(100, b.percentage)}%`}}
+                                        ></div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </Card>
-                    <div className="space-y-6">
-                        <div className="bg-blue-900/20 p-6 rounded-xl border border-blue-500/20">
-                            <h4 className="font-bold text-blue-300 mb-2">Política de Bloqueio</h4>
-                            <p className="text-sm text-text-secondary">O sistema bloqueia automaticamente a presença em treinos e jogos para atletas com dívida superior a R$ 200,00 por mais de 30 dias.</p>
-                        </div>
-                    </div>
                 </div>
             )}
 
-            {(viewMode === 'OVERVIEW' || viewMode === 'EXPENSES') && (
-                <div className="bg-secondary rounded-xl border border-white/5 overflow-hidden">
-                    <table className="w-full text-sm text-left text-text-secondary">
-                        <thead className="text-xs text-text-secondary uppercase bg-black/20 border-b border-white/5">
-                            <tr>
-                                <th className="px-4 py-3">Data</th>
-                                <th className="px-4 py-3">Descrição</th>
-                                <th className="px-4 py-3">Categoria</th>
-                                <th className="px-4 py-3 text-right">Valor</th>
-                                <th className="px-4 py-3 text-right">Validado Por</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {transactions.slice(0, 10).map((tx) => (
-                                <tr key={tx.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                                    <td className="px-4 py-3">{new Date(tx.date).toLocaleDateString()}</td>
-                                    <td className="px-4 py-3">
-                                        <p className="text-white font-bold">{tx.title}</p>
-                                        {tx.aiGenerated && <span className="text-[9px] bg-purple-500/20 text-purple-300 px-1 rounded">IA + {tx.verifiedBy}</span>}
-                                    </td>
-                                    <td className="px-4 py-3"><span className="text-[10px] bg-white/10 px-2 py-0.5 rounded uppercase">{tx.category}</span></td>
-                                    <td className={`px-4 py-3 text-right font-bold font-mono ${tx.type === 'INCOME' ? 'text-green-400' : 'text-red-400'}`}>
-                                        {tx.type === 'INCOME' ? '+' : '-'} R$ {tx.amount.toFixed(2)}
-                                    </td>
-                                    <td className="px-4 py-3 text-right text-xs text-text-secondary">{tx.verifiedBy || 'Sistema'}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
+            {/* TRANSACTION MODAL */}
             <Modal isOpen={isTxModalOpen} onClose={() => setIsTxModalOpen(false)} title="Nova Transação">
                 <form onSubmit={handleSaveTransaction} className="space-y-4">
                     <div className="flex gap-2 mb-4 bg-black/20 p-1 rounded-lg">
@@ -346,42 +367,24 @@ const Finance: React.FC = () => {
                             <span className="text-xs font-bold text-white">
                                 {isScanning ? 'Analisando Imagem...' : isAiFilled ? 'Documento Lido! Revise abaixo.' : 'Ler Comprovante (IA)'}
                             </span>
-                            <span className="text-[10px] text-text-secondary">Foto de Nota Fiscal ou Recibo</span>
                         </div>
                     </div>
 
-                    {isAiFilled && (
-                        <div className="bg-yellow-900/20 p-2 rounded text-xs text-yellow-300 text-center mb-2 font-bold border border-yellow-500/30">
-                            ⚠ Atenção: Verifique os valores preenchidos pela IA antes de salvar.
-                        </div>
-                    )}
-
-                    <input className={`w-full bg-black/20 border rounded p-2 text-white transition-colors ${isAiFilled ? 'border-yellow-500/50 shadow-glow' : 'border-white/10'}`} placeholder="Título" value={txTitle} onChange={e => setTxTitle(e.target.value)} required />
-                    <input type="number" className={`w-full bg-black/20 border rounded p-2 text-white transition-colors ${isAiFilled ? 'border-yellow-500/50 shadow-glow' : 'border-white/10'}`} placeholder="Valor" value={txAmount} onChange={e => setTxAmount(e.target.value)} required />
-                    <input type="date" className={`w-full bg-black/20 border rounded p-2 text-white transition-colors ${isAiFilled ? 'border-yellow-500/50 shadow-glow' : 'border-white/10'}`} value={txDate} onChange={e => setTxDate(e.target.value)} required />
+                    <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Título" value={txTitle} onChange={e => setTxTitle(e.target.value)} required />
+                    <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Valor" value={txAmount} onChange={e => setTxAmount(e.target.value)} required />
                     
-                    <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={txCategory} onChange={e => setTxCategory(e.target.value as any)}>
-                        <option value="OTHER">Outros</option>
-                        <option value="TRANSPORT">Transporte</option>
-                        <option value="EQUIPMENT">Equipamento</option>
-                        <option value="REFEREE">Arbitragem</option>
-                        <option value="FIELD_RENTAL">Aluguel Campo</option>
-                    </select>
-
-                    <button type="submit" className="w-full bg-highlight hover:bg-highlight-hover text-white py-2 rounded font-bold flex items-center justify-center gap-2">
-                        {isAiFilled && <CheckCircleIcon className="w-4 h-4" />}
-                        {isAiFilled ? 'Validar & Salvar' : 'Salvar'}
-                    </button>
+                    <button type="submit" className="w-full bg-highlight hover:bg-highlight-hover text-white py-2 rounded font-bold">Salvar</button>
                 </form>
             </Modal>
-
-            <Modal isOpen={isRecModalOpen} onClose={() => setIsRecModalOpen(false)} title="Gerar Cobrança">
-                <div className="space-y-4">
-                    <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Título (ex: Mensalidade)" value={recTitle} onChange={e => setRecTitle(e.target.value)} />
-                    <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Valor Unitário" value={recAmount} onChange={e => setRecAmount(Number(e.target.value))} />
-                    <input type="date" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={recDueDate} onChange={e => setRecDueDate(e.target.value)} />
-                    <button onClick={handleCreateBulkReceivable} className="w-full bg-green-600 text-white py-2 rounded font-bold">Gerar para Todos</button>
-                </div>
+            
+            {/* SUBSCRIPTION MODAL */}
+            <Modal isOpen={isSubModalOpen} onClose={() => setIsSubModalOpen(false)} title="Novo Plano Recorrente">
+                <form onSubmit={handleCreateSubscription} className="space-y-4">
+                    <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Nome (Ex: Mensalidade 2025)" value={subTitle} onChange={e => setSubTitle(e.target.value)} required />
+                    <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Valor Mensal (R$)" value={subAmount} onChange={e => setSubAmount(Number(e.target.value))} required />
+                    <p className="text-xs text-text-secondary">Será cobrado mensalmente de todos os atletas ativos.</p>
+                    <button type="submit" className="w-full bg-green-600 text-white py-2 rounded font-bold">Criar Assinatura</button>
+                </form>
             </Modal>
         </div>
     );

@@ -1,5 +1,5 @@
 
-import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, League, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, Championship, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, VideoPermissionGroup, EquipmentItem, EventSale, SavedWorkout, NationalTeamCandidate, Affiliate, KanbanTask, RecruitmentCandidate, Objective } from '../types';
+import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, League, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, Championship, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, VideoPermissionGroup, EquipmentItem, EventSale, SavedWorkout, NationalTeamCandidate, Affiliate, KanbanTask, RecruitmentCandidate, Objective, Subscription, PaymentAgreement, Budget, Bill, Vendor, PurchaseRequest } from '../types';
 import { firebaseDataService } from './firebaseDataService';
 import { syncService } from './syncService';
 
@@ -31,6 +31,13 @@ const SOCIAL_FEED_KEY = 'gridiron_social_feed';
 const AUDIT_LOGS_KEY = 'gridiron_audit_logs';
 const CANDIDATES_KEY = 'gridiron_candidates';
 const OBJECTIVES_KEY = 'gridiron_objectives';
+// New Financial Keys
+const SUBSCRIPTIONS_KEY = 'gridiron_subscriptions';
+const AGREEMENTS_KEY = 'gridiron_agreements';
+const BUDGETS_KEY = 'gridiron_budgets';
+const BILLS_KEY = 'gridiron_bills';
+const VENDORS_KEY = 'gridiron_vendors';
+const PURCHASE_REQUESTS_KEY = 'gridiron_purchase_requests';
 
 const dateReviver = (key: string, value: any) => {
     if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
@@ -82,7 +89,14 @@ const RAM_DB: any = {
     feed: [],
     logs: [],
     candidates: [],
-    objectives: []
+    objectives: [],
+    // Financial
+    subscriptions: [],
+    agreements: [],
+    budgets: [],
+    bills: [],
+    vendors: [],
+    purchaseRequests: []
 };
 
 // Generic Helper for Disk I/O
@@ -96,48 +110,65 @@ const getListFromDisk = <T>(key: string): T[] => {
     }
 };
 
+// NON-BLOCKING SAVE (Performance Fix)
 const saveListToDisk = <T>(key: string, list: T[]) => {
-    try {
-        localStorage.setItem(key, JSON.stringify(list));
-    } catch (e) {
-        console.error(`Error saving ${key} to disk`, e);
-    }
+    // We defer the JSON.stringify and localStorage.setItem to the end of the event loop
+    // This allows the UI to update immediately without freezing
+    setTimeout(() => {
+        try {
+            localStorage.setItem(key, JSON.stringify(list));
+        } catch (e) {
+            console.error(`Error saving ${key} to disk`, e);
+        }
+    }, 0);
 };
 
 export const storageService = {
     // --- INITIALIZATION (Critical for Performance) ---
     initializeRAM: () => {
         console.time("RAM_INIT");
+        // Load critical data first
         RAM_DB.players = getListFromDisk(PLAYERS_KEY);
         RAM_DB.games = getListFromDisk(GAMES_KEY);
         
         const storedSettings = localStorage.getItem(TEAM_SETTINGS_KEY);
         RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
         
-        RAM_DB.practice = getListFromDisk(PRACTICE_KEY);
+        // Load others
         RAM_DB.transactions = getListFromDisk(TRANSACTIONS_KEY);
         RAM_DB.invoices = getListFromDisk(INVOICES_KEY);
         RAM_DB.staff = getListFromDisk(STAFF_KEY);
-        RAM_DB.tasks = getListFromDisk(TASKS_KEY);
-        RAM_DB.announcements = getListFromDisk(ANNOUNCEMENTS_KEY);
-        RAM_DB.chat = getListFromDisk(CHAT_KEY);
-        RAM_DB.documents = getListFromDisk(DOCUMENTS_KEY);
-        RAM_DB.inventory = getListFromDisk(INVENTORY_KEY);
-        RAM_DB.sponsors = getListFromDisk(SPONSORS_KEY);
-        RAM_DB.socialPosts = getListFromDisk(SOCIAL_POSTS_KEY);
-        RAM_DB.marketplace = getListFromDisk(MARKETPLACE_KEY);
-        RAM_DB.sales = getListFromDisk(SALES_KEY);
-        RAM_DB.courses = getListFromDisk(COURSES_KEY);
-        RAM_DB.plays = getListFromDisk(TACTICAL_PLAYS_KEY);
-        RAM_DB.clips = getListFromDisk(CLIPS_KEY);
-        RAM_DB.playlists = getListFromDisk(PLAYLISTS_KEY);
-        RAM_DB.youthClasses = getListFromDisk(YOUTH_CLASSES_KEY);
-        RAM_DB.coachNotes = getListFromDisk(COACH_NOTES_KEY);
-        RAM_DB.coachProfiles = getListFromDisk(COACH_PROFILES_KEY);
-        RAM_DB.feed = getListFromDisk(SOCIAL_FEED_KEY);
-        RAM_DB.logs = getListFromDisk(AUDIT_LOGS_KEY);
-        RAM_DB.candidates = getListFromDisk(CANDIDATES_KEY);
-        RAM_DB.objectives = getListFromDisk(OBJECTIVES_KEY);
+        
+        // Defer loading heavy non-critical data
+        setTimeout(() => {
+            RAM_DB.practice = getListFromDisk(PRACTICE_KEY);
+            RAM_DB.tasks = getListFromDisk(TASKS_KEY);
+            RAM_DB.announcements = getListFromDisk(ANNOUNCEMENTS_KEY);
+            RAM_DB.chat = getListFromDisk(CHAT_KEY);
+            RAM_DB.documents = getListFromDisk(DOCUMENTS_KEY);
+            RAM_DB.inventory = getListFromDisk(INVENTORY_KEY);
+            RAM_DB.sponsors = getListFromDisk(SPONSORS_KEY);
+            RAM_DB.socialPosts = getListFromDisk(SOCIAL_POSTS_KEY);
+            RAM_DB.marketplace = getListFromDisk(MARKETPLACE_KEY);
+            RAM_DB.sales = getListFromDisk(SALES_KEY);
+            RAM_DB.courses = getListFromDisk(COURSES_KEY);
+            RAM_DB.plays = getListFromDisk(TACTICAL_PLAYS_KEY);
+            RAM_DB.clips = getListFromDisk(CLIPS_KEY);
+            RAM_DB.playlists = getListFromDisk(PLAYLISTS_KEY);
+            RAM_DB.youthClasses = getListFromDisk(YOUTH_CLASSES_KEY);
+            RAM_DB.coachNotes = getListFromDisk(COACH_NOTES_KEY);
+            RAM_DB.coachProfiles = getListFromDisk(COACH_PROFILES_KEY);
+            RAM_DB.feed = getListFromDisk(SOCIAL_FEED_KEY);
+            RAM_DB.logs = getListFromDisk(AUDIT_LOGS_KEY);
+            RAM_DB.candidates = getListFromDisk(CANDIDATES_KEY);
+            RAM_DB.objectives = getListFromDisk(OBJECTIVES_KEY);
+            RAM_DB.subscriptions = getListFromDisk(SUBSCRIPTIONS_KEY);
+            RAM_DB.agreements = getListFromDisk(AGREEMENTS_KEY);
+            RAM_DB.budgets = getListFromDisk(BUDGETS_KEY);
+            RAM_DB.bills = getListFromDisk(BILLS_KEY);
+            RAM_DB.vendors = getListFromDisk(VENDORS_KEY);
+            RAM_DB.purchaseRequests = getListFromDisk(PURCHASE_REQUESTS_KEY);
+        }, 100);
         console.timeEnd("RAM_INIT");
     },
 
@@ -161,12 +192,6 @@ export const storageService = {
                 RAM_DB.games = cloudGames;
                 saveListToDisk(GAMES_KEY, cloudGames);
             }
-
-            const cloudTxs = await firebaseDataService.getTransactions();
-            if (cloudTxs && cloudTxs.length > 0) {
-                RAM_DB.transactions = cloudTxs;
-                saveListToDisk(TRANSACTIONS_KEY, cloudTxs);
-            }
             return true;
         } catch (error) {
             console.error("⚠️ Erro na sincronização:", error);
@@ -174,19 +199,14 @@ export const storageService = {
         }
     },
 
-    // --- ACCESSORS (Instant RAM Access with Offline Queue) ---
+    // --- ACCESSORS ---
 
     // PLAYERS
     getPlayers: (): Player[] => RAM_DB.players,
     savePlayers: (players: Player[]) => {
         RAM_DB.players = players;
         saveListToDisk(PLAYERS_KEY, players);
-        
-        if (syncService.getConnectionStatus()) {
-            firebaseDataService.syncPlayers(players).catch(e => console.warn("Sync failed", e));
-        } else {
-            syncService.enqueueAction('SYNC_PLAYERS', players);
-        }
+        if (!syncService.getConnectionStatus()) syncService.enqueueAction('SYNC_PLAYERS', players);
     },
     registerAthlete: (player: Player) => {
         const newPlayer = { ...player, teamId: 'ts-1', rosterCategory: 'ACTIVE' as const };
@@ -203,7 +223,6 @@ export const storageService = {
             return p;
         });
         storageService.savePlayers(updated);
-        storageService.logAuditAction('GAMIFICATION', `Atleta ID ${playerId} recebeu ${amount} XP: ${reason}`);
     },
 
     // RECRUITMENT (CANDIDATES)
@@ -225,12 +244,6 @@ export const storageService = {
     saveGames: (games: Game[]) => {
         RAM_DB.games = games;
         saveListToDisk(GAMES_KEY, games);
-        
-        if (syncService.getConnectionStatus()) {
-            firebaseDataService.syncGames(games).catch(e => console.warn("Sync failed", e));
-        } else {
-            syncService.enqueueAction('SYNC_GAMES', games);
-        }
     },
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const updated = RAM_DB.games.map((g: Game) => g.id === gameId ? { ...g, ...updates } : g);
@@ -259,21 +272,13 @@ export const storageService = {
     saveTeamSettings: (s: TeamSettings) => {
         RAM_DB.settings = s;
         localStorage.setItem(TEAM_SETTINGS_KEY, JSON.stringify(s));
-        if (syncService.getConnectionStatus()) {
-            firebaseDataService.saveTeamSettings(s).catch(e => console.warn("Sync failed", e));
-        }
     },
 
-    // FINANCE
+    // FINANCE (BASIC)
     getTransactions: (): Transaction[] => RAM_DB.transactions,
     saveTransactions: (t: Transaction[]) => {
         RAM_DB.transactions = t;
         saveListToDisk(TRANSACTIONS_KEY, t);
-        if (syncService.getConnectionStatus()) {
-            firebaseDataService.syncTransactions(t).catch(e => console.warn("Sync failed", e));
-        } else {
-            syncService.enqueueAction('SYNC_TRANSACTIONS', t);
-        }
     },
     getInvoices: (): Invoice[] => RAM_DB.invoices,
     saveInvoices: (i: Invoice[]) => {
@@ -296,6 +301,61 @@ export const storageService = {
             };
         });
         storageService.saveInvoices([...RAM_DB.invoices, ...newInvoices]);
+    },
+
+    // FINANCE (ADVANCED ERP)
+    getSubscriptions: (): Subscription[] => RAM_DB.subscriptions,
+    saveSubscriptions: (s: Subscription[]) => {
+        RAM_DB.subscriptions = s;
+        saveListToDisk(SUBSCRIPTIONS_KEY, s);
+    },
+    
+    getAgreements: (): PaymentAgreement[] => RAM_DB.agreements,
+    saveAgreements: (a: PaymentAgreement[]) => {
+        RAM_DB.agreements = a;
+        saveListToDisk(AGREEMENTS_KEY, a);
+    },
+
+    getBudgets: (): Budget[] => RAM_DB.budgets,
+    saveBudgets: (b: Budget[]) => {
+        RAM_DB.budgets = b;
+        saveListToDisk(BUDGETS_KEY, b);
+    },
+
+    getBills: (): Bill[] => RAM_DB.bills,
+    saveBills: (b: Bill[]) => {
+        RAM_DB.bills = b;
+        saveListToDisk(BILLS_KEY, b);
+    },
+    
+    generateMonthlyInvoices: () => {
+        const today = new Date();
+        const subs = RAM_DB.subscriptions as Subscription[];
+        let newInvoices: Invoice[] = [];
+        
+        subs.forEach(sub => {
+            if(sub.active) {
+                sub.assignedTo.forEach(playerId => {
+                    const player = RAM_DB.players.find((p:any) => p.id === playerId);
+                    if(player) {
+                        newInvoices.push({
+                            id: `inv-sub-${Date.now()}-${playerId}`,
+                            playerId: playerId,
+                            playerName: player.name,
+                            title: `Assinatura: ${sub.title}`,
+                            amount: sub.amount,
+                            dueDate: new Date(today.getFullYear(), today.getMonth() + 1, 5), // Due next month 5th
+                            status: 'PENDING',
+                            category: 'TUITION'
+                        });
+                    }
+                });
+            }
+        });
+        
+        if (newInvoices.length > 0) {
+            storageService.saveInvoices([...RAM_DB.invoices, ...newInvoices]);
+        }
     },
 
     // STAFF
@@ -455,13 +515,12 @@ export const storageService = {
         saveListToDisk(AUDIT_LOGS_KEY, updated);
     },
 
-    // --- MOCKS & UTILS ---
+    // --- UTILS ---
     getPermissions: (): VideoPermissionGroup[] => [],
     seedDatabaseToCloud: async () => { 
         await firebaseDataService.syncPlayers(RAM_DB.players);
         await firebaseDataService.syncGames(RAM_DB.games);
         await firebaseDataService.syncTransactions(RAM_DB.transactions);
-        console.log("Seeding complete"); 
     },
     exportFullDatabase: () => {
         const data = JSON.stringify(localStorage);
@@ -506,11 +565,7 @@ export const LEGAL_DOCUMENTS: any[] = [
         id: 'term-finance-01',
         title: 'Termo de Responsabilidade Financeira',
         version: '1.0',
-        content: `
-        1. O usuário declara estar ciente de que as informações financeiras inseridas no sistema são de sua inteira responsabilidade.
-        2. O sistema armazena logs de auditoria de todas as transações para fins de compliance.
-        3. Fraudes ou lançamentos indevidos poderão ser rastreados pelo IP e ID do usuário.
-        `,
+        content: `1. O usuário declara estar ciente de que as informações financeiras inseridas no sistema são de sua inteira responsabilidade.\n2. O sistema armazena logs de auditoria de todas as transações para fins de compliance.\n3. Fraudes ou lançamentos indevidos poderão ser rastreados pelo IP e ID do usuário.`,
         requiredRole: ['HEAD_COACH', 'FINANCIAL_MANAGER', 'MASTER'],
         createdAt: new Date()
     }

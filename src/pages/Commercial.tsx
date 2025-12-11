@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { storageService } from '../services/storageService';
 import { generateSponsorshipProposal } from '../services/geminiService';
 import { SponsorDeal, MarketplaceItem, EventSale } from '../types';
@@ -22,15 +22,17 @@ const Commercial: React.FC = () => {
     const [eventSales, setEventSales] = useState<EventSale[]>([]);
 
     useEffect(() => {
-        // Carregando dados com proteção contra null/undefined
-        const loadedDeals = storageService.getSponsors() || [];
-        setDeals(loadedDeals);
+        // Load heavy data asynchronously
+        setTimeout(() => {
+            const loadedDeals = storageService.getSponsors() || [];
+            setDeals(loadedDeals);
 
-        const loadedItems = storageService.getMarketplaceItems() || [];
-        setStoreItems(loadedItems.filter(i => i && i.sellerType === 'TEAM_STORE'));
+            const loadedItems = storageService.getMarketplaceItems() || [];
+            setStoreItems(loadedItems.filter(i => i && i.sellerType === 'TEAM_STORE'));
 
-        const loadedSales = storageService.getEventSales() || [];
-        setEventSales(loadedSales);
+            const loadedSales = storageService.getEventSales() || [];
+            setEventSales(loadedSales);
+        }, 0);
     }, []);
 
     // --- CRM LOGIC ---
@@ -64,21 +66,27 @@ const Commercial: React.FC = () => {
         return 'text-text-secondary';
     };
 
-    // --- CALCULATIONS (BLINDADOS) ---
-    // Usamos .filter(Boolean) e verificações de propriedade para evitar crash
-    const totalSponsorships = deals
-        .filter(d => d && d.status === 'CLOSED_WON')
-        .reduce((acc, d) => acc + (d.value || 0), 0);
+    // --- CALCULATIONS (MEMOIZED & BLINDADOS) ---
+    const { totalSponsorships, totalStoreSales, totalTicketSales, totalRevenue } = useMemo(() => {
+        const sponsorships = deals
+            .filter(d => d && d.status === 'CLOSED_WON')
+            .reduce((acc, d) => acc + (d.value || 0), 0);
 
-    const totalStoreSales = storeItems
-        .filter(i => i && i.isSold)
-        .reduce((acc, i) => acc + (i.price || 0), 0);
+        const storeSales = storeItems
+            .filter(i => i && i.isSold)
+            .reduce((acc, i) => acc + (i.price || 0), 0);
 
-    const totalTicketSales = eventSales
-        .filter(s => s && s.totalAmount)
-        .reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+        const ticketSales = eventSales
+            .filter(s => s && s.totalAmount)
+            .reduce((acc, s) => acc + (s.totalAmount || 0), 0);
 
-    const totalRevenue = totalSponsorships + totalStoreSales + totalTicketSales;
+        return {
+            totalSponsorships: sponsorships,
+            totalStoreSales: storeSales,
+            totalTicketSales: ticketSales,
+            totalRevenue: sponsorships + storeSales + ticketSales
+        };
+    }, [deals, storeItems, eventSales]);
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
