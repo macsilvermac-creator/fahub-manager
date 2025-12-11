@@ -744,6 +744,8 @@ export interface PaymentTransaction {
     createdAt: Date;
     platformFee: number;
     netAmount: number;
+    aiGenerated?: boolean;
+    verifiedBy?: string;
 }
 
 export interface CoachGameNote {
@@ -800,6 +802,7 @@ export interface QuizResult {
     playerId: number;
     score: number;
     date: Date;
+    
 }
 
 export interface ScoutChartData {
