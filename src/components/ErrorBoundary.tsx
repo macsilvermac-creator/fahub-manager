@@ -23,10 +23,10 @@ class ErrorBoundary extends React.Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
     
-    // Auto-reload se for erro de chunk (comum após deploy)
+    // Auto-reload se for erro de chunk (comum após deploy ou falha de rede)
     if (error.message && (error.message.includes('Loading chunk') || error.message.includes('Importing a module script failed'))) {
         console.warn("Chunk load error detected. Reloading...");
-        // window.location.reload(); // Opcional: Recarregar automaticamente
+        // Opcional: window.location.reload(); 
     }
   }
 
@@ -43,7 +43,7 @@ class ErrorBoundary extends React.Component<Props, State> {
             </div>
             <h2 className="text-2xl font-bold mb-2">Ops! Algo deu errado.</h2>
             <p className="text-gray-400 text-sm mb-6">
-                O sistema encontrou um erro inesperado. Geralmente limpar o cache resolve.
+                O sistema encontrou um erro inesperado (provavelmente conexão). Tente recarregar.
             </p>
             <div className="bg-black/30 p-3 rounded text-xs font-mono text-left text-red-300 mb-6 overflow-auto max-h-32 border border-white/5">
                 {this.state.error?.message || "Erro desconhecido"}
@@ -65,4 +65,4 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 }
 
-export default ErrorBoundary;
+export default ErrorBounda
