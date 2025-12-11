@@ -34,7 +34,7 @@ const Schedule: React.FC = () => {
     const isPlayer = currentRole === 'PLAYER';
 
     useEffect(() => {
-        // PERFORMANCE: Load data
+        // PERFORMANCE: Load data optimized
         const games = storageService.getGames().map(g => ({
             id: g.id,
             type: 'GAME' as const,
@@ -53,10 +53,15 @@ const Schedule: React.FC = () => {
             details: p
         }));
 
-        // Merge and Sort by Date (Descending for history, Ascending for future?)
-        // Better: Sort Ascending so upcoming are first, but maybe filter out very old ones
+        // Merge and Sort by Date Ascending (Oldest first? No, let's show upcoming first but keep recent history)
+        // Better UX: Sort by date. 
         const merged = [...games, ...practices].sort((a, b) => a.date.getTime() - b.date.getTime());
-        setSchedule(merged);
+        
+        // Optional: Filter out VERY old events (older than 30 days) to keep list snappy
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        setSchedule(merged.filter(i => i.date > thirtyDaysAgo));
     }, []);
 
     const handleDeleteGame = (game: Game) => {

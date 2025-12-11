@@ -94,14 +94,17 @@ const RAM_DB: any = {
     bills: null
 };
 
-// --- CORE UTILS ---
+// --- CORE UTILS (High Performance) ---
 const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any = []): T[] => {
+    // 1. Fast Path: Se já está na RAM, retorna instantaneamente
     if (RAM_DB[ramKey] !== null) {
         return RAM_DB[ramKey];
     }
+    
+    // 2. Slow Path: Acessa disco e faz parse
     try {
         const stored = localStorage.getItem(storageKey);
-        // Otimização: Se a string for muito curta, nem faz parse, retorna array vazio
+        // Otimização: Se a string for muito curta ou inexistente, evita JSON.parse
         if (!stored || stored.length < 5) {
             RAM_DB[ramKey] = initialValue;
             return initialValue;
@@ -110,37 +113,40 @@ const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any =
         RAM_DB[ramKey] = parsed;
         return parsed;
     } catch (e) {
-        console.error(`Error loading ${ramKey}`, e);
+        console.error(`Storage Corrupt [${ramKey}]: Resetting data.`);
         RAM_DB[ramKey] = initialValue;
         return initialValue;
     }
 };
 
 const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
+    // Atualiza RAM imediatamente para a UI reagir rápido
     RAM_DB[ramKey] = data;
-    // Otimização: requestIdleCallback evita travar a UI durante animações
-    if ('requestIdleCallback' in window) {
-        (window as any).requestIdleCallback(() => {
-            localStorage.setItem(storageKey, JSON.stringify(data));
+    
+    // Persiste no disco de forma assíncrona (não bloqueia a thread principal)
+    if (window.requestIdleCallback) {
+        window.requestIdleCallback(() => {
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(data));
+            } catch (e) {
+                console.error("Quota Exceeded or Write Error", e);
+            }
         });
     } else {
         setTimeout(() => {
             localStorage.setItem(storageKey, JSON.stringify(data));
-        }, 10);
+        }, 0);
     }
 };
 
 export const storageService = {
     initializeRAM: () => {
-        // Carrega APENAS configurações críticas para o Layout pintar a cor certa
+        // PERFORMANCE: Carrega APENAS configurações críticas na inicialização.
+        // Todo o resto é carregado sob demanda (Lazy) quando a página específica é aberta.
         const storedSettings = localStorage.getItem(KEYS.SETTINGS);
         RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
         
-        // Pré-aquece Players e Games (Core) em background após 200ms
-        setTimeout(() => {
-            loadIfNeeded('players', KEYS.PLAYERS);
-            loadIfNeeded('games', KEYS.GAMES);
-        }, 200);
+        console.log("🚀 System Boot: Core Settings Loaded. Lazy modules standing by.");
     },
 
     uploadFile: async (file: File, folder: string = 'general') => {
@@ -164,7 +170,6 @@ export const storageService = {
     },
 
     // --- LAZY ACCESSORS ---
-    // Note como cada getter chama loadIfNeeded. Isso é o segredo do Lazy Load.
     
     getPlayers: (): Player[] => loadIfNeeded<Player>('players', KEYS.PLAYERS),
     savePlayers: (players: Player[]) => {
@@ -212,27 +217,6 @@ export const storageService = {
             status: 'FINAL' as const
         } : g);
         storageService.saveGames(updated);
-    },
-
-    createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string, iId?: string) => {
-        const currentInvoices = storageService.getInvoices();
-        const players = storageService.getPlayers();
-        
-        const newInvoices: Invoice[] = ids.map(id => {
-            const player = players.find((p: Player) => p.id === id);
-            return {
-                id: `inv-${Date.now()}-${id}`,
-                playerId: id,
-                playerName: player?.name || 'Atleta',
-                title,
-                amount,
-                dueDate,
-                status: 'PENDING',
-                category: category as any,
-                inventoryItemId: iId
-            };
-        });
-        storageService.saveInvoices([...currentInvoices, ...newInvoices]);
     },
 
     // --- OUTROS GETTERS LAZY ---
@@ -331,13 +315,16 @@ export const storageService = {
         storageService.savePlayers(updated);
     },
 
+    // --- DASHBOARD OPTIMIZED FETCH ---
+    // Este método é crucial. Ele garante que o Dashboard não precise chamar 10 getters diferentes.
+    // Ele faz o trabalho sujo aqui, de forma eficiente.
     getCoachDashboardStats: () => {
-        // Este getter força o carregamento de players e games pois são necessários para a dashboard
-        const players = storageService.getPlayers();
-        const games = storageService.getGames();
+        // Force load apenas do necessário
+        const players = loadIfNeeded<Player>('players', KEYS.PLAYERS);
+        const games = loadIfNeeded<Game>('games', KEYS.GAMES);
         
-        const activePlayers = players.filter((p: Player) => p.status === 'ACTIVE').length;
-        const injuredPlayers = players.filter((p: Player) => p.status === 'INJURED' || p.status === 'IR').length;
+        const activePlayers = players.filter(p => p.status === 'ACTIVE').length;
+        const injuredPlayers = players.filter(p => p.status === 'INJURED' || p.status === 'IR').length;
         
         const now = new Date();
         const nextGame = games
@@ -357,9 +344,9 @@ export const storageService = {
     checkDocumentSigned: (docId: string) => true, 
     signLegalDocument: () => {},
     getConfederationStats: () => ({ totalAthletes: 1200, totalTeams: 15, totalGamesThisYear: 45, activeAffiliates: 4, growthRate: 10 }),
-    getNationalTeamScouting: () => loadIfNeeded<NationalTeamCandidate>('candidates', KEYS.CANDIDATES), // Mocking using candidates for now as placeholder or separate logic needed
+    getNationalTeamScouting: () => loadIfNeeded<NationalTeamCandidate>('candidates', KEYS.CANDIDATES), 
     getAffiliatesStatus: () => [],
-    getTransferRequests: () => loadIfNeeded<TransferRequest>('transfers', 'gridiron_transfers'), // Assuming key
+    getTransferRequests: () => loadIfNeeded<TransferRequest>('transfers', 'gridiron_transfers'), 
     processTransfer: (id: string, decision: string, by: string) => {},
     getLeague: () => ({ id: 'lg-1', name: 'Liga Nacional', season: '2025', teams: [] }),
     getPublicLeagueStats: () => ({ name: 'Liga Nacional', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
