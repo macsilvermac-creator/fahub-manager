@@ -16,31 +16,22 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY)
+      // CRÍTICO: Evita crash "process is not defined" em bibliotecas legadas
+      'process.env': {
+         API_KEY: JSON.stringify(env.API_KEY),
+         NODE_ENV: JSON.stringify(mode)
+      }
     },
     build: {
       target: 'esnext',
       minify: 'esbuild',
       outDir: 'dist',
       sourcemap: false,
-      chunkSizeWarningLimit: 1200, 
+      chunkSizeWarningLimit: 1600, // Aumenta limite para evitar warnings irrelevantes
       rollupOptions: {
         output: {
-          manualChunks: (id) => {
-            // Separação Crítica de Vendor (Bibliotecas Pesadas)
-            if (id.includes('node_modules/react')) return 'vendor-react';
-            if (id.includes('node_modules/firebase')) return 'vendor-firebase';
-            if (id.includes('node_modules/recharts')) return 'vendor-charts';
-            if (id.includes('node_modules/@google/genai')) return 'vendor-ai';
-            
-            // Separação de Módulos Internos (Lazy Load Real)
-            if (id.includes('src/pages/Finance')) return 'page-finance';
-            if (id.includes('src/pages/Recruitment')) return 'page-recruitment';
-            if (id.includes('src/pages/VideoAnalysis')) return 'page-video';
-            if (id.includes('src/pages/TacticalLab')) return 'page-tactics';
-            if (id.includes('src/pages/Logistics')) return 'page-logistics';
-            if (id.includes('src/pages/Inventory')) return 'page-inventory';
-          }
+          // Volta para o automático (mais seguro para Vercel)
+          manualChunks: undefined 
         }
       }
     }
