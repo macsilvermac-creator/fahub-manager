@@ -6,9 +6,11 @@ import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlobalSearch from './components/GlobalSearch';
+import ProtectedRoute from './components/ProtectedRoute'; // Importação da Segurança
 import { ToastProvider } from './contexts/ToastContext';
 
-// FAHUB MANAGER v2.8 - Strategic Management
+// FAHUB MANAGER v3.0 - Unified Architecture with Entity Segregation
+// Lazy Load Modules
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
@@ -45,7 +47,17 @@ const Onboarding = React.lazy(() => import('./pages/Onboarding'));
 const BroadcastOverlay = React.lazy(() => import('./pages/BroadcastOverlay'));
 const Logistics = React.lazy(() => import('./pages/Logistics'));
 const Recruitment = React.lazy(() => import('./pages/Recruitment'));
-const Goals = React.lazy(() => import('./pages/Goals')); // NEW
+const Goals = React.lazy(() => import('./pages/Goals'));
+
+// --- DEFINIÇÃO DE GRUPOS DE ACESSO (SEGREGATION PROTOCOL) ---
+const ROLES = {
+  MASTER: ['MASTER'],
+  FINANCE: ['MASTER', 'FINANCIAL_MANAGER'],
+  COACHING: ['MASTER', 'HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'],
+  STAFF: ['MASTER', 'HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD', 'FINANCIAL_MANAGER', 'MARKETING_MANAGER', 'COMMERCIAL_MANAGER', 'SPORTS_DIRECTOR'],
+  PLAYER_VIEW: ['MASTER', 'HEAD_COACH', 'PLAYER', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'], // Quem pode ver treinos/jogos
+  ALL: undefined // Acesso público/comum
+};
 
 const Main: React.FC = () => {
   return (
@@ -55,7 +67,7 @@ const Main: React.FC = () => {
             <GlobalSearch />
             <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
                 <Routes>
-                {/* Rotas Públicas (Sem Layout) */}
+                {/* Rotas Públicas */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/public/league" element={<PublicLeague />} />
@@ -70,37 +82,45 @@ const Main: React.FC = () => {
                         <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LoadingScreen /></div>}>
                             <Routes>
                             <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                            
+                            {/* CORE (Todos Acessam) */}
                             <Route path="/dashboard" element={<Dashboard />} />
-                            <Route path="/roster" element={<Roster />} />
-                            <Route path="/finance" element={<Finance />} />
-                            <Route path="/practice" element={<PracticePlan />} />
-                            <Route path="/schedule" element={<Schedule />} />
-                            <Route path="/staff" element={<Staff />} />
-                            <Route path="/inventory" element={<Inventory />} />
-                            <Route path="/tasks" element={<TeamTasks />} />
-                            <Route path="/communications" element={<Communications />} />
-                            <Route path="/resources" element={<Resources />} />
-                            <Route path="/settings" element={<TeamSettingsPage />} />
-                            <Route path="/admin" element={<AdminPanel />} />
                             <Route path="/profile" element={<MyProfile />} />
+                            <Route path="/schedule" element={<Schedule />} />
+                            <Route path="/locker-room" element={<LockerRoom />} />
+                            <Route path="/academy" element={<Academy />} />
+                            <Route path="/marketplace" element={<Marketplace />} />
+                            <Route path="/communications" element={<Communications />} />
+                            <Route path="/help" element={<HelpCenter />} />
+                            <Route path="/resources" element={<Resources />} />
+                            
+                            {/* COACHING & OPERAÇÕES (Restrito) */}
+                            <Route path="/roster" element={<ProtectedRoute allowedRoles={ROLES.PLAYER_VIEW}><Roster /></ProtectedRoute>} />
+                            <Route path="/practice" element={<ProtectedRoute allowedRoles={ROLES.PLAYER_VIEW}><PracticePlan /></ProtectedRoute>} />
+                            <Route path="/gemini-playbook" element={<ProtectedRoute allowedRoles={ROLES.PLAYER_VIEW}><GeminiPlaybook /></ProtectedRoute>} />
+                            <Route path="/video" element={<ProtectedRoute allowedRoles={ROLES.PLAYER_VIEW}><VideoAnalysis /></ProtectedRoute>} />
+                            <Route path="/tactical-lab" element={<ProtectedRoute allowedRoles={ROLES.COACHING}><TacticalLab /></ProtectedRoute>} />
+                            <Route path="/recruitment" element={<ProtectedRoute allowedRoles={ROLES.COACHING}><Recruitment /></ProtectedRoute>} />
+                            <Route path="/youth" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><YouthProgram /></ProtectedRoute>} />
+                            <Route path="/event-desk" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><EventDesk /></ProtectedRoute>} />
+                            
+                            {/* OFFICE / ADMIN (Alta Segurança) */}
+                            <Route path="/finance" element={<ProtectedRoute allowedRoles={ROLES.FINANCE}><Finance /></ProtectedRoute>} />
+                            <Route path="/commercial" element={<ProtectedRoute allowedRoles={['MASTER', 'COMMERCIAL_MANAGER']}><Commercial /></ProtectedRoute>} />
+                            <Route path="/marketing" element={<ProtectedRoute allowedRoles={['MASTER', 'MARKETING_MANAGER']}><Marketing /></ProtectedRoute>} />
+                            <Route path="/logistics" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><Logistics /></ProtectedRoute>} />
+                            <Route path="/inventory" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><Inventory /></ProtectedRoute>} />
+                            <Route path="/staff" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><Staff /></ProtectedRoute>} />
+                            <Route path="/tasks" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><TeamTasks /></ProtectedRoute>} />
+                            <Route path="/goals" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><Goals /></ProtectedRoute>} />
+                            <Route path="/settings" element={<ProtectedRoute allowedRoles={ROLES.MASTER}><TeamSettingsPage /></ProtectedRoute>} />
+                            <Route path="/admin" element={<ProtectedRoute allowedRoles={ROLES.MASTER}><AdminPanel /></ProtectedRoute>} />
+                            
+                            {/* EXTERNAL & FEDERAÇÃO */}
                             <Route path="/officiating" element={<Officiating />} />
                             <Route path="/league" element={<LeagueManager />} />
                             <Route path="/confederation" element={<Confederation />} />
-                            <Route path="/gemini-playbook" element={<GeminiPlaybook />} />
-                            <Route path="/tactical-lab" element={<TacticalLab />} />
-                            <Route path="/video" element={<VideoAnalysis />} />
-                            <Route path="/academy" element={<Academy />} />
-                            <Route path="/marketplace" element={<Marketplace />} />
-                            <Route path="/commercial" element={<Commercial />} />
-                            <Route path="/marketing" element={<Marketing />} />
-                            <Route path="/locker-room" element={<LockerRoom />} />
-                            <Route path="/youth" element={<YouthProgram />} />
-                            <Route path="/event-desk" element={<EventDesk />} />
-                            <Route path="/help" element={<HelpCenter />} />
                             <Route path="/roadmap" element={<Roadmap />} />
-                            <Route path="/logistics" element={<Logistics />} />
-                            <Route path="/recruitment" element={<Recruitment />} />
-                            <Route path="/goals" element={<Goals />} />
                             </Routes>
                         </Suspense>
                     </ErrorBoundary>
