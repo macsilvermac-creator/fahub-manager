@@ -1,384 +1,517 @@
 
-import React, { useState, useEffect } from 'react';
-import Card from '../components/Card';
-import { EquipmentItem, Player } from '../types';
-import { storageService } from '../services/storageService';
-import { ClipboardIcon, AlertTriangleIcon, CheckCircleIcon, TrashIcon, QrcodeIcon, PrinterIcon, SmartphoneIcon, BarcodeIcon } from '../components/icons/UiIcons';
-import Modal from '../components/Modal';
-import { useToast } from '../contexts/ToastContext';
+import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, League, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, Championship, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, VideoPermissionGroup, EquipmentItem, EventSale, SavedWorkout, NationalTeamCandidate, Affiliate, KanbanTask, RecruitmentCandidate, Objective } from '../types';
+import { firebaseDataService } from './firebaseDataService';
+import { syncService } from './syncService';
 
-const Inventory: React.FC = () => {
-    const toast = useToast();
-    const [items, setItems] = useState<EquipmentItem[]>([]);
-    const [players, setPlayers] = useState<Player[]>([]);
-    const [filter, setFilter] = useState<'ASSETS' | 'SALES'>('ASSETS');
-    
-    // Modal State
-    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<EquipmentItem | null>(null);
-    const [selectedPlayerId, setSelectedPlayerId] = useState<number | string>('');
+// Chaves do LocalStorage
+const PLAYERS_KEY = 'gridiron_players';
+const GAMES_KEY = 'gridiron_games';
+const TEAM_SETTINGS_KEY = 'gridiron_settings';
+const PRACTICE_KEY = 'gridiron_practice';
+const TRANSACTIONS_KEY = 'gridiron_transactions';
+const INVOICES_KEY = 'gridiron_invoices';
+const STAFF_KEY = 'gridiron_staff';
+const TASKS_KEY = 'gridiron_tasks';
+const ANNOUNCEMENTS_KEY = 'gridiron_announcements';
+const CHAT_KEY = 'gridiron_chat';
+const DOCUMENTS_KEY = 'gridiron_documents';
+const INVENTORY_KEY = 'gridiron_inventory';
+const SPONSORS_KEY = 'gridiron_sponsors';
+const SOCIAL_POSTS_KEY = 'gridiron_social_posts';
+const MARKETPLACE_KEY = 'gridiron_marketplace';
+const SALES_KEY = 'gridiron_sales';
+const COURSES_KEY = 'gridiron_courses';
+const TACTICAL_PLAYS_KEY = 'gridiron_tactical_plays';
+const CLIPS_KEY = 'gridiron_clips';
+const PLAYLISTS_KEY = 'gridiron_playlists';
+const YOUTH_CLASSES_KEY = 'gridiron_youth_classes';
+const COACH_PROFILES_KEY = 'gridiron_coach_profiles';
+const COACH_NOTES_KEY = 'gridiron_coach_notes';
+const SOCIAL_FEED_KEY = 'gridiron_social_feed';
+const AUDIT_LOGS_KEY = 'gridiron_audit_logs';
+const CANDIDATES_KEY = 'gridiron_candidates';
+const OBJECTIVES_KEY = 'gridiron_objectives';
 
-    // New Item State
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [newItem, setNewItem] = useState<Partial<EquipmentItem>>({ category: 'HELMET', condition: 'NEW', quantity: 1, forSale: false });
-
-    // Print State
-    const [printMode, setPrintMode] = useState(false);
-
-    useEffect(() => {
-        setItems(storageService.getInventory());
-        setPlayers(storageService.getPlayers());
-    }, []);
-
-    const filteredItems = items.filter(i => filter === 'ASSETS' ? !i.forSale : i.forSale);
-
-    const handleAssign = () => {
-        if (!selectedItem || !selectedPlayerId) return;
-        
-        const updatedItems = items.map(i => 
-            i.id === selectedItem.id 
-            ? { ...i, assignedToPlayerId: Number(selectedPlayerId), quantity: i.quantity - 1 } 
-            : i
-        );
-        
-        setItems(updatedItems);
-        storageService.saveInventory(updatedItems);
-        setIsAssignModalOpen(false);
-        setSelectedItem(null);
-        setSelectedPlayerId('');
-        toast.success("Equipamento atribuído com sucesso!");
-    };
-
-    const handleReturn = (itemId: string) => {
-        const updatedItems = items.map(i => 
-            i.id === itemId 
-            ? { ...i, assignedToPlayerId: undefined, quantity: i.quantity + 1 } 
-            : i
-        );
-        setItems(updatedItems);
-        storageService.saveInventory(updatedItems);
-        toast.info("Item devolvido ao estoque.");
-    };
-
-    const handleAddItem = (e: React.FormEvent) => {
-        e.preventDefault();
-        const item: EquipmentItem = {
-            id: `eq-${Date.now()}`,
-            name: newItem.name || 'Item Sem Nome',
-            category: newItem.category as any,
-            quantity: Number(newItem.quantity),
-            condition: newItem.condition as any,
-            forSale: filter === 'SALES',
-            salePrice: newItem.salePrice ? Number(newItem.salePrice) : undefined,
-            brand: newItem.brand,
-            acquisitionDate: new Date(),
-            expiryDate: newItem.expiryDate ? new Date(newItem.expiryDate) : undefined,
-            qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ASSET:${Date.now()}`
-        };
-        const updated = [...items, item];
-        setItems(updated);
-        storageService.saveInventory(updated);
-        setIsAddModalOpen(false);
-        setNewItem({ category: 'HELMET', condition: 'NEW', quantity: 1, forSale: false });
-        toast.success("Item cadastrado!");
-    };
-
-    const handleCopyReport = () => {
-        const report = `📦 *RELATÓRIO DE INVENTÁRIO - FAHUB STARS*
-📅 Data: ${new Date().toLocaleDateString()}
-
-🚨 *ITENS VENCIDOS:*
-${items.filter(i => i.expiryDate && new Date(i.expiryDate) < new Date()).map(i => `- ${i.name} (Venc: ${new Date(i.expiryDate!).toLocaleDateString()})`).join('\n') || 'Nenhum'}
-
-📊 *RESUMO GERAL:*
-- Total Ativos: ${items.filter(i => !i.forSale).length}
-- Valor Patrimonial: R$ ${totalAssetValue.toFixed(2)}
-- Emprestados: ${items.filter(i => i.assignedToPlayerId).length}
-
-Assinado: Gestão de Patrimônio`;
-
-        navigator.clipboard.writeText(report);
-        toast.success("Relatório copiado! Cole no WhatsApp da Diretoria.");
-    };
-
-    const totalAssetValue = items.filter(i => !i.forSale).reduce((acc, i) => acc + ((i.cost || 0) * i.quantity), 0);
-    const expiredItems = items.filter(i => i.expiryDate && new Date(i.expiryDate) < new Date()).length;
-
-    return (
-        <div className="space-y-6 pb-12 animate-fade-in relative">
-            {/* THERMAL PRINTER STYLES */}
-            <style>{`
-                @media print {
-                    body * { visibility: hidden; }
-                    #thermal-labels, #thermal-labels * { visibility: visible; }
-                    #thermal-labels {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
-                    }
-                    .label-item {
-                        width: 50mm;
-                        height: 30mm;
-                        border: 1px dashed black;
-                        padding: 2mm;
-                        page-break-after: always;
-                        display: flex;
-                        align-items: center;
-                        justify-content: space-between;
-                        font-family: Arial, sans-serif;
-                    }
-                    .no-print { display: none !important; }
-                }
-            `}</style>
-
-            {/* HIDDEN PRINT AREA */}
-            <div id="thermal-labels" className="hidden print:block">
-                {items.filter(i => !i.forSale).map(item => (
-                    <div key={item.id} className="label-item">
-                        <div style={{width: '60%'}}>
-                            <div style={{fontSize: '10px', fontWeight: 'bold'}}>{item.category}</div>
-                            <div style={{fontSize: '12px', overflow: 'hidden', whiteSpace: 'nowrap'}}>{item.name}</div>
-                            <div style={{fontSize: '8px'}}>ID: {item.id}</div>
-                            <div style={{fontSize: '8px'}}>Venc: {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'N/A'}</div>
-                        </div>
-                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${item.id}`} style={{width: '20mm', height: '20mm'}} />
-                    </div>
-                ))}
-            </div>
-
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 no-print">
-                <div>
-                    <h2 className="text-3xl font-bold text-text-primary">Gestão de Inventário 2.0</h2>
-                    <p className="text-text-secondary mt-1 flex items-center gap-2">
-                        <ClipboardIcon className="w-4 h-4" />
-                        Almoxarifado Inteligente & Ciclo de Vida.
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={handleCopyReport} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 text-sm">
-                        <SmartphoneIcon className="w-4 h-4" /> Relatório WhatsApp
-                    </button>
-                    <button onClick={() => window.print()} className="bg-secondary border border-white/10 hover:bg-white/5 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm">
-                        <BarcodeIcon className="w-4 h-4" /> Imprimir Etiquetas (50x30mm)
-                    </button>
-                    <button onClick={() => setIsAddModalOpen(true)} className="bg-highlight hover:bg-highlight-hover text-white px-4 py-2 rounded-xl font-bold shadow-lg text-sm">
-                        + Novo Item
-                    </button>
-                </div>
-            </div>
-
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 no-print">
-                <Card className="bg-gradient-to-br from-blue-900/40 to-secondary border-l-4 border-l-blue-500">
-                    <div className="flex items-center">
-                        <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400">
-                             <ClipboardIcon className="h-8 w-8" />
-                        </div>
-                        <div className="ml-4">
-                            <p className="text-xs text-text-secondary font-bold uppercase">Valor Patrimonial</p>
-                            <p className="text-2xl font-bold text-white">R$ {totalAssetValue.toFixed(2)}</p>
-                        </div>
-                    </div>
-                </Card>
-                <Card className="bg-gradient-to-br from-red-900/40 to-secondary border-l-4 border-l-red-500">
-                    <div className="flex items-center">
-                        <div className="p-3 bg-red-500/20 rounded-lg text-red-400">
-                             <AlertTriangleIcon className="h-8 w-8" />
-                        </div>
-                        <div className="ml-4">
-                            <p className="text-xs text-text-secondary font-bold uppercase">Itens Vencidos</p>
-                            <p className="text-2xl font-bold text-white">{expiredItems} <span className="text-sm font-normal text-text-secondary">Risco Legal</span></p>
-                        </div>
-                    </div>
-                </Card>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex border-b border-white/10 no-print">
-                <button 
-                    onClick={() => setFilter('ASSETS')}
-                    className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${filter === 'ASSETS' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary hover:text-white'}`}
-                >
-                    Patrimônio (Equipamentos)
-                </button>
-                <button 
-                    onClick={() => setFilter('SALES')}
-                    className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${filter === 'SALES' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary hover:text-white'}`}
-                >
-                    Estoque Comercial (Bar/Loja)
-                </button>
-            </div>
-
-            {/* Table */}
-            <Card className="no-print">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left text-text-secondary">
-                        <thead className="text-xs text-text-secondary uppercase bg-black/20 border-b border-white/5">
-                            <tr>
-                                <th className="px-4 py-3">Item</th>
-                                <th className="px-4 py-3">Categoria</th>
-                                <th className="px-4 py-3">Qtd</th>
-                                <th className="px-4 py-3">Validade</th>
-                                {filter === 'ASSETS' && <th className="px-4 py-3">Responsável</th>}
-                                {filter === 'SALES' && <th className="px-4 py-3">Preço Venda</th>}
-                                <th className="px-4 py-3 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredItems.map(item => {
-                                const assignee = players.find(p => p.id === item.assignedToPlayerId);
-                                const isExpired = item.expiryDate && new Date(item.expiryDate) < new Date();
-
-                                return (
-                                    <tr key={item.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                                        <td className="px-4 py-3 flex items-center gap-3">
-                                            {item.qrCodeUrl && <QrcodeIcon className="w-4 h-4 text-text-secondary" />}
-                                            <div>
-                                                <p className="font-bold text-white">{item.name}</p>
-                                                <p className="text-xs">{item.brand} • {item.size}</p>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded uppercase">{item.category}</span>
-                                        </td>
-                                        <td className="px-4 py-3 font-bold text-white">{item.quantity}</td>
-                                        <td className="px-4 py-3">
-                                            {isExpired ? (
-                                                <span className="text-red-400 font-bold flex items-center gap-1 text-xs bg-red-900/20 px-2 py-1 rounded"><AlertTriangleIcon className="w-3 h-3"/> Vencido</span>
-                                            ) : (
-                                                <span className="text-green-400 text-xs">{item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'Indefinido'}</span>
-                                            )}
-                                        </td>
-                                        
-                                        {filter === 'ASSETS' && (
-                                            <td className="px-4 py-3">
-                                                {assignee ? (
-                                                    <span className="text-highlight font-bold flex items-center gap-1 text-xs">
-                                                        <div className="w-2 h-2 rounded-full bg-highlight"></div>
-                                                        {assignee.name}
-                                                    </span>
-                                                ) : (
-                                                    <span className="opacity-50 text-xs">Em Estoque</span>
-                                                )}
-                                            </td>
-                                        )}
-
-                                        {filter === 'SALES' && (
-                                            <td className="px-4 py-3 text-white">R$ {item.salePrice?.toFixed(2)}</td>
-                                        )}
-
-                                        <td className="px-4 py-3 text-right">
-                                            {filter === 'ASSETS' && (
-                                                <>
-                                                    {item.assignedToPlayerId ? (
-                                                        <button 
-                                                            onClick={() => handleReturn(item.id)}
-                                                            className="text-xs bg-white/10 hover:bg-green-600 hover:text-white px-3 py-1.5 rounded transition-colors"
-                                                        >
-                                                            Devolução
-                                                        </button>
-                                                    ) : (
-                                                        <button 
-                                                            onClick={() => { setSelectedItem(item); setIsAssignModalOpen(true); }}
-                                                            className="text-xs bg-highlight hover:bg-highlight-hover text-white px-3 py-1.5 rounded transition-colors"
-                                                        >
-                                                            Emprestar
-                                                        </button>
-                                                    )}
-                                                </>
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </Card>
-
-            {/* Assign Modal */}
-            <Modal isOpen={isAssignModalOpen} onClose={() => setIsAssignModalOpen(false)} title="Empréstimo de Material">
-                <div className="space-y-4">
-                    <p className="text-sm text-text-secondary">Selecione o atleta que receberá: <strong>{selectedItem?.name}</strong></p>
-                    <select 
-                        className="w-full bg-black/20 border border-white/10 rounded p-3 text-white"
-                        value={selectedPlayerId}
-                        onChange={(e) => setSelectedPlayerId(e.target.value)}
-                    >
-                        <option value="">Selecione um Atleta...</option>
-                        {players.map(p => (
-                            <option key={p.id} value={p.id}>{p.name} (#{p.jerseyNumber})</option>
-                        ))}
-                    </select>
-                    <div className="bg-yellow-900/20 p-3 rounded border border-yellow-500/20">
-                        <p className="text-xs text-yellow-200">ℹ️ Ao confirmar, um "Termo de Responsabilidade" digital será gerado e vinculado ao perfil do atleta.</p>
-                    </div>
-                    <div className="flex justify-end pt-2">
-                        <button onClick={handleAssign} disabled={!selectedPlayerId} className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-lg font-bold disabled:opacity-50">
-                            Confirmar Entrega
-                        </button>
-                    </div>
-                </div>
-            </Modal>
-
-            {/* Add Item Modal */}
-            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Cadastrar Item">
-                <form onSubmit={handleAddItem} className="space-y-4">
-                    <div>
-                        <label className="text-xs font-bold text-text-secondary">Nome do Item</label>
-                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} required />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-xs font-bold text-text-secondary">Categoria</label>
-                            <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value as any})}>
-                                {filter === 'ASSETS' ? (
-                                    <>
-                                        <option value="HELMET">Capacete</option>
-                                        <option value="PADS">Shoulder Pad</option>
-                                        <option value="JERSEY">Uniforme</option>
-                                        <option value="BALL">Bola/Treino</option>
-                                    </>
-                                ) : (
-                                    <>
-                                        <option value="DRINK">Bebida</option>
-                                        <option value="FOOD">Comida</option>
-                                        <option value="MERCH">Merch/Loja</option>
-                                    </>
-                                )}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-text-secondary">Quantidade</label>
-                            <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newItem.quantity} onChange={e => setNewItem({...newItem, quantity: Number(e.target.value)})} required />
-                        </div>
-                    </div>
-                    
-                    {/* LIFECYCLE FIELDS */}
-                    <div className="grid grid-cols-2 gap-4 bg-white/5 p-3 rounded-lg border border-white/10">
-                        <div>
-                            <label className="text-xs font-bold text-text-secondary">Data Fabricação (Opcional)</label>
-                            <input type="date" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" />
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-text-secondary">Data Validade</label>
-                            <input type="date" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" onChange={e => setNewItem({...newItem, expiryDate: e.target.value as any})} />
-                        </div>
-                        <p className="col-span-2 text-[10px] text-text-secondary">Essencial para Capacetes (Validade 5-10 anos) para evitar processos.</p>
-                    </div>
-
-                    {filter === 'SALES' && (
-                        <div>
-                            <label className="text-xs font-bold text-text-secondary">Preço de Venda (R$)</label>
-                            <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newItem.salePrice} onChange={e => setNewItem({...newItem, salePrice: Number(e.target.value)})} />
-                        </div>
-                    )}
-                    <button type="submit" className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg mt-4">Salvar Item</button>
-                </form>
-            </Modal>
-        </div>
-    );
+const dateReviver = (key: string, value: any) => {
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+        return new Date(value);
+    }
+    return value;
 };
 
-export default Inventory;
+const INITIAL_TEAM_SETTINGS: TeamSettings = {
+    id: 'ts-1',
+    teamName: 'FAHUB Stars',
+    logoUrl: 'https://ui-avatars.com/api/?name=FS&background=00A86B&color=fff&size=200', 
+    address: 'Arena Principal, Centro Esportivo',
+    primaryColor: '#00A86B',
+    secondaryColor: '#EAB308',
+    level: 5,
+    xp: 2400,
+    reputation: 85,
+    badges: ['Campeão Estadual', 'Fair Play', 'Elite Training'],
+    sportType: 'FULLPADS',
+    legalAgreementsSigned: []
+};
+
+// --- IN-MEMORY DATABASE (RAM CACHE) ---
+const RAM_DB: any = {
+    players: [],
+    games: [],
+    settings: null,
+    practice: [],
+    transactions: [],
+    invoices: [],
+    staff: [],
+    tasks: [],
+    announcements: [],
+    chat: [],
+    documents: [],
+    inventory: [],
+    sponsors: [],
+    socialPosts: [],
+    marketplace: [],
+    sales: [],
+    courses: [],
+    plays: [],
+    clips: [],
+    playlists: [],
+    youthClasses: [],
+    coachNotes: [],
+    coachProfiles: [],
+    feed: [],
+    logs: [],
+    candidates: [],
+    objectives: []
+};
+
+// Generic Helper for Disk I/O
+const getListFromDisk = <T>(key: string): T[] => {
+    try {
+        const stored = localStorage.getItem(key);
+        return stored ? JSON.parse(stored, dateReviver) : [];
+    } catch (e) {
+        console.error(`Error reading ${key} from disk`, e);
+        return [];
+    }
+};
+
+const saveListToDisk = <T>(key: string, list: T[]) => {
+    try {
+        localStorage.setItem(key, JSON.stringify(list));
+    } catch (e) {
+        console.error(`Error saving ${key} to disk`, e);
+    }
+};
+
+export const storageService = {
+    // --- INITIALIZATION (Critical for Performance) ---
+    initializeRAM: () => {
+        console.time("RAM_INIT");
+        RAM_DB.players = getListFromDisk(PLAYERS_KEY);
+        RAM_DB.games = getListFromDisk(GAMES_KEY);
+        
+        const storedSettings = localStorage.getItem(TEAM_SETTINGS_KEY);
+        RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
+        
+        RAM_DB.practice = getListFromDisk(PRACTICE_KEY);
+        RAM_DB.transactions = getListFromDisk(TRANSACTIONS_KEY);
+        RAM_DB.invoices = getListFromDisk(INVOICES_KEY);
+        RAM_DB.staff = getListFromDisk(STAFF_KEY);
+        RAM_DB.tasks = getListFromDisk(TASKS_KEY);
+        RAM_DB.announcements = getListFromDisk(ANNOUNCEMENTS_KEY);
+        RAM_DB.chat = getListFromDisk(CHAT_KEY);
+        RAM_DB.documents = getListFromDisk(DOCUMENTS_KEY);
+        RAM_DB.inventory = getListFromDisk(INVENTORY_KEY);
+        RAM_DB.sponsors = getListFromDisk(SPONSORS_KEY);
+        RAM_DB.socialPosts = getListFromDisk(SOCIAL_POSTS_KEY);
+        RAM_DB.marketplace = getListFromDisk(MARKETPLACE_KEY);
+        RAM_DB.sales = getListFromDisk(SALES_KEY);
+        RAM_DB.courses = getListFromDisk(COURSES_KEY);
+        RAM_DB.plays = getListFromDisk(TACTICAL_PLAYS_KEY);
+        RAM_DB.clips = getListFromDisk(CLIPS_KEY);
+        RAM_DB.playlists = getListFromDisk(PLAYLISTS_KEY);
+        RAM_DB.youthClasses = getListFromDisk(YOUTH_CLASSES_KEY);
+        RAM_DB.coachNotes = getListFromDisk(COACH_NOTES_KEY);
+        RAM_DB.coachProfiles = getListFromDisk(COACH_PROFILES_KEY);
+        RAM_DB.feed = getListFromDisk(SOCIAL_FEED_KEY);
+        RAM_DB.logs = getListFromDisk(AUDIT_LOGS_KEY);
+        RAM_DB.candidates = getListFromDisk(CANDIDATES_KEY);
+        RAM_DB.objectives = getListFromDisk(OBJECTIVES_KEY);
+        console.timeEnd("RAM_INIT");
+    },
+
+    // --- CLOUD STORAGE (FILES) ---
+    uploadFile: async (file: File, folder: string = 'general') => {
+        return await firebaseDataService.uploadFile(file, folder);
+    },
+
+    // --- CORE SYNC FUNCTION ---
+    syncFromCloud: async () => {
+        console.log("📡 Iniciando sincronização (Background)...");
+        try {
+            const cloudPlayers = await firebaseDataService.getPlayers();
+            if (cloudPlayers && cloudPlayers.length > 0) {
+                RAM_DB.players = cloudPlayers;
+                saveListToDisk(PLAYERS_KEY, cloudPlayers);
+            }
+
+            const cloudGames = await firebaseDataService.getGames();
+            if (cloudGames && cloudGames.length > 0) {
+                RAM_DB.games = cloudGames;
+                saveListToDisk(GAMES_KEY, cloudGames);
+            }
+
+            const cloudTxs = await firebaseDataService.getTransactions();
+            if (cloudTxs && cloudTxs.length > 0) {
+                RAM_DB.transactions = cloudTxs;
+                saveListToDisk(TRANSACTIONS_KEY, cloudTxs);
+            }
+            return true;
+        } catch (error) {
+            console.error("⚠️ Erro na sincronização:", error);
+            return false;
+        }
+    },
+
+    // --- ACCESSORS (Instant RAM Access with Offline Queue) ---
+
+    // PLAYERS
+    getPlayers: (): Player[] => RAM_DB.players,
+    savePlayers: (players: Player[]) => {
+        RAM_DB.players = players;
+        saveListToDisk(PLAYERS_KEY, players);
+        
+        if (syncService.getConnectionStatus()) {
+            firebaseDataService.syncPlayers(players).catch(e => console.warn("Sync failed", e));
+        } else {
+            syncService.enqueueAction('SYNC_PLAYERS', players);
+        }
+    },
+    registerAthlete: (player: Player) => {
+        const newPlayer = { ...player, teamId: 'ts-1', rosterCategory: 'ACTIVE' as const };
+        const updated = [...RAM_DB.players, newPlayer];
+        storageService.savePlayers(updated);
+    },
+    addPlayerXP: (playerId: number, amount: number, reason: string) => {
+        const updated = RAM_DB.players.map((p: Player) => {
+            if (p.id === playerId) {
+                const newXp = (p.xp || 0) + amount;
+                const newLevel = Math.floor(newXp / 100) + 1;
+                return { ...p, xp: newXp, level: newLevel };
+            }
+            return p;
+        });
+        storageService.savePlayers(updated);
+        storageService.logAuditAction('GAMIFICATION', `Atleta ID ${playerId} recebeu ${amount} XP: ${reason}`);
+    },
+
+    // RECRUITMENT (CANDIDATES)
+    getCandidates: (): RecruitmentCandidate[] => RAM_DB.candidates,
+    saveCandidates: (candidates: RecruitmentCandidate[]) => {
+        RAM_DB.candidates = candidates;
+        saveListToDisk(CANDIDATES_KEY, candidates);
+    },
+
+    // OKRS (GOALS)
+    getObjectives: (): Objective[] => RAM_DB.objectives,
+    saveObjectives: (objectives: Objective[]) => {
+        RAM_DB.objectives = objectives;
+        saveListToDisk(OBJECTIVES_KEY, objectives);
+    },
+
+    // GAMES
+    getGames: (): Game[] => RAM_DB.games,
+    saveGames: (games: Game[]) => {
+        RAM_DB.games = games;
+        saveListToDisk(GAMES_KEY, games);
+        
+        if (syncService.getConnectionStatus()) {
+            firebaseDataService.syncGames(games).catch(e => console.warn("Sync failed", e));
+        } else {
+            syncService.enqueueAction('SYNC_GAMES', games);
+        }
+    },
+    updateLiveGame: (gameId: number, updates: Partial<Game>) => {
+        const updated = RAM_DB.games.map((g: Game) => g.id === gameId ? { ...g, ...updates } : g);
+        storageService.saveGames(updated);
+    },
+    finalizeGameReport: (gameId: number, report: GameReport, score: string, winner: string) => {
+        const updated = RAM_DB.games.map((g: Game) => g.id === gameId ? {
+            ...g,
+            officialReport: report,
+            score,
+            result: (winner === 'HOME' ? 'W' : winner === 'AWAY' ? 'L' : 'T') as 'W' | 'L' | 'T',
+            status: 'FINAL' as const
+        } : g);
+        storageService.saveGames(updated);
+    },
+
+    // PRACTICE
+    getPracticeSessions: (): PracticeSession[] => RAM_DB.practice,
+    savePracticeSessions: (p: PracticeSession[]) => {
+        RAM_DB.practice = p;
+        saveListToDisk(PRACTICE_KEY, p);
+    },
+
+    // SETTINGS
+    getTeamSettings: (): TeamSettings => RAM_DB.settings || INITIAL_TEAM_SETTINGS,
+    saveTeamSettings: (s: TeamSettings) => {
+        RAM_DB.settings = s;
+        localStorage.setItem(TEAM_SETTINGS_KEY, JSON.stringify(s));
+        if (syncService.getConnectionStatus()) {
+            firebaseDataService.saveTeamSettings(s).catch(e => console.warn("Sync failed", e));
+        }
+    },
+
+    // FINANCE
+    getTransactions: (): Transaction[] => RAM_DB.transactions,
+    saveTransactions: (t: Transaction[]) => {
+        RAM_DB.transactions = t;
+        saveListToDisk(TRANSACTIONS_KEY, t);
+        if (syncService.getConnectionStatus()) {
+            firebaseDataService.syncTransactions(t).catch(e => console.warn("Sync failed", e));
+        } else {
+            syncService.enqueueAction('SYNC_TRANSACTIONS', t);
+        }
+    },
+    getInvoices: (): Invoice[] => RAM_DB.invoices,
+    saveInvoices: (i: Invoice[]) => {
+        RAM_DB.invoices = i;
+        saveListToDisk(INVOICES_KEY, i);
+    },
+    createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string, iId?: string) => {
+        const newInvoices: Invoice[] = ids.map(id => {
+            const player = RAM_DB.players.find((p: Player) => p.id === id);
+            return {
+                id: `inv-${Date.now()}-${id}`,
+                playerId: id,
+                playerName: player?.name || 'Atleta',
+                title,
+                amount,
+                dueDate,
+                status: 'PENDING',
+                category: category as any,
+                inventoryItemId: iId
+            };
+        });
+        storageService.saveInvoices([...RAM_DB.invoices, ...newInvoices]);
+    },
+
+    // STAFF
+    getStaff: (): StaffMember[] => RAM_DB.staff,
+    saveStaff: (s: StaffMember[]) => {
+        RAM_DB.staff = s;
+        saveListToDisk(STAFF_KEY, s);
+    },
+
+    // DASHBOARD CALCULATIONS (RAM Optimized)
+    getCoachDashboardStats: () => {
+        const activePlayers = RAM_DB.players.filter((p: Player) => p.status === 'ACTIVE').length;
+        const injuredPlayers = RAM_DB.players.filter((p: Player) => p.status === 'INJURED' || p.status === 'IR').length;
+        
+        const now = new Date();
+        const nextGame = RAM_DB.games
+            .filter((g: Game) => new Date(g.date) > now && g.status === 'SCHEDULED')
+            .sort((a: Game, b: Game) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+
+        return { activePlayers, injuredPlayers, nextGame: nextGame || null };
+    },
+
+    // SOCIAL & COMMS
+    getSocialFeed: (): SocialFeedPost[] => RAM_DB.feed,
+    saveSocialFeedPost: (p: SocialFeedPost) => {
+        const updated = [p, ...RAM_DB.feed];
+        RAM_DB.feed = updated;
+        saveListToDisk(SOCIAL_FEED_KEY, updated);
+    },
+    toggleLikePost: (postId: string) => {
+        const updated = RAM_DB.feed.map((p: SocialFeedPost) => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
+        RAM_DB.feed = updated;
+        saveListToDisk(SOCIAL_FEED_KEY, updated);
+    },
+
+    getTasks: (): KanbanTask[] => RAM_DB.tasks,
+    saveTasks: (t: KanbanTask[]) => {
+        RAM_DB.tasks = t;
+        saveListToDisk(TASKS_KEY, t);
+    },
+
+    getAnnouncements: (): Announcement[] => RAM_DB.announcements,
+    saveAnnouncements: (a: Announcement[]) => {
+        RAM_DB.announcements = a;
+        saveListToDisk(ANNOUNCEMENTS_KEY, a);
+    },
+
+    getChatMessages: (): ChatMessage[] => RAM_DB.chat,
+    saveChatMessages: (m: ChatMessage[]) => {
+        RAM_DB.chat = m;
+        saveListToDisk(CHAT_KEY, m);
+    },
+
+    // RESOURCES
+    getDocuments: (): TeamDocument[] => RAM_DB.documents,
+    saveDocuments: (d: TeamDocument[]) => {
+        RAM_DB.documents = d;
+        saveListToDisk(DOCUMENTS_KEY, d);
+    },
+
+    getInventory: (): EquipmentItem[] => RAM_DB.inventory,
+    saveInventory: (i: EquipmentItem[]) => {
+        RAM_DB.inventory = i;
+        saveListToDisk(INVENTORY_KEY, i);
+    },
+
+    // COMMERCIAL
+    getSponsors: (): SponsorDeal[] => RAM_DB.sponsors,
+    saveSponsors: (s: SponsorDeal[]) => {
+        RAM_DB.sponsors = s;
+        saveListToDisk(SPONSORS_KEY, s);
+    },
+
+    getSocialPosts: (): SocialPost[] => RAM_DB.socialPosts,
+    saveSocialPosts: (p: SocialPost[]) => {
+        RAM_DB.socialPosts = p;
+        saveListToDisk(SOCIAL_POSTS_KEY, p);
+    },
+
+    getMarketplaceItems: (): MarketplaceItem[] => RAM_DB.marketplace,
+    saveMarketplaceItems: (i: MarketplaceItem[]) => {
+        RAM_DB.marketplace = i;
+        saveListToDisk(MARKETPLACE_KEY, i);
+    },
+
+    getEventSales: (): EventSale[] => RAM_DB.sales,
+    saveEventSales: (s: EventSale[]) => {
+        RAM_DB.sales = s;
+        saveListToDisk(SALES_KEY, s);
+    },
+
+    // ACADEMY
+    getCourses: (): Course[] => RAM_DB.courses,
+    saveCourses: (c: Course[]) => {
+        RAM_DB.courses = c;
+        saveListToDisk(COURSES_KEY, c);
+    },
+
+    // TACTICAL
+    getTacticalPlays: (): TacticalPlay[] => RAM_DB.plays,
+    saveTacticalPlays: (t: TacticalPlay[]) => {
+        RAM_DB.plays = t;
+        saveListToDisk(TACTICAL_PLAYS_KEY, t);
+    },
+
+    // VIDEO
+    getClips: (): VideoClip[] => RAM_DB.clips,
+    saveClips: (c: VideoClip[]) => {
+        RAM_DB.clips = c;
+        saveListToDisk(CLIPS_KEY, c);
+    },
+    getPlaylists: (): VideoPlaylist[] => RAM_DB.playlists,
+    savePlaylists: (p: VideoPlaylist[]) => {
+        RAM_DB.playlists = p;
+        saveListToDisk(PLAYLISTS_KEY, p);
+    },
+
+    // YOUTH
+    getYouthClasses: (): YouthClass[] => RAM_DB.youthClasses,
+    saveYouthClasses: (c: YouthClass[]) => {
+        RAM_DB.youthClasses = c;
+        saveListToDisk(YOUTH_CLASSES_KEY, c);
+    },
+    getYouthStudents: (): YouthStudent[] => {
+        let allStudents: YouthStudent[] = [];
+        RAM_DB.youthClasses.forEach((c: YouthClass) => allStudents = [...allStudents, ...c.students]);
+        return allStudents;
+    },
+
+    // COACH
+    getCoachGameNotes: (): CoachGameNote[] => RAM_DB.coachNotes,
+    saveCoachGameNotes: (n: CoachGameNote[]) => {
+        RAM_DB.coachNotes = n;
+        saveListToDisk(COACH_NOTES_KEY, n);
+    },
+    getCoachProfile: (id: string) => RAM_DB.coachProfiles[0] || null,
+    saveCoachProfile: (id: string, p: CoachCareer) => {
+        RAM_DB.coachProfiles = [p];
+        saveListToDisk(COACH_PROFILES_KEY, [p]);
+    },
+
+    // LOGS
+    getAuditLogs: (): AuditLog[] => RAM_DB.logs,
+    logAuditAction: (action: string, detail: string) => {
+        const newLog: AuditLog = {
+            id: `log-${Date.now()}`,
+            action,
+            details: detail,
+            timestamp: new Date(),
+            userId: 'sys',
+            userName: 'System',
+            role: 'SYSTEM',
+            ipAddress: '127.0.0.1'
+        };
+        const updated = [newLog, ...RAM_DB.logs];
+        RAM_DB.logs = updated;
+        saveListToDisk(AUDIT_LOGS_KEY, updated);
+    },
+
+    // --- MOCKS & UTILS ---
+    getPermissions: (): VideoPermissionGroup[] => [],
+    seedDatabaseToCloud: async () => { 
+        await firebaseDataService.syncPlayers(RAM_DB.players);
+        await firebaseDataService.syncGames(RAM_DB.games);
+        await firebaseDataService.syncTransactions(RAM_DB.transactions);
+        console.log("Seeding complete"); 
+    },
+    exportFullDatabase: () => {
+        const data = JSON.stringify(localStorage);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'fahub_backup.json';
+        a.click();
+    },
+    checkDocumentSigned: (docId: string) => true,
+    signLegalDocument: (docId: string) => {},
+    getConfederationStats: () => ({ totalAthletes: 1200, totalTeams: 15, totalGamesThisYear: 45, activeAffiliates: 4, growthRate: 10 }),
+    getNationalTeamScouting: (): NationalTeamCandidate[] => [],
+    getAffiliatesStatus: (): Affiliate[] => [],
+    getTransferRequests: (): TransferRequest[] => [],
+    processTransfer: (id: string, decision: string, by: string) => {},
+    getLeague: () => ({ id: 'lg-1', name: 'Liga Nacional', season: '2025', teams: [] }),
+    getPublicLeagueStats: () => ({ name: 'Liga Nacional', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
+    getPublicGameData: (gameId: string) => null,
+    getReferees: () => [],
+    getRefereeProfile: (id: string) => null,
+    getCrewLogistics: (gameId: number) => null,
+    getAssociationFinancials: () => null,
+    addTeamXP: (amount: number) => {},
+    savePlayerWorkout: (playerId: number, content: string, title: string) => {
+        const updated = RAM_DB.players.map((p: Player) => {
+            if(p.id === playerId) {
+                const workouts = p.savedWorkouts || [];
+                workouts.push({ id: `w-${Date.now()}`, date: new Date(), title, content, category: 'GYM' });
+                return { ...p, savedWorkouts: workouts };
+            }
+            return p;
+        });
+        storageService.savePlayers(updated);
+    },
+    createChampionship: (name: string, year: number, division: string) => {}
+};
+
+export const LEGAL_DOCUMENTS: any[] = [
+    {
+        id: 'term-finance-01',
+        title: 'Termo de Responsabilidade Financeira',
+        version: '1.0',
+        content: `
+        1. O usuário declara estar ciente de que as informações financeiras inseridas no sistema são de sua inteira responsabilidade.
+        2. O sistema armazena logs de auditoria de todas as transações para fins de compliance.
+        3. Fraudes ou lançamentos indevidos poderão ser rastreados pelo IP e ID do usuário.
+        `,
+        requiredRole: ['HEAD_COACH', 'FINANCIAL_MANAGER', 'MASTER'],
+        createdAt: new Date()
+    }
+];
