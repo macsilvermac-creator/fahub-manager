@@ -19,6 +19,7 @@ const LazyImage: React.FC<LazyImageProps> = ({ src, alt, className, placeholderC
   }, [src]);
 
   useEffect(() => {
+    // Observer para carregar apenas quando aparecer na tela (Core do Protocolo FAHUB)
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
@@ -26,7 +27,7 @@ const LazyImage: React.FC<LazyImageProps> = ({ src, alt, className, placeholderC
           observer.disconnect();
         }
       });
-    }, { rootMargin: '50px' }); // Preload a bit before showing
+    }, { rootMargin: '50px' }); // Preload 50px antes de aparecer
 
     if (imgRef.current) {
       observer.observe(imgRef.current);
@@ -39,17 +40,21 @@ const LazyImage: React.FC<LazyImageProps> = ({ src, alt, className, placeholderC
 
   return (
     <div className={`relative overflow-hidden ${className} ${!isLoaded ? placeholderColor : ''}`}>
+      {/* Skeleton Loading State */}
       {!isLoaded && !hasError && (
-        <div className="absolute inset-0 flex items-center justify-center">
-           <div className="w-full h-full animate-pulse bg-white/5 flex items-center justify-center">
-             {fallbackText && <span className="text-[10px] text-white/50">{fallbackText}</span>}
-           </div>
+        <div className="absolute inset-0 flex items-center justify-center bg-white/5 animate-pulse">
+             {fallbackText ? (
+                 <span className="text-[10px] text-white/30 font-bold uppercase">{fallbackText.substring(0, 2)}</span>
+             ) : (
+                 <div className="w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12 animate-shimmer"></div>
+             )}
         </div>
       )}
       
+      {/* Error State Fallback */}
       {hasError ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-600 text-xs">
-            IMG
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-600 border border-white/5">
+            <span className="text-[9px] font-mono text-gray-500 uppercase">{fallbackText || 'IMG'}</span>
         </div>
       ) : (
         <img
