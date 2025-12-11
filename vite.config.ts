@@ -18,30 +18,27 @@ export default defineConfig(({ mode }) => {
       'process.env.API_KEY': JSON.stringify(env.API_KEY)
     },
     build: {
-      target: 'esnext', // OTIMIZAÇÃO: Alvo moderno para melhor performance
-      minify: 'esbuild', // OTIMIZAÇÃO: Minificação mais rápida e eficiente
+      target: 'esnext',
+      minify: 'esbuild',
       outDir: 'dist',
       sourcemap: false,
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 2000, 
       rollupOptions: {
         output: {
           manualChunks: (id) => {
-            if (id.includes('node_modules')) {
-              // Separação agressiva de bibliotecas pesadas
-              if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-                return 'vendor-react';
-              }
-              if (id.includes('firebase')) {
-                return 'vendor-firebase';
-              }
-              if (id.includes('recharts')) {
-                return 'vendor-charts';
-              }
-              if (id.includes('@google/genai')) {
-                return 'vendor-ai';
-              }
-              return 'vendor-utils'; // todo o resto
-            }
+            // Separação Crítica de Vendor (Bibliotecas Pesadas)
+            if (id.includes('node_modules/react')) return 'vendor-react';
+            if (id.includes('node_modules/firebase')) return 'vendor-firebase';
+            if (id.includes('node_modules/recharts')) return 'vendor-charts';
+            if (id.includes('node_modules/@google/genai')) return 'vendor-ai';
+            
+            // Separação de Módulos Internos (Lazy Load Real)
+            if (id.includes('src/pages/Finance')) return 'page-finance';
+            if (id.includes('src/pages/Recruitment')) return 'page-recruitment';
+            if (id.includes('src/pages/VideoAnalysis')) return 'page-video';
+            if (id.includes('src/pages/TacticalLab')) return 'page-tactics';
+            if (id.includes('src/pages/Logistics')) return 'page-logistics';
+            if (id.includes('src/pages/Inventory')) return 'page-inventory';
           }
         }
       }
