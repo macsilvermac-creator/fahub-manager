@@ -3,15 +3,19 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { authService } from '../services/authService';
 import { User, AuditLog } from '../types';
-import { CheckCircleIcon, TrashIcon, ShieldCheckIcon, LockIcon, SparklesIcon } from '../components/icons/UiIcons';
+import { CheckCircleIcon, TrashIcon, ShieldCheckIcon, LockIcon, SparklesIcon, ScanIcon, ClipboardIcon } from '../components/icons/UiIcons';
 import { storageService } from '../services/storageService';
 import LazyImage from '@/components/LazyImage';
 
 const AdminPanel: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-    const [activeTab, setActiveTab] = useState<'USERS' | 'SYSTEM' | 'COMPLIANCE'>('USERS');
+    const [activeTab, setActiveTab] = useState<'USERS' | 'SYSTEM' | 'COMPLIANCE' | 'INSPECTOR'>('USERS');
     const [isSeeding, setIsSeeding] = useState(false);
+    
+    // Inspector State
+    const [inspectedEntity, setInspectedEntity] = useState<string | null>(null);
+    const [entityData, setEntityData] = useState<string>('');
 
     useEffect(() => {
         setUsers(authService.getUsers());
@@ -44,12 +48,31 @@ const AdminPanel: React.FC = () => {
         }
     };
 
+    const loadEntityData = (key: string) => {
+        setInspectedEntity(key);
+        const data = localStorage.getItem(key);
+        try {
+            const parsed = data ? JSON.parse(data) : null;
+            setEntityData(JSON.stringify(parsed, null, 2));
+        } catch {
+            setEntityData(data || 'Vazio/Inválido');
+        }
+    };
+
     const pendingUsers = users.filter(u => u.status === 'PENDING');
     const activeUsers = users.filter(u => u.status === 'APPROVED');
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
-            <h2 className="text-3xl font-bold text-white mb-6">Painel Administrativo (Master)</h2>
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-red-600 rounded-xl shadow-lg">
+                    <ShieldCheckIcon className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                    <h2 className="text-3xl font-bold text-white">Painel Administrativo (Master)</h2>
+                    <p className="text-text-secondary text-sm">Controle Total da Organização (God Mode)</p>
+                </div>
+            </div>
 
             {/* Tabs */}
             <div className="flex border-b border-white/10 mb-4 overflow-x-auto">
@@ -59,8 +82,11 @@ const AdminPanel: React.FC = () => {
                 <button onClick={() => setActiveTab('COMPLIANCE')} className={`px-6 py-2 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'COMPLIANCE' ? 'border-red-500 text-red-400' : 'border-transparent text-text-secondary'}`}>
                     Compliance & Logs
                 </button>
-                <button onClick={() => setActiveTab('SYSTEM')} className={`px-6 py-2 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'SYSTEM' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
-                    Dados & Arquitetura
+                <button onClick={() => setActiveTab('INSPECTOR')} className={`px-6 py-2 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'INSPECTOR' ? 'border-purple-500 text-purple-400' : 'border-transparent text-text-secondary'}`}>
+                    Inspetor de Dados
+                </button>
+                <button onClick={() => setActiveTab('SYSTEM')} className={`px-6 py-2 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'SYSTEM' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary'}`}>
+                    Sistema
                 </button>
             </div>
 
@@ -168,6 +194,53 @@ const AdminPanel: React.FC = () => {
                             </table>
                         </div>
                     </Card>
+                </div>
+            )}
+
+            {activeTab === 'INSPECTOR' && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+                    <div className="bg-secondary p-4 rounded-xl border border-white/5 overflow-y-auto custom-scrollbar">
+                        <h4 className="text-xs font-bold text-purple-400 uppercase mb-4 flex items-center gap-2">
+                            <ScanIcon className="w-4 h-4"/> Entidades (DB Local)
+                        </h4>
+                        <div className="space-y-2">
+                            {[
+                                { k: 'gridiron_players', label: 'Jogadores' },
+                                { k: 'gridiron_games', label: 'Jogos' },
+                                { k: 'gridiron_transactions', label: 'Transações (Fin)' },
+                                { k: 'gridiron_invoices', label: 'Cobranças' },
+                                { k: 'gridiron_inventory', label: 'Inventário' },
+                                { k: 'gridiron_settings', label: 'Configurações' },
+                                { k: 'gridiron_staff', label: 'Staff' },
+                                { k: 'gridiron_practice', label: 'Treinos' },
+                                { k: 'gridiron_tactical_plays', label: 'Playbook' },
+                                { k: 'gridiron_clips', label: 'Vídeo Clips' }
+                            ].map(ent => (
+                                <button 
+                                    key={ent.k}
+                                    onClick={() => loadEntityData(ent.k)}
+                                    className={`w-full text-left px-3 py-2 rounded text-sm transition-colors ${inspectedEntity === ent.k ? 'bg-purple-600 text-white font-bold' : 'text-text-secondary hover:bg-white/5 hover:text-white'}`}
+                                >
+                                    {ent.label}
+                                    <span className="float-right text-[10px] opacity-50 font-mono">{ent.k}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="lg:col-span-2 bg-[#0d1117] rounded-xl border border-white/10 p-4 flex flex-col">
+                        <div className="flex justify-between items-center mb-2">
+                            <h4 className="text-xs font-bold text-text-secondary uppercase">Dados Brutos (JSON)</h4>
+                            <button className="text-xs text-blue-400 hover:text-white flex items-center gap-1" onClick={() => navigator.clipboard.writeText(entityData)}>
+                                <ClipboardIcon className="w-3 h-3" /> Copiar JSON
+                            </button>
+                        </div>
+                        <textarea 
+                            className="flex-1 w-full bg-transparent text-green-400 font-mono text-xs resize-none focus:outline-none"
+                            value={entityData || '// Selecione uma entidade para inspecionar'}
+                            readOnly
+                        />
+                    </div>
                 </div>
             )}
 
