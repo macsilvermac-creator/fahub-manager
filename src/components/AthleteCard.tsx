@@ -2,6 +2,7 @@
 import React from 'react';
 import { Player } from '../types';
 import { TrashIcon } from './icons/UiIcons';
+import LazyImage from './LazyImage';
 
 interface AthleteCardProps {
   player: Player;
@@ -46,13 +47,14 @@ const AthleteCard: React.FC<AthleteCardProps> = ({ player, onClick, onDelete }) 
 
         {/* Conteúdo do Jogador */}
         <div className="px-4 pb-4 relative">
-            {/* Avatar Centralizado */}
+            {/* Avatar Centralizado - LAZY LOADED */}
             <div className="relative -mt-12 mb-3 flex justify-center">
                  <div className="relative">
-                    <img 
+                    <LazyImage 
                         src={player.avatarUrl} 
                         alt={player.name} 
-                        className="w-24 h-24 rounded-full object-cover border-4 border-secondary shadow-lg z-10 relative" 
+                        className="w-24 h-24 rounded-full object-cover border-4 border-secondary shadow-lg z-10 relative bg-secondary"
+                        fallbackText={player.name} 
                     />
                     {/* Badge de Nível */}
                     <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-yellow-400 to-yellow-600 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold text-sm border-2 border-secondary z-20 shadow-md" title="Nível do Jogador">
