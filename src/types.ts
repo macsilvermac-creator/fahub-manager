@@ -4,25 +4,6 @@ export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
 export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH';
 
-export interface RecruitmentCandidate {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    position: string;
-    age: number;
-    height: string;
-    weight: number;
-    experience: string;
-    status: 'NEW' | 'TRYOUT' | 'SELECTED' | 'ONBOARDING' | 'CONVERTED' | 'REJECTED';
-    tryoutDate?: Date;
-    rating?: number; // 1-5 stars
-    aiAnalysis?: string; // Texto gerado pela IA
-    verifiedBy?: string; // ID do coach que validou
-    notes?: string;
-    createdAt: Date;
-}
-
 export interface CombineStats {
     fortyYards?: number;
     benchPress?: number;
@@ -347,8 +328,8 @@ export interface Transaction {
     netAmount?: number;
     method?: PaymentMethod;
     createdAt?: Date;
-    aiGenerated?: boolean; // Se foi criado via Scanner
-    verifiedBy?: string; // ID do usuário que salvou
+    aiGenerated?: boolean;
+    verifiedBy?: string;
 }
 
 export interface EquipmentItem {
@@ -366,29 +347,6 @@ export interface EquipmentItem {
     cost?: number;
     size?: string;
     qrCodeUrl?: string;
-    location?: string;
-    manufactureDate?: Date;
-}
-
-export interface KeyResult {
-    id: string;
-    title: string;
-    currentValue: number;
-    targetValue: number;
-    unit: string; // '%', 'R$', '#'
-    lastUpdated: Date;
-}
-
-export interface Objective {
-    id: string;
-    title: string;
-    description?: string;
-    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING' | 'STRUCTURAL';
-    status: 'ON_TRACK' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
-    progress: number;
-    deadline: Date;
-    owner: string; // Department
-    keyResults: KeyResult[];
 }
 
 export interface InstallMatrixItem {
@@ -744,8 +702,6 @@ export interface PaymentTransaction {
     createdAt: Date;
     platformFee: number;
     netAmount: number;
-    aiGenerated?: boolean;
-    verifiedBy?: string;
 }
 
 export interface CoachGameNote {
@@ -802,7 +758,6 @@ export interface QuizResult {
     playerId: number;
     score: number;
     date: Date;
-    
 }
 
 export interface ScoutChartData {
@@ -830,4 +785,44 @@ export interface DisciplineRecord {
     fineAmount?: number;
     punishment?: string;
     reportedBy: string;
+}
+
+export interface RecruitmentCandidate {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    position: string;
+    age: number;
+    height: string;
+    weight: number;
+    experience: string;
+    status: 'NEW' | 'TRYOUT' | 'SELECTED' | 'ONBOARDING' | 'CONVERTED' | 'REJECTED';
+    tryoutDate?: Date;
+    rating?: number; // 1-100
+    aiAnalysis?: string; 
+    verifiedBy?: string; 
+    notes?: string;
+    createdAt: Date;
+    combineStats?: CombineStats;
+}
+
+export interface KeyResult {
+    id: string;
+    title: string;
+    currentValue: number;
+    targetValue: number;
+    unit: string;
+    lastUpdated: Date;
+}
+
+export interface Objective {
+    id: string;
+    title: string;
+    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING';
+    status: 'ON_TRACK' | 'COMPLETED' | 'BEHIND';
+    progress: number;
+    deadline: Date;
+    owner: string;
+    keyResults: KeyResult[];
 }

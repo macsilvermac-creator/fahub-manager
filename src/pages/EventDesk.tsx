@@ -7,6 +7,8 @@ import PaymentModal from '../components/PaymentModal';
 import { storageService } from '../services/storageService';
 import { EventSale } from '../types';
 import { UserContext } from '../components/Layout';
+import Modal from '../components/Modal'; // Importando Modal
+import { useToast } from '../contexts/ToastContext'; // Importando Toast
 
 // Quick Items Configuration
 const TICKET_ITEMS = [
@@ -34,24 +36,28 @@ interface CartItem {
 
 const EventDesk: React.FC = () => {
     const { currentRole } = useContext(UserContext);
+    const toast = useToast();
     const [mode, setMode] = useState<'TICKETS' | 'BAR'>('TICKETS');
     const [cart, setCart] = useState<CartItem[]>([]);
     const [recentSales, setRecentSales] = useState<EventSale[]>([]);
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const [lastOrder, setLastOrder] = useState<{ id: string, items: CartItem[], total: number, date: Date } | null>(null);
     
+    // Quick Add Modal State
+    const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+    const [quickName, setQuickName] = useState('');
+    const [quickPrice, setQuickPrice] = useState('');
+
     // Mobile View State
     const [mobileView, setMobileView] = useState<'CATALOG' | 'CART'>('CATALOG');
 
-    // Load recent sales for the "Shift Summary"
     useEffect(() => {
         const sales = storageService.getEventSales();
-        // Filter only sales from "today" for the live dashboard
         const today = new Date().toDateString();
         setRecentSales(sales.filter(s => new Date(s.timestamp).toDateString() === today));
     }, []);
 
-    const addToCart = (item: typeof TICKET_ITEMS[0]) => {
+    const addToCart = (item: { id: string, name: string, price: number }) => {
         const newItem: CartItem = {
             id: Date.now().toString() + Math.random(),
             productId: item.id,
@@ -59,6 +65,7 @@ const EventDesk: React.FC = () => {
             price: item.price
         };
         setCart([...cart, newItem]);
+        toast.info(`${item.name} adicionado.`);
     };
 
     const removeFromCart = (instanceId: string) => {
@@ -75,7 +82,6 @@ const EventDesk: React.FC = () => {
     };
 
     const onPaymentSuccess = () => {
-        // 1. Create Sales Records
         const saleId = `ord-${Date.now()}`;
         const newSales: EventSale[] = cart.map(item => ({
             id: `sale-${Date.now()}-${Math.random()}`,
@@ -86,15 +92,12 @@ const EventDesk: React.FC = () => {
             timestamp: new Date()
         }));
 
-        // 2. Save to Storage (Consolidated)
         const allSales = storageService.getEventSales();
         const updatedAllSales = [...allSales, ...newSales];
         storageService.saveEventSales(updatedAllSales);
 
-        // 3. Update Local State
         setRecentSales([...recentSales, ...newSales]);
         
-        // 4. Prepare Receipt Data
         setLastOrder({
             id: saleId,
             items: [...cart],
@@ -102,44 +105,32 @@ const EventDesk: React.FC = () => {
             date: new Date()
         });
 
-        // 5. Reset UI
         setIsPaymentOpen(false);
         clearCart();
         setMobileView('CATALOG');
+        toast.success("Venda realizada com sucesso!");
         
-        // 6. Ask for Print
-        if(window.confirm("Venda realizada! Deseja imprimir o comprovante?")) {
-            setTimeout(() => window.print(), 500);
-        }
+        // Auto-print logic or confirmation could go here
     };
 
-    // Calculate Shift Stats
-    const totalRevenue = recentSales.reduce((sum, s) => sum + s.totalAmount, 0);
-    const ticketsSold = recentSales.filter(s => s.type === 'TICKET').length;
-
-    // --- NEW: Add Product Logic (Quick) ---
-    const handleQuickAdd = () => {
-        const name = prompt("Nome do Produto Rápido:");
-        if (!name) return;
-        const price = prompt("Preço (R$):");
-        if (!price) return;
+    const handleQuickAddSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!quickName || !quickPrice) return;
         
         const newItem = { 
             id: `quick-${Date.now()}`, 
-            name, 
-            price: Number(price), 
-            icon: '⚡' 
+            name: quickName, 
+            price: Number(quickPrice)
         };
         
-        // Add to cart directly
-        const cartItem: CartItem = {
-            id: Date.now().toString() + Math.random(),
-            productId: newItem.id,
-            name: newItem.name,
-            price: newItem.price
-        };
-        setCart([...cart, cartItem]);
+        addToCart(newItem);
+        setQuickName('');
+        setQuickPrice('');
+        setIsQuickAddOpen(false);
     };
+
+    const totalRevenue = recentSales.reduce((sum, s) => sum + s.totalAmount, 0);
+    const ticketsSold = recentSales.filter(s => s.type === 'TICKET').length;
 
     return (
         <div className="space-y-4 pb-12 animate-fade-in h-[calc(100vh-5rem)] flex flex-col overflow-hidden">
@@ -152,18 +143,17 @@ const EventDesk: React.FC = () => {
                         position: absolute;
                         left: 0;
                         top: 0;
-                        width: 80mm; /* Thermal Paper Width */
+                        width: 80mm;
                         background: white;
                         color: black;
                         font-family: 'Courier New', Courier, monospace;
                         padding: 10px;
                     }
-                    /* Hide everything else */
                     .no-print { display: none !important; }
                 }
             `}</style>
 
-            {/* RECEIPT TEMPLATE (Hidden on Screen) */}
+            {/* RECEIPT TEMPLATE */}
             <div id="receipt-area" className="hidden print:block">
                 <div className="text-center mb-4">
                     <h2 className="font-bold text-xl uppercase">FAHUB MANAGER</h2>
@@ -191,7 +181,7 @@ const EventDesk: React.FC = () => {
                 </div>
             </div>
 
-            {/* Header Compacto */}
+            {/* HEADER */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1 no-print">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-secondary rounded-xl">
@@ -203,7 +193,6 @@ const EventDesk: React.FC = () => {
                     </div>
                 </div>
                 
-                {/* Shift Stats Widget */}
                 <div className="flex gap-3 text-xs w-full sm:w-auto bg-black/20 p-2 rounded-lg border border-white/5 justify-between sm:justify-end">
                     <div className="text-right">
                         <p className="text-text-secondary uppercase font-bold text-[10px]">Caixa Hoje</p>
@@ -237,7 +226,6 @@ const EventDesk: React.FC = () => {
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden min-h-0 no-print">
                 {/* Left: Product Grid */}
                 <div className={`lg:col-span-2 flex-col h-full overflow-hidden ${mobileView === 'CART' ? 'hidden lg:flex' : 'flex'}`}>
-                    {/* Tabs */}
                     <div className="flex gap-2 mb-3 shrink-0 overflow-x-auto pb-1">
                         <button 
                             onClick={() => setMode('TICKETS')}
@@ -253,7 +241,6 @@ const EventDesk: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Items Grid */}
                     <div className="flex-1 bg-secondary/30 rounded-2xl border border-white/5 p-3 overflow-y-auto custom-scrollbar relative">
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                             {(mode === 'TICKETS' ? TICKET_ITEMS : BAR_ITEMS).map(item => (
@@ -267,9 +254,8 @@ const EventDesk: React.FC = () => {
                                     <span className="text-highlight font-bold bg-black/20 px-2 py-0.5 rounded-full text-xs">R$ {item.price.toFixed(2)}</span>
                                 </button>
                             ))}
-                            {/* Quick Add Button */}
                             <button 
-                                onClick={handleQuickAdd}
+                                onClick={() => setIsQuickAddOpen(true)}
                                 className="bg-white/5 hover:bg-white/10 border border-dashed border-white/20 rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-all active:scale-95 min-h-[120px]"
                             >
                                 <span className="text-2xl text-text-secondary">+</span>
@@ -320,7 +306,6 @@ const EventDesk: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Totals Section */}
                     <div className="p-4 bg-black/40 border-t border-white/10 shrink-0">
                         <div className="flex justify-between items-center mb-4">
                             <span className="text-text-secondary text-sm">Total a Pagar</span>
@@ -355,6 +340,35 @@ const EventDesk: React.FC = () => {
                 amount={cartTotal}
                 description={`Venda POS (${cart.length} itens)`}
             />
+
+            {/* Quick Add Modal */}
+            <Modal isOpen={isQuickAddOpen} onClose={() => setIsQuickAddOpen(false)} title="Adicionar Item Rápido">
+                <form onSubmit={handleQuickAddSubmit} className="space-y-4">
+                    <div>
+                        <label className="text-xs font-bold text-text-secondary">Nome do Produto</label>
+                        <input 
+                            className="w-full bg-black/20 border border-white/10 rounded p-3 text-white focus:border-highlight focus:outline-none"
+                            value={quickName}
+                            onChange={e => setQuickName(e.target.value)}
+                            placeholder="Ex: Pastel"
+                            autoFocus
+                        />
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-text-secondary">Preço (R$)</label>
+                        <input 
+                            type="number"
+                            className="w-full bg-black/20 border border-white/10 rounded p-3 text-white focus:border-highlight focus:outline-none"
+                            value={quickPrice}
+                            onChange={e => setQuickPrice(e.target.value)}
+                            placeholder="Ex: 10.00"
+                        />
+                    </div>
+                    <button type="submit" disabled={!quickName || !quickPrice} className="w-full bg-highlight hover:bg-highlight-hover text-white font-bold py-3 rounded-lg disabled:opacity-50">
+                        Adicionar ao Carrinho
+                    </button>
+                </form>
+            </Modal>
         </div>
     );
 };
