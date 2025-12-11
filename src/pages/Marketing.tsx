@@ -1,14 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
+// @ts-ignore
+import { useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { generateMarketingContent } from '../services/geminiService';
 import { SocialPost, Announcement, Course } from '../types';
-import { MegaphoneIcon, AcademyIcon } from '../components/icons/NavIcons';
+import { MegaphoneIcon, AcademyIcon, TicketIcon } from '../components/icons/NavIcons';
 import { SparklesIcon, UsersIcon, BellIcon, ShareIcon, GlobeIcon, UserPlusIcon, QrcodeIcon, LinkIcon } from '../components/icons/UiIcons';
 import Card from '../components/Card';
 import LazyImage from '../components/LazyImage';
 
 const Marketing: React.FC = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<'SOCIAL' | 'COMMUNITY' | 'INTERNAL'>('SOCIAL');
     
     // Social State
@@ -80,9 +83,21 @@ const Marketing: React.FC = () => {
                     </div>
                 </div>
                 
-                <button onClick={copyPublicLink} className="bg-white/10 hover:bg-white/20 border border-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2">
-                    <GlobeIcon className="w-4 h-4 text-green-400" /> Copiar Link do Site Oficial
-                </button>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={() => navigate('/event-desk')} 
+                        className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2 shadow-lg transition-transform hover:scale-105"
+                    >
+                        <TicketIcon className="w-4 h-4" />
+                        PDV: Bar & Eventos
+                    </button>
+                    <button 
+                        onClick={copyPublicLink} 
+                        className="bg-white/10 hover:bg-white/20 border border-white/10 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-2"
+                    >
+                        <GlobeIcon className="w-4 h-4 text-green-400" /> Site Oficial
+                    </button>
+                </div>
             </div>
 
             {/* Navigation Tabs */}

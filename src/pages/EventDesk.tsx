@@ -189,7 +189,7 @@ const EventDesk: React.FC = () => {
                     </div>
                     <div>
                         <h2 className="text-xl sm:text-2xl font-bold text-text-primary leading-none">Game Day POS</h2>
-                        <p className="text-text-secondary text-xs">Ponto de Venda Oficial</p>
+                        <p className="text-text-secondary text-xs">Ponto de Venda: Bar & Estacionamento</p>
                     </div>
                 </div>
                 
@@ -231,7 +231,7 @@ const EventDesk: React.FC = () => {
                             onClick={() => setMode('TICKETS')}
                             className={`flex-1 py-3 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all border ${mode === 'TICKETS' ? 'bg-highlight/10 border-highlight text-highlight' : 'bg-secondary border-white/5 text-text-secondary hover:bg-white/5'}`}
                         >
-                            <TicketIcon className="w-5 h-5" /> Bilheteria
+                            <TicketIcon className="w-5 h-5" /> Bilheteria & Estac.
                         </button>
                         <button 
                             onClick={() => setMode('BAR')}

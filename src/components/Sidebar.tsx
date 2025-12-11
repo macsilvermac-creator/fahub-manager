@@ -6,7 +6,7 @@ import {
   DashboardIcon, RosterIcon, ScheduleIcon, FinanceIcon, 
   AiPlaybookIcon, PracticeIcon, FlagIcon, TrophyIcon, 
   MegaphoneIcon, ShopIcon, BriefcaseIcon, AcademyIcon, VideoIcon,
-  WhistleIcon
+  WhistleIcon, TicketIcon
 } from './icons/NavIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
@@ -158,6 +158,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
             <div className="mt-6 animate-fade-in">
               <p className="px-4 text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Gestão Corporativa</p>
               
+              <NavLink to="/event-desk" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <TicketIcon className="w-5 h-5 mr-3 group-hover:text-green-400 transition-colors" />
+                <span>PDV: Bar & Eventos</span>
+              </NavLink>
+
               <NavLink to="/finance" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <FinanceIcon className="w-5 h-5 mr-3 group-hover:text-green-400 transition-colors" />
                 <span>Financeiro (CFO)</span>
