@@ -24,9 +24,6 @@ const MyProfile: React.FC = () => {
     const [showCardModal, setShowCardModal] = useState(false);
     const [loading, setLoading] = useState(true);
     
-    const [isKycModalOpen, setIsKycModalOpen] = useState(false);
-    const [kycStep, setKycStep] = useState(1);
-
     const [formData, setFormData] = useState({
         weight: 0,
         height: '',
@@ -54,6 +51,7 @@ const MyProfile: React.FC = () => {
             });
         } else {
             const allPlayers = storageService.getPlayers();
+            // Match player by ID first if linked, or fallback to name/cpf
             const myPlayer = allPlayers.find(p => p.name === user?.name) || allPlayers[0];
             
             if (myPlayer) {
@@ -83,6 +81,7 @@ const MyProfile: React.FC = () => {
 
     const handleSaveProfile = () => {
         const user = authService.getCurrentUser();
+        
         if (isCoach && user) {
             if (coachProfile) {
                 const updatedProfile: CoachCareer = {
@@ -97,31 +96,26 @@ const MyProfile: React.FC = () => {
             setIsEditing(false);
             return;
         }
-        if (!player) return;
-        const updatedPlayer = { ...player, weight: formData.weight, height: formData.height };
-        setPlayer(updatedPlayer);
-        storageService.savePlayers(storageService.getPlayers().map(p => p.id === player.id ? updatedPlayer : p));
-        setIsEditing(false);
-        alert("Perfil atualizado com sucesso!");
-    };
 
-    const handleStartKYC = () => {
-        setIsKycModalOpen(true);
-        setKycStep(1);
-    };
-
-    const handleUploadDoc = () => {
-        setTimeout(() => {
-            setKycStep(2);
-            setTimeout(() => {
-                if(player) {
-                    const updated = { ...player, verificationStatus: 'VERIFIED' as const };
-                    setPlayer(updated);
-                    storageService.savePlayers(storageService.getPlayers().map(p => p.id === player.id ? updated : p));
-                }
-                setKycStep(3);
-            }, 2000);
-        }, 1500);
+        if (player) {
+            // CRITICAL FIX: Ensure we update the MAIN LIST
+            const updatedPlayer = { 
+                ...player, 
+                weight: Number(formData.weight), 
+                height: formData.height 
+            };
+            
+            // 1. Update Local State
+            setPlayer(updatedPlayer);
+            
+            // 2. Update Storage
+            const currentPlayers = storageService.getPlayers();
+            const updatedList = currentPlayers.map(p => p.id === player.id ? updatedPlayer : p);
+            storageService.savePlayers(updatedList);
+            
+            setIsEditing(false);
+            alert("Perfil atualizado com sucesso!");
+        }
     };
 
     const getCardStats = (p: Player) => {
@@ -371,7 +365,7 @@ const MyProfile: React.FC = () => {
                                     </div>
                                     <h4 className="font-bold text-white text-sm">{ach.title}</h4>
                                     <p className="text-xs text-text-secondary mt-1">{ach.year}</p>
-                                    <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded mt-2 text-yellow-200">{ach.type}</span>
+                                    <span className="text--[10px] bg-white/5 px-2 py-0.5 rounded mt-2 text-yellow-200">{ach.type}</span>
                                 </div>
                             )) : (
                                 <div className="col-span-4 text-center py-12 text-text-secondary italic">
