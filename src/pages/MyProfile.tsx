@@ -96,19 +96,14 @@ const MyProfile: React.FC = () => {
         }
 
         if (player) {
-            // 1. Criar objeto atualizado
             const updatedPlayer = { 
                 ...player, 
                 weight: Number(formData.weight), 
                 height: formData.height 
             };
-            
-            // 2. Atualizar estado local
             setPlayer(updatedPlayer);
             
-            // 3. Atualizar LISTA MESTRE no Storage (Persistence)
             const currentPlayers = storageService.getPlayers();
-            // Mapeia e substitui. Se não achar pelo ID, tenta pelo nome (fallback)
             const updatedList = currentPlayers.map(p => 
                 (p.id === player.id || p.name === player.name) ? updatedPlayer : p
             );

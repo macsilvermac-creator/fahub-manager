@@ -70,7 +70,6 @@ const Recruitment: React.FC = () => {
         storageService.saveCandidates(updated);
     };
 
-    // CORREÇÃO CRÍTICA: Player Object Completo
     const promoteToRoster = (candidate: RecruitmentCandidate) => {
         try {
             const user = authService.getCurrentUser();
@@ -344,5 +343,4 @@ const Recruitment: React.FC = () => {
     );
 };
 
-export default Recruitment;
 export default Recruitment;
