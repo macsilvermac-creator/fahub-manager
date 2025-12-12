@@ -328,6 +328,7 @@ const Dashboard: React.FC = () => {
     const [xpLeaders, setXpLeaders] = useState<Player[]>([]);
     const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
     
+    // Check for query param override
     const searchParams = new URLSearchParams(window.location.search);
     const roleOverride = searchParams.get('role');
     const isMasterView = currentRole === 'MASTER' && roleOverride !== 'COACH';
@@ -346,7 +347,7 @@ const Dashboard: React.FC = () => {
             const user = authService.getCurrentUser();
             if (isPlayerView && user) {
                 const me = players.find(p => p.name === user.name);
-                setCurrentPlayer(me || players[0]); 
+                setCurrentPlayer(me || players[0]); // Fallback to first player for demo
             }
 
             setSystemHealth({ 
@@ -359,6 +360,7 @@ const Dashboard: React.FC = () => {
 
     const handleCopyInvite = () => {
         const teamName = storageService.getTeamSettings().teamName;
+        // Use window.location.origin to support Vercel URLs
         const url = window.location.origin + '/#/register';
         const msg = `🏈 *CONVOCAÇÃO OFICIAL: ${teamName.toUpperCase()}*\n\nVocê foi selecionado para participar do teste beta fechado do FAHUB Manager.\n\n*Missão:*\n1. Acesse o link abaixo.\n2. Crie sua conta (use seu CPF).\n3. Aguarde a liberação.\n\n🔗 *Link de Acesso:* ${url}\n\n_Acesso restrito. Não compartilhe._`;
         
