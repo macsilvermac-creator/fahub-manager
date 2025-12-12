@@ -1,35 +1,87 @@
+
 import { User, UserRole } from '../types';
+import { storageService } from './storageService';
 
 const CURRENT_USER_KEY = 'gridiron_current_user';
+const USERS_LIST_KEY = 'gridiron_users_list';
 
 export const authService = {
-  getUsers: (): User[] => [],
+  getUsers: (): User[] => {
+      const stored = localStorage.getItem(USERS_LIST_KEY);
+      return stored ? JSON.parse(stored) : [];
+  },
 
-  register: async (name: string, email: string, role: UserRole, password: string): Promise<User> => {
+  register: async (name: string, email: string, role: UserRole, password: string, cpf: string): Promise<User> => {
+      const users = authService.getUsers();
+      
+      // Validação de Duplicidade
+      if (users.some(u => u.email === email)) throw new Error('Email já cadastrado.');
+      if (users.some(u => u.cpf === cpf)) throw new Error('CPF já cadastrado no sistema.');
+
+      // Regra de Negócio: Se for o PRIMEIRO usuário do sistema, ele é MASTER automaticamente.
+      // Caso contrário, é CANDIDATE e PENDING.
+      const isFirstUser = users.length === 0;
+      const initialRole = isFirstUser ? 'MASTER' : 'CANDIDATE';
+      const initialStatus = isFirstUser ? 'APPROVED' : 'PENDING';
+
       const newUser: User = {
         id: `user-${Date.now()}`,
         email: email,
         name: name,
-        role: role,
+        role: initialRole,
+        cpf: cpf,
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
-        status: 'APPROVED'
+        status: initialStatus
       };
       
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
+      const updatedUsers = [...users, newUser];
+      localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updatedUsers));
+      
+      // Se for o master, já loga direto
+      if(isFirstUser) {
+          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
+      }
+
       return newUser;
   },
 
   login: async (email: string, password: string): Promise<User> => {
-        const mockUser: User = {
-             id: 'user-123',
-             email: email,
-             name: email.split('@')[0],
-             role: 'MASTER',
-             avatarUrl: `https://ui-avatars.com/api/?name=${email[0]}`,
-             status: 'APPROVED'
-        };
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(mockUser));
-        return mockUser;
+        // Simulação de delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        const users = authService.getUsers();
+        const user = users.find(u => u.email === email);
+
+        // Fallback para usuário de demonstração se a lista estiver vazia (apenas para testes)
+        if (!user && users.length === 0 && email.includes('@')) {
+             const mockUser: User = {
+                 id: 'user-' + Math.random().toString(36).substr(2, 9),
+                 email: email,
+                 name: email.split('@')[0].toUpperCase(),
+                 role: 'MASTER',
+                 avatarUrl: `https://ui-avatars.com/api/?name=${email[0]}`,
+                 status: 'APPROVED'
+            };
+            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(mockUser));
+            return mockUser;
+        }
+
+        if (!user) throw new Error('Usuário não encontrado.');
+        
+        // Bloqueio de Acesso
+        if (user.status === 'PENDING') throw new Error('Cadastro em análise pela diretoria.');
+        if (user.status === 'REJECTED') throw new Error('Acesso negado.');
+
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+        
+        // CRITICAL PERFORMANCE: Pre-warm the cache based on role
+        setTimeout(() => {
+            console.log("🔥 Pre-warming cache for role:", user.role);
+            storageService.initializeRAM();
+            storageService.syncFromCloud();
+        }, 100);
+
+        return user;
   },
 
   logout: async () => {
@@ -43,7 +95,18 @@ export const authService = {
     return stored ? JSON.parse(stored) : null;
   },
 
-  updateUserStatus: async (userId: string, status: 'APPROVED' | 'REJECTED') => {
-    console.log(`User ${userId} status updated to ${status}`);
+  updateUserStatus: async (userId: string, status: 'APPROVED' | 'REJECTED', newRole?: UserRole) => {
+    const users = authService.getUsers();
+    const updatedUsers = users.map(u => {
+        if (u.id === userId) {
+            return { 
+                ...u, 
+                status, 
+                role: newRole || u.role 
+            };
+        }
+        return u;
+    });
+    localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updatedUsers));
   }
 };

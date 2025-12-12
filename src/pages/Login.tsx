@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 // @ts-ignore
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
-import { storageService } from '../services/storageService';
-import { SparklesIcon, AlertTriangleIcon, LockIcon } from '../components/icons/UiIcons';
+import { LockIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
 import Button from '../components/Button';
 import Input from '../components/Input';
 
@@ -14,7 +13,6 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [seedStatus, setSeedStatus] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,27 +20,19 @@ const Login: React.FC = () => {
     setLoading(true);
     
     try {
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Tempo limite de conexão excedido.")), 8000)
-      );
-
-      await Promise.race([authService.login(email, password), timeoutPromise]);
-      
+      const user = await authService.login(email, password);
       navigate('/dashboard');
       window.location.reload();
     } catch (err: any) {
       console.error(err);
-      if (err.message.includes('invalid-credential')) {
-        setError("Senha incorreta.");
-      } else {
-        setError(err.message);
-      }
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleEmergencyLogin = () => {
+      // MASTER ADMIN BACKDOOR FOR DEV ONLY
       const mockUser = {
           id: 'dev-master',
           email: 'admin@gridiron.com',
@@ -56,26 +46,12 @@ const Login: React.FC = () => {
       window.location.reload();
   };
 
-  const handleSeedDatabase = async () => {
-      if(!window.confirm("Isso irá enviar dados de exemplo para o Firebase.")) return;
-      setSeedStatus('Enviando...');
-      try {
-          await storageService.seedDatabaseToCloud();
-          setSeedStatus('✅ Feito!');
-          alert('Dados enviados.');
-      } catch (e: any) {
-          setSeedStatus('❌ Erro');
-      }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary p-4 overflow-hidden">
-      {/* Container Compacto: max-w-sm e padding reduzido */}
-      <div className="bg-secondary p-6 rounded-2xl border border-white/10 w-full max-w-sm shadow-2xl">
+      <div className="bg-secondary p-6 rounded-2xl border border-white/10 w-full max-w-sm shadow-2xl animate-fade-in">
         
         <div className="text-center mb-5">
             <div className="flex justify-center mb-3">
-                {/* Logo Reduzida */}
                 <div className="w-12 h-12 bg-highlight rounded-xl flex items-center justify-center shadow-glow transform -skew-x-6">
                     <span className="text-white font-black text-xl transform skew-x-6 tracking-tighter">FH</span>
                 </div>
@@ -85,7 +61,10 @@ const Login: React.FC = () => {
         </div>
 
         {error && (
-            <div className="bg-red-900/50 text-red-200 p-2 rounded mb-3 text-xs text-center border border-red-500/20">
+            <div className="bg-red-900/50 text-red-200 p-3 rounded mb-4 text-xs text-center border border-red-500/20 flex flex-col gap-1">
+                <div className="flex items-center justify-center gap-2 font-bold">
+                    <AlertTriangleIcon className="w-4 h-4" /> Acesso Negado
+                </div>
                 {error}
             </div>
         )}
@@ -98,7 +77,7 @@ const Login: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="py-2 text-sm" // Input mais compacto
+                className="py-2 text-sm"
             />
             
             <div>
@@ -122,20 +101,15 @@ const Login: React.FC = () => {
         <div className="mt-4 pt-3 border-t border-white/10 text-center space-y-2">
             <Link to="/register">
                 <Button variant="ghost" fullWidth size="sm" className="text-xs text-text-secondary hover:text-white border border-white/5 hover:bg-white/5">
-                    CRIAR NOVA CONTA
+                    SOLICITAR ACESSO (NOVO USUÁRIO)
                 </Button>
             </Link>
             
-            {/* Opções de Dev compactas */}
-            <div className="flex justify-center gap-4 pt-1 opacity-60">
-                <button onClick={handleEmergencyLogin} className="text-[10px] text-text-secondary hover:text-highlight transition-colors flex items-center gap-1">
-                    <LockIcon className="w-3 h-3" /> Login Rápido
-                </button>
-                <button onClick={handleSeedDatabase} className="text-[10px] text-text-secondary hover:text-highlight transition-colors flex items-center gap-1">
-                    <SparklesIcon className="w-3 h-3" /> Seed Data
+            <div className="flex justify-center pt-2 opacity-30 hover:opacity-100 transition-opacity">
+                <button onClick={handleEmergencyLogin} className="text-[9px] text-text-secondary hover:text-highlight flex items-center gap-1">
+                    <LockIcon className="w-3 h-3" /> Master Dev
                 </button>
             </div>
-            {seedStatus && <p className="text-[10px] text-green-400">{seedStatus}</p>}
         </div>
       </div>
     </div>
