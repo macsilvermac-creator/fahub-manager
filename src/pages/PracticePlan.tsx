@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
-import { Player, PracticeSession, PracticeCategory, PracticeScriptItem } from '../types';
+import { Player, PracticeSession, PracticeCategory, PracticeScriptItem, Announcement } from '../types';
 import { storageService } from '../services/storageService';
 import { generatePracticeScript } from '../services/geminiService';
 import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon } from '../components/icons/UiIcons';
@@ -76,12 +76,29 @@ const PracticePlan: React.FC = () => {
             script: generatedScript.length > 0 ? generatedScript : [], 
             performances: []
         };
+        
+        // 1. Salvar Treino
         const updated = [practice, ...practices];
         setPractices(updated);
         storageService.savePracticeSessions(updated);
+
+        // 2. Criar Notificação Automática (Announcement)
+        const notification: Announcement = {
+            id: `notif-${Date.now()}`,
+            title: `📅 NOVO TREINO AGENDADO: ${newTitle}`,
+            content: `Foco: ${newFocus}. Data: ${new Date(newDate).toLocaleString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' })}. Presença Obrigatória!`,
+            priority: 'HIGH',
+            date: new Date(),
+            authorRole: 'HEAD_COACH',
+            readBy: []
+        };
+        
+        const currentAnnouncements = storageService.getAnnouncements();
+        storageService.saveAnnouncements([notification, ...currentAnnouncements]);
+
         setIsCreating(false);
         setGeneratedScript([]); 
-        toast.success("Treino agendado com sucesso! Atletas serão notificados.");
+        toast.success("Treino agendado e notificação enviada aos atletas!");
     };
 
     const addTime = (timeStr: string, minutes: number): string => {
@@ -193,7 +210,7 @@ const PracticePlan: React.FC = () => {
                              <form onSubmit={handleCreatePractice} className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <Input label="Título" value={newTitle} onChange={e => setNewTitle(e.target.value)} required placeholder="Ex: Preparação Playoffs" />
-                                    <Input label="Data" type="datetime-local" value={newDate} onChange={e => setNewDate(e.target.value)} required />
+                                    <Input label="Data e Hora" type="datetime-local" value={newDate} onChange={e => setNewDate(e.target.value)} required />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import Card from '../components/Card';
 import { MarketplaceItem } from '../types';
 import { storageService } from '../services/storageService';
@@ -7,9 +7,12 @@ import { UserContext } from '../components/Layout';
 import PaymentModal from '../components/PaymentModal';
 import Modal from '../components/Modal';
 import LazyImage from '@/components/LazyImage';
+import { ImageIcon, CheckCircleIcon } from '../components/icons/UiIcons';
+import { useToast } from '../contexts/ToastContext';
 
 const Marketplace: React.FC = () => {
     const { currentRole } = useContext(UserContext);
+    const toast = useToast();
     const [items, setItems] = useState<MarketplaceItem[]>([]);
     const [viewFilter, setViewFilter] = useState<'ALL' | 'TEAM_STORE' | 'USED'>('ALL');
     
@@ -22,6 +25,12 @@ const Marketplace: React.FC = () => {
     const [newItemDesc, setNewItemDesc] = useState('');
     const [newItemCategory, setNewItemCategory] = useState<any>('ACCESSORIES');
     const [newItemType, setNewItemType] = useState<'PLAYER' | 'TEAM_STORE'>('PLAYER');
+    
+    // Image Upload State
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string>('');
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setItems(storageService.getMarketplaceItems());
@@ -54,8 +63,31 @@ const Marketplace: React.FC = () => {
         }
     };
 
-    const handleAddItem = (e: React.FormEvent) => {
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleAddItem = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsUploading(true);
+
+        let finalImageUrl = `https://source.unsplash.com/random/400x300/?football,${newItemCategory}`;
+
+        if (imageFile) {
+            try {
+                // Upload real da imagem
+                const uploadedUrl = await storageService.uploadFile(imageFile, 'marketplace');
+                finalImageUrl = uploadedUrl;
+            } catch (error) {
+                console.error("Erro no upload", error);
+                toast.error("Erro ao enviar imagem. Usando padrão.");
+            }
+        }
+
         const newItem: MarketplaceItem = {
             id: Date.now().toString(),
             title: newItemTitle,
@@ -64,16 +96,24 @@ const Marketplace: React.FC = () => {
             category: newItemCategory,
             sellerType: newItemType,
             sellerName: newItemType === 'TEAM_STORE' ? 'Loja Oficial' : 'Atleta',
-            imageUrl: `https://source.unsplash.com/random/400x300/?football,${newItemCategory}`,
+            imageUrl: finalImageUrl,
             isSold: false
         };
+        
         const updated = [...items, newItem];
         setItems(updated);
         storageService.saveMarketplaceItems(updated);
+        
+        setIsUploading(false);
         setIsAddModalOpen(false);
+        
+        // Reset Form
         setNewItemTitle('');
         setNewItemPrice('');
         setNewItemDesc('');
+        setImageFile(null);
+        setImagePreview('');
+        toast.success("Produto anunciado com sucesso!");
     };
 
     return (
@@ -179,9 +219,37 @@ const Marketplace: React.FC = () => {
 
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title={newItemType === 'TEAM_STORE' ? "Novo Produto na Loja" : "Anunciar Produto"}>
                 <form onSubmit={handleAddItem} className="space-y-4">
+                    
+                    {/* Image Upload Field */}
+                    <div 
+                        className="bg-black/20 border-2 border-dashed border-white/10 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 hover:border-highlight/50 transition-all relative overflow-hidden h-40"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            ref={fileInputRef} 
+                            className="hidden" 
+                            onChange={handleImageChange}
+                        />
+                        {imagePreview ? (
+                            <img src={imagePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                        ) : (
+                            <div className="flex flex-col items-center gap-2 text-text-secondary">
+                                <ImageIcon className="w-8 h-8 opacity-50" />
+                                <span className="text-xs font-bold uppercase">Clique para adicionar foto</span>
+                            </div>
+                        )}
+                        {imagePreview && (
+                            <div className="absolute bottom-2 right-2 bg-green-500 text-white p-1 rounded-full shadow-lg">
+                                <CheckCircleIcon className="w-4 h-4" />
+                            </div>
+                        )}
+                    </div>
+
                     <div>
                         <label className="text-xs font-bold text-text-secondary uppercase">Título</label>
-                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" required value={newItemTitle} onChange={e => setNewItemTitle(e.target.value)} placeholder="Ex: Capacete Riddell" />
+                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" required value={newItemTitle} onChange={e => setNewItemTitle(e.target.value)} placeholder="Ex: Capacete Riddell Speed" />
                     </div>
                     <div>
                         <label className="text-xs font-bold text-text-secondary uppercase">Preço (R$)</label>
@@ -199,10 +267,16 @@ const Marketplace: React.FC = () => {
                     </div>
                     <div>
                         <label className="text-xs font-bold text-text-secondary uppercase">Descrição</label>
-                        <textarea className="w-full bg-black/20 border border-white/10 rounded p-2 text-white h-24" value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} />
+                        <textarea className="w-full bg-black/20 border border-white/10 rounded p-2 text-white h-24" value={newItemDesc} onChange={e => setNewItemDesc(e.target.value)} placeholder="Descreva o estado do produto, tamanho, etc." />
                     </div>
                     <div className="flex justify-end pt-2">
-                        <button type="submit" className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-lg font-bold">Publicar Anúncio</button>
+                        <button 
+                            type="submit" 
+                            disabled={isUploading} 
+                            className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 disabled:opacity-50"
+                        >
+                            {isUploading ? 'Enviando...' : 'Publicar Anúncio'}
+                        </button>
                     </div>
                 </form>
             </Modal>
