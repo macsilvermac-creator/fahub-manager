@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Player, Transaction, CoachCareer } from '../types';
@@ -6,15 +5,16 @@ import { storageService } from '../services/storageService';
 import { authService } from '../services/authService';
 import { UserContext } from '../components/Layout';
 import { 
-    UsersIcon, WalletIcon, StarIcon, ShareIcon, 
-    PrinterIcon, LockIcon, CheckCircleIcon, LinkIcon, ShieldCheckIcon, AlertTriangleIcon, PlayCircleIcon 
+    WalletIcon, StarIcon, ShareIcon, PrinterIcon, LockIcon, CheckCircleIcon, ActivityIcon, ClipboardIcon, PlayCircleIcon
 } from '../components/icons/UiIcons';
-import { TicketIcon, TrophyIcon, ShopIcon, VideoIcon, BriefcaseIcon } from '../components/icons/NavIcons';
+import { TrophyIcon, VideoIcon } from '../components/icons/NavIcons';
 import Modal from '../components/Modal';
 import LazyImage from '@/components/LazyImage';
+import { useToast } from '../contexts/ToastContext';
 
 const MyProfile: React.FC = () => {
     const { currentRole } = useContext(UserContext);
+    const toast = useToast();
     const [player, setPlayer] = useState<Player | null>(null);
     const [coachProfile, setCoachProfile] = useState<CoachCareer | null>(null);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -51,8 +51,10 @@ const MyProfile: React.FC = () => {
             });
         } else {
             const allPlayers = storageService.getPlayers();
-            // Match player by ID first if linked, or fallback to name/cpf
-            const myPlayer = allPlayers.find(p => p.name === user?.name) || allPlayers[0];
+            // ANALISTA DE DADOS: Melhor lógica de matching. Tenta ID, depois Nome.
+            const myPlayer = allPlayers.find(p => p.id === Number(user?.id)) || 
+                             allPlayers.find(p => p.name === user?.name) || 
+                             allPlayers[0];
             
             if (myPlayer) {
                 setPlayer(myPlayer);
@@ -70,20 +72,17 @@ const MyProfile: React.FC = () => {
         const myTxs = storageService.getTransactions().filter(t => t.type === 'INCOME'); 
         if(myTxs.length > 0) {
              setTransactions(myTxs);
-        } else {
-             setTransactions([
-                { id: 't1', title: 'Venda de Capacete', amount: 450.00, type: 'INCOME', date: new Date('2023-10-01'), category: 'STORE', status: 'PAID' },
-                { id: 't2', title: 'Comissão Afiliado (Curso)', amount: 45.90, type: 'INCOME', date: new Date('2023-10-05'), category: 'OTHER', status: 'PAID' }
-            ]);
         }
         setLoading(false);
     }, [isCoach]);
 
+    // ANALISTA DE DADOS: Função de Salvamento Blindada
     const handleSaveProfile = () => {
         const user = authService.getCurrentUser();
         
         if (isCoach && user) {
-            if (coachProfile) {
+            // ... (Coach logic remains similar)
+             if (coachProfile) {
                 const updatedProfile: CoachCareer = {
                     ...coachProfile,
                     philosophy: formData.philosophy,
@@ -91,30 +90,36 @@ const MyProfile: React.FC = () => {
                 };
                 storageService.saveCoachProfile(user.id, updatedProfile);
                 setCoachProfile(updatedProfile);
-                alert("Currículo do Treinador atualizado!");
+                toast.success("Currículo atualizado!");
             }
             setIsEditing(false);
             return;
         }
 
         if (player) {
-            // CRITICAL FIX: Ensure we update the MAIN LIST
+            // 1. Criar objeto atualizado
             const updatedPlayer = { 
                 ...player, 
                 weight: Number(formData.weight), 
                 height: formData.height 
             };
             
-            // 1. Update Local State
+            // 2. Atualizar estado local
             setPlayer(updatedPlayer);
             
-            // 2. Update Storage
+            // 3. Atualizar LISTA MESTRE no Storage (Persistence)
             const currentPlayers = storageService.getPlayers();
-            const updatedList = currentPlayers.map(p => p.id === player.id ? updatedPlayer : p);
+            // Mapeia e substitui. Se não achar pelo ID, tenta pelo nome (fallback)
+            const updatedList = currentPlayers.map(p => 
+                (p.id === player.id || p.name === player.name) ? updatedPlayer : p
+            );
             storageService.savePlayers(updatedList);
             
+            // 4. (Opcional) Atualizar sessão se houver dados do user (ex: avatar) que mudaram
+            // Aqui estamos mudando apenas dados do atleta, então savePlayers basta.
+            
             setIsEditing(false);
-            alert("Perfil atualizado com sucesso!");
+            toast.success("Perfil atualizado com sucesso!");
         }
     };
 
