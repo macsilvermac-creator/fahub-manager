@@ -60,26 +60,45 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
 };
 
 // --- OPTIMIZED RAM CACHE ---
-// O segredo da velocidade: Mantém tudo em memória e só grava no disco quando necessário.
+// FIX CRÍTICO: Inicializar com Arrays Vazios [] em vez de null para evitar crashes de .map()
 const RAM_DB: any = {
-    // Core (Carregado no boot)
     settings: null,
-    
-    // Lazy (Carregado sob demanda)
-    players: null,
-    games: null,
-    practice: null,
-    transactions: null,
-    invoices: null,
-    staff: null,
-    // ... outros null
+    players: [],
+    games: [],
+    practice: [],
+    transactions: [],
+    invoices: [],
+    staff: [],
+    feed: [],
+    tasks: [],
+    announcements: [],
+    chat: [],
+    documents: [],
+    inventory: [],
+    sponsors: [],
+    socialPosts: [],
+    marketplace: [],
+    sales: [],
+    courses: [],
+    plays: [],
+    clips: [],
+    playlists: [],
+    youthClasses: [],
+    coachNotes: [],
+    coachProfiles: [],
+    logs: [],
+    candidates: [],
+    objectives: [],
+    subscriptions: [],
+    budgets: [],
+    bills: []
 };
 
 // --- CORE UTILS (Non-Blocking I/O) ---
 
-// Leitura Inteligente: Se está na RAM, retorna instantâneo. Se não, lê do disco.
 const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any = []): T[] => {
-    if (RAM_DB[ramKey] !== null && RAM_DB[ramKey] !== undefined) {
+    // Se já tem dados (mesmo que array vazio, assumimos carregado se não for a inicialização padrão)
+    if (RAM_DB[ramKey] && RAM_DB[ramKey].length > 0) {
         return RAM_DB[ramKey];
     }
     
@@ -89,7 +108,6 @@ const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any =
             RAM_DB[ramKey] = initialValue;
             return initialValue;
         }
-        // Otimização: JSON.parse é síncrono e lento. Só fazemos isso UMA vez por sessão.
         const parsed = JSON.parse(stored, dateReviver);
         RAM_DB[ramKey] = parsed;
         return parsed;
@@ -100,28 +118,24 @@ const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any =
     }
 };
 
-// Escrita Otimizada: Atualiza RAM (instantâneo para UI) e agendar disco (background)
 const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
     RAM_DB[ramKey] = data;
-    
-    // Defer Disk Write: Não bloqueia a thread principal da UI
-    if (typeof window.requestIdleCallback === 'function') {
-        window.requestIdleCallback(() => {
-            localStorage.setItem(storageKey, JSON.stringify(data));
-        });
-    } else {
-        setTimeout(() => {
-            localStorage.setItem(storageKey, JSON.stringify(data));
-        }, 50);
+    try {
+        localStorage.setItem(storageKey, JSON.stringify(data));
+    } catch (e) {
+        console.error("Storage Quota Exceeded or Write Error", e);
     }
 };
 
 export const storageService = {
     initializeRAM: () => {
-        // Apenas carrega configurações críticas. O resto é LAZY.
         const storedSettings = localStorage.getItem(KEYS.SETTINGS);
         RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
-        console.log("🚀 Core System Ready (Lazy Mode)");
+        
+        // Pre-load critical data types to prevent white screen flashes
+        loadIfNeeded('players', KEYS.PLAYERS);
+        loadIfNeeded('games', KEYS.GAMES);
+        console.log("🚀 Core System Ready (Robust Mode)");
     },
 
     uploadFile: async (file: File, folder: string = 'general') => {
@@ -129,7 +143,6 @@ export const storageService = {
     },
 
     syncFromCloud: async () => {
-        // Sync roda em background sem bloquear
         try {
             const cloudPlayers = await firebaseDataService.getPlayers();
             if (cloudPlayers?.length) saveAndCache('players', KEYS.PLAYERS, cloudPlayers);
@@ -148,7 +161,6 @@ export const storageService = {
     getPlayers: (): Player[] => loadIfNeeded<Player>('players', KEYS.PLAYERS),
     savePlayers: (players: Player[]) => {
         saveAndCache('players', KEYS.PLAYERS, players);
-        // Sync otimista: não espera resposta
         if (!syncService.getConnectionStatus()) syncService.enqueueAction('SYNC_PLAYERS', players);
     },
     
@@ -161,7 +173,6 @@ export const storageService = {
         localStorage.setItem(KEYS.SETTINGS, JSON.stringify(s));
     },
 
-    // LAZY LOADERS (Só processa JSON se o usuário abrir a tela)
     getPracticeSessions: (): PracticeSession[] => loadIfNeeded<PracticeSession>('practice', KEYS.PRACTICE),
     savePracticeSessions: (p: PracticeSession[]) => saveAndCache('practice', KEYS.PRACTICE, p),
 
@@ -174,8 +185,6 @@ export const storageService = {
     getStaff: (): StaffMember[] => loadIfNeeded<StaffMember>('staff', KEYS.STAFF),
     saveStaff: (s: StaffMember[]) => saveAndCache('staff', KEYS.STAFF, s),
 
-    // --- DASHBOARD INTELLIGENCE (Lógica Unificada) ---
-    // Em vez de 10 chamadas no Dashboard, fazemos 1 cálculo aqui
     getCoachDashboardStats: () => {
         const players = loadIfNeeded<Player>('players', KEYS.PLAYERS);
         const games = loadIfNeeded<Game>('games', KEYS.GAMES);
@@ -183,9 +192,8 @@ export const storageService = {
         const activePlayers = players.filter(p => p.status === 'ACTIVE').length;
         const injuredPlayers = players.filter(p => p.status === 'INJURED' || p.status === 'IR').length;
         
-        // Lógica de tempo "tolerante" para o próximo evento
         const now = new Date();
-        const lookback = new Date(now.getTime() - 4 * 60 * 60 * 1000); // 4h atrás ainda é "agora"
+        const lookback = new Date(now.getTime() - 4 * 60 * 60 * 1000); 
         
         const nextGame = games
             .filter((g: Game) => new Date(g.date) >= lookback && g.status === 'SCHEDULED')
@@ -194,7 +202,6 @@ export const storageService = {
         return { activePlayers, injuredPlayers, nextGame: nextGame || null };
     },
 
-    // --- OUTROS ACCESSORS (Padrão Lazy) ---
     getSubscriptions: () => loadIfNeeded<Subscription>('subscriptions', KEYS.SUBSCRIPTIONS),
     saveSubscriptions: (s: Subscription[]) => saveAndCache('subscriptions', KEYS.SUBSCRIPTIONS, s),
     
@@ -296,14 +303,21 @@ export const storageService = {
 
     registerAthlete: (player: Player) => {
         const players = loadIfNeeded<Player>('players', KEYS.PLAYERS);
-        const updated = [...players, { ...player, teamId: 'ts-1', rosterCategory: 'ACTIVE' as const }];
+        const updated = [...players, { 
+            ...player, 
+            teamId: 'ts-1', 
+            rosterCategory: 'ACTIVE' as const,
+            wellnessHistory: [],
+            gameLogs: [],
+            savedWorkouts: [],
+            medicalReports: []
+        }];
         storageService.savePlayers(updated);
     },
 
-    addTeamXP: (amount: number) => { /* Gamification Stub */ },
-    generateMonthlyInvoices: () => { /* Stub para geração automática */ },
+    addTeamXP: (amount: number) => {},
+    generateMonthlyInvoices: () => {},
 
-    // --- MOCKS & UTILS ---
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const games = loadIfNeeded<Game>('games', KEYS.GAMES);
         const updated = games.map((g: Game) => g.id === gameId ? { ...g, ...updates } : g);
@@ -320,9 +334,7 @@ export const storageService = {
         } : g);
         storageService.saveGames(updated);
     },
-    createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string) => {
-        // Simplified
-    },
+    createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string) => {},
     
     getPermissions: () => [],
     seedDatabaseToCloud: async () => {},

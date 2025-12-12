@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Player, Transaction, CoachCareer } from '../types';
@@ -51,7 +52,7 @@ const MyProfile: React.FC = () => {
             });
         } else {
             const allPlayers = storageService.getPlayers();
-            // ANALISTA DE DADOS: Melhor lógica de matching. Tenta ID, depois Nome.
+            // Lógica de matching robusta
             const myPlayer = allPlayers.find(p => p.id === Number(user?.id)) || 
                              allPlayers.find(p => p.name === user?.name) || 
                              allPlayers[0];
@@ -76,12 +77,10 @@ const MyProfile: React.FC = () => {
         setLoading(false);
     }, [isCoach]);
 
-    // ANALISTA DE DADOS: Função de Salvamento Blindada
     const handleSaveProfile = () => {
         const user = authService.getCurrentUser();
         
         if (isCoach && user) {
-            // ... (Coach logic remains similar)
              if (coachProfile) {
                 const updatedProfile: CoachCareer = {
                     ...coachProfile,
@@ -114,9 +113,6 @@ const MyProfile: React.FC = () => {
                 (p.id === player.id || p.name === player.name) ? updatedPlayer : p
             );
             storageService.savePlayers(updatedList);
-            
-            // 4. (Opcional) Atualizar sessão se houver dados do user (ex: avatar) que mudaram
-            // Aqui estamos mudando apenas dados do atleta, então savePlayers basta.
             
             setIsEditing(false);
             toast.success("Perfil atualizado com sucesso!");

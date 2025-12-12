@@ -7,10 +7,9 @@ import PaymentModal from '../components/PaymentModal';
 import { storageService } from '../services/storageService';
 import { EventSale } from '../types';
 import { UserContext } from '../components/Layout';
-import Modal from '../components/Modal'; // Importando Modal
-import { useToast } from '../contexts/ToastContext'; // Importando Toast
+import Modal from '../components/Modal';
+import { useToast } from '../contexts/ToastContext';
 
-// Quick Items Configuration
 const TICKET_ITEMS = [
     { id: 't1', name: 'Ingresso Inteira', price: 20.00, icon: '🎟️' },
     { id: 't2', name: 'Ingresso Meia/Social', price: 10.00, icon: '🎫' },
@@ -28,7 +27,7 @@ const BAR_ITEMS = [
 ];
 
 interface CartItem {
-    id: string; // unique instance id
+    id: string;
     productId: string;
     name: string;
     price: number;
@@ -42,13 +41,9 @@ const EventDesk: React.FC = () => {
     const [recentSales, setRecentSales] = useState<EventSale[]>([]);
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const [lastOrder, setLastOrder] = useState<{ id: string, items: CartItem[], total: number, date: Date } | null>(null);
-    
-    // Quick Add Modal State
     const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
     const [quickName, setQuickName] = useState('');
     const [quickPrice, setQuickPrice] = useState('');
-
-    // Mobile View State
     const [mobileView, setMobileView] = useState<'CATALOG' | 'CART'>('CATALOG');
 
     useEffect(() => {
@@ -98,6 +93,7 @@ const EventDesk: React.FC = () => {
 
         setRecentSales([...recentSales, ...newSales]);
         
+        // CORREÇÃO: Set lastOrder FIRST
         setLastOrder({
             id: saleId,
             items: [...cart],
@@ -110,7 +106,12 @@ const EventDesk: React.FC = () => {
         setMobileView('CATALOG');
         toast.success("Venda realizada com sucesso!");
         
-        // Auto-print logic or confirmation could go here
+        // Print confirmation
+        setTimeout(() => {
+            if(window.confirm("Deseja imprimir o comprovante?")) {
+                window.print();
+            }
+        }, 500);
     };
 
     const handleQuickAddSubmit = (e: React.FormEvent) => {
@@ -134,7 +135,6 @@ const EventDesk: React.FC = () => {
 
     return (
         <div className="space-y-4 pb-12 animate-fade-in h-[calc(100vh-5rem)] flex flex-col overflow-hidden">
-            {/* PRINT STYLES */}
             <style>{`
                 @media print {
                     body * { visibility: hidden; }
@@ -153,7 +153,6 @@ const EventDesk: React.FC = () => {
                 }
             `}</style>
 
-            {/* RECEIPT TEMPLATE */}
             <div id="receipt-area" className="hidden print:block">
                 <div className="text-center mb-4">
                     <h2 className="font-bold text-xl uppercase">FAHUB MANAGER</h2>
@@ -181,7 +180,6 @@ const EventDesk: React.FC = () => {
                 </div>
             </div>
 
-            {/* HEADER */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1 no-print">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-secondary rounded-xl">
@@ -206,7 +204,6 @@ const EventDesk: React.FC = () => {
                 </div>
             </div>
 
-            {/* Mobile View Switcher */}
             <div className="flex md:hidden bg-secondary rounded-lg p-1 border border-white/10 shrink-0 no-print">
                 <button 
                     onClick={() => setMobileView('CATALOG')}
@@ -224,7 +221,6 @@ const EventDesk: React.FC = () => {
             </div>
 
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden min-h-0 no-print">
-                {/* Left: Product Grid */}
                 <div className={`lg:col-span-2 flex-col h-full overflow-hidden ${mobileView === 'CART' ? 'hidden lg:flex' : 'flex'}`}>
                     <div className="flex gap-2 mb-3 shrink-0 overflow-x-auto pb-1">
                         <button 
@@ -265,7 +261,6 @@ const EventDesk: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Right: Cart & Checkout */}
                 <div className={`lg:col-span-1 bg-secondary rounded-2xl border border-white/5 flex-col h-full overflow-hidden ${mobileView === 'CATALOG' ? 'hidden lg:flex' : 'flex'}`}>
                     <div className="p-4 border-b border-white/10 bg-black/20 shrink-0 flex justify-between items-center">
                         <h3 className="font-bold text-white flex items-center gap-2">
@@ -341,7 +336,6 @@ const EventDesk: React.FC = () => {
                 description={`Venda POS (${cart.length} itens)`}
             />
 
-            {/* Quick Add Modal */}
             <Modal isOpen={isQuickAddOpen} onClose={() => setIsQuickAddOpen(false)} title="Adicionar Item Rápido">
                 <form onSubmit={handleQuickAddSubmit} className="space-y-4">
                     <div>

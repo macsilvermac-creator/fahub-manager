@@ -15,19 +15,16 @@ const Recruitment: React.FC = () => {
     const [candidates, setCandidates] = useState<RecruitmentCandidate[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     
-    // Combine Mode State
     const [selectedCandidate, setSelectedCandidate] = useState<RecruitmentCandidate | null>(null);
     const [isCombineOpen, setIsCombineOpen] = useState(false);
     const [combineStats, setCombineStats] = useState<CombineStats>({});
     
-    // Editable AI Analysis State (Human-in-the-loop)
     const [scoutAnalysis, setScoutAnalysis] = useState<{ rating: number, potential: string, analysis: string } | null>(null);
     const [editedRating, setEditedRating] = useState<number>(0);
     const [editedAnalysis, setEditedAnalysis] = useState<string>('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
 
-    // Form State
     const [newName, setNewName] = useState('');
     const [newPhone, setNewPhone] = useState('');
     const [newPosition, setNewPosition] = useState('ATH');
@@ -48,7 +45,7 @@ const Recruitment: React.FC = () => {
             height: '',
             weight: 0,
             experience: 'ROOKIE',
-            status: 'NEW', // Starts as New Lead
+            status: 'NEW', 
             createdAt: new Date()
         };
         const updated = [...candidates, newCandidate];
@@ -61,7 +58,6 @@ const Recruitment: React.FC = () => {
     };
 
     const handleCheckIn = (id: string) => {
-        // Move status 'NEW' -> 'TRYOUT' (Presente no campo)
         const updated = candidates.map(c => c.id === id ? { ...c, status: 'TRYOUT' as const } : c);
         setCandidates(updated);
         storageService.saveCandidates(updated);
@@ -74,6 +70,7 @@ const Recruitment: React.FC = () => {
         storageService.saveCandidates(updated);
     };
 
+    // CORREÇÃO CRÍTICA: Player Object Completo
     const promoteToRoster = (candidate: RecruitmentCandidate) => {
         try {
             const user = authService.getCurrentUser();
@@ -91,10 +88,14 @@ const Recruitment: React.FC = () => {
                 xp: 0,
                 rating: candidate.rating || 65,
                 status: 'ACTIVE',
-                rosterCategory: 'PRACTICE_SQUAD', // Start in Practice Squad
+                rosterCategory: 'PRACTICE_SQUAD', 
                 depthChartOrder: 4,
                 combineStats: combineStats,
-                hcNotes: `Promovido via Combine. Análise: ${candidate.aiAnalysis} (Validado por: ${candidate.verifiedBy || user?.name})`
+                hcNotes: `Promovido via Combine. Análise: ${candidate.aiAnalysis} (Validado por: ${candidate.verifiedBy || user?.name})`,
+                wellnessHistory: [],
+                gameLogs: [],
+                savedWorkouts: [],
+                medicalReports: []
             } as any);
             
             moveCandidate(candidate.id, 'CONVERTED');
@@ -118,11 +119,10 @@ const Recruitment: React.FC = () => {
         setIsAnalyzing(true);
         const result = await analyzeCombineStats(combineStats, selectedCandidate.position);
         
-        // Populate edit state immediately
         setScoutAnalysis(result);
         setEditedRating(result.rating);
         setEditedAnalysis(result.analysis);
-        setIsEditingAnalysis(true); // Enable edit mode by default for review
+        setIsEditingAnalysis(true); 
         
         setIsAnalyzing(false);
     };
@@ -146,7 +146,6 @@ const Recruitment: React.FC = () => {
     };
 
     const renderColumn = (status: string, title: string, color: string) => {
-        // Simple filter based on status
         const list = candidates.filter(c => c.status === status);
         return (
             <div className="bg-secondary/40 rounded-xl p-4 border border-white/5 min-w-[280px] flex-1">
@@ -166,7 +165,6 @@ const Recruitment: React.FC = () => {
                                 </div>
                             </div>
                             
-                            {/* Actions per Status */}
                             {status === 'NEW' && (
                                 <button 
                                     onClick={() => handleCheckIn(c.id)}
@@ -257,7 +255,6 @@ const Recruitment: React.FC = () => {
                 </form>
             </Modal>
 
-            {/* COMBINE MODAL (TECHNICAL ONLY) */}
             <Modal isOpen={isCombineOpen} onClose={() => setIsCombineOpen(false)} title={`Avaliação Física: ${selectedCandidate?.name}`} maxWidth="max-w-2xl">
                 <div className="space-y-6">
                     <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/20 text-center mb-4">
@@ -347,4 +344,5 @@ const Recruitment: React.FC = () => {
     );
 };
 
+export default Recruitment;
 export default Recruitment;

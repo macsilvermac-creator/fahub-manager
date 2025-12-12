@@ -38,7 +38,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
       navigate('/login');
   };
 
-  // --- DEFINIÇÃO DE PERFIS (Divide and Conquer) ---
   const isCoach = ['MASTER', 'HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'].includes(currentRole);
   const isAthlete = ['PLAYER'].includes(currentRole);
   const isBackoffice = ['MASTER', 'FINANCIAL_MANAGER', 'MARKETING_MANAGER', 'COMMERCIAL_MANAGER'].includes(currentRole);
@@ -55,8 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
   const badge = getRoleBadge();
 
   return (
-    <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-[#0F172A] transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-linear lg:relative lg:translate-x-0 lg:flex lg:flex-shrink-0 flex flex-col h-full border-r border-white/5 shadow-2xl`}>
-      {/* HEADER DA ENTIDADE */}
+    <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0F172A] transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-linear lg:relative lg:translate-x-0 lg:flex lg:flex-shrink-0 flex flex-col h-full border-r border-white/5 shadow-2xl`}>
       <div className="h-20 flex items-center px-6 border-b border-white/5 bg-[#0B1120]">
             <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg border border-white/10 ${isAthlete ? 'bg-gradient-to-br from-blue-600 to-indigo-600' : isCoach ? 'bg-gradient-to-br from-highlight to-emerald-800' : 'bg-gradient-to-br from-slate-700 to-slate-900'}`}>
@@ -73,7 +71,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
             </div>
       </div>
 
-      {/* INDICADOR DE NÍVEL DE ACESSO (SEGREGAÇÃO VISUAL) */}
       <div className="px-3 pt-4">
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 ${badge.color} bg-opacity-20`}>
               <LockIcon className={`w-3 h-3 text-white ${badge.color.replace('bg-', 'text-')}`} />
@@ -89,7 +86,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
             <span>{isAthlete ? 'Meu Locker' : 'QG Principal'}</span>
           </NavLink>
 
-          {/* --- MENU DO COACH (TÁTICO & TÉCNICO) --- */}
           {isCoach && (
             <div className="mt-6 animate-fade-in">
               <p className="px-4 text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Comissão Técnica</p>
@@ -126,7 +122,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
             </div>
           )}
 
-          {/* --- MENU DO ATLETA (FOCO NO INDIVÍDUO) --- */}
           {isAthlete && (
              <div className="mt-6 animate-fade-in">
                 <p className="px-4 text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Área do Atleta</p>
@@ -153,7 +148,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
              </div>
           )}
 
-          {/* --- MENU DE BACKOFFICE (GESTÃO PURA) --- */}
           {isBackoffice && (
             <div className="mt-6 animate-fade-in">
               <p className="px-4 text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Gestão Corporativa</p>
@@ -195,7 +189,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
             </div>
           )}
 
-          {/* --- MENU DE ARBITRAGEM (ISOLADO) --- */}
           {isOfficial && (
              <div className="mt-6 animate-fade-in">
                <p className="px-4 text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Oficiais</p>
@@ -206,7 +199,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
              </div>
           )}
 
-          {/* --- COMUM A TODOS (ECOSSISTEMA) --- */}
           <div className="mt-6 pt-6 border-t border-white/5">
             <p className="px-4 text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Comunidade</p>
             <NavLink to="/locker-room" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
@@ -227,7 +219,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
         </nav>
       </div>
 
-      {/* GOD MODE (DEV ONLY - REMOVER EM PROD SE NECESSÁRIO) */}
       {isMasterUser && (
         <div className="bg-black/40 border-t border-white/5 p-3">
             <div className="grid grid-cols-3 gap-1">
