@@ -1,5 +1,5 @@
 
-import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, League, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, Championship, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, VideoPermissionGroup, EquipmentItem, EventSale, SavedWorkout, NationalTeamCandidate, Affiliate, KanbanTask, RecruitmentCandidate, Objective, Subscription, PaymentAgreement, Budget, Bill, Vendor, PurchaseRequest } from '../types';
+import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, EquipmentItem, EventSale, RecruitmentCandidate, Objective, Subscription, Budget, Bill, KanbanTask, NationalTeamCandidate, Affiliate, RefereeProfile } from '../types';
 import { firebaseDataService } from './firebaseDataService';
 import { syncService } from './syncService';
 
@@ -60,71 +60,80 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
 };
 
 // --- RAM CACHE (Single Source of Truth) ---
+// Inicializa com null para diferenciar "ainda não carregado" de "vazio"
 const RAM_DB: any = {
     settings: null,
-    players: [],
-    games: [],
-    practice: [],
-    transactions: [],
-    invoices: [],
-    staff: [],
-    feed: [],
-    tasks: [],
-    announcements: [],
-    chat: [],
-    documents: [],
-    inventory: [],
-    sponsors: [],
-    socialPosts: [],
-    marketplace: [],
-    sales: [],
-    courses: [],
-    plays: [],
-    clips: [],
-    playlists: [],
-    youthClasses: [],
-    coachNotes: [],
-    coachProfiles: [],
-    logs: [],
-    candidates: [],
-    objectives: [],
-    subscriptions: [],
-    budgets: [],
-    bills: []
+    players: null,
+    games: null,
+    practice: null,
+    transactions: null,
+    invoices: null,
+    staff: null,
+    feed: null,
+    tasks: null,
+    announcements: null,
+    chat: null,
+    documents: null,
+    inventory: null,
+    sponsors: null,
+    socialPosts: null,
+    marketplace: null,
+    sales: null,
+    courses: null,
+    plays: null,
+    clips: null,
+    playlists: null,
+    youthClasses: null,
+    coachNotes: null,
+    coachProfiles: null,
+    logs: null,
+    candidates: null,
+    objectives: null,
+    subscriptions: null,
+    budgets: null,
+    bills: null
 };
 
-// --- DEBOUNCE SYSTEM (Anti-Freeze) ---
+// --- DEBOUNCE SYSTEM ---
 const saveTimeouts: Record<string, any> = {};
 
+// Circuit Breaker: Garante que loadIfNeeded sempre retorne uma referência estável
 const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any = []): T[] => {
-    if (RAM_DB[ramKey] && Array.isArray(RAM_DB[ramKey]) && RAM_DB[ramKey].length > 0) {
+    // 1. Se já está na RAM, retorna imediatamente (Rápido)
+    if (RAM_DB[ramKey] !== null && RAM_DB[ramKey] !== undefined) {
         return RAM_DB[ramKey];
     }
+
+    // 2. Se não está, tenta ler do disco (Lento)
     try {
         const stored = localStorage.getItem(storageKey);
         if (!stored) {
+            // Se não existe no disco, inicializa RAM com valor padrão e retorna
             RAM_DB[ramKey] = initialValue;
             return initialValue;
         }
+        
+        // Parse e cache na RAM
         const parsed = JSON.parse(stored, dateReviver);
         RAM_DB[ramKey] = parsed;
         return parsed;
     } catch (e) {
         console.error(`Storage Read Error [${ramKey}]`, e);
+        // Em caso de erro, define valor padrão na RAM para evitar loops de erro
         RAM_DB[ramKey] = initialValue;
         return initialValue;
     }
 };
 
-// CRITICAL FIX: Debounced Write
 const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
+    // 1. Atualiza RAM imediatamente (UI responsiva)
     RAM_DB[ramKey] = data;
     
+    // 2. Debounce para escrita no disco (Performance)
     if (saveTimeouts[storageKey]) {
         clearTimeout(saveTimeouts[storageKey]);
     }
 
-    // Espera 800ms antes de escrever no disco
     saveTimeouts[storageKey] = setTimeout(() => {
         try {
             localStorage.setItem(storageKey, JSON.stringify(data));
@@ -132,24 +141,21 @@ const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
             console.error("Storage Write Error (Quota Exceeded?)", e);
         }
         delete saveTimeouts[storageKey];
-    }, 800);
+    }, 1000); // 1 segundo de delay
 };
 
 export const storageService = {
     initializeRAM: () => {
-        try {
-            const storedSettings = localStorage.getItem(KEYS.SETTINGS);
-            RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
-            
-            setTimeout(() => {
-                loadIfNeeded('players', KEYS.PLAYERS);
-                loadIfNeeded('games', KEYS.GAMES);
-            }, 100);
-            
-            console.log("🚀 Storage System Ready (Debounce Mode)");
-        } catch (e) {
-            console.error("Init Error", e);
+        // Pré-carrega configurações essenciais
+        if (RAM_DB.settings === null) {
+            try {
+                const storedSettings = localStorage.getItem(KEYS.SETTINGS);
+                RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
+            } catch (e) {
+                RAM_DB.settings = INITIAL_TEAM_SETTINGS;
+            }
         }
+        console.log("🚀 Storage System Ready");
     },
 
     uploadFile: async (file: File, folder: string = 'general') => {
@@ -170,7 +176,7 @@ export const storageService = {
         }
     },
 
-    // --- ACCESSORS OTIMIZADOS ---
+    // --- ACCESSORS ---
     
     getPlayers: (): Player[] => loadIfNeeded<Player>('players', KEYS.PLAYERS),
     savePlayers: (players: Player[]) => {
@@ -327,7 +333,15 @@ export const storageService = {
         storageService.savePlayers(updated);
     },
 
-    addTeamXP: (amount: number) => {},
+    addTeamXP: (amount: number) => {
+        const settings = storageService.getTeamSettings();
+        settings.xp += amount;
+        if(settings.xp > 5000) {
+            settings.level += 1;
+            settings.xp = 0;
+        }
+        storageService.saveTeamSettings(settings);
+    },
     generateMonthlyInvoices: () => {},
 
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
@@ -350,7 +364,15 @@ export const storageService = {
     
     getPermissions: () => [],
     seedDatabaseToCloud: async () => {},
-    exportFullDatabase: () => {},
+    exportFullDatabase: () => {
+        const data = JSON.stringify(localStorage);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `fahub_backup_${new Date().toISOString()}.json`;
+        a.click();
+    },
     checkDocumentSigned: (docId: string) => true, 
     signLegalDocument: () => {},
     getConfederationStats: () => ({ totalAthletes: 1200, totalTeams: 15, totalGamesThisYear: 45, activeAffiliates: 4, growthRate: 10 }),
@@ -361,9 +383,9 @@ export const storageService = {
     getLeague: () => ({ id: 'lg-1', name: 'Liga Nacional', season: '2025', teams: [] }),
     getPublicLeagueStats: () => ({ name: 'Liga Nacional', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
     getPublicGameData: (gameId: string) => null,
-    getReferees: () => [],
-    getRefereeProfile: (id: string) => null,
-    getCrewLogistics: (gameId: number) => null,
+    getReferees: (): RefereeProfile[] => [],
+    getRefereeProfile: (id: string): RefereeProfile => ({ id, name: 'Juiz Demo', level: 'Senior', city: 'SP', availability: 'AVAILABLE', totalGames: 10, balance: 250, certifications: [] }),
+    getCrewLogistics: (gameId: number): CrewLogistics | null => null,
     getAssociationFinancials: () => null,
     savePlayerWorkout: (playerId: number, content: string, title: string) => {
         const players = loadIfNeeded<Player>('players', KEYS.PLAYERS);
@@ -380,4 +402,4 @@ export const storageService = {
     createChampionship: (name: string, year: number, division: string) => {}
 };
 
-export const LEGAL_DOCUMENTS: any[] = [];
+export const LEGAL_DOCUMENTS: any[] = [{ id: 'doc-terms', title: 'Termos de Uso Financeiro', version: '1.0', content: 'Termos de uso do sistema financeiro...', requiredRole: ['FINANCIAL_MANAGER'] }];
