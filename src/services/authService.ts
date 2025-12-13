@@ -79,6 +79,14 @@ export const authService = {
 
         localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
         
+        // --- SEGURANÇA DE CONTEXTO (ROOT LEVEL) ---
+        // Se o usuário tem um programa definido (ex: FLAG), forçamos o sistema
+        // a usar esse contexto imediatamente.
+        if (user.program && user.program !== 'BOTH') {
+            storageService.setActiveProgram(user.program);
+            console.log(`🔒 Contexto travado na raiz: ${user.program}`);
+        }
+
         // CRITICAL PERFORMANCE: Pre-warm the cache based on role
         setTimeout(() => {
             console.log("🔥 Pre-warming cache for role:", user.role);
@@ -118,7 +126,6 @@ export const authService = {
     localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updatedUsers));
   },
   
-  // Nova função para marcar o perfil como completo após o Onboarding
   completeUserProfile: async (userId: string) => {
       const users = authService.getUsers();
       const updatedUsers = users.map(u => {
@@ -129,7 +136,6 @@ export const authService = {
       });
       localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updatedUsers));
       
-      // Atualiza também a sessão atual
       const currentUser = authService.getCurrentUser();
       if (currentUser && currentUser.id === userId) {
           localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...currentUser, isProfileComplete: true }));

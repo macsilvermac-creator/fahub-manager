@@ -28,21 +28,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   useEffect(() => {
       const initSystem = async () => {
           console.log("⚙️ System Booting...");
-          // 1. Inicializa RAM (Síncrono)
-          storageService.initializeRAM();
           
-          // 2. Registra Sync (Async Background)
-          syncService.registerProcessor(async () => {
-              return await storageService.syncFromCloud();
-          });
-          syncService.init();
-
-          // 3. User Setup
+          // 1. User Setup & Context Enforcement
           const u = authService.getCurrentUser();
           if(u) {
               setUser(u);
               setRole(u.role);
+              
+              // REFORÇO DE CONTEXTO: Se der F5, garante que o programa esteja correto
+              if (u.program && u.program !== 'BOTH') {
+                   const currentProgram = storageService.getActiveProgram();
+                   if (currentProgram !== u.program) {
+                       storageService.setActiveProgram(u.program);
+                   }
+              }
           }
+
+          // 2. Inicializa RAM (Síncrono)
+          storageService.initializeRAM();
+          
+          // 3. Registra Sync (Async Background)
+          syncService.registerProcessor(async () => {
+              return await storageService.syncFromCloud();
+          });
+          syncService.init();
 
           // 4. Marca como pronto (Evita Race Condition nas pages filhas)
           setIsReady(true);
