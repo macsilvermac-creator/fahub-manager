@@ -10,7 +10,7 @@ import {
 } from './icons/NavIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
-import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, UserPlusIcon, LockIcon } from './icons/UiIcons';
+import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, UserPlusIcon, LockIcon, EyeIcon } from './icons/UiIcons';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,7 +22,11 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRole }) => {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
-  const isMasterUser = user?.role === 'MASTER'; // Check the AUTHENTICATED user role, not the switched role
+  
+  // Verifica se o usuário logado é realmente MASTER (Dono)
+  const isRealMaster = user?.role === 'MASTER';
+  // Verifica se está em modo de simulação (Logado como Master, mas vendo como outra role)
+  const isSimulating = isRealMaster && currentRole !== 'MASTER';
 
   const navLinkClasses = "flex items-center px-4 py-2.5 text-text-secondary rounded-lg hover:bg-white/5 hover:text-white transition-all text-sm font-medium mb-1 group";
   const activeNavLinkClasses = "bg-highlight/10 text-highlight border-l-4 border-highlight font-bold shadow-[0_0_15px_rgba(0,168,107,0.1)]";
@@ -38,13 +42,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
       navigate('/login');
   };
 
+  // Definição de permissões de visualização
   const isCoach = ['MASTER', 'HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'].includes(currentRole);
   const isAthlete = ['PLAYER'].includes(currentRole);
   const isBackoffice = ['MASTER', 'FINANCIAL_MANAGER', 'MARKETING_MANAGER', 'COMMERCIAL_MANAGER'].includes(currentRole);
   const isOfficial = ['MASTER', 'REFEREE'].includes(currentRole);
 
   const getRoleBadge = () => {
-      if(currentRole === 'MASTER') return { label: 'ACESSO TOTAL', color: 'bg-red-600' };
+      if(currentRole === 'MASTER') return { label: 'DONO / GESTOR', color: 'bg-red-600' };
       if(isCoach) return { label: 'COMISSÃO TÉCNICA', color: 'bg-blue-600' };
       if(isAthlete) return { label: 'ATLETA', color: 'bg-green-600' };
       if(currentRole === 'FINANCIAL_MANAGER') return { label: 'CFO / FINANÇAS', color: 'bg-yellow-600' };
@@ -76,6 +81,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
               <LockIcon className={`w-3 h-3 text-white ${badge.color.replace('bg-', 'text-')}`} />
               <span className="text-[9px] font-black text-white tracking-widest uppercase">{badge.label}</span>
           </div>
+          
+          {/* Alerta Visual de Simulação */}
+          {isSimulating && (
+            <div className="mt-2 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-2 flex items-center justify-center gap-2 animate-pulse">
+                <EyeIcon className="w-3 h-3 text-yellow-400" />
+                <span className="text-[9px] font-bold text-yellow-400 uppercase tracking-wider">Modo Simulação Ativo</span>
+            </div>
+          )}
       </div>
       
       <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar py-4 px-3">
@@ -214,31 +227,74 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
                 <ShopIcon className="w-5 h-5 mr-3 group-hover:text-yellow-400" />
                 <span>Loja & Classificados</span>
             </NavLink>
-            
-            {/* STRICT ADMIN CHECK: ONLY SHOW ADMIN LINK IF USER IS TRULY MASTER */}
-            {currentRole === 'MASTER' && (
-                <NavLink to="/admin" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                    <ShieldCheckIcon className="w-5 h-5 mr-3 group-hover:text-red-400" />
-                    <span>Admin Master</span>
-                </NavLink>
-            )}
           </div>
+          
+           {/* LINKS ESPECÍFICOS DE MASTER (FEDERAÇÃO) AGORA DENTRO DO BLOCO MASTER */}
+           {(currentRole === 'MASTER') && (
+             <>
+               <div className="mt-6 pt-6 border-t border-white/5">
+                  <p className="px-4 text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Entidades</p>
+                  <NavLink to="/league" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                      <TrophyIcon className="w-5 h-5 mr-3" />
+                      <span>Federação</span>
+                  </NavLink>
+                  <NavLink to="/confederation" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                      <UsersIcon className="w-5 h-5 mr-3" />
+                      <span>Confederação</span>
+                  </NavLink>
+               </div>
+             </>
+          )}
+
         </nav>
       </div>
+      
+      {/* SECTION: ADMIN MASTER - ISOLADA NO FUNDO E VISÍVEL APENAS PARA MASTER REAL */}
+      {/* Esta seção foi separada das "Entidades" (Links acima) conforme solicitado */}
+      {isRealMaster && currentRole === 'MASTER' && (
+          <div className="px-3 pb-2 pt-2 border-t border-white/5 bg-red-900/10">
+              <NavLink to="/admin" onClick={handleLinkClick} className={`flex items-center px-4 py-3 text-red-300 rounded-lg hover:bg-red-900/30 hover:text-white transition-all text-sm font-bold border border-red-500/20 shadow-lg`}>
+                  <ShieldCheckIcon className="w-5 h-5 mr-3 text-red-500" />
+                  <span>Admin Master</span>
+              </NavLink>
+          </div>
+      )}
 
-      {/* GOD MODE SWITCHER (HIDDEN FOR EVERYONE EXCEPT THE REAL MASTER) */}
-      {isMasterUser && (
+      {/* GOD MODE SWITCHER (APENAS PARA O MASTER REAL) */}
+      {isRealMaster && (
         <div className="bg-black/40 border-t border-white/5 p-3">
-            <p className="text-[9px] font-bold text-highlight uppercase mb-2 text-center tracking-widest">Modo de Visualização (Admin)</p>
+            <p className="text-[9px] font-bold text-highlight uppercase mb-2 text-center tracking-widest flex items-center justify-center gap-1">
+                <EyeIcon className="w-3 h-3" /> Simular Visão
+            </p>
             <div className="grid grid-cols-3 gap-1">
-                <button onClick={() => { setRole('HEAD_COACH'); navigate('/dashboard'); }} className="text-[9px] bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded py-1 hover:bg-blue-600 hover:text-white transition-colors">COACH</button>
-                <button onClick={() => { setRole('PLAYER'); navigate('/profile'); }} className="text-[9px] bg-green-600/20 text-green-400 border border-green-500/30 rounded py-1 hover:bg-green-600 hover:text-white transition-colors">PLAYER</button>
-                <button onClick={() => { setRole('FINANCIAL_MANAGER'); navigate('/finance'); }} className="text-[9px] bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 rounded py-1 hover:bg-yellow-600 hover:text-white transition-colors">ADMIN</button>
+                <button 
+                    onClick={() => { setRole('HEAD_COACH'); navigate('/dashboard'); }} 
+                    className={`text-[9px] border rounded py-1 transition-colors ${currentRole === 'HEAD_COACH' ? 'bg-blue-600 text-white border-blue-500' : 'bg-blue-600/20 text-blue-400 border-blue-500/30 hover:bg-blue-600 hover:text-white'}`}
+                >
+                    COACH
+                </button>
+                <button 
+                    onClick={() => { setRole('PLAYER'); navigate('/profile'); }} 
+                    className={`text-[9px] border rounded py-1 transition-colors ${currentRole === 'PLAYER' ? 'bg-green-600 text-white border-green-500' : 'bg-green-600/20 text-green-400 border-green-500/30 hover:bg-green-600 hover:text-white'}`}
+                >
+                    PLAYER
+                </button>
+                <button 
+                    onClick={() => { setRole('FINANCIAL_MANAGER'); navigate('/finance'); }} 
+                    className={`text-[9px] border rounded py-1 transition-colors ${currentRole === 'FINANCIAL_MANAGER' ? 'bg-yellow-600 text-white border-yellow-500' : 'bg-yellow-600/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-600 hover:text-white'}`}
+                >
+                    ADMIN
+                </button>
             </div>
-            {/* Button to restore Master View */}
-             <button onClick={() => { setRole('MASTER'); navigate('/dashboard'); }} className="w-full mt-2 text-[9px] bg-red-600/20 text-red-400 border border-red-500/30 rounded py-1 hover:bg-red-600 hover:text-white transition-colors font-bold">
-                 RESTAURAR VISÃO GOD
-             </button>
+            {/* Botão para restaurar Visão God */}
+            {currentRole !== 'MASTER' && (
+                 <button 
+                    onClick={() => { setRole('MASTER'); navigate('/dashboard'); }} 
+                    className={`w-full mt-2 text-[9px] border rounded py-1 transition-colors font-bold bg-red-600 text-white border-red-500`}
+                 >
+                     RESTAURAR VISÃO DONO
+                 </button>
+            )}
         </div>
       )}
 
@@ -254,4 +310,4 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
   );
 };
 
-export default Sidebar
+export default Sidebar;
