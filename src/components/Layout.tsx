@@ -7,13 +7,12 @@ import { UserRole } from '../types';
 import { authService } from '../services/authService';
 import { storageService } from '../services/storageService';
 import { syncService } from '../services/syncService';
-import { ToastProvider } from '../contexts/ToastContext';
+import LoadingScreen from './LoadingScreen';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-// EXPORTANDO A INTERFACE PARA USO EXTERNO
 export interface UserContextType {
   currentRole: UserRole;
 }
@@ -24,24 +23,41 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [currentRole, setRole] = useState<UserRole>('HEAD_COACH');
   const [user, setUser] = useState(authService.getCurrentUser());
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-      // 1. Inicializa RAM
-      storageService.initializeRAM();
+      const initSystem = async () => {
+          console.log("⚙️ System Booting...");
+          // 1. Inicializa RAM (Síncrono)
+          storageService.initializeRAM();
+          
+          // 2. Registra Sync (Async Background)
+          syncService.registerProcessor(async () => {
+              return await storageService.syncFromCloud();
+          });
+          syncService.init();
 
-      // 2. INJEÇÃO DE DEPENDÊNCIA (A mágica que destrava o VS Code)
-      // Conectamos o storageService dentro do syncService aqui, evitando loop nos arquivos
-      syncService.registerProcessor(async () => {
-          return await storageService.syncFromCloud();
-      });
-      syncService.init();
+          // 3. User Setup
+          const u = authService.getCurrentUser();
+          if(u) {
+              setUser(u);
+              setRole(u.role);
+          }
 
-      const u = authService.getCurrentUser();
-      if(u) {
-          setUser(u);
-          setRole(u.role);
-      }
+          // 4. Marca como pronto (Evita Race Condition nas pages filhas)
+          setIsReady(true);
+      };
+
+      initSystem();
   }, []);
+
+  if (!isReady) {
+      return (
+          <div className="h-screen w-screen bg-primary flex items-center justify-center">
+              <LoadingScreen />
+          </div>
+      );
+  }
 
   return (
     <UserContext.Provider value={{ currentRole }}>

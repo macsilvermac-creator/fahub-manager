@@ -1,18 +1,19 @@
 
-import React, { useContext, useEffect, useState, useMemo, Suspense } from 'react';
+import React, { useContext, useMemo, Suspense, useState, useEffect } from 'react';
 import Card from '../components/Card';
-import { TeamSettings, SocialFeedPost, Player, ProgramType } from '../types';
+import { Player, ProgramType, Game } from '../types';
 import { CalendarIcon, UsersIcon, AlertTriangleIcon, BankIcon, PlayCircleIcon, ClipboardIcon, MedicalIcon, DumbbellIcon, WifiIcon, CheckCircleIcon, SparklesIcon, LockIcon, StarIcon, ActivityIcon, FireIcon, GamepadIcon, ShareIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
 import { MegaphoneIcon, WhistleIcon, TrophyIcon, BookIcon, FlagIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 import { storageService } from '../services/storageService';
 import { authService } from '../services/authService';
 // @ts-ignore
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
 import Skeleton from '../components/Skeleton';
 import LazyImage from '@/components/LazyImage';
 import { useToast } from '../contexts/ToastContext';
+import { useData } from '../hooks/useData';
 
 // Lazy Load Modules
 const PracticePlan = React.lazy(() => import('./PracticePlan'));
@@ -26,7 +27,6 @@ const TacticalLab = React.lazy(() => import('./TacticalLab'));
 const Academy = React.lazy(() => import('./Academy'));
 
 // --- MEMOIZED WIDGETS ---
-
 const StatusWidgets = React.memo(({ systemHealth, navigate }: any) => (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[1,2,3,4].map(i => (
@@ -77,15 +77,13 @@ const StatusWidgets = React.memo(({ systemHealth, navigate }: any) => (
     </div>
 ));
 
-const ExecutiveDashboard = React.memo(({ stats, navigate, handleCopyInvite }: any) => (
+const ExecutiveDashboard = React.memo(({ navigate, handleCopyInvite }: any) => (
     <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
             <div>
                 <h2 className="text-2xl font-bold text-white">Visão Executiva (Master)</h2>
                 <p className="text-text-secondary text-sm">Controle total da organização.</p>
             </div>
-            
-            {/* WIDGET DE CONVITE RÁPIDO */}
             <button 
                 onClick={handleCopyInvite}
                 className="bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 hover:scale-105 transition-transform animate-pulse"
@@ -188,9 +186,6 @@ const PlayerCareerMode = React.memo(({ player, navigate, nextGame, xpLeaders }: 
                         <div className="absolute -bottom-2 -right-2 bg-black text-white font-black text-xl w-10 h-10 flex items-center justify-center rounded-lg border-2 border-highlight shadow-lg">
                             {player.level}
                         </div>
-                        <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span className="text-[10px] font-bold text-white uppercase">Editar Foto</span>
-                        </div>
                     </div>
 
                     {/* Stats & Progress */}
@@ -255,63 +250,6 @@ const PlayerCareerMode = React.memo(({ player, navigate, nextGame, xpLeaders }: 
                         )}
                     </Card>
                 </div>
-
-                {/* BODY STATUS (Check-in Rápido) */}
-                <div className="lg:col-span-1">
-                    <Card title="Status Físico (Hoje)">
-                        <div className="grid grid-cols-3 gap-2">
-                            <button className="flex flex-col items-center gap-2 p-3 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded-xl transition-all" onClick={() => alert("Check-in: 100%")}>
-                                <span className="text-2xl">⚡</span>
-                                <span className="text-[10px] font-bold text-green-400 uppercase">100%</span>
-                            </button>
-                            <button className="flex flex-col items-center gap-2 p-3 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-xl transition-all" onClick={() => alert("Check-in: Cansado")}>
-                                <span className="text-2xl">🥱</span>
-                                <span className="text-[10px] font-bold text-yellow-400 uppercase">Sore</span>
-                            </button>
-                            <button className="flex flex-col items-center gap-2 p-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl transition-all" onClick={() => navigate('/performance')}>
-                                <span className="text-2xl">🚑</span>
-                                <span className="text-[10px] font-bold text-red-400 uppercase">Dor</span>
-                            </button>
-                        </div>
-                    </Card>
-                </div>
-            </div>
-
-            {/* LEADERBOARD & ACTIONS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card title="Leaderboard do Time (XP)">
-                    <div className="space-y-3">
-                        {xpLeaders.map((p: any, idx: number) => (
-                            <div key={p.id} className="flex items-center justify-between bg-secondary p-3 rounded-lg border border-white/5">
-                                <div className="flex items-center gap-3">
-                                    <span className={`font-black w-6 text-center ${idx === 0 ? 'text-yellow-400 text-lg' : 'text-gray-500'}`}>{idx + 1}</span>
-                                    <LazyImage src={p.avatarUrl} className="w-8 h-8 rounded-full bg-black" />
-                                    <span className={`font-bold text-sm ${p.id === player.id ? 'text-highlight' : 'text-white'}`}>{p.name}</span>
-                                </div>
-                                <span className="font-mono font-bold text-white text-sm">{p.xp} XP</span>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => navigate('/gemini-playbook')} className="bg-purple-900/40 hover:bg-purple-900/60 border border-purple-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <BookIcon className="w-8 h-8 text-purple-400" />
-                        <span className="font-bold text-white text-sm">Estudar Playbook</span>
-                    </button>
-                    <button onClick={() => navigate('/locker-room')} className="bg-blue-900/40 hover:bg-blue-900/60 border border-blue-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <UsersIcon className="w-8 h-8 text-blue-400" />
-                        <span className="font-bold text-white text-sm">Vestiário</span>
-                    </button>
-                    <button onClick={() => navigate('/marketplace')} className="bg-yellow-900/40 hover:bg-yellow-900/60 border border-yellow-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <TrophyIcon className="w-8 h-8 text-yellow-400" />
-                        <span className="font-bold text-white text-sm">Loja & Itens</span>
-                    </button>
-                    <button onClick={() => navigate('/profile')} className="bg-gray-800 hover:bg-gray-700 border border-white/10 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <ActivityIcon className="w-8 h-8 text-gray-400" />
-                        <span className="font-bold text-white text-sm">Meus Highlights</span>
-                    </button>
-                </div>
             </div>
         </div>
     );
@@ -320,109 +258,82 @@ const PlayerCareerMode = React.memo(({ player, navigate, nextGame, xpLeaders }: 
 const Dashboard: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const navigate = useNavigate();
-    const location = useLocation(); // Hook para ler o estado da navegação
     const toast = useToast();
-    const [rawCoachStats, setRawCoachStats] = useState<any>(null);
     const [activeHub, setActiveHub] = useState<string | null>(null);
     const [activeModule, setActiveModule] = useState<string>('');
-    const [systemHealth, setSystemHealth] = useState<any>(null);
-    const [xpLeaders, setXpLeaders] = useState<Player[]>([]);
-    const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
-    const [userProgram, setUserProgram] = useState<ProgramType>('BOTH'); // Contexto do usuário logado
+    const [userProgram, setUserProgram] = useState<ProgramType>('BOTH'); 
     
-    // NEW: Program Switcher State
-    const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
+    // REACTIVE DATA HOOKS (O segredo do Protocolo FAHUB)
+    const players = useData('players', storageService.getPlayers);
+    const games = useData('games', storageService.getGames);
+    // @ts-ignore
+    const activeProgram = useData('activeProgram', storageService.getActiveProgram);
 
-    // Check for query param override
+    // Derived States (Memoized for Performance)
+    const { rawCoachStats, xpLeaders, nextGame } = useMemo(() => {
+        const now = new Date();
+        const next = games
+            .filter((g: Game) => new Date(g.date) >= now && g.status === 'SCHEDULED')
+            .sort((a: Game, b: Game) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+            
+        const sortedPlayers = [...players].sort((a, b) => (b.xp || 0) - (a.xp || 0)).slice(0, 5);
+        
+        return {
+            rawCoachStats: { nextGame: next },
+            xpLeaders: sortedPlayers,
+            nextGame: next
+        };
+    }, [players, games]);
+
+    // Check role views
     const searchParams = new URLSearchParams(window.location.search);
     const roleOverride = searchParams.get('role');
     const isMasterView = currentRole === 'MASTER' && roleOverride !== 'COACH';
     const isHeadCoach = currentRole === 'HEAD_COACH' || roleOverride === 'COACH';
     const isPlayerView = currentRole === 'PLAYER';
 
-    // FIX: Listener para o reset via Sidebar
     useEffect(() => {
-        if (location.state?.reset) {
-            setActiveHub(null);
-            setActiveModule('');
-            window.history.replaceState({}, document.title);
-        }
-    }, [location]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            const stats = storageService.getCoachDashboardStats();
-            setRawCoachStats(stats);
-            
-            // Lógica de Detecção de Programa do Usuário
-            const user = authService.getCurrentUser();
-            if (user) {
-                setUserProgram(user.program || 'BOTH');
-                // Se o usuário só tem um programa, força o activeProgram
-                if (user.program === 'FLAG') {
-                    setActiveProgram('FLAG');
-                    storageService.setActiveProgram('FLAG');
-                } else if (user.program === 'TACKLE') {
-                    setActiveProgram('TACKLE');
-                    storageService.setActiveProgram('TACKLE');
-                } else {
-                    // Se for BOTH ou não definido, pega do storage global (ou default TACKLE)
-                    setActiveProgram(storageService.getActiveProgram());
-                }
-
-                if (isPlayerView) {
-                    const players = storageService.getPlayers();
-                    const me = players.find(p => p.name === user.name);
-                    setCurrentPlayer(me || players[0]); 
-                }
+        const user = authService.getCurrentUser();
+        if (user) {
+            setUserProgram(user.program || 'BOTH');
+            if (user.program === 'FLAG' || user.program === 'TACKLE') {
+                storageService.setActiveProgram(user.program);
             }
-
-            const players = storageService.getPlayers();
-            const sorted = [...players].sort((a, b) => (b.xp || 0) - (a.xp || 0)).slice(0, 5);
-            setXpLeaders(sorted);
-
-            setSystemHealth({ 
-                api: true, 
-                db: 'RAM', 
-                version: '3.0.1 (Dual)' 
-            });
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [currentRole, activeHub, isPlayerView]);
+        }
+    }, []);
 
     const handleProgramSwitch = (program: 'TACKLE' | 'FLAG') => {
-        setActiveProgram(program);
         storageService.setActiveProgram(program);
         toast.info(`Modo Treinador: ${program}`);
-        // Optional: Force refresh or re-fetch relevant data
     };
 
     const handleCopyInvite = () => {
         const teamName = storageService.getTeamSettings().teamName;
         const url = window.location.origin + '/#/register';
-        const msg = `🏈 *CONVOCAÇÃO OFICIAL: ${teamName.toUpperCase()}*\n\nVocê foi selecionado para participar do teste beta fechado do FAHUB Manager.\n\n*Missão:*\n1. Acesse o link abaixo.\n2. Crie sua conta (use seu CPF).\n3. Aguarde a liberação.\n\n🔗 *Link de Acesso:* ${url}\n\n_Acesso restrito. Não compartilhe._`;
-        
+        const msg = `🏈 *CONVOCAÇÃO OFICIAL: ${teamName.toUpperCase()}*\n\n🔗 *Link de Acesso:* ${url}`;
         navigator.clipboard.writeText(msg);
-        toast.success("Convite copiado para a área de transferência! Cole no WhatsApp.");
+        toast.success("Convite copiado!");
     };
 
-    // --- MASTER EXECUTIVE DASHBOARD ---
+    // --- RENDER ---
+    const systemHealth = { api: true, db: 'RAM Reactive', version: '3.1.0' };
+
     if (isMasterView) {
         return (
             <div className="space-y-6 animate-fade-in pb-20">
                 <StatusWidgets systemHealth={systemHealth} navigate={navigate} />
-                <ExecutiveDashboard stats={rawCoachStats} navigate={navigate} handleCopyInvite={handleCopyInvite} />
+                <ExecutiveDashboard navigate={navigate} handleCopyInvite={handleCopyInvite} />
             </div>
         );
     }
 
-    // --- PLAYER CAREER DASHBOARD ---
     if (isPlayerView) {
-        return <PlayerCareerMode player={currentPlayer} navigate={navigate} nextGame={rawCoachStats?.nextGame} xpLeaders={xpLeaders} />;
+        // Encontra o próprio player
+        const user = authService.getCurrentUser();
+        const currentPlayer = players.find(p => p.name === user?.name) || players[0];
+        return <PlayerCareerMode player={currentPlayer} navigate={navigate} nextGame={nextGame} xpLeaders={xpLeaders} />;
     }
 
-    // --- COACH OPERATIONAL DASHBOARD ---
     if (isHeadCoach) {
         if (!activeHub) {
             return (
@@ -431,11 +342,11 @@ const Dashboard: React.FC = () => {
                         <div>
                             <h2 className="text-2xl font-bold text-white">Central do Treinador</h2>
                             <p className="text-text-secondary text-sm">
-                                {userProgram === 'BOTH' ? 'Selecione o programa ativo.' : `Programa: ${userProgram}`}
+                                Programa Ativo: <strong className="text-highlight">{activeProgram}</strong>
                             </p>
                         </div>
                         
-                        {/* PROGRAM SWITCHER - Só aparece se o usuário for BOTH ou MASTER */}
+                        {/* PROGRAM SWITCHER */}
                         {userProgram === 'BOTH' && (
                             <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
                                 <button 
@@ -460,12 +371,11 @@ const Dashboard: React.FC = () => {
                         )}
                     </div>
                     
-                    <CoachHubButtons setActiveHub={setActiveHub} setActiveModule={setActiveModule} nextGame={rawCoachStats?.nextGame} program={activeProgram} />
+                    <CoachHubButtons setActiveHub={setActiveHub} setActiveModule={setActiveModule} nextGame={nextGame} program={activeProgram} />
                 </div>
             );
         }
 
-        // --- HUB RENDER ---
         const renderHeader = (title: string, modules: any[]) => (
             <div className="bg-primary pt-2 pb-4 mb-6">
                 <div className="flex items-center justify-between mb-3">

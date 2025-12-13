@@ -16,7 +16,6 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      // CRÍTICO: Evita crash "process is not defined" em bibliotecas legadas
       'process.env': {
          API_KEY: JSON.stringify(env.API_KEY),
          NODE_ENV: JSON.stringify(mode)
@@ -27,11 +26,15 @@ export default defineConfig(({ mode }) => {
       minify: 'esbuild',
       outDir: 'dist',
       sourcemap: false,
-      chunkSizeWarningLimit: 1600, // Aumenta limite para evitar warnings irrelevantes
+      chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {
-          // Volta para o automático (mais seguro para Vercel)
-          manualChunks: undefined 
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-charts': ['recharts'],
+            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+            'vendor-ai': ['@google/genai'],
+          }
         }
       }
     }

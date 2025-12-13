@@ -35,7 +35,7 @@ const KEYS = {
     SUBSCRIPTIONS: 'gridiron_subscriptions',
     BUDGETS: 'gridiron_budgets',
     BILLS: 'gridiron_bills',
-    ACTIVE_PROGRAM: 'gridiron_active_program' // NOVA CHAVE
+    ACTIVE_PROGRAM: 'gridiron_active_program'
 };
 
 const dateReviver = (key: string, value: any) => {
@@ -60,8 +60,7 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
     legalAgreementsSigned: []
 };
 
-// --- RAM CACHE (Single Source of Truth) ---
-// Inicializa com null para diferenciar "ainda não carregado" de "vazio"
+// --- RAM CACHE & REACTIVITY SYSTEM ---
 const RAM_DB: any = {
     settings: null,
     players: null,
@@ -93,45 +92,49 @@ const RAM_DB: any = {
     subscriptions: null,
     budgets: null,
     bills: null,
-    activeProgram: 'TACKLE' // Default
+    activeProgram: 'TACKLE'
+};
+
+// Listener System
+type Listener = () => void;
+const listeners: Record<string, Listener[]> = {};
+
+const notifyListeners = (key: string) => {
+    if (listeners[key]) {
+        listeners[key].forEach(fn => fn());
+    }
+    // Also notify global listeners or dependent keys if needed
 };
 
 // --- DEBOUNCE SYSTEM ---
 const saveTimeouts: Record<string, any> = {};
 
-// Circuit Breaker: Garante que loadIfNeeded sempre retorne uma referência estável
 const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any = []): T[] => {
-    // 1. Se já está na RAM, retorna imediatamente (Rápido)
     if (RAM_DB[ramKey] !== null && RAM_DB[ramKey] !== undefined) {
         return RAM_DB[ramKey];
     }
 
-    // 2. Se não está, tenta ler do disco (Lento)
     try {
         const stored = localStorage.getItem(storageKey);
         if (!stored) {
-            // Se não existe no disco, inicializa RAM com valor padrão e retorna
             RAM_DB[ramKey] = initialValue;
             return initialValue;
         }
         
-        // Parse e cache na RAM
         const parsed = JSON.parse(stored, dateReviver);
         RAM_DB[ramKey] = parsed;
         return parsed;
     } catch (e) {
         console.error(`Storage Read Error [${ramKey}]`, e);
-        // Em caso de erro, define valor padrão na RAM para evitar loops de erro
         RAM_DB[ramKey] = initialValue;
         return initialValue;
     }
 };
 
 const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
-    // 1. Atualiza RAM imediatamente (UI responsiva)
     RAM_DB[ramKey] = data;
+    notifyListeners(ramKey); // REATIVIDADE: Avisa os componentes React
     
-    // 2. Debounce para escrita no disco (Performance)
     if (saveTimeouts[storageKey]) {
         clearTimeout(saveTimeouts[storageKey]);
     }
@@ -140,15 +143,23 @@ const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
         try {
             localStorage.setItem(storageKey, JSON.stringify(data));
         } catch (e) {
-            console.error("Storage Write Error (Quota Exceeded?)", e);
+            console.error("Storage Write Error", e);
         }
         delete saveTimeouts[storageKey];
-    }, 1000); // 1 segundo de delay
+    }, 500); 
 };
 
 export const storageService = {
+    // Permite que componentes React assinem mudanças nos dados
+    subscribe: (key: string, callback: Listener) => {
+        if (!listeners[key]) listeners[key] = [];
+        listeners[key].push(callback);
+        return () => {
+            listeners[key] = listeners[key].filter(cb => cb !== callback);
+        };
+    },
+
     initializeRAM: () => {
-        // Pré-carrega configurações essenciais
         if (RAM_DB.settings === null) {
             try {
                 const storedSettings = localStorage.getItem(KEYS.SETTINGS);
@@ -157,11 +168,11 @@ export const storageService = {
                 RAM_DB.settings = INITIAL_TEAM_SETTINGS;
             }
         }
-        // Carrega programa ativo
         const storedProgram = localStorage.getItem(KEYS.ACTIVE_PROGRAM);
         if (storedProgram) RAM_DB.activeProgram = storedProgram;
         
-        console.log("🚀 Storage System Ready");
+        console.log("🚀 Storage System Hydrated");
+        return true; // Signal completion
     },
 
     uploadFile: async (file: File, folder: string = 'general') => {
@@ -170,29 +181,32 @@ export const storageService = {
 
     syncFromCloud: async () => {
         try {
+            // Ao receber dados da nuvem, salvamos na RAM e disparamos notifyListeners
+            // Isso fará a tela atualizar automaticamente
             const cloudPlayers = await firebaseDataService.getPlayers();
             if (cloudPlayers?.length) saveAndCache('players', KEYS.PLAYERS, cloudPlayers);
             
             const cloudGames = await firebaseDataService.getGames();
             if (cloudGames?.length) saveAndCache('games', KEYS.GAMES, cloudGames);
+
+            const cloudTxs = await firebaseDataService.getTransactions();
+            if (cloudTxs?.length) saveAndCache('transactions', KEYS.TRANSACTIONS, cloudTxs);
             
             return true;
         } catch (error) {
+            console.warn("Sync warning:", error);
             return false;
         }
     },
 
-    // --- PROGRAM CONTEXT SWITCHER (FIX PARA TS2339) ---
-    getActiveProgram: (): 'TACKLE' | 'FLAG' => {
-        return RAM_DB.activeProgram || 'TACKLE';
-    },
+    getActiveProgram: (): 'TACKLE' | 'FLAG' => RAM_DB.activeProgram || 'TACKLE',
     setActiveProgram: (program: 'TACKLE' | 'FLAG') => {
         RAM_DB.activeProgram = program;
         localStorage.setItem(KEYS.ACTIVE_PROGRAM, program);
+        notifyListeners('activeProgram');
     },
 
-    // --- ACCESSORS ---
-    
+    // --- ACCESSORS (With Reactivity) ---
     getPlayers: (): Player[] => loadIfNeeded<Player>('players', KEYS.PLAYERS),
     savePlayers: (players: Player[]) => {
         saveAndCache('players', KEYS.PLAYERS, players);
@@ -357,8 +371,7 @@ export const storageService = {
         }
         storageService.saveTeamSettings(settings);
     },
-    generateMonthlyInvoices: () => {},
-
+    
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const games = loadIfNeeded<Game>('games', KEYS.GAMES);
         const updated = games.map((g: Game) => g.id === gameId ? { ...g, ...updates } : g);
@@ -375,8 +388,37 @@ export const storageService = {
         } : g);
         storageService.saveGames(updated);
     },
-    createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string) => {},
-    
+    createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string, inventoryItemId?: string) => {
+        const invoices = storageService.getInvoices();
+        const players = storageService.getPlayers();
+        
+        const newInvoices: Invoice[] = ids.map(id => {
+            const player = players.find(p => p.id === id);
+            return {
+                id: `inv-${Date.now()}-${id}`,
+                playerId: id,
+                playerName: player?.name || 'Atleta',
+                title,
+                amount,
+                dueDate,
+                status: 'PENDING',
+                category: category as any,
+                inventoryItemId
+            };
+        });
+        storageService.saveInvoices([...invoices, ...newInvoices]);
+    },
+    generateMonthlyInvoices: () => {
+         const subscriptions = storageService.getSubscriptions();
+         const players = storageService.getPlayers();
+         const activeSubs = subscriptions.filter(s => s.active);
+         
+         activeSubs.forEach(sub => {
+             // Mock logic: Create invoices for everyone in sub
+             storageService.createBulkInvoices(sub.assignedTo, sub.title, sub.amount, new Date(), 'TUITION');
+         });
+    },
+
     getPermissions: () => [],
     seedDatabaseToCloud: async () => {},
     exportFullDatabase: () => {
