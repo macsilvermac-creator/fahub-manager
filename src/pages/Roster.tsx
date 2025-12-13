@@ -32,11 +32,14 @@ const Roster: React.FC = () => {
     const [compareSelection, setCompareSelection] = useState<number[]>([]);
     const [showCompareModal, setShowCompareModal] = useState(false);
 
-    // --- PERMISSÕES RÍGIDAS ---
+    // --- PERMISSÕES RÍGIDAS (Segregação de Funções) ---
     const isPlayer = currentRole === 'PLAYER';
-    // Apenas MASTER (Gestão/Dono) pode criar ou deletar registros (CPF/Contratos)
+    
+    // REGRA DE OURO: Apenas MASTER cadastra ou deleta.
+    // O Coach não perde tempo com burocracia, foca em performance.
     const canCreateDelete = currentRole === 'MASTER'; 
-    // Coach pode gerenciar o elenco (Mover para Practice Squad, IR, ver detalhes), mas não criar usuários
+    
+    // REGRA DE PRATA: Coach e Coordenadores gerenciam o status esportivo (Active/PS/IR).
     const canManageRoster = currentRole === 'MASTER' || currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
 
     useEffect(() => {
@@ -111,11 +114,13 @@ const Roster: React.FC = () => {
         setVisibleCount(prev => prev + 12);
     };
 
-    // --- FILTRAGEM SEGREGADA ---
+    // --- FILTRAGEM SEGREGADA (FLAG vs TACKLE) ---
     const filteredPlayers = useMemo(() => {
         return players.filter(p => {
             // 1. Filtro de Modalidade (CRÍTICO)
+            // Se o programa ativo é FLAG, não mostra TACKLE puro. Mostra FLAG e BOTH.
             if (activeProgram === 'FLAG' && p.program === 'TACKLE') return false;
+            // Se o programa ativo é TACKLE, não mostra FLAG puro.
             if (activeProgram === 'TACKLE' && p.program === 'FLAG') return false;
 
             // 2. Filtro de Categoria

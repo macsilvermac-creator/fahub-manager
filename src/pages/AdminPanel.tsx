@@ -237,7 +237,7 @@ const AdminPanel: React.FC = () => {
                 </div>
             </Modal>
             
-            {/* ... Resto do componente SYSTEM e COMPLIANCE (sem alterações) ... */}
+            {/* ... Resto do componente SYSTEM e COMPLIANCE ... */}
             {activeTab === 'SYSTEM' && (
                 <div className="space-y-6">
                     <Card title="Operações de Banco de Dados">

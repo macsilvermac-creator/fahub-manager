@@ -26,8 +26,10 @@ const Recruitment: React.FC = () => {
     const [isProcessing, setIsProcessing] = useState(false);
 
     // Permissões
+    // REGRA: Apenas Master cadastra novos candidatos (fluxo administrativo)
     const isMaster = currentRole === 'MASTER';
-    // O Coach pode mover cards (Avaliar) mas não pode criar ou deletar a origem
+    
+    // REGRA: Coaches podem avaliar e mover cards (fluxo técnico)
     const canManagePipeline = isMaster || currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
 
     // Form State
