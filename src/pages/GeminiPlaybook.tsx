@@ -21,6 +21,7 @@ const GeminiPlaybook: React.FC = () => {
   const [playSuggestions, setPlaySuggestions] = useState<any[]>([]);
   
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   // --- HANDLERS ---
 
@@ -28,38 +29,64 @@ const GeminiPlaybook: React.FC = () => {
     if (!prompt.trim()) return;
     setIsLoading(true);
     setGeneratedPlan('');
+    setErrorMsg('');
     
     if (manualKey) setRuntimeKey(manualKey);
     
     const finalPrompt = `
-      Atue como um treinador especialista. Gere um plano de drills técnicos.
-      FOCO: ${prompt}
-      Estrutura: 3 Drills detalhados com explicação do "Porquê" e termos de busca para vídeo.
+      Atue como um treinador especialista de Futebol Americano.
+      Gere um plano de drills técnicos detalhados.
+      FOCO DO TREINO: ${prompt}
+      
+      Estrutura de resposta (HTML simples):
+      <h3>Drill 1: [Nome]</h3>
+      <p><strong>Objetivo:</strong> ...</p>
+      <p><strong>Execução:</strong> ...</p>
+      <p><strong>Coaching Points:</strong> ...</p>
+      <br/>
+      (Repita para 3 drills)
     `;
 
     const result = await generatePracticePlan(finalPrompt);
-    setGeneratedPlan(result);
+    
+    if (result.includes("Erro")) {
+        setErrorMsg(result);
+        toast.error("Falha na IA. Verifique a chave de API.");
+    } else {
+        setGeneratedPlan(result);
+        toast.success("Plano gerado!");
+    }
     setIsLoading(false);
   };
 
   const handleAnalyzeScout = async () => {
       if (!scoutNotes.trim()) return;
       setIsLoading(true);
+      setErrorMsg('');
       if (manualKey) setRuntimeKey(manualKey);
 
       const result = await analyzeOpponentTendencies(scoutNotes);
-      setScoutAnalysis(result);
+      if (!result || Object.keys(result).length === 0) {
+           setErrorMsg("Não foi possível analisar. Tente notas mais detalhadas.");
+      } else {
+           setScoutAnalysis(result);
+           toast.success("Análise de Scout concluída!");
+      }
       setIsLoading(false);
-      toast.success("Análise de Scout concluída!");
   };
 
   const handleSuggestPlays = async () => {
       if (!tacticalSituation.trim()) return;
       setIsLoading(true);
+      setErrorMsg('');
       if (manualKey) setRuntimeKey(manualKey);
 
       const result = await suggestPlayConcepts(tacticalSituation);
-      setPlaySuggestions(result);
+      if (result.length === 0) {
+          setErrorMsg("Sem sugestões. Verifique a conexão.");
+      } else {
+          setPlaySuggestions(result);
+      }
       setIsLoading(false);
   };
 
@@ -111,7 +138,7 @@ const GeminiPlaybook: React.FC = () => {
                         value={prompt}
                         onChange={e => setPrompt(e.target.value)}
                     />
-                    <button onClick={handleGenerateDrills} disabled={isLoading} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2">
+                    <button onClick={handleGenerateDrills} disabled={isLoading} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 disabled:opacity-50">
                         {isLoading ? 'Criando Drills...' : 'Gerar Plano de Drills'}
                     </button>
                 </>
@@ -126,7 +153,7 @@ const GeminiPlaybook: React.FC = () => {
                         value={scoutNotes}
                         onChange={e => setScoutNotes(e.target.value)}
                     />
-                    <button onClick={handleAnalyzeScout} disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2">
+                    <button onClick={handleAnalyzeScout} disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 disabled:opacity-50">
                         {isLoading ? 'Decodificando...' : 'Gerar Relatório Estratégico'}
                     </button>
                 </>
@@ -141,7 +168,7 @@ const GeminiPlaybook: React.FC = () => {
                         value={tacticalSituation}
                         onChange={e => setTacticalSituation(e.target.value)}
                     />
-                    <button onClick={handleSuggestPlays} disabled={isLoading} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2">
+                    <button onClick={handleSuggestPlays} disabled={isLoading} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg flex justify-center items-center gap-2 disabled:opacity-50">
                         {isLoading ? 'Consultando Playbook...' : 'Sugerir Conceitos'}
                     </button>
                 </>
@@ -151,11 +178,12 @@ const GeminiPlaybook: React.FC = () => {
             <div className="pt-4 border-t border-white/10">
                 <details className="text-xs text-text-secondary cursor-pointer">
                     <summary>Configurações Avançadas (API Key)</summary>
-                    <div className="mt-2">
+                    <div className="mt-2 bg-red-900/20 p-2 rounded border border-red-500/20">
+                        <p className="mb-2 text-red-200">Se a chave do .env falhar, insira uma temporária aqui:</p>
                         <input 
                             type="text" 
                             className="w-full bg-black/20 border border-white/10 rounded p-2 text-white"
-                            placeholder="Chave API Personalizada (Opcional)"
+                            placeholder="AIzaSy..."
                             value={manualKey}
                             onChange={e => setManualKey(e.target.value)}
                         />
@@ -174,13 +202,23 @@ const GeminiPlaybook: React.FC = () => {
                 </div>
             )}
 
-            {!isLoading && activeAgent === 'DRILLS' && generatedPlan && (
+            {errorMsg && (
+                <div className="bg-red-500/20 text-red-200 p-4 rounded-lg border border-red-500/50 flex items-center gap-3">
+                    <AlertTriangleIcon className="w-6 h-6" />
+                    <div>
+                        <p className="font-bold">Erro na Solicitação</p>
+                        <p className="text-xs">{errorMsg}</p>
+                    </div>
+                </div>
+            )}
+
+            {!isLoading && !errorMsg && activeAgent === 'DRILLS' && generatedPlan && (
                 <div className="prose prose-invert max-w-none text-sm custom-scrollbar max-h-[500px] overflow-y-auto">
                     <div dangerouslySetInnerHTML={{ __html: formatPlanWithLinks(generatedPlan) }} />
                 </div>
             )}
 
-            {!isLoading && activeAgent === 'SCOUT' && scoutAnalysis && (
+            {!isLoading && !errorMsg && activeAgent === 'SCOUT' && scoutAnalysis && (
                 <div className="space-y-6 animate-fade-in">
                     <div className="bg-blue-900/20 p-4 rounded-lg border-l-4 border-blue-500">
                         <h4 className="font-bold text-blue-300 uppercase text-xs mb-1">Identidade do Adversário</h4>
@@ -207,7 +245,7 @@ const GeminiPlaybook: React.FC = () => {
                 </div>
             )}
 
-            {!isLoading && activeAgent === 'TACTICS' && playSuggestions.length > 0 && (
+            {!isLoading && !errorMsg && activeAgent === 'TACTICS' && playSuggestions.length > 0 && (
                 <div className="space-y-4 animate-fade-in">
                     {playSuggestions.map((play, idx) => (
                         <div key={idx} className="bg-secondary p-4 rounded-xl border border-white/5 hover:border-green-500/50 transition-colors group">
@@ -221,7 +259,7 @@ const GeminiPlaybook: React.FC = () => {
                 </div>
             )}
 
-            {!isLoading && !generatedPlan && !scoutAnalysis && playSuggestions.length === 0 && (
+            {!isLoading && !generatedPlan && !scoutAnalysis && playSuggestions.length === 0 && !errorMsg && (
                 <div className="h-full flex flex-col items-center justify-center text-text-secondary opacity-50">
                     <SearchIcon className="w-16 h-16 mb-4" />
                     <p>Aguardando comando...</p>

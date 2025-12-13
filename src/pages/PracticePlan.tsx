@@ -10,12 +10,24 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import { useToast } from '../contexts/ToastContext';
 
-const QUICK_BLOCKS = [
-    { type: 'WARMUP', name: 'Alongamento / Warmup', duration: 15, desc: 'Ativação muscular e mobilidade.' },
-    { type: 'INDY', name: 'Individual (Indy)', duration: 20, desc: 'Drills específicos por posição.' },
-    { type: 'GROUP', name: 'Skelly / 7on7', duration: 20, desc: 'Passe vs Cobertura (sem linha).' },
-    { type: 'TEAM', name: 'Team (11on11)', duration: 30, desc: 'Situações de jogo completas.' },
-    { type: 'SPECIAL', name: 'Special Teams', duration: 15, desc: 'Punt/Kickoff focus.' },
+// PRESETS TACKLE
+const QUICK_BLOCKS_TACKLE = [
+    { type: 'WARMUP', name: 'Warmup / Dynamic', duration: 15, desc: 'Mobilidade e Ativação.' },
+    { type: 'INDY', name: 'Indy (Posição)', duration: 20, desc: 'Drills de técnica individual.' },
+    { type: 'GROUP', name: 'Inside Run (9on7)', duration: 15, desc: 'Bloqueios e Corrida.' },
+    { type: 'GROUP', name: 'Skelly (7on7)', duration: 20, desc: 'Passe vs Cobertura.' },
+    { type: 'TEAM', name: 'Team (11on11)', duration: 30, desc: 'Situações de jogo.' },
+    { type: 'SPECIAL', name: 'Punt / Kickoff', duration: 10, desc: 'Special Teams.' },
+];
+
+// PRESETS FLAG (NOVO!)
+const QUICK_BLOCKS_FLAG = [
+    { type: 'WARMUP', name: 'Agility Ladder', duration: 10, desc: 'Escada de agilidade e cone drill.' },
+    { type: 'INDY', name: 'Flag Pulling', duration: 15, desc: 'Técnica de retirada de flag.' },
+    { type: 'GROUP', name: 'Route Tree', duration: 15, desc: 'Rotas e Catching.' },
+    { type: 'GROUP', name: '1on1 WR/DB', duration: 15, desc: 'Man coverage drills.' },
+    { type: 'TEAM', name: 'Scrimmage (5on5)', duration: 30, desc: 'Simulação de jogo.' },
+    { type: 'SPECIAL', name: 'Rusher Drills', duration: 10, desc: 'Pass rush específico 7s.' },
 ];
 
 const PracticePlan: React.FC = () => {
@@ -25,6 +37,10 @@ const PracticePlan: React.FC = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [selectedPractice, setSelectedPractice] = useState<PracticeSession | null>(null);
     const [activeMode, setActiveMode] = useState<'SCRIPT' | 'PERFORMANCE'>('SCRIPT');
+
+    // Context & Config
+    const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
+    const [quickBlocks, setQuickBlocks] = useState(QUICK_BLOCKS_TACKLE);
 
     // Form State
     const [newTitle, setNewTitle] = useState('');
@@ -48,6 +64,12 @@ const PracticePlan: React.FC = () => {
 
     useEffect(() => {
         setPractices(storageService.getPracticeSessions());
+        
+        // Detect Program Context
+        const prog = storageService.getActiveProgram();
+        setActiveProgram(prog);
+        setQuickBlocks(prog === 'FLAG' ? QUICK_BLOCKS_FLAG : QUICK_BLOCKS_TACKLE);
+        setNewDuration(prog === 'FLAG' ? 90 : 120); // Treinos de flag tendem a ser mais curtos
     }, []);
 
     useEffect(() => {
@@ -60,7 +82,6 @@ const PracticePlan: React.FC = () => {
         return () => clearInterval(interval);
     }, [isTimerRunning, timerSeconds]);
 
-    // ANALISTA DE LÓGICA: Função Corrigida para Salvar Treino + Notificação
     const handleCreatePractice = (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -78,24 +99,23 @@ const PracticePlan: React.FC = () => {
             locationType: 'FIELD',
             instructor: 'Coach',
             attendees: [],
-            notes: 'Criado via FAHUB Manager',
+            notes: `Programa: ${activeProgram}`,
             drills: [],
             script: generatedScript.length > 0 ? generatedScript : [], 
             performances: []
         };
         
-        // 1. Salvar Treino na Storage
         const currentPractices = storageService.getPracticeSessions();
         const updatedPractices = [practice, ...currentPractices];
         setPractices(updatedPractices);
         storageService.savePracticeSessions(updatedPractices);
 
-        // 2. TRIGGER CRÍTICO: Criar Notificação Automática (Announcement)
+        // Notificar jogadores
         const dateStr = new Date(newDate).toLocaleString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' });
         
         const notification: Announcement = {
             id: `notif-prat-${Date.now()}`,
-            title: `📅 TREINO: ${newTitle.toUpperCase()}`,
+            title: `📅 TREINO (${activeProgram}): ${newTitle.toUpperCase()}`,
             content: `Foco: ${newFocus}. Data: ${dateStr}. Presença Obrigatória!`,
             priority: 'HIGH',
             date: new Date(),
@@ -106,17 +126,15 @@ const PracticePlan: React.FC = () => {
         const currentAnnouncements = storageService.getAnnouncements();
         storageService.saveAnnouncements([notification, ...currentAnnouncements]);
 
-        // 3. Reset
         setIsCreating(false);
         setGeneratedScript([]); 
         setNewTitle('');
         setNewFocus('');
         setNewDate('');
         
-        toast.success("Treino agendado e notificação enviada para todos!");
+        toast.success("Treino agendado e notificação enviada!");
     };
 
-    // Helper functions maintained...
     const addTime = (timeStr: string, minutes: number): string => {
         if (!timeStr) return '19:00';
         const [h, m] = timeStr.split(':').map(Number);
@@ -147,16 +165,21 @@ const PracticePlan: React.FC = () => {
         setGeneratedScript(updated);
     };
 
+    // --- AI WIZARD INTEGRATION (CONTEXT AWARE) ---
     const handleAiGenerateScript = async () => {
         if (!newFocus) {
             toast.warning("Defina um foco principal primeiro.");
             return;
         }
         setIsGeneratingScript(true);
-        toast.info(`🤖 IA Criando roteiro...`);
+        toast.info(`🤖 IA Criando roteiro para ${activeProgram}...`);
         
         try {
-            const script = await generatePracticeScript(newFocus, newDuration, "High Intensity");
+            // Context Injection
+            const context = activeProgram === 'FLAG' ? 'Flag Football 5v5' : 'American Football 11v11 Tackle';
+            const promptContext = `${newFocus} (${context})`;
+            
+            const script = await generatePracticeScript(promptContext, newDuration, "High Intensity");
             if (script && script.length > 0) {
                 setGeneratedScript(script);
                 toast.success(`Roteiro gerado com sucesso!`);
@@ -187,7 +210,7 @@ const PracticePlan: React.FC = () => {
         <div className="space-y-6 pb-12 animate-fade-in relative">
              <div className="flex flex-col md:flex-row justify-between items-center gap-4 no-print">
                 <div>
-                    <h2 className="text-3xl font-bold text-text-primary">Gestão de Treinos</h2>
+                    <h2 className="text-3xl font-bold text-text-primary">Gestão de Treinos <span className="text-sm font-normal text-text-secondary">({activeProgram})</span></h2>
                     <p className="text-text-secondary">Planeje scripts minuto-a-minuto com IA ou Manualmente.</p>
                 </div>
                 {canEdit && (
@@ -201,6 +224,7 @@ const PracticePlan: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-6">
                         <Card className="animate-slide-in no-print border border-highlight/20 relative overflow-hidden">
+                             {/* AI Badge */}
                              <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 p-4 rounded-xl border border-purple-500/30 mb-6 flex flex-col md:flex-row gap-4 items-center">
                                 <div className="flex-1">
                                     <h4 className="font-bold text-white flex items-center gap-2 mb-1">
@@ -208,7 +232,7 @@ const PracticePlan: React.FC = () => {
                                         Coach Copilot (IA)
                                     </h4>
                                     <p className="text-xs text-text-secondary">
-                                        Descreva o foco e a IA escreverá o treino completo.
+                                        IA ajustada para contexto: <strong>{activeProgram}</strong>.
                                     </p>
                                 </div>
                                 <button 
@@ -236,7 +260,7 @@ const PracticePlan: React.FC = () => {
                                         </select>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <Input label="Foco Principal (Para IA)" value={newFocus} onChange={e => setNewFocus(e.target.value)} required placeholder="Ex: Defesa contra corrida" />
+                                        <Input label="Foco Principal (Para IA)" value={newFocus} onChange={e => setNewFocus(e.target.value)} required placeholder={activeProgram === 'FLAG' ? "Ex: Pulling flags e Rotas Curtas" : "Ex: Defesa contra corrida"} />
                                     </div>
                                 </div>
                                 
@@ -283,10 +307,10 @@ const PracticePlan: React.FC = () => {
                     <div className="lg:col-span-1 space-y-4">
                         <div className="bg-secondary p-4 rounded-xl border border-white/5">
                             <h4 className="font-bold text-white mb-4 flex items-center gap-2">
-                                <PenIcon className="w-4 h-4 text-blue-400" /> Blocos Rápidos
+                                <PenIcon className="w-4 h-4 text-blue-400" /> Blocos Rápidos ({activeProgram})
                             </h4>
                             <div className="grid grid-cols-1 gap-2">
-                                {QUICK_BLOCKS.map((block, idx) => (
+                                {quickBlocks.map((block, idx) => (
                                     <button 
                                         key={idx}
                                         onClick={() => handleAddQuickBlock(block)}
@@ -324,33 +348,45 @@ const PracticePlan: React.FC = () => {
                 <div className="lg:col-span-2">
                     {selectedPractice ? (
                         <Card title={selectedPractice.title} className="print-safe">
-                            <div className="space-y-3">
-                                {selectedPractice.script && selectedPractice.script.length > 0 ? (
-                                    selectedPractice.script.map((item, idx) => (
-                                        <div key={idx} className={`bg-secondary p-4 rounded-lg border border-white/5 flex justify-between items-center group hover:border-white/20 transition-all ${activeScriptItemId === item.id ? 'border-highlight bg-highlight/5' : ''}`}>
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-highlight font-mono font-bold text-lg">{item.startTime}</span>
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-white">{item.activityName}</span>
-                                                    <span className="text-xs text-text-secondary">{item.description}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-xs font-bold text-white bg-black/30 px-2 py-1 rounded">{item.durationMinutes} min</span>
-                                                {canEdit && (
-                                                    <button onClick={() => startDrillTimer(item)} className="text-green-400 hover:text-white p-2 bg-white/5 rounded-full hover:bg-green-600 transition-colors" title="Iniciar Timer">
-                                                        <PlayCircleIcon className="w-6 h-6" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-8 text-text-secondary italic">Este treino não possui roteiro detalhado.</div>
-                                )}
+                             <div className="flex gap-4 mb-6 border-b border-white/10 pb-4 no-print overflow-x-auto">
+                                <button onClick={() => setActiveMode('SCRIPT')} className={`text-sm font-bold pb-1 border-b-2 ${activeMode === 'SCRIPT' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>Roteiro</button>
+                                <button onClick={() => setActiveMode('PERFORMANCE')} className={`text-sm font-bold pb-1 border-b-2 ${activeMode === 'PERFORMANCE' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>Avaliação</button>
                             </div>
+
+                            {activeMode === 'SCRIPT' && (
+                                <div className="space-y-6">
+                                    <div className="space-y-3">
+                                        {selectedPractice.script && selectedPractice.script.length > 0 ? (
+                                            selectedPractice.script.map((item, idx) => (
+                                                <div key={idx} className={`bg-secondary p-4 rounded-lg border border-white/5 flex justify-between items-center group hover:border-white/20 transition-all ${activeScriptItemId === item.id ? 'border-highlight bg-highlight/5' : ''}`}>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-highlight font-mono font-bold text-lg">{item.startTime}</span>
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="bg-white/10 text-[10px] px-2 rounded uppercase font-bold text-text-secondary">{item.type}</span>
+                                                                <span className="font-bold text-white">{item.activityName}</span>
+                                                            </div>
+                                                            <span className="text-xs text-text-secondary line-clamp-1">{item.description}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-xs font-bold text-white bg-black/30 px-2 py-1 rounded">{item.durationMinutes} min</span>
+                                                        {canEdit && (
+                                                            <button onClick={() => startDrillTimer(item)} className="text-green-400 hover:text-white p-2 bg-white/5 rounded-full hover:bg-green-600 transition-colors" title="Iniciar Timer">
+                                                                <PlayCircleIcon className="w-6 h-6" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-8 text-text-secondary italic">Este treino não possui roteiro detalhado.</div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </Card>
-                    ) : <div className="text-center p-12 text-text-secondary italic bg-secondary/20 rounded-xl">Selecione um treino para ver o script.</div>}
+                    ) : <div className="text-center p-12 text-text-secondary italic bg-secondary/20 rounded-xl">Selecione um treino para visualizar os detalhes.</div>}
                 </div>
             </div>
             

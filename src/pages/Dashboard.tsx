@@ -263,7 +263,8 @@ const Dashboard: React.FC = () => {
     const [activeModule, setActiveModule] = useState<string>('');
     const [userProgram, setUserProgram] = useState<ProgramType>('BOTH'); 
     
-    // REACTIVE DATA HOOKS (O segredo do Protocolo FAHUB)
+    // --- PROTOCOLO FAHUB: REACTIVE DATA HOOKS ---
+    // Substitui os antigos useEffects com setTimeout
     const players = useData('players', storageService.getPlayers);
     const games = useData('games', storageService.getGames);
     // @ts-ignore
