@@ -149,7 +149,14 @@ const Officiating: React.FC = () => {
     };
 
     const startVoiceCommand = () => {
+        if (isListening) {
+            setIsListening(false);
+            return;
+        }
+        
         setIsListening(true);
+        toast.info("Zebra Bot ouvindo...");
+
         voiceService.listenToCommand(
             (text) => {
                 setIsListening(false);
@@ -470,11 +477,12 @@ const Officiating: React.FC = () => {
                                         <div className="bg-secondary rounded-2xl p-6 border border-white/10 text-center">
                                             <h3 className="text-xl font-bold text-white mb-4">Painel de Faltas</h3>
                                             <div className="flex gap-4 justify-center">
-                                                <button onClick={startVoiceCommand} className={`px-6 py-4 rounded-xl font-bold flex items-center gap-2 ${isListening ? 'bg-red-500 animate-pulse text-white' : 'bg-blue-600 text-white hover:bg-blue-500'}`}>
-                                                    <MicIcon className="w-6 h-6" /> Comando de Voz
+                                                <button onClick={startVoiceCommand} className={`px-6 py-4 rounded-xl font-bold flex items-center gap-2 shadow-lg transition-transform hover:scale-105 ${isListening ? 'bg-red-500 animate-pulse text-white' : 'bg-blue-600 text-white hover:bg-blue-500'}`}>
+                                                    <MicIcon className="w-6 h-6" /> 
+                                                    {isListening ? 'Ouvindo...' : 'Comando de Voz'}
                                                 </button>
                                             </div>
-                                            <p className="text-xs text-text-secondary mt-2">Diga: "Falta Holding número 55"</p>
+                                            <p className="text-xs text-text-secondary mt-3">Diga: "Falta Holding número 55"</p>
                                         </div>
                                     </div>
                                     <div>

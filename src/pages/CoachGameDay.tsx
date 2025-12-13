@@ -68,6 +68,7 @@ const CoachGameDay: React.FC = () => {
         toast.success(`Log: ${action}`);
     };
 
+    // --- LÓGICA DE INTERPRETAÇÃO DE VOZ ---
     const handleVoiceNote = () => {
         if (!voiceService.isSupported()) {
             toast.error("Navegador não suporta voz.");
@@ -75,29 +76,47 @@ const CoachGameDay: React.FC = () => {
         }
 
         if (isListening) {
-            setIsListening(false); // Stop logic handled by service usually, but here we update UI
+            setIsListening(false); 
             return;
         }
 
         setIsListening(true);
-        toast.info("Ouvindo... (Fale sua nota)");
+        toast.info("Ouvindo... (Fale um comando ou nota)");
         
         voiceService.listenToCommand(
             (text) => {
                 setIsListening(false);
-                const note: CoachGameNote = {
-                    id: Date.now().toString(),
-                    gameId: activeGame?.id || 0,
-                    quarter: activeGame?.currentQuarter || 1,
-                    content: `🎤 Voz: ${text}`,
-                    timestamp: new Date(),
-                    category: 'GENERAL',
-                    tags: ['VOICE']
-                };
-                const updated = [note, ...notes];
-                setNotes(updated);
-                storageService.saveCoachGameNotes(updated);
-                toast.success("Nota de voz salva!");
+                const lowerText = text.toLowerCase();
+                
+                // 1. Roteamento de Comandos (Voice-to-Action)
+                if (lowerText.includes('touchdown')) {
+                    handleQuickAction('TOUCHDOWN', 'OFFENSE');
+                    toast.success("Comando de Voz: Touchdown registrado!");
+                } else if (lowerText.includes('interceptação') || lowerText.includes('interceptado')) {
+                    handleQuickAction('TURNOVER', 'OFFENSE');
+                    toast.success("Comando de Voz: Interceptação registrada!");
+                } else if (lowerText.includes('sack')) {
+                    handleQuickAction('SACK', 'DEFENSE');
+                    toast.success("Comando de Voz: Sack registrado!");
+                } else if (lowerText.includes('primeira descida') || lowerText.includes('first down')) {
+                    handleQuickAction('1st DOWN', 'OFFENSE');
+                    toast.success("Comando de Voz: 1st Down registrado!");
+                } else {
+                    // 2. Fallback: Salvar como Nota de Voz
+                    const note: CoachGameNote = {
+                        id: Date.now().toString(),
+                        gameId: activeGame?.id || 0,
+                        quarter: activeGame?.currentQuarter || 1,
+                        content: `🎤 Voz: "${text}"`,
+                        timestamp: new Date(),
+                        category: 'GENERAL',
+                        tags: ['VOICE']
+                    };
+                    const updated = [note, ...notes];
+                    setNotes(updated);
+                    storageService.saveCoachGameNotes(updated);
+                    toast.info("Nota de voz salva.");
+                }
             },
             (error) => {
                 setIsListening(false);
@@ -195,9 +214,10 @@ const CoachGameDay: React.FC = () => {
                     <div className="flex items-center gap-4">
                         <button 
                             onClick={handleVoiceNote}
-                            className={`p-3 rounded-full transition-all ${isListening ? 'bg-red-600 animate-pulse text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                            className={`p-3 rounded-full transition-all border border-white/10 ${isListening ? 'bg-red-600 animate-pulse text-white shadow-glow' : 'bg-secondary text-white hover:bg-white/20'}`}
+                            title="Comando de Voz (Segure para Falar)"
                         >
-                            {isListening ? <StopIcon className="w-5 h-5" /> : <MicIcon className="w-5 h-5" />}
+                            {isListening ? <StopIcon className="w-6 h-6" /> : <MicIcon className="w-6 h-6" />}
                         </button>
                         <span className="block text-3xl font-mono font-bold text-white leading-none">{activeGame.score || '0-0'}</span>
                     </div>
