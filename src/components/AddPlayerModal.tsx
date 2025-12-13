@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { Player, CombineStats } from '../types';
 import { validators } from '../utils/validators';
+import { storageService } from '../services/storageService';
 
 interface AddPlayerModalProps {
   isOpen: boolean;
@@ -10,7 +11,9 @@ interface AddPlayerModalProps {
   onAdd: (player: Omit<Player, 'id' | 'level' | 'xp' | 'badges' | 'rating' | 'status'>) => void;
 }
 
-const POSITIONS = ['QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'CB', 'S', 'K', 'P'];
+const POSITIONS_TACKLE = ['QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'CB', 'S', 'K', 'P'];
+const POSITIONS_FLAG = ['QB', 'WR', 'CENTER', 'RUSHER', 'LB', 'DB', 'S', 'ATH'];
+
 const CLASSES = ['Calouro', 'Segundanista', 'Júnior', 'Sênior', 'Veterano'];
 const NATIONALITIES = [
     { code: 'BRA', label: 'Brasileiro 🇧🇷' },
@@ -23,6 +26,7 @@ const NATIONALITIES = [
 
 const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd }) => {
   const [activeTab, setActiveTab] = useState<'INFO' | 'COMBINE'>('INFO');
+  const [positions, setPositions] = useState<string[]>(POSITIONS_TACKLE);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -49,6 +53,10 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
 
   useEffect(() => {
     if (isOpen) {
+        // Detect Program Context
+        const program = storageService.getActiveProgram();
+        setPositions(program === 'FLAG' ? POSITIONS_FLAG : POSITIONS_TACKLE);
+        
         setFormData({
             name: '',
             cpf: '',
@@ -220,14 +228,14 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
                     <h4 className="text-xs font-bold text-blue-400 uppercase mb-3">Dados Esportivos</h4>
                     <div className="grid grid-cols-2 gap-5">
                         <div>
-                            <label className={labelClass}>Posição</label>
+                            <label className={labelClass}>Posição ({storageService.getActiveProgram()})</label>
                             <select
                             name="position"
                             value={formData.position}
                             onChange={handleChange}
                             className={inputClass}
                             >
-                            {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                            {positions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
                             </select>
                         </div>
                         <div>

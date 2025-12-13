@@ -15,8 +15,9 @@ const CoachGameDay: React.FC = () => {
     const [activeGame, setActiveGame] = useState<Game | null>(null);
     const [notes, setNotes] = useState<CoachGameNote[]>([]);
     
-    // View State: Agora temos compartimentos específicos
+    // View State
     const [viewFilter, setViewFilter] = useState<'ALL' | 'OFFENSE' | 'DEFENSE' | 'SPECIAL'>('ALL');
+    const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
     
     // Tactical Flow State
     const [currentDown, setCurrentDown] = useState<1 | 2 | 3 | 4>(1);
@@ -33,12 +34,15 @@ const CoachGameDay: React.FC = () => {
         setActiveGame(live || null);
         setNotes(storageService.getCoachGameNotes());
         
+        // Carrega o contexto do programa
+        setActiveProgram(storageService.getActiveProgram());
+
         return () => {
             setIsListening(false);
         };
     }, []);
 
-    // --- AI VOICE HANDLER (THE CORE FEATURE) ---
+    // --- AI VOICE HANDLER ---
     const handleVoiceNote = () => {
         if (!voiceService.isSupported()) {
             toast.error("Navegador não suporta voz.");
@@ -47,7 +51,6 @@ const CoachGameDay: React.FC = () => {
 
         if (isListening) {
             setIsListening(false); 
-            // voiceService stop is handled internally or by browser, we rely on result
             return;
         }
 
@@ -59,19 +62,17 @@ const CoachGameDay: React.FC = () => {
                 setIsListening(false);
                 setLiveTranscript(text);
                 
-                // 1. Processamento AI (Classificação)
                 setIsProcessingAi(true);
                 try {
                     const aiResult = await classifyCoachVoiceNote(text);
                     
-                    // 2. Criação da Nota Compartimentada
                     const note: CoachGameNote = {
                         id: Date.now().toString(),
                         gameId: activeGame?.id || 0,
                         quarter: activeGame?.currentQuarter || 1,
-                        content: text, // Texto original
+                        content: text,
                         timestamp: new Date(),
-                        category: aiResult.category, // 'OFFENSE', 'DEFENSE', etc.
+                        category: aiResult.category,
                         tags: ['VOICE', ...aiResult.tags]
                     };
                     
@@ -79,18 +80,12 @@ const CoachGameDay: React.FC = () => {
                         note.content += ` \n👉 Ação Sugerida: ${aiResult.action}`;
                     }
 
-                    // 3. Salvar e Atualizar UI
                     const updated = [note, ...notes];
                     setNotes(updated);
                     storageService.saveCoachGameNotes(updated);
                     
                     const sentimentIcon = aiResult.sentiment === 'POSITIVE' ? '🟢' : aiResult.sentiment === 'NEGATIVE' ? '🔴' : '⚪';
                     toast.success(`${sentimentIcon} Nota salva em ${aiResult.category}`);
-                    
-                    // Auto-switch view if user is in ALL to show feedback
-                    if (viewFilter === 'ALL') {
-                        // Optional: could auto-switch to category, but might be jarring
-                    }
 
                 } catch (e) {
                     // Fallback
@@ -139,6 +134,7 @@ const CoachGameDay: React.FC = () => {
     if (!activeGame) return <div className="text-center py-20 text-text-secondary">Nenhum jogo ativo no momento.</div>;
 
     const filteredNotes = viewFilter === 'ALL' ? notes : notes.filter(n => n.category === viewFilter);
+    const availableTabs = activeProgram === 'FLAG' ? ['ALL', 'OFFENSE', 'DEFENSE'] : ['ALL', 'OFFENSE', 'DEFENSE', 'SPECIAL'];
 
     return (
         <div className="space-y-4 pb-24 animate-fade-in relative h-[calc(100vh-100px)] flex flex-col">
@@ -151,6 +147,7 @@ const CoachGameDay: React.FC = () => {
                         <div className="flex gap-3 text-xs font-mono text-text-secondary">
                             <span className="text-yellow-400 font-bold">Q{activeGame.currentQuarter || 1}</span>
                             <span>{activeGame.clock || '12:00'}</span>
+                            <span className="bg-white/10 px-2 rounded text-[10px] font-bold">{activeProgram} MODE</span>
                         </div>
                     </div>
                     <div className="text-4xl font-mono font-bold text-white">{activeGame.score || '0-0'}</div>
@@ -159,9 +156,9 @@ const CoachGameDay: React.FC = () => {
 
             {/* --- MIDDLE: COMPARTMENTALIZED FEEDS --- */}
             <div className="flex-1 overflow-hidden flex flex-col">
-                {/* Tabs */}
+                {/* Tabs Dynamically Rendered based on Program */}
                 <div className="flex bg-secondary/50 p-1 rounded-lg mb-2 shrink-0">
-                    {['ALL', 'OFFENSE', 'DEFENSE', 'SPECIAL'].map(tab => (
+                    {availableTabs.map(tab => (
                         <button 
                             key={tab}
                             onClick={() => setViewFilter(tab as any)}

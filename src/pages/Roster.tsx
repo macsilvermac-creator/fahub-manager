@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { Player, RosterCategory } from '../types';
 import AthleteCard from '../components/AthleteCard';
 import AddPlayerModal from '../components/AddPlayerModal';
@@ -20,9 +20,10 @@ const Roster: React.FC = () => {
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
     const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
     const [viewMode, setViewMode] = useState<'CARDS' | 'DEPTH_CHART'>('CARDS');
+    const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
     
-    // Performance: Paginação
-    const [visibleCount, setVisibleCount] = useState(12);
+    // Performance: Paginação Agressiva para Tablet
+    const [visibleCount, setVisibleCount] = useState(8); 
     
     // Squad Management State
     const [activeCategory, setActiveCategory] = useState<RosterCategory>('ACTIVE');
@@ -38,11 +39,12 @@ const Roster: React.FC = () => {
 
     useEffect(() => {
         setPlayers(storageService.getPlayers());
+        setActiveProgram(storageService.getActiveProgram());
         if (isPlayer) setViewMode('CARDS');
     }, [isPlayer]);
 
     useEffect(() => {
-        setVisibleCount(12);
+        setVisibleCount(8); // Reset pagination on filter change
     }, [activeCategory, unitFilter, viewMode]);
 
     const handleAddPlayer = (newPlayerData: Omit<Player, 'id' | 'level' | 'xp' | 'badges' | 'rating' | 'status'>) => {
@@ -104,30 +106,49 @@ const Roster: React.FC = () => {
     };
 
     const handleLoadMore = () => {
-        setVisibleCount(prev => prev + 12);
+        setVisibleCount(prev => prev + 8);
     };
 
-    // Filter players by current squad tab AND unit filter
-    const filteredPlayers = players.filter(p => {
-        // 1. Squad Filter
-        if ((p.rosterCategory || 'ACTIVE') !== activeCategory) return false;
-        
-        // 2. Unit Filter
-        if (unitFilter === 'ALL') return true;
-        const pos = p.position;
-        if (unitFilter === 'OFFENSE') return ['QB','RB','WR','TE','OL','LT','LG','C','RG','RT'].includes(pos);
-        if (unitFilter === 'DEFENSE') return ['DL','DE','DT','LB','CB','S','FS','SS'].includes(pos);
-        if (unitFilter === 'ST') return ['K','P','LS','KR','PR'].includes(pos);
-        return true;
-    });
+    // MEMOIZED FILTERING (Critical Performance Fix)
+    const filteredPlayers = useMemo(() => {
+        return players.filter(p => {
+            // 1. Squad Filter
+            if ((p.rosterCategory || 'ACTIVE') !== activeCategory) return false;
+            
+            // 2. Unit Filter
+            if (unitFilter === 'ALL') return true;
+            const pos = p.position;
+            
+            if (unitFilter === 'OFFENSE') {
+                return activeProgram === 'FLAG' 
+                    ? ['QB','WR','C','RUSHER','ATH'].includes(pos)
+                    : ['QB','RB','WR','TE','OL','LT','LG','C','RG','RT'].includes(pos);
+            }
+            if (unitFilter === 'DEFENSE') {
+                return activeProgram === 'FLAG'
+                    ? ['LB','DB','S','RUSHER','ATH'].includes(pos)
+                    : ['DL','DE','DT','LB','CB','S','FS','SS'].includes(pos);
+            }
+            if (unitFilter === 'ST') {
+                return ['K','P','LS','KR','PR'].includes(pos);
+            }
+            return true;
+        });
+    }, [players, activeCategory, unitFilter, activeProgram]);
 
     const displayedPlayers = filteredPlayers.slice(0, visibleCount);
 
     // --- Depth Chart Helpers ---
     const getPlayersByUnit = (unit: 'OFFENSE' | 'DEFENSE' | 'SPECIAL') => {
-        const offPositions = ['QB', 'RB', 'WR', 'TE', 'OL', 'LT', 'C', 'RT', 'LG', 'RG'];
-        const defPositions = ['DL', 'DE', 'DT', 'LB', 'CB', 'S', 'FS', 'SS'];
-        // Expanded Special Teams Positions
+        // Flag Specific Positions
+        const offPositions = activeProgram === 'FLAG' 
+            ? ['QB', 'WR', 'C', 'ATH']
+            : ['QB', 'RB', 'WR', 'TE', 'OL', 'LT', 'C', 'RT', 'LG', 'RG'];
+            
+        const defPositions = activeProgram === 'FLAG'
+            ? ['RUSHER', 'LB', 'DB', 'S', 'ATH']
+            : ['DL', 'DE', 'DT', 'LB', 'CB', 'S', 'FS', 'SS'];
+            
         const stPositions = ['K', 'P', 'LS', 'KR', 'PR'];
 
         let positionsToCheck: string[] = [];
@@ -139,12 +160,9 @@ const Roster: React.FC = () => {
             .filter(p => (p.rosterCategory || 'ACTIVE') === 'ACTIVE')
             .filter(p => positionsToCheck.includes(p.position))
             .sort((a, b) => {
-                // Primary Sort: Position Order based on list
                 const idxA = positionsToCheck.indexOf(a.position);
                 const idxB = positionsToCheck.indexOf(b.position);
                 if (idxA !== idxB) return idxA - idxB;
-                
-                // Secondary Sort: Depth
                 return a.depthChartOrder - b.depthChartOrder;
             });
     };
@@ -152,14 +170,7 @@ const Roster: React.FC = () => {
     const getPlayerKeyStat = (player: Player) => {
         if (!player.gameLogs || player.gameLogs.length === 0) return `OVR ${player.rating}`;
         
-        const totalYards = player.gameLogs.reduce((acc, log) => acc + (log.stats.yards || 0), 0);
-        const totalTDs = player.gameLogs.reduce((acc, log) => acc + (log.stats.tds || 0), 0);
-        const totalTackles = player.gameLogs.reduce((acc, log) => acc + (log.stats.tackles || 0), 0);
-        
-        if (['QB', 'WR', 'RB', 'TE'].includes(player.position)) return `${totalYards} yds, ${totalTDs} TD`;
-        if (['LB', 'CB', 'S', 'DL', 'DE'].includes(player.position)) return `${totalTackles} Tkls`;
-        if (['K', 'P'].includes(player.position)) return `FG/Punt Avg: 40y`;
-        
+        // Simples fallback se não tiver dados
         return `OVR ${player.rating}`;
     };
 
@@ -170,13 +181,12 @@ const Roster: React.FC = () => {
             grouped[p.position].push(p);
         });
 
-        // Ensure order matches standard football depth charts
         const orderedPositions = title.includes('Special') 
             ? ['K', 'P', 'LS', 'KR', 'PR'] 
             : Object.keys(grouped).sort();
 
         return (
-            <div className="bg-secondary/30 rounded-xl p-4 border border-white/5 print:bg-transparent print:border-black">
+            <div className="bg-secondary/30 rounded-xl p-4 border border-white/5 print:bg-transparent print:border-black min-w-[280px]">
                 <h3 className="text-xl font-bold text-white mb-4 border-b border-white/10 pb-2 print:text-black print:border-black">{title}</h3>
                 <div className="space-y-6">
                     {orderedPositions.map(pos => {
@@ -198,7 +208,6 @@ const Roster: React.FC = () => {
                                                     {p.depthChartOrder === 1 ? '1st' : p.depthChartOrder === 2 ? '2nd' : '3rd'}
                                                 </span>
                                                 <div className="flex items-center gap-2">
-                                                    <img src={p.avatarUrl} className="w-6 h-6 rounded-full print:hidden" />
                                                     <div className="flex flex-col">
                                                         <span className={`text-sm leading-none ${p.depthChartOrder === 1 ? 'font-bold text-white print:text-black' : 'text-text-secondary print:text-gray-800'}`}>{p.name}</span>
                                                         {!isPlayer && <span className="text-[9px] text-text-secondary print:hidden">{getPlayerKeyStat(p)}</span>}
@@ -287,7 +296,9 @@ const Roster: React.FC = () => {
                         <button onClick={() => setUnitFilter('ALL')} className={`px-3 py-1 text-xs font-bold rounded whitespace-nowrap ${unitFilter === 'ALL' ? 'bg-white text-black' : 'text-text-secondary hover:text-white'}`}>Tudo</button>
                         <button onClick={() => setUnitFilter('OFFENSE')} className={`px-3 py-1 text-xs font-bold rounded whitespace-nowrap ${unitFilter === 'OFFENSE' ? 'bg-blue-600 text-white' : 'text-text-secondary hover:text-white'}`}>ATQ</button>
                         <button onClick={() => setUnitFilter('DEFENSE')} className={`px-3 py-1 text-xs font-bold rounded whitespace-nowrap ${unitFilter === 'DEFENSE' ? 'bg-red-600 text-white' : 'text-text-secondary hover:text-white'}`}>DEF</button>
-                        <button onClick={() => setUnitFilter('ST')} className={`px-3 py-1 text-xs font-bold rounded whitespace-nowrap ${unitFilter === 'ST' ? 'bg-green-600 text-white' : 'text-text-secondary hover:text-white'}`}>ST</button>
+                        {activeProgram === 'TACKLE' && (
+                            <button onClick={() => setUnitFilter('ST')} className={`px-3 py-1 text-xs font-bold rounded whitespace-nowrap ${unitFilter === 'ST' ? 'bg-green-600 text-white' : 'text-text-secondary hover:text-white'}`}>ST</button>
+                        )}
                     </div>
                 </div>
             )}
@@ -328,10 +339,10 @@ const Roster: React.FC = () => {
                         )}
                     </>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-x-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-x-auto pb-4">
                         {renderDepthChartColumn('Ataque (Offense)', getPlayersByUnit('OFFENSE'))}
                         {renderDepthChartColumn('Defesa (Defense)', getPlayersByUnit('DEFENSE'))}
-                        {renderDepthChartColumn('Special Teams (ST)', getPlayersByUnit('SPECIAL'))}
+                        {activeProgram === 'TACKLE' && renderDepthChartColumn('Special Teams (ST)', getPlayersByUnit('SPECIAL'))}
                     </div>
                 )}
             </div>
