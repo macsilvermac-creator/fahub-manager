@@ -23,22 +23,17 @@ export const voiceService = {
             const recognition = new SpeechRecognition();
 
             recognition.lang = 'pt-BR';
-            recognition.continuous = false; // Prevents infinite loops
+            recognition.continuous = false; // CRITICAL: Must be false to prevent loops
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
             recognition.onresult = (event: any) => {
-                try {
-                    const transcript = event.results[0][0].transcript;
-                    onResult(transcript);
-                } catch (e) {
-                    console.warn("Voice parsing error");
-                }
+                const transcript = event.results[0][0].transcript;
+                onResult(transcript);
             };
 
             recognition.onerror = (event: any) => {
-                if (event.error !== 'no-speech' && event.error !== 'aborted') {
-                    console.warn("Voice Error:", event.error);
+                if (event.error !== 'no-speech') {
                     onError(event.error);
                 }
             };

@@ -60,7 +60,6 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
 };
 
 // --- RAM CACHE (Single Source of Truth) ---
-// Isso impede leitura de disco a cada renderização
 const RAM_DB: any = {
     settings: null,
     players: [],
@@ -94,10 +93,9 @@ const RAM_DB: any = {
     bills: []
 };
 
-// --- DEBOUNCE SYSTEM (O Segredo da Performance) ---
+// --- DEBOUNCE SYSTEM (Anti-Freeze) ---
 const saveTimeouts: Record<string, any> = {};
 
-// Helper to load data only if needed (Lazy Load)
 const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any = []): T[] => {
     if (RAM_DB[ramKey] && Array.isArray(RAM_DB[ramKey]) && RAM_DB[ramKey].length > 0) {
         return RAM_DB[ramKey];
@@ -119,17 +117,14 @@ const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any =
 };
 
 // CRITICAL FIX: Debounced Write
-// Atualiza a RAM instantaneamente (UI rápida), mas espera 1s para gravar no disco (Evita travamento)
 const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
-    // 1. Instant update UI
     RAM_DB[ramKey] = data;
     
-    // 2. Clear pending write for this key
     if (saveTimeouts[storageKey]) {
         clearTimeout(saveTimeouts[storageKey]);
     }
 
-    // 3. Schedule write in 800ms (Debounce)
+    // Espera 800ms antes de escrever no disco
     saveTimeouts[storageKey] = setTimeout(() => {
         try {
             localStorage.setItem(storageKey, JSON.stringify(data));
@@ -146,13 +141,12 @@ export const storageService = {
             const storedSettings = localStorage.getItem(KEYS.SETTINGS);
             RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
             
-            // Pre-load critical data types quietly
             setTimeout(() => {
                 loadIfNeeded('players', KEYS.PLAYERS);
                 loadIfNeeded('games', KEYS.GAMES);
             }, 100);
             
-            console.log("🚀 Storage System Ready (Debounce Mode Active)");
+            console.log("🚀 Storage System Ready (Debounce Mode)");
         } catch (e) {
             console.error("Init Error", e);
         }
