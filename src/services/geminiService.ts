@@ -77,20 +77,37 @@ const generateText = async (prompt: string): Promise<string> => {
     }
 };
 
-export const classifyCoachVoiceNote = async (text: string): Promise<{ category: 'GENERAL' | 'TACTICAL' | 'PLAYER' | 'OFFICIAL', tags: string[], sentiment: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL', action?: string }> => {
+// --- VOICE CLASSIFIER AGENT ---
+export const classifyCoachVoiceNote = async (text: string): Promise<{ category: 'OFFENSE' | 'DEFENSE' | 'SPECIAL' | 'GENERAL', tags: string[], sentiment: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL', action?: string }> => {
     if (!text || text.length < 2) return { category: 'GENERAL', tags: [], sentiment: 'NEUTRAL' };
 
     const prompt = `
-    Analise esta fala de um Coach de FA na sideline: "${text}"
-    Classifique a intenção: TACTICAL, PLAYER, OFFICIAL, GENERAL.
-    Sentiment: POSITIVE, NEGATIVE, NEUTRAL.
-    Tags: Keywords.
-    Action: Sugestão de ação curta.
-    Retorne JSON.
+    You are an expert American Football Assistant Coach. Analyze this voice note transcript from a Head Coach during a game:
+    
+    "${text}"
+    
+    Task:
+    1. Categorize strictly into one of: 'OFFENSE', 'DEFENSE', 'SPECIAL', 'GENERAL'.
+       - Keywords for OFFENSE: Pass, Run, Catch, Throw, Block, OL, WR, QB, RB, Route, Touchdown, First Down.
+       - Keywords for DEFENSE: Tackle, Sack, Interception, Coverage, Blitz, LB, DB, DL, Pressure.
+       - Keywords for SPECIAL: Kick, Punt, Return, Field Goal.
+    2. Extract up to 3 short tags (e.g., "OL Issue", "Good Coverage").
+    3. Determine sentiment (POSITIVE/NEGATIVE/NEUTRAL).
+    4. Suggest a short action if applicable (e.g., "Substituir QB", "Ajustar Blitz").
+    
+    Return JSON format only.
     `;
 
     const result = await generateJson(prompt);
-    return result || { category: 'GENERAL', tags: ['RAW_VOICE'], sentiment: 'NEUTRAL' };
+    
+    // Fallback safety
+    if (!result) return { category: 'GENERAL', tags: ['RAW_VOICE'], sentiment: 'NEUTRAL' };
+    
+    // Normalize category just in case AI hallucinates a new one
+    const validCats = ['OFFENSE', 'DEFENSE', 'SPECIAL', 'GENERAL'];
+    if (!validCats.includes(result.category)) result.category = 'GENERAL';
+
+    return result;
 };
 
 export const generatePracticeScript = async (focus: string, duration: number, intensity: string): Promise<PracticeScriptItem[]> => {

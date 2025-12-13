@@ -713,7 +713,7 @@ export interface CoachGameNote {
     quarter: number;
     content: string;
     timestamp: Date;
-    category?: 'GENERAL' | 'HALFTIME' | 'POSTGAME';
+    category?: 'GENERAL' | 'HALFTIME' | 'POSTGAME' | 'OFFENSE' | 'DEFENSE' | 'SPECIAL';
     tags?: string[];
 }
 
