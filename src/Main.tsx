@@ -12,7 +12,7 @@ import { UserRole } from './types';
 import { authService } from './services/authService';
 import { storageService } from './services/storageService';
 
-// FAHUB MANAGER v3.0
+// FAHUB MANAGER v3.0 - Optimized
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
@@ -65,19 +65,25 @@ const ROLES = {
 const OnboardingCheck: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const location = useLocation();
     
-    // Memoize the check result to prevent re-calculations on every render
+    // Safety check: Don't check onboarding on public routes to save performance
+    if (location.pathname.startsWith('/public') || location.pathname === '/login' || location.pathname === '/register') {
+        return <>{children}</>;
+    }
+
     const shouldRedirect = useMemo(() => {
-        const user = authService.getCurrentUser();
-        if (user && user.status === 'APPROVED' && user.role === 'PLAYER' && location.pathname !== '/onboarding') {
-            const players = storageService.getPlayers();
-            // Fast check: Assume player exists if CPF matches
-            const playerProfile = players.find(p => p.cpf === user.cpf);
-            if (!playerProfile) {
-                return true;
+        try {
+            const user = authService.getCurrentUser();
+            if (user && user.status === 'APPROVED' && user.role === 'PLAYER' && location.pathname !== '/onboarding') {
+                const players = storageService.getPlayers();
+                // Simple existence check
+                const exists = players.some(p => p.cpf === user.cpf || p.name === user.name);
+                return !exists;
             }
+            return false;
+        } catch (e) {
+            return false; // Fail safe
         }
-        return false;
-    }, [location.pathname]); // Only re-run if location changes
+    }, [location.pathname]);
 
     if (shouldRedirect) {
         return <Navigate to="/onboarding" replace />;

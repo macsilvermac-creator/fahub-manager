@@ -59,7 +59,8 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
     legalAgreementsSigned: []
 };
 
-// --- OPTIMIZED RAM CACHE ---
+// --- RAM CACHE (Single Source of Truth) ---
+// Isso impede leitura de disco a cada renderização
 const RAM_DB: any = {
     settings: null,
     players: [],
@@ -93,14 +94,14 @@ const RAM_DB: any = {
     bills: []
 };
 
-// --- CORE UTILS (Non-Blocking I/O) ---
+// --- DEBOUNCE SYSTEM (O Segredo da Performance) ---
+const saveTimeouts: Record<string, any> = {};
 
+// Helper to load data only if needed (Lazy Load)
 const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any = []): T[] => {
-    // Se já tem dados na RAM, retorna imediatamente (Cache Hit)
     if (RAM_DB[ramKey] && Array.isArray(RAM_DB[ramKey]) && RAM_DB[ramKey].length > 0) {
         return RAM_DB[ramKey];
     }
-    
     try {
         const stored = localStorage.getItem(storageKey);
         if (!stored) {
@@ -111,25 +112,32 @@ const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any =
         RAM_DB[ramKey] = parsed;
         return parsed;
     } catch (e) {
-        console.error(`Storage Error [${ramKey}]`, e);
+        console.error(`Storage Read Error [${ramKey}]`, e);
         RAM_DB[ramKey] = initialValue;
         return initialValue;
     }
 };
 
-// PERFORMANCE FIX: Escrita Assíncrona para não travar a UI Thread
+// CRITICAL FIX: Debounced Write
+// Atualiza a RAM instantaneamente (UI rápida), mas espera 1s para gravar no disco (Evita travamento)
 const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
-    // 1. Atualiza RAM imediatamente (UI reage rápido)
+    // 1. Instant update UI
     RAM_DB[ramKey] = data;
     
-    // 2. Agenda gravação no disco para o próximo ciclo (não bloqueia render)
-    setTimeout(() => {
+    // 2. Clear pending write for this key
+    if (saveTimeouts[storageKey]) {
+        clearTimeout(saveTimeouts[storageKey]);
+    }
+
+    // 3. Schedule write in 800ms (Debounce)
+    saveTimeouts[storageKey] = setTimeout(() => {
         try {
             localStorage.setItem(storageKey, JSON.stringify(data));
         } catch (e) {
-            console.error("Storage Quota Exceeded or Write Error", e);
+            console.error("Storage Write Error (Quota Exceeded?)", e);
         }
-    }, 0);
+        delete saveTimeouts[storageKey];
+    }, 800);
 };
 
 export const storageService = {
@@ -138,10 +146,13 @@ export const storageService = {
             const storedSettings = localStorage.getItem(KEYS.SETTINGS);
             RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
             
-            // Pre-load critical data types
-            loadIfNeeded('players', KEYS.PLAYERS);
-            loadIfNeeded('games', KEYS.GAMES);
-            console.log("🚀 Core System Ready (Non-Blocking Mode)");
+            // Pre-load critical data types quietly
+            setTimeout(() => {
+                loadIfNeeded('players', KEYS.PLAYERS);
+                loadIfNeeded('games', KEYS.GAMES);
+            }, 100);
+            
+            console.log("🚀 Storage System Ready (Debounce Mode Active)");
         } catch (e) {
             console.error("Init Error", e);
         }
@@ -202,10 +213,8 @@ export const storageService = {
         const injuredPlayers = players.filter(p => p.status === 'INJURED' || p.status === 'IR').length;
         
         const now = new Date();
-        const lookback = new Date(now.getTime() - 4 * 60 * 60 * 1000); 
-        
         const nextGame = games
-            .filter((g: Game) => new Date(g.date) >= lookback && g.status === 'SCHEDULED')
+            .filter((g: Game) => new Date(g.date) >= now && g.status === 'SCHEDULED')
             .sort((a: Game, b: Game) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
         return { activePlayers, injuredPlayers, nextGame: nextGame || null };
