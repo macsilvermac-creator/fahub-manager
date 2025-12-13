@@ -36,6 +36,9 @@ const Onboarding: React.FC = () => {
     const isMaster = currentRole === 'MASTER';
     const isPlayer = currentRole === 'PLAYER';
     const isCoach = currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
+    
+    // Auto-detect program from user profile
+    const programContext = user?.program || 'TACKLE';
 
     const handleFinish = () => {
         setIsSaving(true);
@@ -68,14 +71,20 @@ const Onboarding: React.FC = () => {
                 badges: ['Novato'],
                 nationality: 'BRA',
                 depthChartOrder: 4,
-                cpf: user.cpf // Linkando pelo CPF
+                cpf: user.cpf, // Linkando pelo CPF
+                program: programContext === 'BOTH' ? 'TACKLE' : programContext // Default to Tackle if both, user can change later
             };
             storageService.registerAthlete(newPlayer);
         }
 
         if (isCoach && user) {
             // Mock Coach Profile creation logic
-            console.log(`Coach profile created: ${specialty}, ${philosophy}`);
+             storageService.saveCoachProfile(user.id, {
+                careerRecord: { wins: 0, losses: 0, ties: 0 },
+                philosophy: philosophy,
+                achievements: [],
+                specialties: [specialty]
+            });
         }
 
         setTimeout(() => {
@@ -101,9 +110,11 @@ const Onboarding: React.FC = () => {
                     <p className="text-lg text-text-secondary mt-2 font-medium">
                         Você agora faz parte do <strong className="text-highlight">{teamSettings.teamName}</strong>.
                     </p>
-                    <p className="text-sm text-text-secondary opacity-80 mt-1">
-                        Que nossa temporada seja de grandes vitórias!
-                    </p>
+                    {user?.program && user.program !== 'BOTH' && (
+                        <p className="text-xs bg-white/10 text-white px-3 py-1 rounded-full inline-block mt-2 font-bold uppercase">
+                            Módulo: {user.program}
+                        </p>
+                    )}
                 </div>
 
                 <Card className="border-t-4 border-t-highlight">
@@ -121,7 +132,7 @@ const Onboarding: React.FC = () => {
                                     Sua função foi definida: <span className="text-white uppercase underline decoration-highlight">{isPlayer ? 'ATLETA' : isCoach ? 'TÉCNICO' : isMaster ? 'PRESIDENTE' : 'STAFF'}</span>
                                 </p>
                                 <p className="text-sm text-text-secondary">
-                                    Aproveite que está por aqui e já preencha seu cadastro completo para ter acesso imediato às ferramentas.
+                                    O administrador já configurou suas permissões. Complete seu perfil para acessar o QG.
                                 </p>
                             </div>
                             <button onClick={() => setStep(2)} className="w-full bg-highlight hover:bg-highlight-hover text-white font-bold py-4 rounded-xl transition-all shadow-lg transform hover:-translate-y-1">
@@ -168,6 +179,7 @@ const Onboarding: React.FC = () => {
                                                 value={position}
                                                 onChange={e => setPosition(e.target.value)}
                                             >
+                                                {/* Filter positions based on Program context if possible, for now show all common ones */}
                                                 <option value="QB">Quarterback</option>
                                                 <option value="WR">Receiver</option>
                                                 <option value="RB">Running Back</option>
@@ -175,6 +187,8 @@ const Onboarding: React.FC = () => {
                                                 <option value="DL">Linha Defensiva</option>
                                                 <option value="LB">Linebacker</option>
                                                 <option value="DB">Defensive Back</option>
+                                                <option value="RUSHER">Rusher (Flag)</option>
+                                                <option value="CENTER">Center (Flag)</option>
                                             </select>
                                         </div>
                                         <div>

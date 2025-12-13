@@ -1,14 +1,14 @@
 
 import React, { useContext, useEffect, useState, useMemo, Suspense } from 'react';
 import Card from '../components/Card';
-import { TeamSettings, SocialFeedPost, Player } from '../types';
-import { CalendarIcon, UsersIcon, AlertTriangleIcon, BankIcon, PlayCircleIcon, ClipboardIcon, MedicalIcon, DumbbellIcon, WifiIcon, CheckCircleIcon, SparklesIcon, LockIcon, StarIcon, ActivityIcon, FireIcon, GamepadIcon, ShareIcon } from '../components/icons/UiIcons';
-import { MegaphoneIcon, WhistleIcon, TrophyIcon, BookIcon } from '../components/icons/NavIcons';
+import { TeamSettings, SocialFeedPost, Player, ProgramType } from '../types';
+import { CalendarIcon, UsersIcon, AlertTriangleIcon, BankIcon, PlayCircleIcon, ClipboardIcon, MedicalIcon, DumbbellIcon, WifiIcon, CheckCircleIcon, SparklesIcon, LockIcon, StarIcon, ActivityIcon, FireIcon, GamepadIcon, ShareIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
+import { MegaphoneIcon, WhistleIcon, TrophyIcon, BookIcon, FlagIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 import { storageService } from '../services/storageService';
 import { authService } from '../services/authService';
 // @ts-ignore
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen';
 import Skeleton from '../components/Skeleton';
 import LazyImage from '@/components/LazyImage';
@@ -141,12 +141,12 @@ const ExecutiveDashboard = React.memo(({ stats, navigate, handleCopyInvite }: an
     </div>
 ));
 
-const CoachHubButtons = React.memo(({ setActiveHub, setActiveModule, nextGame }: any) => (
+const CoachHubButtons = React.memo(({ setActiveHub, setActiveModule, nextGame, program }: any) => (
     <div className="grid grid-cols-1 gap-4 h-[calc(100vh-250px)]">
-        <button onClick={() => { setActiveHub('TRAINING'); setActiveModule('PRACTICE'); }} className="glass-panel bg-gradient-to-br from-blue-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group hover:border-blue-400">
-            <DumbbellIcon className="w-12 h-12 text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
+        <button onClick={() => { setActiveHub('TRAINING'); setActiveModule('PRACTICE'); }} className={`glass-panel bg-gradient-to-br ${program === 'TACKLE' ? 'from-blue-900/40 hover:border-blue-400' : 'from-yellow-900/40 hover:border-yellow-400'} to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group`}>
+            <DumbbellIcon className={`w-12 h-12 mb-2 group-hover:scale-110 transition-transform ${program === 'TACKLE' ? 'text-blue-400' : 'text-yellow-400'}`} />
             <span className="text-2xl font-black text-white uppercase">Dia de Treino</span>
-            <span className="text-xs text-blue-300 mt-1">Scripts, IA & Performance</span>
+            <span className={`text-xs mt-1 ${program === 'TACKLE' ? 'text-blue-300' : 'text-yellow-300'}`}>Scripts, IA & Performance ({program})</span>
         </button>
         <button onClick={() => { setActiveHub('GAME'); setActiveModule('MISSION_CONTROL'); }} className="glass-panel bg-gradient-to-br from-red-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group hover:border-red-400">
             <TrophyIcon className="w-12 h-12 text-red-400 mb-2 group-hover:scale-110 transition-transform" />
@@ -161,8 +161,8 @@ const CoachHubButtons = React.memo(({ setActiveHub, setActiveModule, nextGame }:
                 <ClipboardIcon className="w-8 h-8 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
                 <span className="text-lg font-black text-white uppercase">Gestão</span>
             </button>
-            <button onClick={() => { setActiveHub('STUDY'); setActiveModule('VIDEO'); }} className="glass-panel bg-gradient-to-br from-yellow-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg active:scale-95 transition-transform group hover:border-yellow-400">
-                <BookIcon className="w-8 h-8 text-yellow-400 mb-2 group-hover:scale-110 transition-transform" />
+            <button onClick={() => { setActiveHub('STUDY'); setActiveModule('VIDEO'); }} className="glass-panel bg-gradient-to-br from-purple-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg active:scale-95 transition-transform group hover:border-purple-400">
+                <BookIcon className="w-8 h-8 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
                 <span className="text-lg font-black text-white uppercase">Estudos (IA)</span>
             </button>
         </div>
@@ -320,6 +320,7 @@ const PlayerCareerMode = React.memo(({ player, navigate, nextGame, xpLeaders }: 
 const Dashboard: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const navigate = useNavigate();
+    const location = useLocation(); // Hook para ler o estado da navegação
     const toast = useToast();
     const [rawCoachStats, setRawCoachStats] = useState<any>(null);
     const [activeHub, setActiveHub] = useState<string | null>(null);
@@ -327,7 +328,11 @@ const Dashboard: React.FC = () => {
     const [systemHealth, setSystemHealth] = useState<any>(null);
     const [xpLeaders, setXpLeaders] = useState<Player[]>([]);
     const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+    const [userProgram, setUserProgram] = useState<ProgramType>('BOTH'); // Contexto do usuário logado
     
+    // NEW: Program Switcher State
+    const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
+
     // Check for query param override
     const searchParams = new URLSearchParams(window.location.search);
     const roleOverride = searchParams.get('role');
@@ -335,32 +340,66 @@ const Dashboard: React.FC = () => {
     const isHeadCoach = currentRole === 'HEAD_COACH' || roleOverride === 'COACH';
     const isPlayerView = currentRole === 'PLAYER';
 
+    // FIX: Listener para o reset via Sidebar
     useEffect(() => {
-        setTimeout(() => {
+        if (location.state?.reset) {
+            setActiveHub(null);
+            setActiveModule('');
+            window.history.replaceState({}, document.title);
+        }
+    }, [location]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
             const stats = storageService.getCoachDashboardStats();
             setRawCoachStats(stats);
             
+            // Lógica de Detecção de Programa do Usuário
+            const user = authService.getCurrentUser();
+            if (user) {
+                setUserProgram(user.program || 'BOTH');
+                // Se o usuário só tem um programa, força o activeProgram
+                if (user.program === 'FLAG') {
+                    setActiveProgram('FLAG');
+                    storageService.setActiveProgram('FLAG');
+                } else if (user.program === 'TACKLE') {
+                    setActiveProgram('TACKLE');
+                    storageService.setActiveProgram('TACKLE');
+                } else {
+                    // Se for BOTH ou não definido, pega do storage global (ou default TACKLE)
+                    setActiveProgram(storageService.getActiveProgram());
+                }
+
+                if (isPlayerView) {
+                    const players = storageService.getPlayers();
+                    const me = players.find(p => p.name === user.name);
+                    setCurrentPlayer(me || players[0]); 
+                }
+            }
+
             const players = storageService.getPlayers();
             const sorted = [...players].sort((a, b) => (b.xp || 0) - (a.xp || 0)).slice(0, 5);
             setXpLeaders(sorted);
 
-            const user = authService.getCurrentUser();
-            if (isPlayerView && user) {
-                const me = players.find(p => p.name === user.name);
-                setCurrentPlayer(me || players[0]); // Fallback to first player for demo
-            }
-
             setSystemHealth({ 
                 api: true, 
                 db: 'RAM', 
-                version: '2.5.0 Stable' 
+                version: '3.0.1 (Dual)' 
             });
         }, 300);
+
+        return () => clearTimeout(timer);
     }, [currentRole, activeHub, isPlayerView]);
+
+    const handleProgramSwitch = (program: 'TACKLE' | 'FLAG') => {
+        setActiveProgram(program);
+        storageService.setActiveProgram(program);
+        toast.info(`Modo Treinador: ${program}`);
+        // Optional: Force refresh or re-fetch relevant data
+    };
 
     const handleCopyInvite = () => {
         const teamName = storageService.getTeamSettings().teamName;
-        // Use window.location.origin to support Vercel URLs
         const url = window.location.origin + '/#/register';
         const msg = `🏈 *CONVOCAÇÃO OFICIAL: ${teamName.toUpperCase()}*\n\nVocê foi selecionado para participar do teste beta fechado do FAHUB Manager.\n\n*Missão:*\n1. Acesse o link abaixo.\n2. Crie sua conta (use seu CPF).\n3. Aguarde a liberação.\n\n🔗 *Link de Acesso:* ${url}\n\n_Acesso restrito. Não compartilhe._`;
         
@@ -388,27 +427,55 @@ const Dashboard: React.FC = () => {
         if (!activeHub) {
             return (
                 <div className="space-y-6 animate-fade-in pb-20">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-bold text-white">Central do Treinador</h2>
+                    <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">Central do Treinador</h2>
+                            <p className="text-text-secondary text-sm">
+                                {userProgram === 'BOTH' ? 'Selecione o programa ativo.' : `Programa: ${userProgram}`}
+                            </p>
+                        </div>
+                        
+                        {/* PROGRAM SWITCHER - Só aparece se o usuário for BOTH ou MASTER */}
+                        {userProgram === 'BOTH' && (
+                            <div className="flex bg-black/40 p-1 rounded-xl border border-white/10">
+                                <button 
+                                    onClick={() => handleProgramSwitch('TACKLE')}
+                                    className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeProgram === 'TACKLE' ? 'bg-blue-600 text-white shadow-lg' : 'text-text-secondary hover:text-white'}`}
+                                >
+                                    <ShieldCheckIcon className="w-4 h-4" /> Full Pads
+                                </button>
+                                <button 
+                                    onClick={() => handleProgramSwitch('FLAG')}
+                                    className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeProgram === 'FLAG' ? 'bg-yellow-500 text-black shadow-lg' : 'text-text-secondary hover:text-white'}`}
+                                >
+                                    <FlagIcon className="w-4 h-4" /> Flag 5x5
+                                </button>
+                            </div>
+                        )}
+
                         {currentRole === 'MASTER' && (
                             <button onClick={() => navigate('/dashboard')} className="text-xs text-text-secondary border border-white/10 px-3 py-1 rounded hover:text-white">
                                 Voltar para Master
                             </button>
                         )}
                     </div>
-                    <CoachHubButtons setActiveHub={setActiveHub} setActiveModule={setActiveModule} nextGame={rawCoachStats?.nextGame} />
+                    
+                    <CoachHubButtons setActiveHub={setActiveHub} setActiveModule={setActiveModule} nextGame={rawCoachStats?.nextGame} program={activeProgram} />
                 </div>
             );
         }
 
         // --- HUB RENDER ---
         const renderHeader = (title: string, modules: any[]) => (
-            <div className="sticky top-0 z-30 bg-primary pt-2 pb-4">
+            <div className="bg-primary pt-2 pb-4 mb-6">
                 <div className="flex items-center justify-between mb-3">
                      <button onClick={() => setActiveHub(null)} className="text-white flex items-center gap-2 font-bold text-sm bg-secondary px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors">
                         ← Voltar
                     </button>
-                    <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">{title} Hub</span>
+                    <div className="text-right">
+                        <span className="text-xs font-bold text-text-secondary uppercase tracking-widest block">{title} Hub</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${activeProgram === 'TACKLE' ? 'bg-blue-900 text-blue-300' : 'bg-yellow-900 text-yellow-300'}`}>{activeProgram}</span>
+                    </div>
                 </div>
                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                     {modules.map(m => (

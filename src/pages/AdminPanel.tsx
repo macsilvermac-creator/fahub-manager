@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { authService } from '../services/authService';
-import { User, AuditLog, UserRole } from '../types';
+import { User, AuditLog, UserRole, ProgramType } from '../types';
 import { CheckCircleIcon, TrashIcon, ShieldCheckIcon, LockIcon, SparklesIcon, ScanIcon, ClipboardIcon, UsersIcon } from '../components/icons/UiIcons';
 import { storageService } from '../services/storageService';
 import LazyImage from '@/components/LazyImage';
@@ -18,6 +18,7 @@ const AdminPanel: React.FC = () => {
     const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [assignedRole, setAssignedRole] = useState<UserRole>('PLAYER');
+    const [assignedProgram, setAssignedProgram] = useState<ProgramType>('BOTH');
 
     // Inspector State
     const [inspectedEntity, setInspectedEntity] = useState<string | null>(null);
@@ -31,14 +32,15 @@ const AdminPanel: React.FC = () => {
     const openApprovalModal = (user: User) => {
         setSelectedUser(user);
         setAssignedRole('PLAYER'); // Default
+        setAssignedProgram('BOTH'); // Default
         setIsApprovalModalOpen(true);
     };
 
     const handleConfirmApproval = () => {
         if (selectedUser) {
-            authService.updateUserStatus(selectedUser.id, 'APPROVED', assignedRole);
+            authService.updateUserStatus(selectedUser.id, 'APPROVED', assignedRole, assignedProgram);
             setUsers(authService.getUsers());
-            storageService.logAuditAction('USER_MGMT', `Admin aprovou ${selectedUser.name} como ${assignedRole}`);
+            storageService.logAuditAction('USER_MGMT', `Admin aprovou ${selectedUser.name} como ${assignedRole} [${assignedProgram}]`);
             setIsApprovalModalOpen(false);
             setSelectedUser(null);
         }
@@ -149,7 +151,7 @@ const AdminPanel: React.FC = () => {
                                         <LazyImage src={user.avatarUrl} className="w-8 h-8 rounded-full grayscale" />
                                         <div>
                                             <p className="font-bold text-white text-sm">{user.name}</p>
-                                            <p className="text-xs text-text-secondary">{user.role}</p>
+                                            <p className="text-xs text-text-secondary">{user.role} • <span className="text-highlight">{user.program || 'BOTH'}</span></p>
                                         </div>
                                     </div>
                                     {user.role !== 'MASTER' && (
@@ -168,7 +170,7 @@ const AdminPanel: React.FC = () => {
             )}
 
             {/* MODAL DE APROVAÇÃO */}
-            <Modal isOpen={isApprovalModalOpen} onClose={() => setIsApprovalModalOpen(false)} title="Definir Função do Membro">
+            <Modal isOpen={isApprovalModalOpen} onClose={() => setIsApprovalModalOpen(false)} title="Definir Função e Acesso">
                 <div className="space-y-6">
                     <div className="text-center">
                         <div className="w-20 h-20 mx-auto rounded-full overflow-hidden mb-3 border-2 border-white/10">
@@ -180,7 +182,7 @@ const AdminPanel: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-text-secondary uppercase mb-2">Cargo no Time</label>
+                        <label className="block text-xs font-bold text-text-secondary uppercase mb-2">1. Cargo no Time</label>
                         <div className="grid grid-cols-2 gap-2">
                             <button onClick={() => setAssignedRole('PLAYER')} className={`p-3 rounded-lg border text-sm font-bold transition-all ${assignedRole === 'PLAYER' ? 'bg-highlight border-highlight text-white' : 'bg-black/20 border-white/10 text-text-secondary'}`}>
                                 🏃 Atleta
@@ -195,6 +197,22 @@ const AdminPanel: React.FC = () => {
                                 📢 Marketing
                             </button>
                         </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-text-secondary uppercase mb-2">2. Contexto (Modalidade)</label>
+                        <div className="grid grid-cols-3 gap-2">
+                             <button onClick={() => setAssignedProgram('TACKLE')} className={`p-2 rounded-lg border text-xs font-bold transition-all ${assignedProgram === 'TACKLE' ? 'bg-blue-600 border-blue-600 text-white' : 'bg-black/20 border-white/10 text-text-secondary'}`}>
+                                🏈 Tackle
+                            </button>
+                            <button onClick={() => setAssignedProgram('FLAG')} className={`p-2 rounded-lg border text-xs font-bold transition-all ${assignedProgram === 'FLAG' ? 'bg-yellow-500 border-yellow-500 text-black' : 'bg-black/20 border-white/10 text-text-secondary'}`}>
+                                🚩 Flag
+                            </button>
+                             <button onClick={() => setAssignedProgram('BOTH')} className={`p-2 rounded-lg border text-xs font-bold transition-all ${assignedProgram === 'BOTH' ? 'bg-purple-600 border-purple-600 text-white' : 'bg-black/20 border-white/10 text-text-secondary'}`}>
+                                🌐 Ambos
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-text-secondary mt-1">Define quais ferramentas ele verá no Dashboard.</p>
                     </div>
 
                     <div className="flex gap-3 pt-4 border-t border-white/10">
@@ -237,7 +255,7 @@ const AdminPanel: React.FC = () => {
                                             <td className="px-4 py-2 text-xs text-gray-400">{new Date(log.timestamp).toLocaleString()}</td>
                                             <td className="px-4 py-2">
                                                 <span className="text-white font-bold">{log.userName}</span>
-                                                <span className="text-[10px] ml-2 bg-white/10 px-1 rounded">{log.role}</span>
+                                                <span className="text-xs ml-2 bg-white/10 px-1 rounded">{log.role}</span>
                                             </td>
                                             <td className="px-4 py-2">
                                                 <span className={`text-[10px] uppercase px-2 py-0.5 rounded font-bold ${log.action.includes('REJECT') ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/30 text-blue-400'}`}>

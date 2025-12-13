@@ -424,7 +424,8 @@ export interface User {
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
     cpf?: string;
     phone?: string;
-    teamName?: string; // Para identificar qual time ele pertence se for multi-tenant futuro
+    teamName?: string;
+    program?: ProgramType; // Added Program Type
 }
 
 export type CourseLevel = 'FAN' | 'PLAYER' | 'COACH';

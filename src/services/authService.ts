@@ -1,5 +1,5 @@
 
-import { User, UserRole } from '../types';
+import { User, UserRole, ProgramType } from '../types';
 import { storageService } from './storageService';
 
 const CURRENT_USER_KEY = 'gridiron_current_user';
@@ -23,6 +23,7 @@ export const authService = {
       const isFirstUser = users.length === 0;
       const initialRole = isFirstUser ? 'MASTER' : 'CANDIDATE';
       const initialStatus = isFirstUser ? 'APPROVED' : 'PENDING';
+      const initialProgram = isFirstUser ? 'BOTH' : undefined;
 
       const newUser: User = {
         id: `user-${Date.now()}`,
@@ -31,7 +32,8 @@ export const authService = {
         role: initialRole,
         cpf: cpf,
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
-        status: initialStatus
+        status: initialStatus,
+        program: initialProgram // Master gets BOTH by default
       };
       
       const updatedUsers = [...users, newUser];
@@ -60,7 +62,8 @@ export const authService = {
                  name: email.split('@')[0].toUpperCase(),
                  role: 'MASTER',
                  avatarUrl: `https://ui-avatars.com/api/?name=${email[0]}`,
-                 status: 'APPROVED'
+                 status: 'APPROVED',
+                 program: 'BOTH'
             };
             localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(mockUser));
             return mockUser;
@@ -95,14 +98,15 @@ export const authService = {
     return stored ? JSON.parse(stored) : null;
   },
 
-  updateUserStatus: async (userId: string, status: 'APPROVED' | 'REJECTED', newRole?: UserRole) => {
+  updateUserStatus: async (userId: string, status: 'APPROVED' | 'REJECTED', newRole?: UserRole, newProgram?: ProgramType) => {
     const users = authService.getUsers();
     const updatedUsers = users.map(u => {
         if (u.id === userId) {
             return { 
                 ...u, 
                 status, 
-                role: newRole || u.role 
+                role: newRole || u.role,
+                program: newProgram || u.program
             };
         }
         return u;
