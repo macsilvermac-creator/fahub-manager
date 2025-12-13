@@ -103,10 +103,9 @@ const notifyListeners = (key: string) => {
     if (listeners[key]) {
         listeners[key].forEach(fn => fn());
     }
-    // Also notify global listeners or dependent keys if needed
+    // Notifica listeners globais se necessário
 };
 
-// --- DEBOUNCE SYSTEM ---
 const saveTimeouts: Record<string, any> = {};
 
 const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any = []): T[] => {
@@ -171,8 +170,12 @@ export const storageService = {
         const storedProgram = localStorage.getItem(KEYS.ACTIVE_PROGRAM);
         if (storedProgram) RAM_DB.activeProgram = storedProgram;
         
+        // Pre-load critical data
+        loadIfNeeded('players', KEYS.PLAYERS);
+        loadIfNeeded('games', KEYS.GAMES);
+        
         console.log("🚀 Storage System Hydrated");
-        return true; // Signal completion
+        return true; 
     },
 
     uploadFile: async (file: File, folder: string = 'general') => {
@@ -181,8 +184,6 @@ export const storageService = {
 
     syncFromCloud: async () => {
         try {
-            // Ao receber dados da nuvem, salvamos na RAM e disparamos notifyListeners
-            // Isso fará a tela atualizar automaticamente
             const cloudPlayers = await firebaseDataService.getPlayers();
             if (cloudPlayers?.length) saveAndCache('players', KEYS.PLAYERS, cloudPlayers);
             
@@ -414,7 +415,6 @@ export const storageService = {
          const activeSubs = subscriptions.filter(s => s.active);
          
          activeSubs.forEach(sub => {
-             // Mock logic: Create invoices for everyone in sub
              storageService.createBulkInvoices(sub.assignedTo, sub.title, sub.amount, new Date(), 'TUITION');
          });
     },
