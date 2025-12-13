@@ -4,18 +4,19 @@ import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, Vide
 
 // @ts-ignore
 const ENV_KEY = process.env.API_KEY;
-const FALLBACK_KEY = "AIzaSyB6VDLKBK9Siz81DC_bEm54oMILT-Hd6wA"; 
+const FALLBACK_KEY = "AIzaSyB6VDLKBK9Siz81DC_bEm54oMILT-Hd6wA";
 const API_KEY = ENV_KEY || FALLBACK_KEY;
 
 let runtimeKey: string | null = null;
-let aiClientInstance: GoogleGenAI | null = null; // Singleton Instance
+let aiClientInstance: GoogleGenAI | null = null; // Singleton
 
 export const setRuntimeKey = (key: string) => {
+    console.log("🔑 Chave de API atualizada manualmente!");
     runtimeKey = key;
-    aiClientInstance = null; // Reseta cliente para usar nova chave
+    aiClientInstance = null; // Força recriação
 };
 
-// Singleton Getter
+// Singleton Getter - Previne Memory Leak no VS Code e Browser
 const getClient = () => {
     if (aiClientInstance) return aiClientInstance;
     
@@ -50,7 +51,6 @@ const generateJson = async (prompt: string): Promise<any> => {
             try {
                 return JSON.parse(cleanJsonString(response.text));
             } catch (e) {
-                console.warn("JSON Parse Warning, fallback text");
                 return null;
             }
         }
@@ -61,8 +61,20 @@ const generateJson = async (prompt: string): Promise<any> => {
     }
 };
 
+const generateText = async (prompt: string): Promise<string> => {
+    try {
+        const ai = getClient();
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+        });
+        return response.text || "";
+    } catch (e) {
+        return "Erro ao processar IA.";
+    }
+};
+
 export const classifyCoachVoiceNote = async (text: string): Promise<{ category: 'GENERAL' | 'TACTICAL' | 'PLAYER' | 'OFFICIAL', tags: string[], sentiment: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL', action?: string }> => {
-    // Fail-safe para evitar chamadas vazias
     if (!text || text.length < 2) return { category: 'GENERAL', tags: [], sentiment: 'NEUTRAL' };
 
     const prompt = `
@@ -78,11 +90,10 @@ export const classifyCoachVoiceNote = async (text: string): Promise<{ category: 
     return result || { category: 'GENERAL', tags: ['RAW_VOICE'], sentiment: 'NEUTRAL' };
 };
 
-// --- Wrappers Otimizados ---
 export const generatePracticeScript = async (focus: string, duration: number, intensity: string): Promise<PracticeScriptItem[]> => {
     const prompt = `Create a Football Practice Script JSON for: ${focus}, ${duration}min, ${intensity}. Array of objects: {startTime, durationMinutes, type, activityName, description}.`;
     const result = await generateJson(prompt);
-    return Array.isArray(result) ? result.map((i: any) => ({...i, id: `ai-${Date.now()}-${Math.random()}`})) : [];
+    return Array.isArray(result) ? result.map((i: any) => ({ ...i, id: `ai-${Date.now()}-${Math.random()}` })) : [];
 };
 
 export const analyzeOpponentTendencies = async (notes: string) => {
@@ -94,10 +105,9 @@ export const suggestPlayConcepts = async (sit: string) => {
 };
 
 export const predictPlayCall = async (history: VideoClip[], down: number, dist: number) => {
-    // Limita histórico para economizar tokens e evitar crash
-    const context = history.slice(0, 15).map(c => c.tags.offensivePlayCall).join(', ');
+    const context = history.slice(0, 10).map(c => c.tags.offensivePlayCall).join(', ');
     const prompt = `Predict next play based on history: [${context}] for situation ${down} & ${dist}. Return JSON {prediction, confidence, reason}.`;
-    return (await generateJson(prompt)) || { prediction: "Análise Indisponível", confidence: "Baixa", reason: "Poucos dados." };
+    return (await generateJson(prompt)) || { prediction: "Indisponível", confidence: "Baixa", reason: "Poucos dados." };
 };
 
 export const importPlaybookFromImage = async (base64: string): Promise<PlayElement[]> => {
@@ -130,13 +140,6 @@ export const scanFinancialDocument = async (base64: string) => {
 
 export const analyzeCombineStats = async (stats: CombineStats, pos: string) => {
     return (await generateJson(`Analyze NFL Combine stats for ${pos}: ${JSON.stringify(stats)}. Return JSON {rating, potential, analysis, comparison}`)) || {};
-};
-
-// Text Helpers Simples
-const generateText = async (p: string) => {
-    try { 
-        return (await getClient().models.generateContent({ model: 'gemini-2.5-flash', contents: p })).text || ""; 
-    } catch { return "Erro IA"; }
 };
 
 export const generatePracticePlan = (p: string) => generateText(p);

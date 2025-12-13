@@ -1,5 +1,5 @@
 
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useMemo } from 'react';
 // @ts-ignore
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -61,19 +61,28 @@ const ROLES = {
   MARKETING: ['MASTER', 'MARKETING_MANAGER'] as UserRole[]
 };
 
-// Componente para Checagem de Perfil
+// Componente OTIMIZADO para Checagem de Perfil
 const OnboardingCheck: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const user = authService.getCurrentUser();
     const location = useLocation();
-
-    if (user && user.status === 'APPROVED' && user.role === 'PLAYER' && location.pathname !== '/onboarding') {
-        const players = storageService.getPlayers();
-        // Assume player exists if CPF matches
-        const playerProfile = players.find(p => p.cpf === user.cpf);
-        if (!playerProfile) {
-            return <Navigate to="/onboarding" replace />;
+    
+    // Memoize the check result to prevent re-calculations on every render
+    const shouldRedirect = useMemo(() => {
+        const user = authService.getCurrentUser();
+        if (user && user.status === 'APPROVED' && user.role === 'PLAYER' && location.pathname !== '/onboarding') {
+            const players = storageService.getPlayers();
+            // Fast check: Assume player exists if CPF matches
+            const playerProfile = players.find(p => p.cpf === user.cpf);
+            if (!playerProfile) {
+                return true;
+            }
         }
+        return false;
+    }, [location.pathname]); // Only re-run if location changes
+
+    if (shouldRedirect) {
+        return <Navigate to="/onboarding" replace />;
     }
+    
     return <>{children}</>;
 };
 
