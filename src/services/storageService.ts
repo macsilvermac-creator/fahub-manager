@@ -60,7 +60,6 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
 };
 
 // --- OPTIMIZED RAM CACHE ---
-// FIX CRÍTICO: Inicializar com Arrays Vazios [] em vez de null para evitar crashes de .map()
 const RAM_DB: any = {
     settings: null,
     players: [],
@@ -97,8 +96,8 @@ const RAM_DB: any = {
 // --- CORE UTILS (Non-Blocking I/O) ---
 
 const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any = []): T[] => {
-    // Se já tem dados (mesmo que array vazio, assumimos carregado se não for a inicialização padrão)
-    if (RAM_DB[ramKey] && RAM_DB[ramKey].length > 0) {
+    // Se já tem dados na RAM, retorna imediatamente (Cache Hit)
+    if (RAM_DB[ramKey] && Array.isArray(RAM_DB[ramKey]) && RAM_DB[ramKey].length > 0) {
         return RAM_DB[ramKey];
     }
     
@@ -118,24 +117,34 @@ const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any =
     }
 };
 
+// PERFORMANCE FIX: Escrita Assíncrona para não travar a UI Thread
 const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
+    // 1. Atualiza RAM imediatamente (UI reage rápido)
     RAM_DB[ramKey] = data;
-    try {
-        localStorage.setItem(storageKey, JSON.stringify(data));
-    } catch (e) {
-        console.error("Storage Quota Exceeded or Write Error", e);
-    }
+    
+    // 2. Agenda gravação no disco para o próximo ciclo (não bloqueia render)
+    setTimeout(() => {
+        try {
+            localStorage.setItem(storageKey, JSON.stringify(data));
+        } catch (e) {
+            console.error("Storage Quota Exceeded or Write Error", e);
+        }
+    }, 0);
 };
 
 export const storageService = {
     initializeRAM: () => {
-        const storedSettings = localStorage.getItem(KEYS.SETTINGS);
-        RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
-        
-        // Pre-load critical data types to prevent white screen flashes
-        loadIfNeeded('players', KEYS.PLAYERS);
-        loadIfNeeded('games', KEYS.GAMES);
-        console.log("🚀 Core System Ready (Robust Mode)");
+        try {
+            const storedSettings = localStorage.getItem(KEYS.SETTINGS);
+            RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
+            
+            // Pre-load critical data types
+            loadIfNeeded('players', KEYS.PLAYERS);
+            loadIfNeeded('games', KEYS.GAMES);
+            console.log("🚀 Core System Ready (Non-Blocking Mode)");
+        } catch (e) {
+            console.error("Init Error", e);
+        }
     },
 
     uploadFile: async (file: File, folder: string = 'general') => {
@@ -170,7 +179,7 @@ export const storageService = {
     getTeamSettings: (): TeamSettings => RAM_DB.settings || INITIAL_TEAM_SETTINGS,
     saveTeamSettings: (s: TeamSettings) => {
         RAM_DB.settings = s;
-        localStorage.setItem(KEYS.SETTINGS, JSON.stringify(s));
+        saveAndCache('settings', KEYS.SETTINGS, s);
     },
 
     getPracticeSessions: (): PracticeSession[] => loadIfNeeded<PracticeSession>('practice', KEYS.PRACTICE),

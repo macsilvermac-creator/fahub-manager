@@ -4,26 +4,26 @@ import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, Vide
 
 // @ts-ignore
 const ENV_KEY = process.env.API_KEY;
-// Chave de Fallback (Cópia da chave do Firebase para garantir funcionamento imediato)
-const FALLBACK_KEY = "AIzaSyB6VDLKBK9Siz81DC_bEm54oMILT-Hd6wA";
-
+const FALLBACK_KEY = "AIzaSyB6VDLKBK9Siz81DC_bEm54oMILT-Hd6wA"; 
 const API_KEY = ENV_KEY || FALLBACK_KEY;
 
-// Variável para armazenar chave temporária inserida pelo usuário na UI
 let runtimeKey: string | null = null;
+let aiClientInstance: GoogleGenAI | null = null; // Singleton Instance
 
 export const setRuntimeKey = (key: string) => {
-    console.log("🔑 Chave de API atualizada manualmente!");
     runtimeKey = key;
+    aiClientInstance = null; // Reseta cliente para usar nova chave
 };
 
-// Função para obter o cliente correto
+// Singleton Getter
 const getClient = () => {
+    if (aiClientInstance) return aiClientInstance;
+    
     const activeKey = runtimeKey || API_KEY;
-    return new GoogleGenAI({ apiKey: activeKey });
+    aiClientInstance = new GoogleGenAI({ apiKey: activeKey });
+    return aiClientInstance;
 };
 
-// Função auxiliar para limpar o JSON que a IA retorna
 const cleanJsonString = (input: string): string => {
     let clean = input.trim();
     if (clean.startsWith('```json')) {
@@ -34,7 +34,6 @@ const cleanJsonString = (input: string): string => {
     return clean;
 };
 
-// Helper to handle JSON response safely
 const generateJson = async (prompt: string): Promise<any> => {
     try {
         const ai = getClient();
@@ -49,282 +48,104 @@ const generateJson = async (prompt: string): Promise<any> => {
         
         if (response.text) {
             try {
-                const cleanedText = cleanJsonString(response.text);
-                return JSON.parse(cleanedText);
-            } catch (jsonError) {
-                console.error("🤖 Gemini: Falha ao fazer parse do JSON:", response.text);
+                return JSON.parse(cleanJsonString(response.text));
+            } catch (e) {
+                console.warn("JSON Parse Warning, fallback text");
                 return null;
             }
         }
         return null;
-    } catch (e: any) {
-        console.error("🤖 Gemini JSON Error:", e);
+    } catch (e) {
+        console.error("Gemini Error:", e);
         return null;
     }
 };
 
-// Helper for text response
-const generateText = async (prompt: string): Promise<string> => {
-    try {
-        const ai = getClient();
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-        });
-        return response.text || "";
-    } catch (e: any) {
-        let errorMsg = "Erro desconhecido na IA.";
-        const errorString = JSON.stringify(e);
-        
-        if (errorString.includes('403') || e.status === 403) {
-            errorMsg = "ERRO 403 (PERMISSÃO): Chave inválida.";
-        } else if (errorString.includes('400') || e.status === 400) {
-            errorMsg = "ERRO 400 (REQ. INVÁLIDA): Verifique os dados.";
-        }
-        return `⚠️ ${errorMsg}`;
-    }
+export const classifyCoachVoiceNote = async (text: string): Promise<{ category: 'GENERAL' | 'TACTICAL' | 'PLAYER' | 'OFFICIAL', tags: string[], sentiment: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL', action?: string }> => {
+    // Fail-safe para evitar chamadas vazias
+    if (!text || text.length < 2) return { category: 'GENERAL', tags: [], sentiment: 'NEUTRAL' };
+
+    const prompt = `
+    Analise esta fala de um Coach de FA na sideline: "${text}"
+    Classifique a intenção: TACTICAL, PLAYER, OFFICIAL, GENERAL.
+    Sentiment: POSITIVE, NEGATIVE, NEUTRAL.
+    Tags: Keywords.
+    Action: Sugestão de ação curta.
+    Retorne JSON.
+    `;
+
+    const result = await generateJson(prompt);
+    return result || { category: 'GENERAL', tags: ['RAW_VOICE'], sentiment: 'NEUTRAL' };
 };
 
-// --- AGENTE 1: SCRIPT WIZARD (Gera Roteiro de Treino Completo) ---
+// --- Wrappers Otimizados ---
 export const generatePracticeScript = async (focus: string, duration: number, intensity: string): Promise<PracticeScriptItem[]> => {
-    const prompt = `
-    Você é um Head Coach expert em Futebol Americano.
-    Crie um Roteiro de Treino (Practice Script) minuto a minuto.
-    
-    Parâmetros:
-    - Foco Tático: "${focus}"
-    - Duração Total: ${duration} minutos
-    - Intensidade: ${intensity} (Ex: "Walkthrough" é leve, "Full Pads" é pesado)
-    
-    Regras de Ouro:
-    1. Comece sempre com Warmup/Alongamento.
-    2. Inclua períodos de "Indy" (Individual) específicos para o foco.
-    3. Termine com "Team" (Coletivo) ou "Conditioning".
-    4. A soma dos 'durationMinutes' deve ser EXATAMENTE ${duration}.
-    
-    Retorne APENAS um JSON Array com objetos:
-    [
-        {
-            "startTime": "HH:MM" (Começando as 19:00),
-            "durationMinutes": number,
-            "type": "WARMUP" | "INDY" | "GROUP" | "TEAM" | "SPECIAL",
-            "activityName": "Nome do Drill (Ex: Inside Run)",
-            "description": "Explicação técnica breve em português."
-        }
-    ]
-    `;
-
+    const prompt = `Create a Football Practice Script JSON for: ${focus}, ${duration}min, ${intensity}. Array of objects: {startTime, durationMinutes, type, activityName, description}.`;
     const result = await generateJson(prompt);
-    if (result && Array.isArray(result)) {
-        return result.map((item: any) => ({ ...item, id: `script-${Date.now()}-${Math.random()}` }));
-    }
-    return [];
+    return Array.isArray(result) ? result.map((i: any) => ({...i, id: `ai-${Date.now()}-${Math.random()}`})) : [];
 };
 
-// --- AGENTE 2: SCOUT DECODER (Analisa Tendências) ---
-export const analyzeOpponentTendencies = async (rawNotes: string): Promise<{ summary: string, keysToVictory: string[], suggestedConcepts: string[] }> => {
-    const prompt = `
-    Você é um Coordenador Defensivo/Ofensivo de elite. Analise estas anotações brutas de scout sobre o adversário:
-    
-    "${rawNotes}"
-    
-    Gere um relatório estratégico estruturado em JSON:
-    {
-        "summary": "Resumo de 2 linhas sobre a identidade do adversário.",
-        "keysToVictory": ["Chave 1", "Chave 2", "Chave 3"],
-        "suggestedConcepts": ["Conceito Tático 1 para usar", "Conceito 2"]
-    }
-    `;
-    
-    const result = await generateJson(prompt);
-    return result || { summary: "Erro na análise.", keysToVictory: [], suggestedConcepts: [] };
+export const analyzeOpponentTendencies = async (notes: string) => {
+    return (await generateJson(`Analyze opponent notes and return JSON {summary, keysToVictory, suggestedConcepts}: ${notes}`)) || {};
 };
 
-// --- AGENTE 3: TACTICAL ORACLE (Sugere Jogadas) ---
-export const suggestPlayConcepts = async (situation: string): Promise<{ name: string, reason: string }[]> => {
-    const prompt = `
-    Situação de Jogo: ${situation}
-    Sugira 3 conceitos táticos modernos de futebol americano para vencer essa situação.
-    
-    Retorne JSON Array:
-    [ { "name": "Nome da Jogada (Ex: Mesh)", "reason": "Por que funciona aqui." } ]
-    `;
-    
-    const result = await generateJson(prompt);
-    return Array.isArray(result) ? result : [];
+export const suggestPlayConcepts = async (sit: string) => {
+    return (await generateJson(`Suggest 3 football play concepts for: ${sit}. Return JSON array {name, reason}.`)) || [];
 };
 
-// --- AGENTE 4: PREDICTIVE PLAY CALLER (Vision Core) ---
-export const predictPlayCall = async (historyClips: VideoClip[], currentDown: number, currentDistance: number): Promise<{ prediction: string, confidence: string, reason: string }> => {
-    // 1. Summarize History Data for the Token Window
-    const simplifiedHistory = historyClips.map(c => ({
-        down: c.tags.down,
-        dist: c.tags.distance,
-        off: c.tags.offensiveFormation,
-        play: c.tags.offensivePlayCall,
-        result: c.tags.result
-    })).slice(0, 30); // Limit to last 30 clips to fit context
-
-    const prompt = `
-    Atue como um Coordenador Defensivo analisando dados do adversário.
-    
-    Histórico de Jogadas Recentes (JSON):
-    ${JSON.stringify(simplifiedHistory)}
-    
-    Situação Atual no Campo:
-    ${currentDown}ª Descida para ${currentDistance} jardas.
-    
-    Tarefa:
-    Com base no padrão histórico acima, preveja qual será a próxima jogada ofensiva.
-    
-    Retorne JSON:
-    {
-        "prediction": "Ex: Corrida Inside Zone ou Passe Curto",
-        "confidence": "Ex: Alta (80%)",
-        "reason": "Ex: Eles correm 90% das vezes em descidas curtas com esta formação."
-    }
-    `;
-
-    const result = await generateJson(prompt);
-    return result || { prediction: "Dados insuficientes", confidence: "Baixa", reason: "Poucos clips tagueados." };
+export const predictPlayCall = async (history: VideoClip[], down: number, dist: number) => {
+    // Limita histórico para economizar tokens e evitar crash
+    const context = history.slice(0, 15).map(c => c.tags.offensivePlayCall).join(', ');
+    const prompt = `Predict next play based on history: [${context}] for situation ${down} & ${dist}. Return JSON {prediction, confidence, reason}.`;
+    return (await generateJson(prompt)) || { prediction: "Análise Indisponível", confidence: "Baixa", reason: "Poucos dados." };
 };
 
-// --- AGENTE 5: PLAYBOOK DIGITIZER (Multimodal) ---
-export const importPlaybookFromImage = async (base64Image: string): Promise<PlayElement[]> => {
-    try {
+export const importPlaybookFromImage = async (base64: string): Promise<PlayElement[]> => {
+     try {
         const ai = getClient();
-        const prompt = `
-        You are an Offensive Coordinator. Analyze this image of a football play.
-        Identify the positions of offensive (O) and defensive (X) players.
-        
-        The image represents a field.
-        Top-Left is (0,0). Bottom-Right is (600, 400).
-        
-        Return a JSON array of elements:
-        [
-            { "id": "generated-1", "type": "OFFENSE", "label": "QB", "x": 300, "y": 250 },
-            { "id": "generated-2", "type": "DEFENSE", "label": "LB", "x": 300, "y": 150 }
-        ]
-        
-        Use standard labels: QB, RB, WR, TE, OL, C for Offense. LB, CB, S, DL for Defense.
-        Approximate the coordinates to fit a 600x400 canvas.
-        `;
-
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [
-                {
-                    role: "user",
-                    parts: [
-                        { text: prompt },
-                        { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
-                    ],
-                },
+                { role: "user", parts: [{ text: "Extract football players X/O positions to JSON array {id, type, label, x, y} based on 600x400 canvas." }, { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }] }
             ],
             config: { responseMimeType: "application/json" }
         });
-
-        if (response.text) {
-            const clean = cleanJsonString(response.text);
-            const elements = JSON.parse(clean);
-            if (Array.isArray(elements)) {
-                return elements.map((el: any) => ({
-                    ...el,
-                    id: `gen-${Date.now()}-${Math.random()}`,
-                    // Ensure coordinates are within bounds
-                    x: Math.min(580, Math.max(20, el.x)),
-                    y: Math.min(380, Math.max(20, el.y))
-                }));
-            }
-        }
-        return [];
-    } catch (e) {
-        console.error("Gemini Vision Error:", e);
-        return [];
-    }
+        return response.text ? JSON.parse(cleanJsonString(response.text)) : [];
+    } catch (e) { return []; }
 };
 
-// --- AGENTE 6: DOCUMENT SCANNER (Financeiro) ---
-export const scanFinancialDocument = async (base64Image: string): Promise<{ title: string, amount: number, date: string, category: string, description: string }> => {
+export const scanFinancialDocument = async (base64: string) => {
     try {
         const ai = getClient();
-        const prompt = `
-        Você é um auditor financeiro. Analise esta imagem de um comprovante, recibo ou nota fiscal.
-        Extraia os dados para lançamento contábil.
-        
-        Se não encontrar data, use hoje. Se não encontrar descrição, crie uma baseada no fornecedor.
-        Categorias Possíveis: 'TRANSPORT', 'EQUIPMENT', 'REFEREE', 'FIELD_RENTAL', 'EVENT', 'OTHER'.
-        
-        Retorne JSON:
-        {
-            "title": "Nome do Fornecedor / Estabelecimento",
-            "amount": 0.00 (Número float, cuidado com vírgulas),
-            "date": "YYYY-MM-DD",
-            "category": "Uma das categorias acima",
-            "description": "Breve descrição dos itens"
-        }
-        `;
-
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: [
-                {
-                    role: "user",
-                    parts: [
-                        { text: prompt },
-                        { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
-                    ],
-                },
+                { role: "user", parts: [{ text: "Extract receipt data to JSON {title, amount, date, category, description}." }, { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }] }
             ],
             config: { responseMimeType: "application/json" }
         });
-
-        if (response.text) {
-            const clean = cleanJsonString(response.text);
-            return JSON.parse(clean);
-        }
-        throw new Error("Não foi possível ler o documento.");
-    } catch (e) {
-        console.error("Scanner Error:", e);
-        throw e;
-    }
+        return response.text ? JSON.parse(cleanJsonString(response.text)) : {};
+    } catch (e) { throw new Error("Falha na leitura"); }
 };
 
-// --- AGENTE 7: COMBINE ANALYZER (Recrutamento) ---
-export const analyzeCombineStats = async (stats: CombineStats, position: string): Promise<{ rating: number, potential: string, analysis: string, comparison: string }> => {
-    const prompt = `
-    Atue como um Scout da NFL. Analise os testes físicos deste candidato para a posição de ${position}.
-    
-    Dados:
-    - 40 Jardas: ${stats.fortyYards || 'N/A'}s
-    - Supino (Reps): ${stats.benchPress || 'N/A'}
-    - Salto Vertical: ${stats.verticalJump || 'N/A'} in
-    - Shuttle: ${stats.shuttle || 'N/A'}s
-    
-    Retorne JSON:
-    {
-        "rating": (0-100, baseado em padrões reais da posição),
-        "potential": "Elite / Starter / Backup / Practice Squad",
-        "analysis": "Análise técnica de 2 frases sobre os pontos fortes/fracos físicos.",
-        "comparison": "Comparação com um estilo de jogador famoso (Ex: Estilo Derrick Henry)"
-    }
-    `;
-
-    const result = await generateJson(prompt);
-    return result || { rating: 50, potential: "Unknown", analysis: "Dados insuficientes.", comparison: "-" };
+export const analyzeCombineStats = async (stats: CombineStats, pos: string) => {
+    return (await generateJson(`Analyze NFL Combine stats for ${pos}: ${JSON.stringify(stats)}. Return JSON {rating, potential, analysis, comparison}`)) || {};
 };
 
-// --- LEGACY FUNCTIONS (Mantidas para compatibilidade) ---
-export const generatePracticePlan = async (prompt: string): Promise<string> => generateText(prompt);
-export const generatePlayerAnalysis = async (player: Player, context: string): Promise<string> => generateText(`Analise ${player.name}: ${context}`);
-export const generateMarketingContent = async (topic: string, platform: string): Promise<string> => generateText(`Post sobre ${topic} para ${platform}`);
-export const generateSponsorshipProposal = async (company: string, value: number): Promise<string> => generateText(`Proposta para ${company} valor ${value}`);
-export const generateCourseCurriculum = async (topic: string, level: string): Promise<string> => generateText(`Curso sobre ${topic} nível ${level}`);
-export const generateGymPlan = async (goal: string, equip: string, profile: string): Promise<string> => generateText(`Treino ${goal} com ${equip}`);
-export const generateInstallSchedule = async (ctx: string, week: string): Promise<InstallMatrixItem[]> => {
-    const res = await generateJson(`Install schedule for ${ctx} week ${week}. Return JSON array.`);
-    return Array.isArray(res) ? res : [];
+// Text Helpers Simples
+const generateText = async (p: string) => {
+    try { 
+        return (await getClient().models.generateContent({ model: 'gemini-2.5-flash', contents: p })).text || ""; 
+    } catch { return "Erro IA"; }
 };
-export const analyzePlayMatchup = async (play: string, scout: GameScoutingReport, opp: string): Promise<string> => generateText(`Matchup: ${play} vs ${opp}`);
-export const askRefereeBot = async (query: string): Promise<string> => generateText(`Regra FA: ${query}`);
-export const generateJudicialReport = async (id: number, ejections: any[]): Promise<string> => generateText(`Relatório TJD jogo ${id}`);
+
+export const generatePracticePlan = (p: string) => generateText(p);
+export const generatePlayerAnalysis = (p: Player, c: string) => generateText(`Analyze player ${p.name}: ${c}`);
+export const generateMarketingContent = (t: string, p: string) => generateText(`Write ${p} post about ${t}`);
+export const generateSponsorshipProposal = (c: string, v: number) => generateText(`Sponsorship proposal for ${c} value ${v}`);
+export const generateCourseCurriculum = (t: string, l: string) => generateText(`Course curriculum for ${t} level ${l} as JSON`);
+export const generateGymPlan = (g: string, e: string, p: string) => generateText(`Gym plan for ${g} using ${e}`);
+export const generateInstallSchedule = async (c: string, w: string) => generateJson(`Install schedule JSON for ${c} week ${w}`) || [];
+export const analyzePlayMatchup = (p: string, s: GameScoutingReport, o: string) => generateText(`Matchup ${p} vs ${o}`);
+export const askRefereeBot = (q: string) => generateText(`Rule check: ${q}`);
+export const generateJudicialReport = (i: number, e: any[]) => generateText(`Judicial report game ${i}`);

@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Game, CoachGameNote } from '../types';
 import { storageService } from '../services/storageService';
 import { voiceService } from '../services/voiceService';
-import { ClipboardIcon, ClockIcon, AlertTriangleIcon, PlayCircleIcon, ShieldCheckIcon, MicIcon, StopIcon } from '../components/icons/UiIcons';
+import { classifyCoachVoiceNote } from '../services/geminiService';
+import { ClipboardIcon, ClockIcon, AlertTriangleIcon, PlayCircleIcon, ShieldCheckIcon, MicIcon, StopIcon, SparklesIcon } from '../components/icons/UiIcons';
 import { FlagIcon, TrophyIcon } from '../components/icons/NavIcons';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -21,12 +22,18 @@ const CoachGameDay: React.FC = () => {
     
     // Voice State
     const [isListening, setIsListening] = useState(false);
+    const [isProcessingAi, setIsProcessingAi] = useState(false);
 
     useEffect(() => {
         const games = storageService.getGames();
         const live = games.find(g => g.status === 'IN_PROGRESS' || g.status === 'HALFTIME') || games.find(g => g.status === 'SCHEDULED');
         setActiveGame(live || null);
         setNotes(storageService.getCoachGameNotes());
+        
+        // Cleanup ao desmontar
+        return () => {
+            setIsListening(false);
+        };
     }, []);
 
     const handleQuickAction = (action: string, type: 'OFFENSE' | 'DEFENSE' | 'SPECIAL' | 'GENERAL') => {
@@ -68,7 +75,7 @@ const CoachGameDay: React.FC = () => {
         toast.success(`Log: ${action}`);
     };
 
-    // --- LÓGICA DE INTERPRETAÇÃO DE VOZ ---
+    // --- LÓGICA DE INTERPRETAÇÃO DE VOZ (SMART ASSISTANT) ---
     const handleVoiceNote = () => {
         if (!voiceService.isSupported()) {
             toast.error("Navegador não suporta voz.");
@@ -84,42 +91,80 @@ const CoachGameDay: React.FC = () => {
         toast.info("Ouvindo... (Fale um comando ou nota)");
         
         voiceService.listenToCommand(
-            (text) => {
+            async (text) => {
                 setIsListening(false);
                 const lowerText = text.toLowerCase();
                 
-                // 1. Roteamento de Comandos (Voice-to-Action)
+                // CAMADA 1: COMANDOS DE REFLEXO (Instantâneo)
                 if (lowerText.includes('touchdown')) {
                     handleQuickAction('TOUCHDOWN', 'OFFENSE');
-                    toast.success("Comando de Voz: Touchdown registrado!");
-                } else if (lowerText.includes('interceptação') || lowerText.includes('interceptado')) {
+                    toast.success("Voz: Touchdown registrado!");
+                    return;
+                } 
+                if (lowerText.includes('interceptação') || lowerText.includes('interceptado')) {
                     handleQuickAction('TURNOVER', 'OFFENSE');
-                    toast.success("Comando de Voz: Interceptação registrada!");
-                } else if (lowerText.includes('sack')) {
+                    toast.success("Voz: Interceptação registrada!");
+                    return;
+                }
+                if (lowerText.includes('sack')) {
                     handleQuickAction('SACK', 'DEFENSE');
-                    toast.success("Comando de Voz: Sack registrado!");
-                } else if (lowerText.includes('primeira descida') || lowerText.includes('first down')) {
+                    toast.success("Voz: Sack registrado!");
+                    return;
+                }
+                if (lowerText.includes('primeira descida') || lowerText.includes('first down')) {
                     handleQuickAction('1st DOWN', 'OFFENSE');
-                    toast.success("Comando de Voz: 1st Down registrado!");
-                } else {
-                    // 2. Fallback: Salvar como Nota de Voz
+                    toast.success("Voz: 1st Down registrado!");
+                    return;
+                }
+
+                // CAMADA 2: INTELIGÊNCIA IA (Análise de Intenção)
+                setIsProcessingAi(true);
+                
+                try {
+                    const aiResult = await classifyCoachVoiceNote(text);
+                    
                     const note: CoachGameNote = {
                         id: Date.now().toString(),
                         gameId: activeGame?.id || 0,
                         quarter: activeGame?.currentQuarter || 1,
-                        content: `🎤 Voz: "${text}"`,
+                        content: `🤖 IA: "${text}"`,
+                        timestamp: new Date(),
+                        category: 'GENERAL',
+                        tags: ['VOICE', ...aiResult.tags]
+                    };
+                    
+                    // Se a IA sugerir ação, adiciona ao log
+                    if(aiResult.action) {
+                        note.content += ` [Sugestão: ${aiResult.action}]`;
+                    }
+
+                    const updated = [note, ...notes];
+                    setNotes(updated);
+                    storageService.saveCoachGameNotes(updated);
+                    
+                    const sentimentIcon = aiResult.sentiment === 'POSITIVE' ? '✅' : aiResult.sentiment === 'NEGATIVE' ? '⚠️' : 'ℹ️';
+                    toast.success(`${sentimentIcon} Nota salva`);
+
+                } catch (e) {
+                    // Fallback se IA falhar ou estiver offline
+                    const note: CoachGameNote = {
+                        id: Date.now().toString(),
+                        gameId: activeGame?.id || 0,
+                        quarter: activeGame?.currentQuarter || 1,
+                        content: `🎤 Voz (Raw): "${text}"`,
                         timestamp: new Date(),
                         category: 'GENERAL',
                         tags: ['VOICE']
                     };
-                    const updated = [note, ...notes];
-                    setNotes(updated);
-                    storageService.saveCoachGameNotes(updated);
-                    toast.info("Nota de voz salva.");
+                    setNotes([note, ...notes]);
+                    storageService.saveCoachGameNotes([note, ...notes]);
+                } finally {
+                    setIsProcessingAi(false);
                 }
             },
             (error) => {
                 setIsListening(false);
+                setIsProcessingAi(false);
                 toast.error("Erro ao ouvir: " + error);
             }
         );
@@ -214,10 +259,11 @@ const CoachGameDay: React.FC = () => {
                     <div className="flex items-center gap-4">
                         <button 
                             onClick={handleVoiceNote}
-                            className={`p-3 rounded-full transition-all border border-white/10 ${isListening ? 'bg-red-600 animate-pulse text-white shadow-glow' : 'bg-secondary text-white hover:bg-white/20'}`}
+                            disabled={isProcessingAi}
+                            className={`p-3 rounded-full transition-all border border-white/10 ${isListening ? 'bg-red-600 animate-pulse text-white shadow-glow' : isProcessingAi ? 'bg-purple-600 animate-bounce text-white' : 'bg-secondary text-white hover:bg-white/20'}`}
                             title="Comando de Voz (Segure para Falar)"
                         >
-                            {isListening ? <StopIcon className="w-6 h-6" /> : <MicIcon className="w-6 h-6" />}
+                            {isListening ? <StopIcon className="w-6 h-6" /> : isProcessingAi ? <SparklesIcon className="w-6 h-6" /> : <MicIcon className="w-6 h-6" />}
                         </button>
                         <span className="block text-3xl font-mono font-bold text-white leading-none">{activeGame.score || '0-0'}</span>
                     </div>
@@ -254,6 +300,12 @@ const CoachGameDay: React.FC = () => {
                             <h3 className="text-4xl font-bold text-yellow-400">1ª & 10</h3>
                             <p className="text-white">Bola na linha de 25</p>
                         </div>
+                        {notes.length > 0 && (
+                            <div className="w-full max-w-md bg-black/40 p-4 rounded-xl border border-white/5">
+                                <p className="text-xs text-text-secondary uppercase font-bold mb-2">Última Interação</p>
+                                <p className="text-white text-sm">{notes[0].content}</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
