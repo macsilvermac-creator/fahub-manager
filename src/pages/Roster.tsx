@@ -6,7 +6,7 @@ import AddPlayerModal from '../components/AddPlayerModal';
 import PlayerDetailsModal from '../components/PlayerDetailsModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Modal from '../components/Modal';
-import { UsersIcon, ClipboardIcon, ChevronDownIcon } from '../components/icons/UiIcons';
+import { UsersIcon, ClipboardIcon, ChevronDownIcon, LockIcon } from '../components/icons/UiIcons';
 import { storageService } from '../services/storageService';
 import PrintLayout from '../components/PrintLayout';
 import { UserContext } from '../components/Layout';
@@ -20,22 +20,24 @@ const Roster: React.FC = () => {
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
     const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
     const [viewMode, setViewMode] = useState<'CARDS' | 'DEPTH_CHART'>('CARDS');
+    
+    // Estado do Programa Ativo (Herdado do Dashboard ou do Usuário)
     const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
     
-    // Performance: Paginação Agressiva para Tablet
-    const [visibleCount, setVisibleCount] = useState(8); 
-    
-    // Squad Management State
+    const [visibleCount, setVisibleCount] = useState(12);
     const [activeCategory, setActiveCategory] = useState<RosterCategory>('ACTIVE');
     const [unitFilter, setUnitFilter] = useState<'ALL' | 'OFFENSE' | 'DEFENSE' | 'ST'>('ALL');
 
-    // Comparison State
     const [isCompareMode, setIsCompareMode] = useState(false);
     const [compareSelection, setCompareSelection] = useState<number[]>([]);
     const [showCompareModal, setShowCompareModal] = useState(false);
 
+    // --- PERMISSÕES RÍGIDAS ---
     const isPlayer = currentRole === 'PLAYER';
-    const canEdit = currentRole === 'MASTER' || currentRole === 'HEAD_COACH';
+    // Apenas MASTER (Gestão/Dono) pode criar ou deletar registros (CPF/Contratos)
+    const canCreateDelete = currentRole === 'MASTER'; 
+    // Coach pode gerenciar o elenco (Mover para Practice Squad, IR, ver detalhes), mas não criar usuários
+    const canManageRoster = currentRole === 'MASTER' || currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
 
     useEffect(() => {
         setPlayers(storageService.getPlayers());
@@ -44,7 +46,7 @@ const Roster: React.FC = () => {
     }, [isPlayer]);
 
     useEffect(() => {
-        setVisibleCount(8); // Reset pagination on filter change
+        setVisibleCount(12);
     }, [activeCategory, unitFilter, viewMode]);
 
     const handleAddPlayer = (newPlayerData: Omit<Player, 'id' | 'level' | 'xp' | 'badges' | 'rating' | 'status'>) => {
@@ -65,14 +67,14 @@ const Roster: React.FC = () => {
             storageService.registerAthlete(newPlayer);
             setPlayers(storageService.getPlayers());
             setIsAddModalOpen(false);
-            toast.success(`Atleta ${newPlayer.name} recrutado com sucesso!`); 
+            toast.success(`Atleta ${newPlayer.name} recrutado para o elenco ${newPlayer.program}!`); 
         } catch (error: any) {
             toast.error(error.message); 
         }
     };
 
     const handleDeleteClick = (player: Player) => {
-        if (canEdit) setPlayerToDelete(player);
+        if (canCreateDelete) setPlayerToDelete(player);
     };
 
     const confirmDeletePlayer = () => {
@@ -86,7 +88,7 @@ const Roster: React.FC = () => {
     };
 
     const handleMovePlayer = (player: Player, newCategory: RosterCategory) => {
-        if (!canEdit) return;
+        if (!canManageRoster) return;
         const updated = players.map(p => p.id === player.id ? { ...p, rosterCategory: newCategory } : p);
         setPlayers(updated);
         storageService.savePlayers(updated);
@@ -106,16 +108,20 @@ const Roster: React.FC = () => {
     };
 
     const handleLoadMore = () => {
-        setVisibleCount(prev => prev + 8);
+        setVisibleCount(prev => prev + 12);
     };
 
-    // MEMOIZED FILTERING (Critical Performance Fix)
+    // --- FILTRAGEM SEGREGADA ---
     const filteredPlayers = useMemo(() => {
         return players.filter(p => {
-            // 1. Squad Filter
+            // 1. Filtro de Modalidade (CRÍTICO)
+            if (activeProgram === 'FLAG' && p.program === 'TACKLE') return false;
+            if (activeProgram === 'TACKLE' && p.program === 'FLAG') return false;
+
+            // 2. Filtro de Categoria
             if ((p.rosterCategory || 'ACTIVE') !== activeCategory) return false;
             
-            // 2. Unit Filter
+            // 3. Filtro de Unidade
             if (unitFilter === 'ALL') return true;
             const pos = p.position;
             
@@ -140,7 +146,6 @@ const Roster: React.FC = () => {
 
     // --- Depth Chart Helpers ---
     const getPlayersByUnit = (unit: 'OFFENSE' | 'DEFENSE' | 'SPECIAL') => {
-        // Flag Specific Positions
         const offPositions = activeProgram === 'FLAG' 
             ? ['QB', 'WR', 'C', 'ATH']
             : ['QB', 'RB', 'WR', 'TE', 'OL', 'LT', 'C', 'RT', 'LG', 'RG'];
@@ -157,7 +162,11 @@ const Roster: React.FC = () => {
         if (unit === 'SPECIAL') positionsToCheck = stPositions;
 
         return players
-            .filter(p => (p.rosterCategory || 'ACTIVE') === 'ACTIVE')
+            .filter(p => {
+                if (activeProgram === 'FLAG' && p.program === 'TACKLE') return false;
+                if (activeProgram === 'TACKLE' && p.program === 'FLAG') return false;
+                return (p.rosterCategory || 'ACTIVE') === 'ACTIVE';
+            })
             .filter(p => positionsToCheck.includes(p.position))
             .sort((a, b) => {
                 const idxA = positionsToCheck.indexOf(a.position);
@@ -168,9 +177,6 @@ const Roster: React.FC = () => {
     };
 
     const getPlayerKeyStat = (player: Player) => {
-        if (!player.gameLogs || player.gameLogs.length === 0) return `OVR ${player.rating}`;
-        
-        // Simples fallback se não tiver dados
         return `OVR ${player.rating}`;
     };
 
@@ -231,24 +237,15 @@ const Roster: React.FC = () => {
     return (
         <div className="space-y-8 animate-fade-in pb-12">
             <PrintLayout />
-            <style>{`
-                @media print {
-                    body { background: white !important; color: black !important; }
-                    .no-print { display: none !important; }
-                    .glass-panel { background: none !important; box-shadow: none !important; border: none !important; }
-                    .text-white { color: black !important; }
-                    .text-text-secondary { color: #333 !important; }
-                    .bg-secondary { background: none !important; }
-                    .print-safe { margin-top: 150px; }
-                }
-            `}</style>
-
+            
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 no-print">
                 <div>
-                    <h2 className="text-3xl font-bold text-text-primary bg-clip-text text-transparent bg-gradient-to-r from-white to-text-secondary">Gestão de Elenco</h2>
+                    <h2 className="text-3xl font-bold text-text-primary bg-clip-text text-transparent bg-gradient-to-r from-white to-text-secondary">
+                        Elenco {activeProgram === 'FLAG' ? 'Flag Football' : 'Full Pads'}
+                    </h2>
                     <p className="text-text-secondary mt-1 flex items-center gap-2">
                         <UsersIcon className="w-4 h-4" />
-                        {isPlayer ? 'Seus companheiros de batalha.' : 'Gerencie atletas, depth chart e squads.'}
+                        {isPlayer ? 'Seus companheiros de batalha.' : 'Gerencie o Depth Chart e as unidades.'}
                     </p>
                 </div>
                 <div className="flex gap-3 flex-wrap">
@@ -273,12 +270,13 @@ const Roster: React.FC = () => {
                         </div>
                     )}
 
-                    {canEdit && (
+                    {/* Botão de Recrutar - VISÍVEL APENAS PARA MASTER (GESTÃO) */}
+                    {canCreateDelete && (
                         <button 
                             onClick={() => setIsAddModalOpen(true)}
                             className="px-6 py-2.5 bg-gradient-to-r from-highlight to-highlight-hover text-white rounded-xl font-semibold hover:shadow-glow transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
                         >
-                            <span>+</span> Recrutar
+                            <span>+</span> Cadastrar (Admin)
                         </button>
                     )}
                 </div>
@@ -287,7 +285,7 @@ const Roster: React.FC = () => {
             {!isPlayer && viewMode === 'CARDS' && (
                 <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:items-center md:justify-between border-b border-white/10 mb-4 no-print">
                     <div className="flex overflow-x-auto">
-                        <button onClick={() => setActiveCategory('ACTIVE')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'ACTIVE' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary hover:text-white'}`}>Active Roster ({players.filter(p => p.rosterCategory === 'ACTIVE').length})</button>
+                        <button onClick={() => setActiveCategory('ACTIVE')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'ACTIVE' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary hover:text-white'}`}>Active Roster ({players.filter(p => p.rosterCategory === 'ACTIVE' && (p.program === activeProgram || p.program === 'BOTH')).length})</button>
                         <button onClick={() => setActiveCategory('PRACTICE_SQUAD')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'PRACTICE_SQUAD' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary hover:text-white'}`}>Practice Squad</button>
                         <button onClick={() => setActiveCategory('IR')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors whitespace-nowrap ${activeCategory === 'IR' ? 'border-red-500 text-red-400' : 'border-transparent text-text-secondary hover:text-white'}`}>IR / Suspensos</button>
                     </div>
@@ -307,24 +305,37 @@ const Roster: React.FC = () => {
                 {viewMode === 'CARDS' ? (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {filteredPlayers.length === 0 && <p className="col-span-full text-center text-text-secondary py-12 italic">Nenhum atleta nesta categoria/filtro.</p>}
+                            {filteredPlayers.length === 0 && <p className="col-span-full text-center text-text-secondary py-12 italic">Nenhum atleta nesta categoria/filtro para o programa {activeProgram}.</p>}
                             {displayedPlayers.map(player => (
                                 <div key={player.id} className="relative group">
                                     <AthleteCard 
                                         player={player} 
                                         onClick={(p) => isCompareMode ? toggleCompareSelect(p.id) : setSelectedPlayer(p)}
-                                        onDelete={canEdit ? handleDeleteClick : () => {}}
+                                        onDelete={canCreateDelete ? handleDeleteClick : () => {}}
                                     />
+                                    {/* Mostra tag de programa se for BOTH ou diferente do contexto (edge case) */}
+                                    {player.program === 'BOTH' && (
+                                        <span className="absolute top-2 right-12 text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded shadow z-10">BOTH</span>
+                                    )}
                                     {isCompareMode && (
                                         <div className={`absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center transition-opacity ${compareSelection.includes(player.id) ? 'opacity-100 ring-4 ring-indigo-500' : 'opacity-0 hover:opacity-100 cursor-pointer'}`} onClick={() => toggleCompareSelect(player.id)}>
                                             <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${compareSelection.includes(player.id) ? 'bg-indigo-500 border-white text-white' : 'border-white text-transparent'}`}>✓</div>
                                         </div>
                                     )}
-                                    {canEdit && !isCompareMode && (
+                                    
+                                    {/* Botões de Ação do Coach: Apenas Movimentação */}
+                                    {canManageRoster && !isCompareMode && (
                                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 z-20">
                                             {activeCategory !== 'ACTIVE' && <button onClick={(e) => {e.stopPropagation(); handleMovePlayer(player, 'ACTIVE')}} className="bg-green-600 text-white text-[10px] px-2 py-1 rounded shadow" title="Promover para Ativo">▲ Ativo</button>}
                                             {activeCategory !== 'PRACTICE_SQUAD' && <button onClick={(e) => {e.stopPropagation(); handleMovePlayer(player, 'PRACTICE_SQUAD')}} className="bg-yellow-600 text-white text-[10px] px-2 py-1 rounded shadow" title="Mover para PS">▼ PS</button>}
                                             {activeCategory !== 'IR' && <button onClick={(e) => {e.stopPropagation(); handleMovePlayer(player, 'IR')}} className="bg-red-600 text-white text-[10px] px-2 py-1 rounded shadow" title="Mover para IR">✖ IR</button>}
+                                        </div>
+                                    )}
+                                    
+                                    {/* Lock Icon se não puder deletar */}
+                                    {!canCreateDelete && !isPlayer && (
+                                        <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-60 transition-opacity">
+                                            <LockIcon className="w-4 h-4 text-white" />
                                         </div>
                                     )}
                                 </div>
