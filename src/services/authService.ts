@@ -33,7 +33,8 @@ export const authService = {
         cpf: cpf,
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         status: initialStatus,
-        program: initialProgram // Master gets BOTH by default
+        program: initialProgram, // Master gets BOTH by default
+        isProfileComplete: isFirstUser // Master starts complete, others pending
       };
       
       const updatedUsers = [...users, newUser];
@@ -63,7 +64,8 @@ export const authService = {
                  role: 'MASTER',
                  avatarUrl: `https://ui-avatars.com/api/?name=${email[0]}`,
                  status: 'APPROVED',
-                 program: 'BOTH'
+                 program: 'BOTH',
+                 isProfileComplete: true
             };
             localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(mockUser));
             return mockUser;
@@ -106,11 +108,31 @@ export const authService = {
                 ...u, 
                 status, 
                 role: newRole || u.role,
-                program: newProgram || u.program
+                program: newProgram || u.program,
+                // O perfil continua incompleto até o usuário preencher o Onboarding
+                isProfileComplete: u.isProfileComplete || false 
             };
         }
         return u;
     });
     localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updatedUsers));
+  },
+  
+  // Nova função para marcar o perfil como completo após o Onboarding
+  completeUserProfile: async (userId: string) => {
+      const users = authService.getUsers();
+      const updatedUsers = users.map(u => {
+          if (u.id === userId) {
+              return { ...u, isProfileComplete: true };
+          }
+          return u;
+      });
+      localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updatedUsers));
+      
+      // Atualiza também a sessão atual
+      const currentUser = authService.getCurrentUser();
+      if (currentUser && currentUser.id === userId) {
+          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...currentUser, isProfileComplete: true }));
+      }
   }
 };

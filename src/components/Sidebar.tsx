@@ -22,7 +22,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRole }) => {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
-  const isMasterUser = user?.role === 'MASTER';
+  const isMasterUser = user?.role === 'MASTER'; // Check the AUTHENTICATED user role, not the switched role
 
   const navLinkClasses = "flex items-center px-4 py-2.5 text-text-secondary rounded-lg hover:bg-white/5 hover:text-white transition-all text-sm font-medium mb-1 group";
   const activeNavLinkClasses = "bg-highlight/10 text-highlight border-l-4 border-highlight font-bold shadow-[0_0_15px_rgba(0,168,107,0.1)]";
@@ -81,7 +81,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
       <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar py-4 px-3">
         <nav className="flex-1 space-y-1">
           
-          <NavLink to="/dashboard" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+          <NavLink 
+            to="/dashboard" 
+            state={{ reset: true }} 
+            onClick={handleLinkClick} 
+            className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}
+          >
             <DashboardIcon className="w-5 h-5 mr-3 group-hover:text-highlight transition-colors" />
             <span>{isAthlete ? 'Meu Locker' : 'QG Principal'}</span>
           </NavLink>
@@ -209,7 +214,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
                 <ShopIcon className="w-5 h-5 mr-3 group-hover:text-yellow-400" />
                 <span>Loja & Classificados</span>
             </NavLink>
-            {isMasterUser && (
+            
+            {/* STRICT ADMIN CHECK: ONLY SHOW ADMIN LINK IF USER IS TRULY MASTER */}
+            {currentRole === 'MASTER' && (
                 <NavLink to="/admin" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                     <ShieldCheckIcon className="w-5 h-5 mr-3 group-hover:text-red-400" />
                     <span>Admin Master</span>
@@ -219,13 +226,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
         </nav>
       </div>
 
+      {/* GOD MODE SWITCHER (HIDDEN FOR EVERYONE EXCEPT THE REAL MASTER) */}
       {isMasterUser && (
         <div className="bg-black/40 border-t border-white/5 p-3">
+            <p className="text-[9px] font-bold text-highlight uppercase mb-2 text-center tracking-widest">Modo de Visualização (Admin)</p>
             <div className="grid grid-cols-3 gap-1">
                 <button onClick={() => { setRole('HEAD_COACH'); navigate('/dashboard'); }} className="text-[9px] bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded py-1 hover:bg-blue-600 hover:text-white transition-colors">COACH</button>
                 <button onClick={() => { setRole('PLAYER'); navigate('/profile'); }} className="text-[9px] bg-green-600/20 text-green-400 border border-green-500/30 rounded py-1 hover:bg-green-600 hover:text-white transition-colors">PLAYER</button>
                 <button onClick={() => { setRole('FINANCIAL_MANAGER'); navigate('/finance'); }} className="text-[9px] bg-yellow-600/20 text-yellow-400 border border-yellow-500/30 rounded py-1 hover:bg-yellow-600 hover:text-white transition-colors">ADMIN</button>
             </div>
+            {/* Button to restore Master View */}
+             <button onClick={() => { setRole('MASTER'); navigate('/dashboard'); }} className="w-full mt-2 text-[9px] bg-red-600/20 text-red-400 border border-red-500/30 rounded py-1 hover:bg-red-600 hover:text-white transition-colors font-bold">
+                 RESTAURAR VISÃO GOD
+             </button>
         </div>
       )}
 
@@ -241,4 +254,4 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
   );
 };
 
-export default Sidebar;
+export default Sidebar

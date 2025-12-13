@@ -12,7 +12,7 @@ import { UserRole } from './types';
 import { authService } from './services/authService';
 import { storageService } from './services/storageService';
 
-// FAHUB MANAGER v3.0 - Optimized
+// FAHUB MANAGER v3.1
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
@@ -61,32 +61,30 @@ const ROLES = {
   MARKETING: ['MASTER', 'MARKETING_MANAGER'] as UserRole[]
 };
 
-// Componente OTIMIZADO para Checagem de Perfil
+// --- COMPONENTE DE CHECAGEM DE ONBOARDING ---
+// Garante que o usuário aprovado preencha seus dados antes de acessar o sistema
 const OnboardingCheck: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const location = useLocation();
     
-    // Safety check: Don't check onboarding on public routes to save performance
+    // Safety check: Don't check on public routes
     if (location.pathname.startsWith('/public') || location.pathname === '/login' || location.pathname === '/register') {
         return <>{children}</>;
     }
 
-    const shouldRedirect = useMemo(() => {
-        try {
-            const user = authService.getCurrentUser();
-            if (user && user.status === 'APPROVED' && user.role === 'PLAYER' && location.pathname !== '/onboarding') {
-                const players = storageService.getPlayers();
-                // Simple existence check
-                const exists = players.some(p => p.cpf === user.cpf || p.name === user.name);
-                return !exists;
-            }
-            return false;
-        } catch (e) {
-            return false; // Fail safe
-        }
-    }, [location.pathname]);
+    const user = authService.getCurrentUser();
 
-    if (shouldRedirect) {
+    // 1. Se não tiver usuário, o ProtectedRoute (dentro das rotas) vai lidar.
+    if (!user) return <>{children}</>;
+
+    // 2. Se o usuário estiver aprovado, mas com perfil incompleto, força Onboarding.
+    // Exceção: Se ele JÁ ESTIVER na tela de onboarding.
+    if (user.status === 'APPROVED' && !user.isProfileComplete && location.pathname !== '/onboarding') {
         return <Navigate to="/onboarding" replace />;
+    }
+
+    // 3. Se o usuário TENTAR acessar onboarding mas JÁ ESTIVER completo, manda pra dashboard.
+    if (user.status === 'APPROVED' && user.isProfileComplete && location.pathname === '/onboarding') {
+        return <Navigate to="/dashboard" replace />;
     }
     
     return <>{children}</>;
@@ -107,16 +105,18 @@ const Main: React.FC = () => {
                 <Route path="/public/team" element={<PublicTeam />} /> 
                 <Route path="/broadcast/:gameId" element={<BroadcastOverlay />} />
                 
-                {/* Onboarding Isolado */}
-                <Route path="/onboarding" element={<Onboarding />} />
-                
-                {/* Rotas Protegidas (Com Layout/Sidebar) */}
+                {/* Rotas Protegidas (Envolvidas pelo Layout e OnboardingCheck) */}
                 <Route path="/*" element={
                     <OnboardingCheck>
+                        {/* Se cair no /onboarding, o Layout pode ou não aparecer. 
+                            Vamos renderizar o Layout para manter o Header, mas a Sidebar pode estar fechada */}
                         <Layout>
                         <ErrorBoundary>
                             <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LoadingScreen /></div>}>
                                 <Routes>
+                                {/* Onboarding Route (User Accesses this post-approval) */}
+                                <Route path="/onboarding" element={<Onboarding />} />
+
                                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                                 
                                 {/* CORE */}

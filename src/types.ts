@@ -425,7 +425,8 @@ export interface User {
     cpf?: string;
     phone?: string;
     teamName?: string;
-    program?: ProgramType; // Added Program Type
+    program?: ProgramType; 
+    isProfileComplete?: boolean; // NOVO: Controla se já fez o cadastro completo
 }
 
 export type CourseLevel = 'FAN' | 'PLAYER' | 'COACH';

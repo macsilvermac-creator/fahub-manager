@@ -40,7 +40,7 @@ const Onboarding: React.FC = () => {
     // Auto-detect program from user profile
     const programContext = user?.program || 'TACKLE';
 
-    const handleFinish = () => {
+    const handleFinish = async () => {
         setIsSaving(true);
         
         if (isMaster) {
@@ -85,6 +85,11 @@ const Onboarding: React.FC = () => {
                 achievements: [],
                 specialties: [specialty]
             });
+        }
+
+        // CRITICAL: Mark profile as complete to unlock Dashboard
+        if (user) {
+            await authService.completeUserProfile(user.id);
         }
 
         setTimeout(() => {
