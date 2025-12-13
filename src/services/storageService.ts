@@ -34,7 +34,8 @@ const KEYS = {
     OBJECTIVES: 'gridiron_objectives',
     SUBSCRIPTIONS: 'gridiron_subscriptions',
     BUDGETS: 'gridiron_budgets',
-    BILLS: 'gridiron_bills'
+    BILLS: 'gridiron_bills',
+    ACTIVE_PROGRAM: 'gridiron_active_program' // NOVA CHAVE
 };
 
 const dateReviver = (key: string, value: any) => {
@@ -91,7 +92,8 @@ const RAM_DB: any = {
     objectives: null,
     subscriptions: null,
     budgets: null,
-    bills: null
+    bills: null,
+    activeProgram: 'TACKLE' // Default
 };
 
 // --- DEBOUNCE SYSTEM ---
@@ -155,6 +157,10 @@ export const storageService = {
                 RAM_DB.settings = INITIAL_TEAM_SETTINGS;
             }
         }
+        // Carrega programa ativo
+        const storedProgram = localStorage.getItem(KEYS.ACTIVE_PROGRAM);
+        if (storedProgram) RAM_DB.activeProgram = storedProgram;
+        
         console.log("🚀 Storage System Ready");
     },
 
@@ -174,6 +180,15 @@ export const storageService = {
         } catch (error) {
             return false;
         }
+    },
+
+    // --- PROGRAM CONTEXT SWITCHER (FIX PARA TS2339) ---
+    getActiveProgram: (): 'TACKLE' | 'FLAG' => {
+        return RAM_DB.activeProgram || 'TACKLE';
+    },
+    setActiveProgram: (program: 'TACKLE' | 'FLAG') => {
+        RAM_DB.activeProgram = program;
+        localStorage.setItem(KEYS.ACTIVE_PROGRAM, program);
     },
 
     // --- ACCESSORS ---
