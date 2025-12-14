@@ -7,6 +7,36 @@ const ENV_API_KEY = process.env.API_KEY || "";
 let runtimeKey: string | null = null;
 let aiClientInstance: GoogleGenAI | null = null;
 
+// --- AI CACHE SYSTEM (MEMOIZATION) ---
+// Armazena resultados para evitar chamadas repetidas (Economia de $$ e Latência Zero)
+const AI_CACHE: Record<string, { timestamp: number, data: any }> = {};
+const CACHE_TTL = 1000 * 60 * 60; // 1 Hora de Cache
+
+const getCacheKey = (model: string, prompt: string): string => {
+    // Cria uma chave única baseada no modelo e no conteúdo do prompt
+    return btoa(encodeURIComponent(`${model}:${prompt.substring(0, 100)}`)); // Base64 simples do início do prompt
+};
+
+const checkCache = (key: string) => {
+    const entry = AI_CACHE[key];
+    if (!entry) return null;
+    
+    if (Date.now() - entry.timestamp > CACHE_TTL) {
+        delete AI_CACHE[key];
+        return null;
+    }
+    
+    console.log("⚡ [AI CACHE] Hit! Servindo resposta instantânea.");
+    return entry.data;
+};
+
+const setCache = (key: string, data: any) => {
+    AI_CACHE[key] = {
+        timestamp: Date.now(),
+        data: data
+    };
+};
+
 export const setRuntimeKey = (key: string) => {
     console.log("🔑 Chave de API definida manualmente.");
     runtimeKey = key;
@@ -34,12 +64,19 @@ const cleanJsonString = (input: string): string => {
 };
 
 const generateJson = async (prompt: string): Promise<any> => {
+    const model = 'gemini-2.5-flash';
+    const cacheKey = getCacheKey(model, prompt);
+    
+    // 1. Verifica Cache
+    const cached = checkCache(cacheKey);
+    if (cached) return cached;
+
     try {
         const ai = getClient();
         console.log("🤖 Gemini Request (JSON):", prompt.substring(0, 50) + "...");
         
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: model,
             contents: prompt,
             config: { 
                 responseMimeType: "application/json",
@@ -49,12 +86,17 @@ const generateJson = async (prompt: string): Promise<any> => {
         
         if (response.text) {
             try {
-                return JSON.parse(cleanJsonString(response.text));
+                const parsed = JSON.parse(cleanJsonString(response.text));
+                // 2. Salva no Cache
+                setCache(cacheKey, parsed);
+                return parsed;
             } catch (parseError) {
                 console.warn("⚠️ JSON Parse Error. Tentando corrigir...", response.text);
                 const jsonMatch = response.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
                 if (jsonMatch) {
-                    return JSON.parse(jsonMatch[0]);
+                    const corrected = JSON.parse(jsonMatch[0]);
+                    setCache(cacheKey, corrected);
+                    return corrected;
                 }
                 return null;
             }
@@ -67,14 +109,26 @@ const generateJson = async (prompt: string): Promise<any> => {
 };
 
 const generateText = async (prompt: string): Promise<string> => {
+    const model = 'gemini-2.5-flash';
+    const cacheKey = getCacheKey(model, prompt);
+
+    // 1. Verifica Cache
+    const cached = checkCache(cacheKey);
+    if (cached) return cached;
+
     try {
         const ai = getClient();
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: model,
             contents: prompt,
             config: { temperature: 0.7 }
         });
-        return response.text || "";
+        const text = response.text || "";
+        
+        // 2. Salva no Cache
+        setCache(cacheKey, text);
+        return text;
+
     } catch (e: any) {
         console.error("❌ Erro Gemini Texto:", e.message);
         throw e;
@@ -108,6 +162,7 @@ export const predictPlayCall = async (history: VideoClip[], down: number, dist: 
 };
 
 export const importPlaybookFromImage = async (base64: string): Promise<PlayElement[]> => {
+    // Imagens não são cacheadas por padrão devido ao tamanho da string base64
     try {
         const ai = getClient();
         const response = await ai.models.generateContent({

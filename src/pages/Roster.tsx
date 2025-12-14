@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect, useContext, useMemo } from 'react';
+import React, { useState, useEffect, useContext, useMemo, useRef } from 'react';
 import { Player, RosterCategory } from '../types';
 import AthleteCard from '../components/AthleteCard';
 import AddPlayerModal from '../components/AddPlayerModal';
 import PlayerDetailsModal from '../components/PlayerDetailsModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Modal from '../components/Modal';
-import { UsersIcon, ClipboardIcon, ChevronDownIcon, LockIcon } from '../components/icons/UiIcons';
+import { UsersIcon, ClipboardIcon, ChevronDownIcon, LockIcon, RefreshIcon } from '../components/icons/UiIcons';
 import { storageService } from '../services/storageService';
 import PrintLayout from '../components/PrintLayout';
 import { UserContext } from '../components/Layout';
@@ -24,7 +24,10 @@ const Roster: React.FC = () => {
     // Estado do Programa Ativo (Herdado do Dashboard ou do Usuário)
     const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
     
+    // INFINITE SCROLL STATE
     const [visibleCount, setVisibleCount] = useState(12);
+    const loaderRef = useRef<HTMLDivElement>(null);
+
     const [activeCategory, setActiveCategory] = useState<RosterCategory>('ACTIVE');
     const [unitFilter, setUnitFilter] = useState<'ALL' | 'OFFENSE' | 'DEFENSE' | 'ST'>('ALL');
 
@@ -34,12 +37,7 @@ const Roster: React.FC = () => {
 
     // --- PERMISSÕES RÍGIDAS (Segregação de Funções) ---
     const isPlayer = currentRole === 'PLAYER';
-    
-    // REGRA DE OURO: Apenas MASTER cadastra ou deleta.
-    // O Coach não perde tempo com burocracia, foca em performance.
     const canCreateDelete = currentRole === 'MASTER'; 
-    
-    // REGRA DE PRATA: Coach e Coordenadores gerenciam o status esportivo (Active/PS/IR).
     const canManageRoster = currentRole === 'MASTER' || currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
 
     useEffect(() => {
@@ -49,8 +47,8 @@ const Roster: React.FC = () => {
     }, [isPlayer]);
 
     useEffect(() => {
-        setVisibleCount(12);
-    }, [activeCategory, unitFilter, viewMode]);
+        setVisibleCount(12); // Reset scroll on filter change
+    }, [activeCategory, unitFilter, viewMode, activeProgram]);
 
     const handleAddPlayer = (newPlayerData: Omit<Player, 'id' | 'level' | 'xp' | 'badges' | 'rating' | 'status'>) => {
         try {
@@ -110,23 +108,14 @@ const Roster: React.FC = () => {
         }
     };
 
-    const handleLoadMore = () => {
-        setVisibleCount(prev => prev + 12);
-    };
-
     // --- FILTRAGEM SEGREGADA (FLAG vs TACKLE) ---
     const filteredPlayers = useMemo(() => {
         return players.filter(p => {
-            // 1. Filtro de Modalidade (CRÍTICO)
-            // Se o programa ativo é FLAG, não mostra TACKLE puro. Mostra FLAG e BOTH.
             if (activeProgram === 'FLAG' && p.program === 'TACKLE') return false;
-            // Se o programa ativo é TACKLE, não mostra FLAG puro.
             if (activeProgram === 'TACKLE' && p.program === 'FLAG') return false;
 
-            // 2. Filtro de Categoria
             if ((p.rosterCategory || 'ACTIVE') !== activeCategory) return false;
             
-            // 3. Filtro de Unidade
             if (unitFilter === 'ALL') return true;
             const pos = p.position;
             
@@ -148,6 +137,28 @@ const Roster: React.FC = () => {
     }, [players, activeCategory, unitFilter, activeProgram]);
 
     const displayedPlayers = filteredPlayers.slice(0, visibleCount);
+
+    // --- INFINITE SCROLL LOGIC ---
+    useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                // Se o loader estiver visível e houver mais itens, carrega mais
+                if (displayedPlayers.length < filteredPlayers.length) {
+                    // Pequeno delay artificial para UX
+                    setTimeout(() => {
+                         setVisibleCount(prev => prev + 12);
+                    }, 300);
+                }
+            }
+        }, { threshold: 1.0 });
+
+        if (loaderRef.current) {
+            observer.observe(loaderRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, [displayedPlayers.length, filteredPlayers.length]);
+
 
     // --- Depth Chart Helpers ---
     const getPlayersByUnit = (unit: 'OFFENSE' | 'DEFENSE' | 'SPECIAL') => {
@@ -275,7 +286,6 @@ const Roster: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Botão de Recrutar - VISÍVEL APENAS PARA MASTER (GESTÃO) */}
                     {canCreateDelete && (
                         <button 
                             onClick={() => setIsAddModalOpen(true)}
@@ -318,7 +328,6 @@ const Roster: React.FC = () => {
                                         onClick={(p) => isCompareMode ? toggleCompareSelect(p.id) : setSelectedPlayer(p)}
                                         onDelete={canCreateDelete ? handleDeleteClick : () => {}}
                                     />
-                                    {/* Mostra tag de programa se for BOTH ou diferente do contexto (edge case) */}
                                     {player.program === 'BOTH' && (
                                         <span className="absolute top-2 right-12 text-[9px] bg-purple-600 text-white px-1.5 py-0.5 rounded shadow z-10">BOTH</span>
                                     )}
@@ -327,8 +336,6 @@ const Roster: React.FC = () => {
                                             <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${compareSelection.includes(player.id) ? 'bg-indigo-500 border-white text-white' : 'border-white text-transparent'}`}>✓</div>
                                         </div>
                                     )}
-                                    
-                                    {/* Botões de Ação do Coach: Apenas Movimentação */}
                                     {canManageRoster && !isCompareMode && (
                                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1 z-20">
                                             {activeCategory !== 'ACTIVE' && <button onClick={(e) => {e.stopPropagation(); handleMovePlayer(player, 'ACTIVE')}} className="bg-green-600 text-white text-[10px] px-2 py-1 rounded shadow" title="Promover para Ativo">▲ Ativo</button>}
@@ -336,8 +343,6 @@ const Roster: React.FC = () => {
                                             {activeCategory !== 'IR' && <button onClick={(e) => {e.stopPropagation(); handleMovePlayer(player, 'IR')}} className="bg-red-600 text-white text-[10px] px-2 py-1 rounded shadow" title="Mover para IR">✖ IR</button>}
                                         </div>
                                     )}
-                                    
-                                    {/* Lock Icon se não puder deletar */}
                                     {!canCreateDelete && !isPlayer && (
                                         <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-60 transition-opacity">
                                             <LockIcon className="w-4 h-4 text-white" />
@@ -346,12 +351,15 @@ const Roster: React.FC = () => {
                                 </div>
                             ))}
                         </div>
+                        
+                        {/* INFINITE SCROLL LOADER */}
                         {visibleCount < filteredPlayers.length && (
-                            <div className="flex justify-center mt-8">
-                                <button onClick={handleLoadMore} className="px-6 py-2 bg-secondary border border-white/10 hover:bg-white/5 rounded-full text-sm font-bold text-text-secondary flex items-center gap-2 transition-all">
-                                    Carregar Mais ({filteredPlayers.length - visibleCount} restantes) <ChevronDownIcon className="w-4 h-4"/>
-                                </button>
-                            </div>
+                             <div ref={loaderRef} className="w-full py-8 flex justify-center items-center">
+                                 <div className="flex items-center gap-2 text-text-secondary animate-pulse">
+                                     <RefreshIcon className="w-5 h-5 animate-spin" />
+                                     <span className="text-sm font-bold">Carregando mais atletas...</span>
+                                 </div>
+                             </div>
                         )}
                     </>
                 ) : (
