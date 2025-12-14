@@ -52,4 +52,5 @@ class LiveGameService {
     }
 }
 
+// CORREÇÃO AQUI: Exportando com 'S' maiúsculo para bater com os imports
 export const liveGameService = new LiveGameService();
