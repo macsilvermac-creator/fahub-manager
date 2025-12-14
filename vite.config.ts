@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig(({ mode }) => {
+  // Carrega variáveis de ambiente
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
@@ -28,6 +29,12 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-    }
+    },
+    server: {
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+      },
+    },
   };
 });
