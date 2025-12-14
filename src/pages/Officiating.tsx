@@ -2,18 +2,15 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { FlagIcon, BriefcaseIcon, WhistleIcon } from '../components/icons/NavIcons';
-import { CheckCircleIcon, ClockIcon, WalletIcon, GavelIcon, AlertTriangleIcon, UsersIcon, PlayCircleIcon, StopIcon, MicIcon, MapIcon, FileTextIcon, StarIcon } from '../components/icons/UiIcons';
-import { Game, OfficialAssignment, GameReport, FoulRecord, FoulType, Player, CrewExpense, GameInfrastructureChecklist, TeamSettings, RefereeProfile, AssociationFinance, UserRole, CrewLogistics } from '../types';
+import { CheckCircleIcon, PlayCircleIcon, MicIcon, MapIcon, StarIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
+import { Game, GameReport, FoulRecord, FoulType, Player, GameInfrastructureChecklist, TeamSettings, RefereeProfile, AssociationFinance, CrewLogistics } from '../types';
 import { storageService } from '../services/storageService';
-import { askRefereeBot, generateJudicialReport } from '../services/geminiService';
 import { voiceService } from '../services/voiceService';
 import { liveGameService } from '../services/liveGameService';
 import { UserContext } from '../components/Layout';
-import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext'; 
 import LazyImage from '../components/LazyImage'; 
 
-// Regras 2025: 100L de agua, Ambulancia 30min antes
 const REGULATION_AMBULANCE_TOLERANCE_MIN = 30; 
 const FOUL_TYPES: { type: FoulType; label: string; yards: number; code: string }[] = [
     { type: 'HOLDING', label: 'Holding', yards: 10, code: 'OH' },
@@ -199,7 +196,6 @@ const Officiating: React.FC = () => {
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
-            {/* Same JSX as previous implementation */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-secondary rounded-xl">
