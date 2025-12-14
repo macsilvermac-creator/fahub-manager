@@ -2,7 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import Main from './Main';
-import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+import * as serviceWorkerRegistration from '@/serviceWorkerRegistration';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

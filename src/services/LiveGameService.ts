@@ -4,11 +4,11 @@ import { Game } from '../types';
 // Simula WebSockets usando BroadcastChannel API para comunicação entre abas
 // Perfeito para o cenário "War Room" onde Juiz, Coach e TV estão no mesmo navegador ou rede local simulada
 class LiveGameService {
-    private channel: BroadcastChannel;
+    private channel: BroadcastChannel | null = null;
     private listeners: ((data: any) => void)[] = [];
 
     constructor() {
-        // Verifica suporte ao BroadcastChannel (evita erro em ambientes antigos)
+        // Verifica suporte ao BroadcastChannel (evita erro em ambientes antigos/testes)
         if (typeof BroadcastChannel !== 'undefined') {
             this.channel = new BroadcastChannel('fahub_war_room');
             this.channel.onmessage = (event) => {
@@ -17,8 +17,6 @@ class LiveGameService {
             };
         } else {
             console.warn("BroadcastChannel não suportado neste navegador. War Room desativado.");
-            // Mock seguro
-            this.channel = { postMessage: () => {}, close: () => {}, onmessage: null } as any;
         }
     }
 
@@ -35,12 +33,15 @@ class LiveGameService {
 
     // Chamado pelo Juiz (Officiating.tsx) para atualizar placar em tempo real
     public broadcastUpdate(gameId: number, type: 'SCORE' | 'CLOCK' | 'FOUL' | 'STATUS', payload: Partial<Game>) {
+        if (!this.channel) return;
+        
         const message = {
             gameId,
             type,
             payload,
             timestamp: Date.now()
         };
+        
         this.channel.postMessage(message);
         // Também notifica a própria aba para consistência imediata
         this.notifyListeners(message);

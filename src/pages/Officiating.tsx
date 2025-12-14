@@ -7,7 +7,7 @@ import { Game, OfficialAssignment, GameReport, FoulRecord, FoulType, Player, Cre
 import { storageService } from '../services/storageService';
 import { askRefereeBot, generateJudicialReport } from '../services/geminiService';
 import { voiceService } from '../services/voiceService';
-import { liveGameService } from '../services/liveGameService';
+import { liveGameService } from '@/services/liveGameService';
 import { UserContext } from '../components/Layout';
 import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext'; 
