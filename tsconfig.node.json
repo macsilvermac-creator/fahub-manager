@@ -1,4 +1,3 @@
-
 {
   "compilerOptions": {
     "composite": true,
@@ -7,5 +6,7 @@
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true
   },
-  "include": ["vite.config.ts"]
+  "include": [
+    "vite.config.ts"
+  ]
 }
