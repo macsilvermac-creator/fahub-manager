@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Game, CoachGameNote } from '../types';
 import { storageService } from '../services/storageService';
-import { liveGameService } from '@/services/liveGameService';
+import { liveGameService } from '../services/liveGameService';
 import { voiceService } from '../services/voiceService';
 import { classifyCoachVoiceNote } from '../services/geminiService';
 import { ClipboardIcon, ClockIcon, AlertTriangleIcon, PlayCircleIcon, ShieldCheckIcon, MicIcon, StopIcon, SparklesIcon } from '../components/icons/UiIcons';
@@ -20,9 +20,6 @@ const CoachGameDay: React.FC = () => {
     const [isListening, setIsListening] = useState(false);
     const [isProcessingAi, setIsProcessingAi] = useState(false);
     const [liveTranscript, setLiveTranscript] = useState('');
-
-    const [currentDown, setCurrentDown] = useState<1 | 2 | 3 | 4>(1);
-    const [selectedPlayCall, setSelectedPlayCall] = useState('');
 
     useEffect(() => {
         const games = storageService.getGames();
