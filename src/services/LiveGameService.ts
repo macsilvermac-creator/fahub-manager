@@ -6,7 +6,7 @@ class LiveGameService {
     private listeners: ((data: any) => void)[] = [];
 
     constructor() {
-        // Verifica se está rodando no navegador (client-side)
+        // Verifica se está rodando no navegador (client-side) para evitar erros no SSR/Build
         if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
             try {
                 this.channel = new BroadcastChannel('fahub_war_room');

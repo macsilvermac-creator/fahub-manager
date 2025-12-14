@@ -6,7 +6,7 @@ import { CheckCircleIcon, PlayCircleIcon, MicIcon, MapIcon, StarIcon, AlertTrian
 import { Game, GameReport, FoulRecord, FoulType, Player, GameInfrastructureChecklist, TeamSettings, RefereeProfile, AssociationFinance, CrewLogistics } from '../types';
 import { storageService } from '../services/storageService';
 import { voiceService } from '../services/voiceService';
-import { liveGameService } from '@/services/liveGameService';
+import { liveGameService } from '../services/liveGameService';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext'; 
 import LazyImage from '../components/LazyImage'; 
