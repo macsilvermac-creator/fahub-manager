@@ -19,6 +19,7 @@ const BroadcastOverlay: React.FC = () => {
 
         fetchGame(); 
 
+        // Inscreve no serviço de tempo real para atualizações instantâneas
         const unsubscribe = liveGameService.subscribe((data) => {
             if (data.gameId === Number(gameId) && (data.type === 'SCORE' || data.type === 'CLOCK' || data.type === 'STATUS')) {
                 setGame((prev: any) => ({ ...prev, ...data.payload }));

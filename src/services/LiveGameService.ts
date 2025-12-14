@@ -6,7 +6,8 @@ class LiveGameService {
     private listeners: ((data: any) => void)[] = [];
 
     constructor() {
-        // Verifica se está rodando no navegador (client-side) para evitar erros no SSR/Build do Vercel
+        // Proteção Crítica: Só inicializa BroadcastChannel se estiver no navegador
+        // Isso previne erros durante o build do Vite/Vercel
         if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
             try {
                 this.channel = new BroadcastChannel('fahub_war_room');
@@ -31,7 +32,7 @@ class LiveGameService {
     }
 
     public broadcastUpdate(gameId: number, type: 'SCORE' | 'CLOCK' | 'FOUL' | 'STATUS', payload: Partial<Game>) {
-        // Se não houver canal (ex: server-side), ignora silenciosamente
+        // Se não houver canal (ex: server-side ou erro), ignora silenciosamente
         if (!this.channel) return;
         
         const message = {

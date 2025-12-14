@@ -31,6 +31,7 @@ const CoachGameDay: React.FC = () => {
         const currentProgram = (storageService as any).getActiveProgram ? (storageService as any).getActiveProgram() : 'TACKLE';
         setActiveProgram(currentProgram);
 
+        // Inscreve no serviço de tempo real
         const unsubscribe = liveGameService.subscribe((data) => {
             if (data.type === 'SCORE' || data.type === 'STATUS') {
                 console.log("⚡ [COACH] Atualização do Juiz recebida:", data.payload);
