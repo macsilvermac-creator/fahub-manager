@@ -1,9 +1,13 @@
 
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import * as path from 'path';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// https://vitejs.dev/config/
+// Correção para __dirname em ES Modules (necessário pois package.json tem "type": "module")
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
@@ -15,22 +19,16 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      // Define apenas a API KEY, preservando as variáveis de sistema do Linux (evita erro 126)
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
     },
     build: {
       target: 'esnext',
       outDir: 'dist',
       sourcemap: false,
-      chunkSizeWarningLimit: 1600,
+      // Configuração simplificada para garantir o build
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-            'vendor-charts': ['recharts'],
-            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-            // Removido vendor-ai manual para evitar conflito de importação
-          }
+          manualChunks: undefined // Deixa o Vite decidir automaticamente para evitar erros
         }
       }
     }
