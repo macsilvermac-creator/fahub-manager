@@ -11,7 +11,9 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 root.render(
+  <React.StrictMode>
     <Main />
+  </React.StrictMode>
 );
 
 // Ativa o Service Worker para transformar em PWA
