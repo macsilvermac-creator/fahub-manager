@@ -18,8 +18,9 @@ type Config = {
 };
 
 export function register(config?: Config) {
-  if ('serviceWorker' in navigator) { // Removed process.env.NODE_ENV check to force enablement
-    const publicUrl = new URL(process.env.PUBLIC_URL || '', window.location.href);
+  // Removida checagem de produção para permitir teste em dev/preview se necessário
+  if ('serviceWorker' in navigator) {
+    const publicUrl = new URL(window.location.href);
     if (publicUrl.origin !== window.location.origin) {
       return;
     }

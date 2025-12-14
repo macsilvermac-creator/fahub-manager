@@ -8,12 +8,18 @@ class LiveGameService {
     private listeners: ((data: any) => void)[] = [];
 
     constructor() {
-        this.channel = new BroadcastChannel('fahub_war_room');
-        
-        this.channel.onmessage = (event) => {
-            console.log('⚡ [WAR ROOM] Mensagem recebida:', event.data);
-            this.notifyListeners(event.data);
-        };
+        // Verifica suporte ao BroadcastChannel (evita erro em ambientes antigos)
+        if (typeof BroadcastChannel !== 'undefined') {
+            this.channel = new BroadcastChannel('fahub_war_room');
+            this.channel.onmessage = (event) => {
+                console.log('⚡ [WAR ROOM] Mensagem recebida:', event.data);
+                this.notifyListeners(event.data);
+            };
+        } else {
+            console.warn("BroadcastChannel não suportado neste navegador. War Room desativado.");
+            // Mock seguro
+            this.channel = { postMessage: () => {}, close: () => {}, onmessage: null } as any;
+        }
     }
 
     public subscribe(callback: (data: any) => void): () => void {
@@ -27,7 +33,7 @@ class LiveGameService {
         this.listeners.forEach(callback => callback(data));
     }
 
-    // Chamado pelo Juiz (Officiating.tsx)
+    // Chamado pelo Juiz (Officiating.tsx) para atualizar placar em tempo real
     public broadcastUpdate(gameId: number, type: 'SCORE' | 'CLOCK' | 'FOUL' | 'STATUS', payload: Partial<Game>) {
         const message = {
             gameId,
@@ -36,7 +42,7 @@ class LiveGameService {
             timestamp: Date.now()
         };
         this.channel.postMessage(message);
-        // Também notifica a própria aba para consistência
+        // Também notifica a própria aba para consistência imediata
         this.notifyListeners(message);
     }
 }
