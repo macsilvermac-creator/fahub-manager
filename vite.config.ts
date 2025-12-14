@@ -5,8 +5,6 @@ import * as path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Carrega variáveis de ambiente
-  // O terceiro argumento '' garante que carregamos todas as variáveis, não apenas as com prefixo VITE_
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
@@ -17,8 +15,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      // Mapeia a variável de ambiente API_KEY para process.env.API_KEY no código cliente
-      // IMPORTANTE: Não sobrescrever process.env inteiro.
+      // Define apenas a API KEY, preservando as variáveis de sistema do Linux (evita erro 126)
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
     },
     build: {
@@ -32,7 +29,7 @@ export default defineConfig(({ mode }) => {
             'vendor-react': ['react', 'react-dom', 'react-router-dom'],
             'vendor-charts': ['recharts'],
             'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
-            'vendor-ai': ['@google/genai'],
+            // Removido vendor-ai manual para evitar conflito de importação
           }
         }
       }
