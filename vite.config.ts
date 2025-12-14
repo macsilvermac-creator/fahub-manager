@@ -13,7 +13,6 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(process.cwd(), 'src'),
       },
     },
-    // Garante que a variável seja injetada globalmente como string
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
       'process.env': JSON.stringify(env)
@@ -32,4 +31,3 @@ export default defineConfig(({ mode }) => {
     }
   };
 });
-  
