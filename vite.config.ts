@@ -25,10 +25,9 @@ export default defineConfig(({ mode }) => {
       target: 'esnext',
       outDir: 'dist',
       sourcemap: false,
-      // Configuração simplificada para garantir o build
       rollupOptions: {
         output: {
-          manualChunks: undefined // Deixa o Vite decidir automaticamente para evitar erros
+          manualChunks: undefined // Deixa o Vite decidir automaticamente a divisão de arquivos
         }
       }
     }
