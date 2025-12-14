@@ -9,11 +9,8 @@ class LiveGameService {
         if (typeof BroadcastChannel !== 'undefined') {
             this.channel = new BroadcastChannel('fahub_war_room');
             this.channel.onmessage = (event) => {
-                console.log('⚡ [WAR ROOM] Mensagem recebida:', event.data);
                 this.notifyListeners(event.data);
             };
-        } else {
-            console.warn("BroadcastChannel não suportado neste navegador. War Room desativado.");
         }
     }
 
