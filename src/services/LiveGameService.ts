@@ -6,7 +6,7 @@ class LiveGameService {
     private listeners: ((data: any) => void)[] = [];
 
     constructor() {
-        // Verifica se está no navegador para evitar erro no build do Vercel (Node.js environment)
+        // Verifica se está rodando no navegador (client-side)
         if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
             try {
                 this.channel = new BroadcastChannel('fahub_war_room');
@@ -14,7 +14,7 @@ class LiveGameService {
                     this.notifyListeners(event.data);
                 };
             } catch (e) {
-                console.warn('BroadcastChannel init error:', e);
+                console.warn('BroadcastChannel error:', e);
             }
         }
     }
@@ -31,6 +31,7 @@ class LiveGameService {
     }
 
     public broadcastUpdate(gameId: number, type: 'SCORE' | 'CLOCK' | 'FOUL' | 'STATUS', payload: Partial<Game>) {
+        // Se não houver canal (ex: server-side), ignora silenciosamente
         if (!this.channel) return;
         
         const message = {
@@ -42,9 +43,10 @@ class LiveGameService {
         
         try {
             this.channel.postMessage(message);
+            // Notifica a própria aba também para feedback imediato na UI
             this.notifyListeners(message);
         } catch (e) {
-            console.error('Broadcast send error:', e);
+            console.error('Broadcast error:', e);
         }
     }
 }
