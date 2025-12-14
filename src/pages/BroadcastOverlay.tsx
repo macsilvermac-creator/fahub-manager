@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 // @ts-ignore
 import { useParams } from 'react-router-dom';
-import { storageService } from '../services/storageService';
-import { liveGameService } from '../services/liveGameService';
+import { storageService } from '@/services/storageService';
+import { liveGameService } from '@/services/liveGameService';
 
 const BroadcastOverlay: React.FC = () => {
     const { gameId } = useParams<{ gameId: string }>();
