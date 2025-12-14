@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Game, CoachGameNote } from '../types';
 import { storageService } from '../services/storageService';
-import { liveGameService } from '@/services/liveGameService';
-import { voiceService } from '@/services/voiceService';
-import { classifyCoachVoiceNote } from '@/services/geminiService';
-import { ClipboardIcon, ClockIcon, AlertTriangleIcon, PlayCircleIcon, ShieldCheckIcon, MicIcon, StopIcon, SparklesIcon } from '@/components/icons/UiIcons';
-import { FlagIcon } from '@/components/icons/NavIcons';
-import { useToast } from '@/contexts/ToastContext';
+import { liveGameService } from '../services/liveGameService';
+import { voiceService } from '../services/voiceService';
+import { classifyCoachVoiceNote } from '../services/geminiService';
+import { ClipboardIcon, ClockIcon, AlertTriangleIcon, PlayCircleIcon, ShieldCheckIcon, MicIcon, StopIcon, SparklesIcon } from '../components/icons/UiIcons';
+import { FlagIcon } from '../components/icons/NavIcons';
+import { useToast } from '../contexts/ToastContext';
 
 const CoachGameDay: React.FC = () => {
     const toast = useToast();

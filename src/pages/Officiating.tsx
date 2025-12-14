@@ -1,17 +1,17 @@
 
 import React, { useState, useEffect, useContext } from 'react';
-import Card from '@/components/Card';
-import { FlagIcon, BriefcaseIcon, WhistleIcon } from '@/components/icons/NavIcons';
-import { CheckCircleIcon, ClockIcon, WalletIcon, GavelIcon, AlertTriangleIcon, UsersIcon, PlayCircleIcon, StopIcon, MicIcon, MapIcon, FileTextIcon, StarIcon } from '@/components/icons/UiIcons';
+import Card from '../components/Card';
+import { FlagIcon, BriefcaseIcon, WhistleIcon } from '../components/icons/NavIcons';
+import { CheckCircleIcon, ClockIcon, WalletIcon, GavelIcon, AlertTriangleIcon, UsersIcon, PlayCircleIcon, StopIcon, MicIcon, MapIcon, FileTextIcon, StarIcon } from '../components/icons/UiIcons';
 import { Game, OfficialAssignment, GameReport, FoulRecord, FoulType, Player, CrewExpense, GameInfrastructureChecklist, TeamSettings, RefereeProfile, AssociationFinance, UserRole, CrewLogistics } from '../types';
-import { storageService } from '@/services/storageService';
-import { askRefereeBot, generateJudicialReport } from '@/services/geminiService';
-import { voiceService } from '@/services/voiceService';
-import { liveGameService } from '@/services/liveGameService';
-import { UserContext } from '@/components/Layout';
-import Modal from '@/components/Modal';
-import { useToast } from '@/contexts/ToastContext'; 
-import LazyImage from '@/components/LazyImage'; 
+import { storageService } from '../services/storageService';
+import { askRefereeBot, generateJudicialReport } from '../services/geminiService';
+import { voiceService } from '../services/voiceService';
+import { liveGameService } from '../services/liveGameService';
+import { UserContext } from '../components/Layout';
+import Modal from '../components/Modal';
+import { useToast } from '../contexts/ToastContext'; 
+import LazyImage from '../components/LazyImage'; 
 
 // Regras 2025: 100L de agua, Ambulancia 30min antes
 const REGULATION_AMBULANCE_TOLERANCE_MIN = 30; 
