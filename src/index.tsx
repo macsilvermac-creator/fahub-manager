@@ -2,7 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import Main from './Main';
-import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+import * as pwaRegistration from './pwaRegistration';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -14,7 +14,5 @@ root.render(
     <Main />
 );
 
-// Se quiser que seu app funcione offline e carregue mais rápido, troque
-// unregister() para register() abaixo. Note que isso vem com algumas armadilhas.
-// Saiba mais sobre service workers: https://cra.link/PWA
-serviceWorkerRegistration.register();
+// Ativa o Service Worker para transformar em PWA
+pwaRegistration.register();
