@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     resolve: {
       alias: {
-        '@': path.resolve(process.cwd(), 'src'),
+        '@': path.resolve(__dirname, './src'),
       },
     },
     define: {
@@ -19,12 +19,15 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
+      assetsDir: 'assets',
       sourcemap: false,
-      emptyOutDir: true,
+      minify: 'esbuild',
       rollupOptions: {
         output: {
           manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom', 'firebase', 'recharts'],
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+            charts: ['recharts']
           },
         },
       },
