@@ -1,11 +1,12 @@
 
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
+import * as path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // Carrega variáveis de ambiente baseadas no modo (development/production)
+  // Carrega variáveis de ambiente
+  // O terceiro argumento '' garante que carregamos todas as variáveis, não apenas as com prefixo VITE_
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
@@ -16,8 +17,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     define: {
-      // CORREÇÃO CRÍTICA: Define apenas chaves específicas.
-      // Nunca sobrescreva 'process.env' inteiro, pois isso quebra o build no Linux/Vercel (Erro 126).
+      // Mapeia a variável de ambiente API_KEY para process.env.API_KEY no código cliente
+      // IMPORTANTE: Não sobrescrever process.env inteiro.
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
     },
     build: {
