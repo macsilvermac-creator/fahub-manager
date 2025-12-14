@@ -7,7 +7,7 @@ import { Game, OfficialAssignment, GameReport, FoulRecord, FoulType, Player, Cre
 import { storageService } from '../services/storageService';
 import { askRefereeBot, generateJudicialReport } from '../services/geminiService';
 import { voiceService } from '../services/voiceService';
-import { liveGameService } from '../services/liveGameService'; // Importando WebSockets
+import { liveGameService } from '../services/liveGameService';
 import { UserContext } from '../components/Layout';
 import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext'; 
@@ -50,15 +50,12 @@ const Officiating: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'SUMULA_PRE' | 'LIVE' | 'ROSTER' | 'EDUCATION'>('SUMULA_PRE');
     const [adminTab, setAdminTab] = useState<'SCALES' | 'FINANCE_ADMIN' | 'ROSTER_ADMIN'>('SCALES');
     
-    // Referee Personal Data
     const [myProfile, setMyProfile] = useState<RefereeProfile | null>(null);
     const [crewLogistics, setCrewLogistics] = useState<CrewLogistics | null>(null);
 
-    // Association State
     const [refereeRoster, setRefereeRoster] = useState<RefereeProfile[]>([]);
     const [associationFinance, setAssociationFinance] = useState<AssociationFinance | null>(null);
 
-    // Live Game State
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [pendingFoul, setPendingFoul] = useState<Partial<FoulRecord>>({ quarter: 1 });
     const [gameReport, setGameReport] = useState<GameReport>({ 
@@ -70,19 +67,15 @@ const Officiating: React.FC = () => {
         isFinalized: false 
     });
     
-    // Scoreboard State
     const [homeScore, setHomeScore] = useState(0);
     const [awayScore, setAwayScore] = useState(0);
     const [gameClock, setGameClock] = useState('12:00');
 
-    // Roster Check State
     const [checkedPlayers, setCheckedPlayers] = useState<Record<number, boolean>>({});
 
-    // Ambulance Timer Logic
     const [ambulanceTimer, setAmbulanceTimer] = useState(REGULATION_AMBULANCE_TOLERANCE_MIN * 60); 
     const [isAmbulanceTimerRunning, setIsAmbulanceTimerRunning] = useState(false);
 
-    // Voice State
     const [isListening, setIsListening] = useState(false);
 
     const isMaster = currentRole === 'MASTER';
@@ -103,16 +96,14 @@ const Officiating: React.FC = () => {
         }
     }, []);
 
-    // --- SCOREBOARD HANDLERS ---
     const syncLiveState = (updates: Partial<Game>, type: 'SCORE' | 'CLOCK' | 'STATUS') => {
         if(!selectedGame) return;
         const updatedGame = { ...selectedGame, ...updates, officialReport: gameReport };
         
-        // 1. Salva Local
         storageService.updateLiveGame(selectedGame.id, updatedGame);
         setSelectedGame(updatedGame as Game); 
 
-        // 2. Transmite via WebSocket/BroadcastChannel
+        // Broadcast Change
         liveGameService.broadcastUpdate(selectedGame.id, type, updates);
     };
 
@@ -137,7 +128,6 @@ const Officiating: React.FC = () => {
         }
     };
 
-    // --- INFRASTRUCTURE CHECKLIST ---
     const handleInfraCheck = (field: keyof GameInfrastructureChecklist, value: any) => {
         const updated = { ...gameReport.infrastructure, [field]: value };
         if (field === 'ambulancePresent' && value === true) {
@@ -178,7 +168,6 @@ const Officiating: React.FC = () => {
                         team: 'HOME' 
                     }));
                     toast.success(`Falta Detectada: ${detectedFoul.label}`);
-                    // Opcional: Emitir evento de falta em tempo real
                 } else {
                     toast.warning(`Não entendi a falta. Ouvi: "${text}"`);
                 }
@@ -210,7 +199,7 @@ const Officiating: React.FC = () => {
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
-            {/* ... Rest of JSX remains similar, just ensuring buttons call new handlers ... */}
+            {/* Same JSX as previous implementation */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-secondary rounded-xl">
@@ -239,10 +228,8 @@ const Officiating: React.FC = () => {
                 </div>
             </div>
 
-            {/* FIELD MODE CONTENT (Simplified for brevity, ensuring the Scoreboard uses updated state) */}
             {viewMode === 'FIELD' && selectedGame && (
                  <div className="space-y-6 animate-slide-in">
-                    {/* Scoreboard Header */}
                     <div className="bg-black rounded-2xl p-6 border-b-4 border-highlight relative overflow-hidden shadow-2xl">
                         {selectedGame.status === 'IN_PROGRESS' && (
                             <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 px-2 py-1 rounded text-white text-[10px] font-bold uppercase animate-pulse">
@@ -285,9 +272,7 @@ const Officiating: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                     {/* ... Rest of Field Mode UI (Tabs, Cards) ... */}
                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Example card just to show structure */}
                         <div className="lg:col-span-2">
                             <Card title="Painel de Faltas">
                                 <div className="flex gap-4 justify-center py-4">
@@ -306,7 +291,6 @@ const Officiating: React.FC = () => {
                  </div>
             )}
             
-             {/* Fallback View if no game selected */}
              {viewMode === 'FIELD' && !selectedGame && (
                   <Card title="Selecione o Jogo para Apitar">
                       <div className="space-y-4">

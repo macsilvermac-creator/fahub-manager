@@ -14,16 +14,13 @@ const CoachGameDay: React.FC = () => {
     const [activeGame, setActiveGame] = useState<Game | null>(null);
     const [notes, setNotes] = useState<CoachGameNote[]>([]);
     
-    // View State
     const [viewFilter, setViewFilter] = useState<'ALL' | 'OFFENSE' | 'DEFENSE' | 'SPECIAL'>('ALL');
     const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
     
-    // Voice & AI State
     const [isListening, setIsListening] = useState(false);
     const [isProcessingAi, setIsProcessingAi] = useState(false);
     const [liveTranscript, setLiveTranscript] = useState('');
 
-    // Tactical State
     const [currentDown, setCurrentDown] = useState<1 | 2 | 3 | 4>(1);
     const [selectedPlayCall, setSelectedPlayCall] = useState('');
 
@@ -34,8 +31,6 @@ const CoachGameDay: React.FC = () => {
         setNotes(storageService.getCoachGameNotes());
         setActiveProgram(storageService.getActiveProgram());
 
-        // --- WAR ROOM SUBSCRIPTION ---
-        // Escuta atualizações do Juiz em tempo real
         const unsubscribe = liveGameService.subscribe((data) => {
             if (data.type === 'SCORE' || data.type === 'STATUS') {
                 console.log("⚡ [COACH] Atualização do Juiz recebida:", data.payload);
@@ -51,9 +46,6 @@ const CoachGameDay: React.FC = () => {
             unsubscribe();
         };
     }, [activeGame]);
-
-    // ... (Mantém o restante da lógica de Voice Note e Quick Actions existente) ...
-    // Vou reimplementar o conteúdo principal para garantir que nada quebre com o merge
 
     const handleVoiceNote = () => {
         if (!voiceService.isSupported()) {
@@ -123,7 +115,6 @@ const CoachGameDay: React.FC = () => {
     return (
         <div className="space-y-4 pb-24 animate-fade-in relative h-[calc(100vh-100px)] flex flex-col">
             
-            {/* --- TOP: GAME STATUS (REAL TIME SYNC) --- */}
             <div className="bg-black/40 border-b border-white/10 p-4 sticky top-0 z-20 backdrop-blur-md rounded-xl">
                 <div className="flex justify-between items-center">
                     <div>
@@ -134,14 +125,12 @@ const CoachGameDay: React.FC = () => {
                             <span className="bg-white/10 px-2 rounded text-[10px] font-bold">{activeProgram} MODE</span>
                         </div>
                     </div>
-                    {/* PLACAR SINCRONIZADO VIA WEBSOCKET */}
                     <div className="text-4xl font-mono font-bold text-white bg-black/50 px-4 py-1 rounded border border-white/10">
                         {activeGame.score || '0-0'}
                     </div>
                 </div>
             </div>
 
-            {/* --- MIDDLE: NOTES FEED --- */}
             <div className="flex-1 overflow-hidden flex flex-col">
                 <div className="flex bg-secondary/50 p-1 rounded-lg mb-2 shrink-0">
                     {['ALL', 'OFFENSE', 'DEFENSE'].map(tab => (
@@ -158,7 +147,6 @@ const CoachGameDay: React.FC = () => {
                 </div>
             </div>
 
-            {/* --- BOTTOM: CONTROLS --- */}
             <div className="shrink-0 pt-4 relative flex gap-4 justify-center items-center">
                 {liveTranscript && <div className="absolute -top-12 left-0 right-0 bg-black text-white text-center py-2 text-xs rounded animate-pulse">{liveTranscript}</div>}
                 

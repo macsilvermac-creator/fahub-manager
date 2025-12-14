@@ -17,9 +17,8 @@ const BroadcastOverlay: React.FC = () => {
             }
         };
 
-        fetchGame(); // Carga inicial
+        fetchGame(); 
 
-        // SUBSCRIPTION AO WAR ROOM (Real-time updates)
         const unsubscribe = liveGameService.subscribe((data) => {
             if (data.gameId === Number(gameId) && (data.type === 'SCORE' || data.type === 'CLOCK' || data.type === 'STATUS')) {
                 setGame((prev: any) => ({ ...prev, ...data.payload }));
@@ -52,7 +51,6 @@ const BroadcastOverlay: React.FC = () => {
                     </div>
                 </div>
                 
-                {/* Indicador Live */}
                 {game.status === 'IN_PROGRESS' && (
                     <div className="bg-red-600 text-white px-3 py-1 rounded font-bold text-xs uppercase animate-pulse shadow-lg">
                         ● AO VIVO
