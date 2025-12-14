@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'fahub-manager-v3-cache';
+const CACHE_NAME = 'fahub-manager-v3.1-cache';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
@@ -38,8 +38,8 @@ self.addEventListener('activate', (event) => {
 // 3. Fetch: Estratégia Stale-While-Revalidate
 // Serve do cache imediatamente, mas busca na rede em background para atualizar
 self.addEventListener('fetch', (event) => {
-  // Ignora requisições não-GET ou esquemas chrome-extension, etc.
-  if (event.request.method !== 'GET' || !event.request.url.startsWith('http')) {
+  // Ignora requisições não-GET, esquemas chrome-extension, ou API calls
+  if (event.request.method !== 'GET' || !event.request.url.startsWith('http') || event.request.url.includes('/api/')) {
     return;
   }
 

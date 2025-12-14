@@ -1,72 +1,49 @@
-import { Game, PracticeSession, CoachGameNote, GameReport, Championship } from '../types';
-import { firebaseDataService } from './firebaseDataService';
 
-const GAMES_KEY = 'gridiron_games';
-const PRACTICE_KEY = 'gridiron_practice';
-const COACH_NOTES_KEY = 'gridiron_coach_notes';
+import { Game } from '../types';
 
-const dateReviver = (key: string, value: any) => {
-    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
-        return new Date(value);
-    }
-    return value;
-};
+// Simula WebSockets usando BroadcastChannel API para comunicação entre abas
+// Perfeito para o cenário "War Room" onde Juiz, Coach e TV estão no mesmo navegador ou rede local simulada
+class LiveGameService {
+    private channel: BroadcastChannel;
+    private listeners: ((data: any) => void)[] = [];
 
-export const gameService = {
-    getGames: (): Game[] => {
-        const stored = localStorage.getItem(GAMES_KEY);
-        return stored ? JSON.parse(stored, dateReviver) : [];
-    },
-
-    saveGames: (games: Game[]) => {
-        localStorage.setItem(GAMES_KEY, JSON.stringify(games));
-        firebaseDataService.syncGames(games).catch(console.error);
-    },
-
-    updateLiveGame: (gameId: number, updates: Partial<Game>) => {
-        const games = gameService.getGames();
-        const game = games.find(g => g.id === gameId);
-        if (game) {
-            const updatedGame = { ...game, ...updates };
-            const updatedList = games.map(g => g.id === gameId ? updatedGame : g);
-            gameService.saveGames(updatedList);
-            firebaseDataService.saveGame(updatedGame).catch(console.error); 
+    constructor() {
+        // Verifica suporte ao BroadcastChannel (evita erro em ambientes antigos)
+        if (typeof BroadcastChannel !== 'undefined') {
+            this.channel = new BroadcastChannel('fahub_war_room');
+            this.channel.onmessage = (event) => {
+                console.log('⚡ [WAR ROOM] Mensagem recebida:', event.data);
+                this.notifyListeners(event.data);
+            };
+        } else {
+            console.warn("BroadcastChannel não suportado neste navegador. War Room desativado.");
+            this.channel = { postMessage: () => {}, close: () => {}, onmessage: null } as any;
         }
-    },
+    }
 
-    getPracticeSessions: (): PracticeSession[] => {
-        const stored = localStorage.getItem(PRACTICE_KEY);
-        return stored ? JSON.parse(stored, dateReviver) : [];
-    },
+    public subscribe(callback: (data: any) => void): () => void {
+        this.listeners.push(callback);
+        return () => {
+            this.listeners = this.listeners.filter(l => l !== callback);
+        };
+    }
 
-    savePracticeSessions: (p: PracticeSession[]) => {
-        localStorage.setItem(PRACTICE_KEY, JSON.stringify(p));
-    },
+    private notifyListeners(data: any) {
+        this.listeners.forEach(callback => callback(data));
+    }
 
-    getCoachGameNotes: (): CoachGameNote[] => {
-        const stored = localStorage.getItem(COACH_NOTES_KEY);
-        return stored ? JSON.parse(stored, dateReviver) : [];
-    },
+    // Chamado pelo Juiz (Officiating.tsx)
+    public broadcastUpdate(gameId: number, type: 'SCORE' | 'CLOCK' | 'FOUL' | 'STATUS', payload: Partial<Game>) {
+        const message = {
+            gameId,
+            type,
+            payload,
+            timestamp: Date.now()
+        };
+        this.channel.postMessage(message);
+        // Também notifica a própria aba para consistência
+        this.notifyListeners(message);
+    }
+}
 
-    saveCoachGameNotes: (n: CoachGameNote[]) => {
-        localStorage.setItem(COACH_NOTES_KEY, JSON.stringify(n));
-    },
-
-    finalizeGameReport: (gameId: number, report: GameReport, score: string, winner: string) => {
-        const games = gameService.getGames();
-        const updated = games.map(g => g.id === gameId ? {
-            ...g,
-            officialReport: report,
-            score,
-            result: (winner === 'HOME' ? 'W' : winner === 'AWAY' ? 'L' : 'T') as 'W' | 'L' | 'T',
-            status: 'FINAL' as const
-        } : g);
-        gameService.saveGames(updated);
-    },
-    
-    createChampionship: (name: string, year: number, division: string) => {
-        console.log(`Championship Created: ${name}`);
-    },
-    
-    getChampionships: (): Championship[] => []
-};
+export const liveGameService = new LiveGameService();
