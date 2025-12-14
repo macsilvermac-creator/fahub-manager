@@ -6,7 +6,7 @@ import { CheckCircleIcon, PlayCircleIcon, MicIcon, MapIcon, StarIcon, AlertTrian
 import { Game, GameReport, FoulRecord, FoulType, Player, GameInfrastructureChecklist, TeamSettings, RefereeProfile, AssociationFinance, CrewLogistics } from '../types';
 import { storageService } from '../services/storageService';
 import { voiceService } from '../services/voiceService';
-import { liveGameService } from '../services/liveGameService';
+import { realtimeService } from '../services/realtimeService';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext'; 
 import LazyImage from '../components/LazyImage'; 
@@ -100,8 +100,8 @@ const Officiating: React.FC = () => {
         storageService.updateLiveGame(selectedGame.id, updatedGame);
         setSelectedGame(updatedGame as Game); 
 
-        // Broadcast Change
-        liveGameService.broadcastUpdate(selectedGame.id, type, updates);
+        // Broadcast Change via realtimeService
+        realtimeService.broadcastUpdate(selectedGame.id, type, updates);
     };
 
     const updateScore = (team: 'HOME' | 'AWAY', delta: number) => {
@@ -185,7 +185,7 @@ const Officiating: React.FC = () => {
             if (selectedGame) {
                 const winner = homeScore > awayScore ? 'HOME' : awayScore > homeScore ? 'AWAY' : 'TIE';
                 storageService.finalizeGameReport(selectedGame.id, gameReport, `${homeScore}-${awayScore}`, winner);
-                liveGameService.broadcastUpdate(selectedGame.id, 'STATUS', { status: 'FINAL', result: winner === 'HOME' ? 'W' : 'L', score: `${homeScore}-${awayScore}` });
+                realtimeService.broadcastUpdate(selectedGame.id, 'STATUS', { status: 'FINAL', result: winner === 'HOME' ? 'W' : 'L', score: `${homeScore}-${awayScore}` });
                 
                 toast.success("Súmula enviada com sucesso à Federação.");
                 setGameReport({ ...gameReport, isFinalized: true });

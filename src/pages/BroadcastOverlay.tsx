@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 // @ts-ignore
 import { useParams } from 'react-router-dom';
 import { storageService } from '../services/storageService';
-import { liveGameService } from '../services/liveGameService';
+import { realtimeService } from '../services/realtimeService';
 
 const BroadcastOverlay: React.FC = () => {
     const { gameId } = useParams<{ gameId: string }>();
@@ -20,8 +20,8 @@ const BroadcastOverlay: React.FC = () => {
 
         fetchGame(); 
 
-        // Inscreve no serviço de tempo real para atualizações instantâneas (Sem delay)
-        const unsubscribe = liveGameService.subscribe((data) => {
+        // Inscreve no serviço de tempo real (usando realtimeService)
+        const unsubscribe = realtimeService.subscribe((data) => {
             if (data.gameId === Number(gameId) && (data.type === 'SCORE' || data.type === 'CLOCK' || data.type === 'STATUS')) {
                 setGame((prev: any) => ({ ...prev, ...data.payload }));
             }
@@ -42,9 +42,9 @@ const BroadcastOverlay: React.FC = () => {
 
     if (!game) return <div className="flex items-center justify-center h-screen text-white font-bold bg-black/50">Aguardando sinal...</div>;
 
+    const currentSponsor = game.sponsors?.[sponsorIndex];
     const score = game.score ? game.score.split('-') : ['0', '0'];
     const homeTeam = game.homeTeamName ? game.homeTeamName.toUpperCase() : 'HOME';
-    const currentSponsor = game.sponsors?.[sponsorIndex];
 
     return (
         <div className="w-screen h-screen bg-transparent overflow-hidden font-sans relative">

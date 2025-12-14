@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Game, CoachGameNote } from '../types';
 import { storageService } from '../services/storageService';
-import { liveGameService } from '../services/liveGameService';
+import { realtimeService } from '../services/realtimeService';
 import { voiceService } from '../services/voiceService';
 import { classifyCoachVoiceNote } from '../services/geminiService';
 import { ClipboardIcon, ClockIcon, AlertTriangleIcon, PlayCircleIcon, ShieldCheckIcon, MicIcon, StopIcon, SparklesIcon } from '../components/icons/UiIcons';
@@ -27,12 +27,12 @@ const CoachGameDay: React.FC = () => {
         setActiveGame(live || null);
         setNotes(storageService.getCoachGameNotes());
         
-        // Safe access to getActiveProgram with fallback
+        // Safe access to getActiveProgram
         const currentProgram = (storageService as any).getActiveProgram ? (storageService as any).getActiveProgram() : 'TACKLE';
         setActiveProgram(currentProgram);
 
-        // Inscreve no serviço de tempo real
-        const unsubscribe = liveGameService.subscribe((data) => {
+        // Inscreve no serviço de tempo real (usando realtimeService)
+        const unsubscribe = realtimeService.subscribe((data) => {
             if (data.type === 'SCORE' || data.type === 'STATUS') {
                 console.log("⚡ [COACH] Atualização do Juiz recebida:", data.payload);
                 if (activeGame && data.gameId === activeGame.id) {
@@ -77,7 +77,6 @@ const CoachGameDay: React.FC = () => {
                     if(aiResult.action) note.content += ` \n👉 Ação Sugerida: ${aiResult.action}`;
                     const updated = [note, ...notes];
                     setNotes(updated);
-                    // Cast to any to bypass strict type checking against root types.ts if conflict exists
                     storageService.saveCoachGameNotes(updated as any);
                     toast.success(`Nota salva em ${aiResult.category}`);
                 } catch (e) {
@@ -107,7 +106,6 @@ const CoachGameDay: React.FC = () => {
         };
         const updated = [note, ...notes];
         setNotes(updated);
-        // Cast to any to bypass strict type checking against root types.ts
         storageService.saveCoachGameNotes(updated as any);
         toast.info(`Logado: ${action}`);
     };
