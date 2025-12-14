@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -47,10 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           // 2. Inicializa RAM (Síncrono)
           storageService.initializeRAM();
           
-          // 3. Registra Sync (Async Background)
-          syncService.registerProcessor(async () => {
-              return await storageService.syncFromCloud();
-          });
+          // 3. Inicializa Sync (Async Background)
           syncService.init();
 
           // 4. Marca como pronto (Evita Race Condition nas pages filhas)

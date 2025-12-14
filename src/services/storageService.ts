@@ -60,11 +60,14 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
     legalAgreementsSigned: []
 };
 
-// --- RAM CACHE & REACTIVITY SYSTEM ---
+// --- RAM CACHE & LAZY LOADING SYSTEM ---
 const RAM_DB: any = {
     settings: null,
+    activeProgram: 'TACKLE',
+    // Dados Críticos
     players: null,
     games: null,
+    // Dados Lazy
     practice: null,
     transactions: null,
     invoices: null,
@@ -92,7 +95,6 @@ const RAM_DB: any = {
     subscriptions: null,
     budgets: null,
     bills: null,
-    activeProgram: 'TACKLE'
 };
 
 // Listener System
@@ -103,44 +105,48 @@ const notifyListeners = (key: string) => {
     if (listeners[key]) {
         listeners[key].forEach(fn => fn());
     }
-    // Notifica listeners globais se necessário
 };
 
 const saveTimeouts: Record<string, any> = {};
 
+// LAZY LOAD: Carrega do disco apenas se necessário
 const loadIfNeeded = <T>(ramKey: string, storageKey: string, initialValue: any = []): T[] => {
     if (RAM_DB[ramKey] !== null && RAM_DB[ramKey] !== undefined) {
         return RAM_DB[ramKey];
     }
-
     try {
         const stored = localStorage.getItem(storageKey);
         if (!stored) {
             RAM_DB[ramKey] = initialValue;
             return initialValue;
         }
-        
         const parsed = JSON.parse(stored, dateReviver);
         RAM_DB[ramKey] = parsed;
         return parsed;
     } catch (e) {
-        console.error(`Storage Read Error [${ramKey}]`, e);
         RAM_DB[ramKey] = initialValue;
         return initialValue;
     }
 };
 
+// CORE OPTIMISTIC UI LOGIC
 const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
+    // 1. Atualiza RAM imediatamente (UI reage instantaneamente via hooks)
     RAM_DB[ramKey] = data;
-    notifyListeners(ramKey); // REATIVIDADE: Avisa os componentes React
+    notifyListeners(ramKey); 
     
+    // 2. Salva no Disco (LocalStorage) para persistência offline
     if (saveTimeouts[storageKey]) {
         clearTimeout(saveTimeouts[storageKey]);
     }
-
     saveTimeouts[storageKey] = setTimeout(() => {
         try {
             localStorage.setItem(storageKey, JSON.stringify(data));
+            
+            // 3. Dispara Sincronização em Background (Fire & Forget)
+            // Aqui é a mágica: O UI não espera isso terminar.
+            syncService.triggerSync(ramKey, data); 
+            
         } catch (e) {
             console.error("Storage Write Error", e);
         }
@@ -149,7 +155,6 @@ const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
 };
 
 export const storageService = {
-    // Permite que componentes React assinem mudanças nos dados
     subscribe: (key: string, callback: Listener) => {
         if (!listeners[key]) listeners[key] = [];
         listeners[key].push(callback);
@@ -170,11 +175,8 @@ export const storageService = {
         const storedProgram = localStorage.getItem(KEYS.ACTIVE_PROGRAM);
         if (storedProgram) RAM_DB.activeProgram = storedProgram;
         
-        // Pre-load critical data
         loadIfNeeded('players', KEYS.PLAYERS);
         loadIfNeeded('games', KEYS.GAMES);
-        
-        console.log("🚀 Storage System Hydrated");
         return true; 
     },
 
@@ -183,21 +185,7 @@ export const storageService = {
     },
 
     syncFromCloud: async () => {
-        try {
-            const cloudPlayers = await firebaseDataService.getPlayers();
-            if (cloudPlayers?.length) saveAndCache('players', KEYS.PLAYERS, cloudPlayers);
-            
-            const cloudGames = await firebaseDataService.getGames();
-            if (cloudGames?.length) saveAndCache('games', KEYS.GAMES, cloudGames);
-
-            const cloudTxs = await firebaseDataService.getTransactions();
-            if (cloudTxs?.length) saveAndCache('transactions', KEYS.TRANSACTIONS, cloudTxs);
-            
-            return true;
-        } catch (error) {
-            console.warn("Sync warning:", error);
-            return false;
-        }
+        return await syncService.processQueue().then(() => true).catch(() => false);
     },
 
     getActiveProgram: (): 'TACKLE' | 'FLAG' => RAM_DB.activeProgram || 'TACKLE',
@@ -207,12 +195,9 @@ export const storageService = {
         notifyListeners('activeProgram');
     },
 
-    // --- ACCESSORS (With Reactivity) ---
+    // --- DATA ACCESSORS ---
     getPlayers: (): Player[] => loadIfNeeded<Player>('players', KEYS.PLAYERS),
-    savePlayers: (players: Player[]) => {
-        saveAndCache('players', KEYS.PLAYERS, players);
-        if (!syncService.getConnectionStatus()) syncService.enqueueAction('SYNC_PLAYERS', players);
-    },
+    savePlayers: (players: Player[]) => saveAndCache('players', KEYS.PLAYERS, players),
     
     getGames: (): Game[] => loadIfNeeded<Game>('games', KEYS.GAMES),
     saveGames: (games: Game[]) => saveAndCache('games', KEYS.GAMES, games),
@@ -238,9 +223,10 @@ export const storageService = {
     getCoachDashboardStats: () => {
         const players = loadIfNeeded<Player>('players', KEYS.PLAYERS);
         const games = loadIfNeeded<Game>('games', KEYS.GAMES);
+        const activeProgram = RAM_DB.activeProgram;
         
-        const activePlayers = players.filter(p => p.status === 'ACTIVE').length;
-        const injuredPlayers = players.filter(p => p.status === 'INJURED' || p.status === 'IR').length;
+        const activePlayers = players.filter(p => p.status === 'ACTIVE' && (p.program === activeProgram || p.program === 'BOTH')).length;
+        const injuredPlayers = players.filter(p => (p.status === 'INJURED' || p.status === 'IR') && (p.program === activeProgram || p.program === 'BOTH')).length;
         
         const now = new Date();
         const nextGame = games
@@ -360,7 +346,7 @@ export const storageService = {
             savedWorkouts: [],
             medicalReports: []
         }];
-        storageService.savePlayers(updated);
+        saveAndCache('players', KEYS.PLAYERS, updated);
     },
 
     addTeamXP: (amount: number) => {
@@ -376,7 +362,7 @@ export const storageService = {
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const games = loadIfNeeded<Game>('games', KEYS.GAMES);
         const updated = games.map((g: Game) => g.id === gameId ? { ...g, ...updates } : g);
-        storageService.saveGames(updated);
+        saveAndCache('games', KEYS.GAMES, updated);
     },
     finalizeGameReport: (gameId: number, report: GameReport, score: string, winner: string) => {
         const games = loadIfNeeded<Game>('games', KEYS.GAMES);
@@ -387,7 +373,7 @@ export const storageService = {
             result: (winner === 'HOME' ? 'W' : winner === 'AWAY' ? 'L' : 'T') as 'W' | 'L' | 'T',
             status: 'FINAL' as const
         } : g);
-        storageService.saveGames(updated);
+        saveAndCache('games', KEYS.GAMES, updated);
     },
     createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string, inventoryItemId?: string) => {
         const invoices = storageService.getInvoices();
@@ -407,11 +393,10 @@ export const storageService = {
                 inventoryItemId
             };
         });
-        storageService.saveInvoices([...invoices, ...newInvoices]);
+        saveAndCache('invoices', KEYS.INVOICES, [...invoices, ...newInvoices]);
     },
     generateMonthlyInvoices: () => {
          const subscriptions = storageService.getSubscriptions();
-         const players = storageService.getPlayers();
          const activeSubs = subscriptions.filter(s => s.active);
          
          activeSubs.forEach(sub => {
@@ -420,7 +405,10 @@ export const storageService = {
     },
 
     getPermissions: () => [],
-    seedDatabaseToCloud: async () => {},
+    seedDatabaseToCloud: async () => {
+        // Force full sync for seeding
+        await syncService.processQueue();
+    },
     exportFullDatabase: () => {
         const data = JSON.stringify(localStorage);
         const blob = new Blob([data], {type: 'application/json'});
@@ -454,7 +442,7 @@ export const storageService = {
             }
             return p;
         });
-        storageService.savePlayers(updated);
+        saveAndCache('players', KEYS.PLAYERS, updated);
     },
     createChampionship: (name: string, year: number, division: string) => {}
 };
