@@ -18,4 +18,3 @@ root.render(
 // unregister() para register() abaixo. Note que isso vem com algumas armadilhas.
 // Saiba mais sobre service workers: https://cra.link/PWA
 serviceWorkerRegistration.register();
-    
