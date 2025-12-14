@@ -6,8 +6,8 @@ class LiveGameService {
     private listeners: ((data: any) => void)[] = [];
 
     constructor() {
-        // Proteção Crítica: Só inicializa BroadcastChannel se estiver no navegador
-        // Isso previne erros durante o build do Vite/Vercel
+        // Proteção Crítica: Só inicializa BroadcastChannel se estiver no navegador (Client-side)
+        // Isso previne erros durante o build do Vite/Vercel (SSR) onde 'window' não existe
         if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
             try {
                 this.channel = new BroadcastChannel('fahub_war_room');
@@ -44,7 +44,7 @@ class LiveGameService {
         
         try {
             this.channel.postMessage(message);
-            // Notifica a própria aba também para feedback imediato na UI
+            // Notifica a própria aba também para feedback imediato na UI (Optimistic UI)
             this.notifyListeners(message);
         } catch (e) {
             console.error('Broadcast error:', e);
