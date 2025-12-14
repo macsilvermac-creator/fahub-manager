@@ -14,5 +14,8 @@ root.render(
     <Main />
 );
 
-// Ativa o Service Worker para cache agressivo e funcionamento offline
+// Se quiser que seu app funcione offline e carregue mais rápido, troque
+// unregister() para register() abaixo. Note que isso vem com algumas armadilhas.
+// Saiba mais sobre service workers: https://cra.link/PWA
 serviceWorkerRegistration.register();
+    
