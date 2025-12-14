@@ -14,7 +14,7 @@ class LiveGameService {
                     this.notifyListeners(event.data);
                 };
             } catch (e) {
-                console.warn('BroadcastChannel error:', e);
+                console.warn('BroadcastChannel init error:', e);
             }
         }
     }
@@ -44,7 +44,7 @@ class LiveGameService {
             this.channel.postMessage(message);
             this.notifyListeners(message);
         } catch (e) {
-            console.error('Broadcast error:', e);
+            console.error('Broadcast send error:', e);
         }
     }
 }
