@@ -13,7 +13,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import Skeleton from '../components/Skeleton';
 import LazyImage from '@/components/LazyImage';
 import { useToast } from '../contexts/ToastContext';
-import { useData } from '../hooks/useData';
+import { useData } from './hooks/useData';
 
 // Lazy Load Modules
 const PracticePlan = React.lazy(() => import('./PracticePlan'));

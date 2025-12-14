@@ -6,6 +6,7 @@ class LiveGameService {
     private listeners: ((data: any) => void)[] = [];
 
     constructor() {
+        // Verifica suporte a BroadcastChannel (evita erro em ambientes sem suporte)
         if (typeof BroadcastChannel !== 'undefined') {
             this.channel = new BroadcastChannel('fahub_war_room');
             this.channel.onmessage = (event) => {
@@ -36,6 +37,7 @@ class LiveGameService {
         };
         
         this.channel.postMessage(message);
+        // Notifica a própria aba também para feedback imediato na UI
         this.notifyListeners(message);
     }
 }
