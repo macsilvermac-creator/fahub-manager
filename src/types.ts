@@ -242,7 +242,8 @@ export interface PracticeSession {
     category: PracticeCategory;
     locationType: string;
     instructor: string;
-    attendees: string[];
+    attendees: string[]; // List of Player IDs who confirmed
+    deadlineDate?: Date; // New: Deadline for RSVP
     notes: string;
     drills: Drill[];
     script: PracticeScriptItem[];
@@ -426,7 +427,7 @@ export interface User {
     phone?: string;
     teamName?: string;
     program?: ProgramType; 
-    isProfileComplete?: boolean; // NOVO: Controla se já fez o cadastro completo
+    isProfileComplete?: boolean; 
 }
 
 export type CourseLevel = 'FAN' | 'PLAYER' | 'COACH';
@@ -833,7 +834,6 @@ export interface Objective {
     keyResults: KeyResult[];
 }
 
-// --- NEW FINANCIAL TYPES (ERP) ---
 export interface Subscription {
     id: string;
     title: string;

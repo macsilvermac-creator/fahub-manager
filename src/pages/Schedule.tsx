@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Game, PracticeSession } from '../types';
-import { TrashIcon, CheckCircleIcon, DumbbellIcon } from '../components/icons/UiIcons';
+import { TrashIcon, CheckCircleIcon, DumbbellIcon, XIcon } from '../components/icons/UiIcons';
 import { TrophyIcon } from '../components/icons/NavIcons';
 import ConfirmationModal from '../components/ConfirmationModal';
 import GameManagementModal from '../components/GameManagementModal';
@@ -10,6 +10,8 @@ import { storageService } from '../services/storageService';
 import Modal from '../components/Modal';
 import { UserContext } from '../components/Layout';
 import LazyImage from '@/components/LazyImage';
+import { authService } from '@/services/authService';
+import { useToast } from '@/contexts/ToastContext';
 
 interface ScheduleItem {
     id: string | number;
@@ -17,15 +19,18 @@ interface ScheduleItem {
     date: Date;
     title: string;
     description: string;
-    details: any; // Game or PracticeSession object
+    details: any; 
 }
 
 const Schedule: React.FC = () => {
     const { currentRole } = useContext(UserContext);
+    const toast = useToast();
     const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
     const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [playerId, setPlayerId] = useState<string | number | null>(null);
 
     const [newOpponent, setNewOpponent] = useState('');
     const [newDate, setNewDate] = useState('');
@@ -34,7 +39,19 @@ const Schedule: React.FC = () => {
     const isPlayer = currentRole === 'PLAYER';
 
     useEffect(() => {
-        // PERFORMANCE: Load data optimized
+        loadSchedule();
+
+        // Get Current User ID for RSVP logic
+        const user = authService.getCurrentUser();
+        if (user) {
+            setUserId(user.id);
+            // Also try to find the player ID corresponding to this user
+            const p = storageService.getPlayers().find(player => player.name === user.name);
+            if(p) setPlayerId(p.id);
+        }
+    }, []);
+
+    const loadSchedule = () => {
         const games = storageService.getGames().map(g => ({
             id: g.id,
             type: 'GAME' as const,
@@ -53,16 +70,34 @@ const Schedule: React.FC = () => {
             details: p
         }));
 
-        // Merge and Sort by Date Ascending (Oldest first? No, let's show upcoming first but keep recent history)
-        // Better UX: Sort by date. 
         const merged = [...games, ...practices].sort((a, b) => a.date.getTime() - b.date.getTime());
-        
-        // Optional: Filter out VERY old events (older than 30 days) to keep list snappy
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
         setSchedule(merged.filter(i => i.date > thirtyDaysAgo));
-    }, []);
+    };
+
+    const handleRSVP = (item: ScheduleItem) => {
+        if (item.type !== 'PRACTICE' || !playerId) return;
+        
+        const practice = item.details as PracticeSession;
+        
+        // Deadline Check
+        if (practice.deadlineDate && new Date() > new Date(practice.deadlineDate)) {
+            toast.error("Prazo de confirmação encerrado.");
+            return;
+        }
+
+        // Toggle Logic
+        storageService.togglePracticeAttendance(String(practice.id), String(playerId));
+        
+        // Refresh local view
+        loadSchedule();
+        
+        // Optimistic Feedback
+        const isNowConfirmed = !practice.attendees?.includes(String(playerId));
+        if (isNowConfirmed) toast.success("Presença confirmada!");
+        else toast.info("Presença cancelada.");
+    };
 
     const handleDeleteGame = (game: Game) => {
         setGameToDelete(game);
@@ -73,9 +108,7 @@ const Schedule: React.FC = () => {
             const currentGames = storageService.getGames();
             const updated = currentGames.filter(g => g.id !== gameToDelete.id);
             storageService.saveGames(updated);
-            
-            // Update local combined schedule
-            setSchedule(prev => prev.filter(i => !(i.type === 'GAME' && i.details.id === gameToDelete.id)));
+            loadSchedule();
             setGameToDelete(null);
         }
     };
@@ -85,7 +118,7 @@ const Schedule: React.FC = () => {
         const updatedList = currentGames.map(g => g.id === updatedGame.id ? updatedGame : g);
         storageService.saveGames(updatedList);
         setSelectedGame(null);
-        window.location.reload(); 
+        loadSchedule();
     };
 
     const handleCreateGame = (e: React.FormEvent) => {
@@ -106,17 +139,7 @@ const Schedule: React.FC = () => {
         setIsAddModalOpen(false);
         setNewOpponent('');
         setNewDate('');
-        
-        // Add to local state immediately
-        const newItem: ScheduleItem = {
-            id: newGame.id,
-            type: 'GAME',
-            date: newGame.date,
-            title: `VS ${newGame.opponent}`,
-            description: `Jogo ${newGame.location === 'Home' ? 'em Casa' : 'Fora'}`,
-            details: newGame
-        };
-        setSchedule(prev => [...prev, newItem].sort((a,b) => a.date.getTime() - b.date.getTime()));
+        loadSchedule();
     };
 
     return (
@@ -139,15 +162,20 @@ const Schedule: React.FC = () => {
                     {schedule.map(item => {
                         const isPast = item.date < new Date();
                         const isGame = item.type === 'GAME';
+                        const practice = !isGame ? (item.details as PracticeSession) : null;
+                        
+                        // RSVP State
+                        const isConfirmed = practice && playerId ? (practice.attendees || []).includes(String(playerId)) : false;
+                        const isDeadlinePassed = practice?.deadlineDate ? new Date() > new Date(practice.deadlineDate) : false;
                         
                         return (
                             <div 
                                 key={`${item.type}-${item.id}`} 
                                 onClick={() => isGame ? setSelectedGame(item.details) : null}
-                                className={`rounded-lg p-4 flex items-center justify-between shadow-md transition-colors border cursor-pointer group ${isGame ? 'bg-secondary hover:bg-accent border-white/5 hover:border-highlight/30' : 'bg-blue-900/10 hover:bg-blue-900/20 border-blue-500/20 hover:border-blue-500/50'}`}
+                                className={`rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between shadow-md transition-colors border cursor-pointer group gap-4 ${isGame ? 'bg-secondary hover:bg-accent border-white/5 hover:border-highlight/30' : 'bg-blue-900/10 hover:bg-blue-900/20 border-blue-500/20 hover:border-blue-500/50'}`}
                             >
-                                <div className="flex items-center">
-                                    <div className={`p-3 rounded-xl mr-4 ${isGame ? 'bg-secondary border border-white/10' : 'bg-blue-600/20 border border-blue-500/30'}`}>
+                                <div className="flex items-center w-full md:w-auto">
+                                    <div className={`p-3 rounded-xl mr-4 flex-shrink-0 ${isGame ? 'bg-secondary border border-white/10' : 'bg-blue-600/20 border border-blue-500/30'}`}>
                                         {isGame ? (
                                             item.details.opponentLogoUrl ? <LazyImage src={item.details.opponentLogoUrl} className="w-8 h-8 rounded-full" /> : <TrophyIcon className="w-8 h-8 text-highlight" />
                                         ) : (
@@ -155,27 +183,52 @@ const Schedule: React.FC = () => {
                                         )}
                                     </div>
                                     <div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             {isGame && <span className="text-[10px] bg-red-600 text-white px-2 rounded font-bold">GAME</span>}
                                             {!isGame && <span className="text-[10px] bg-blue-600 text-white px-2 rounded font-bold">TREINO</span>}
                                             <p className="font-bold text-text-primary text-lg">{item.title}</p>
                                         </div>
                                         <p className="text-sm text-text-secondary">{item.description}</p>
-                                        {isGame && item.details.scoutingReport && !isPast && <span className="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded mt-1 inline-block">Scout Ativo</span>}
+                                        
+                                        {/* Deadline Info */}
+                                        {!isGame && practice?.deadlineDate && !isPast && (
+                                            <p className={`text-[10px] mt-1 ${isDeadlinePassed ? 'text-red-400 font-bold' : 'text-yellow-400'}`}>
+                                                {isDeadlinePassed ? 'Inscrições Encerradas' : `Confirme até: ${new Date(practice.deadlineDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex items-center space-x-6">
-                                    <div className="text-right">
+
+                                <div className="flex items-center justify-between w-full md:w-auto md:justify-end gap-6">
+                                    <div className="text-left md:text-right">
                                         <p className={`font-semibold capitalize ${isPast ? 'text-text-secondary' : 'text-white'}`}>{item.date.toLocaleDateString('pt-BR', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                                         <p className="text-sm text-text-secondary">{item.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                                     </div>
                                     
-                                    {isPlayer && !isPast && (
-                                        <button className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1 bg-white/5 border border-white/10 text-text-secondary hover:text-white hover:bg-white/10`}>
-                                            Confirmar
+                                    {/* Botão de RSVP (Atleta) */}
+                                    {isPlayer && !isGame && !isPast && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleRSVP(item); }}
+                                            disabled={isDeadlinePassed}
+                                            className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-md ${
+                                                isConfirmed 
+                                                ? 'bg-green-600 text-white hover:bg-green-500' 
+                                                : isDeadlinePassed 
+                                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed border border-gray-600'
+                                                    : 'bg-white/10 border border-white/20 text-white hover:bg-white/20'
+                                            }`}
+                                        >
+                                            {isConfirmed ? (
+                                                <><CheckCircleIcon className="w-4 h-4"/> Eu Vou</>
+                                            ) : isDeadlinePassed ? (
+                                                <><XIcon className="w-4 h-4"/> Fechado</>
+                                            ) : (
+                                                'Confirmar?'
+                                            )}
                                         </button>
                                     )}
                                     
+                                    {/* Admin Delete */}
                                     {!isPlayer && isGame && (
                                         <button 
                                             className="p-2 text-text-secondary hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"

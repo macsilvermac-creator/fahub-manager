@@ -214,6 +214,23 @@ export const storageService = {
 
     getPracticeSessions: (): PracticeSession[] => loadIfNeeded<PracticeSession>('practice', KEYS.PRACTICE),
     savePracticeSessions: (p: PracticeSession[]) => saveAndCache('practice', KEYS.PRACTICE, p),
+    
+    // NEW: Toggle Practice Attendance
+    togglePracticeAttendance: (practiceId: string, playerId: string) => {
+        const practices = loadIfNeeded<PracticeSession>('practice', KEYS.PRACTICE);
+        const updated = practices.map(p => {
+            if (p.id === practiceId) {
+                const attendees = p.attendees || [];
+                // Se já estiver na lista, remove. Se não, adiciona.
+                const newAttendees = attendees.includes(playerId) 
+                    ? attendees.filter(id => id !== playerId)
+                    : [...attendees, playerId];
+                return { ...p, attendees: newAttendees };
+            }
+            return p;
+        });
+        saveAndCache('practice', KEYS.PRACTICE, updated);
+    },
 
     getTransactions: (): Transaction[] => loadIfNeeded<Transaction>('transactions', KEYS.TRANSACTIONS),
     saveTransactions: (t: Transaction[]) => saveAndCache('transactions', KEYS.TRANSACTIONS, t),

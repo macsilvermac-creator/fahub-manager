@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { PracticeSession, PracticeCategory, PracticeScriptItem, Announcement } from '../types';
 import { storageService } from '../services/storageService';
 import { generatePracticeScript } from '../services/geminiService';
-import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon } from '../components/icons/UiIcons';
+import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon, ShareIcon, AlertCircleIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
 import Button from '../components/Button'; 
 import Input from '../components/Input';
@@ -48,6 +48,8 @@ const PracticePlan: React.FC = () => {
     const [newDate, setNewDate] = useState('');
     const [newCategory, setNewCategory] = useState<PracticeCategory>('TACTICAL');
     const [newDuration, setNewDuration] = useState(120); 
+    // DEADLINE STATE
+    const [newDeadlineHours, setNewDeadlineHours] = useState(2); // Default 2h antes
 
     // Script Management State
     const [generatedScript, setGeneratedScript] = useState<PracticeScriptItem[]>([]);
@@ -90,11 +92,17 @@ const PracticePlan: React.FC = () => {
             return;
         }
 
+        const practiceDate = new Date(newDate);
+        // Calcula Deadline
+        const deadline = new Date(practiceDate);
+        deadline.setHours(deadline.getHours() - newDeadlineHours);
+
         const practice: PracticeSession = {
             id: `prat-${Date.now()}`,
             title: newTitle,
             focus: newFocus,
-            date: new Date(newDate),
+            date: practiceDate,
+            deadlineDate: deadline, // Saves deadline
             category: newCategory,
             locationType: 'FIELD',
             instructor: 'Coach',
@@ -111,12 +119,12 @@ const PracticePlan: React.FC = () => {
         storageService.savePracticeSessions(updatedPractices);
 
         // Notificar jogadores
-        const dateStr = new Date(newDate).toLocaleString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' });
+        const dateStr = practiceDate.toLocaleString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute:'2-digit' });
         
         const notification: Announcement = {
             id: `notif-prat-${Date.now()}`,
             title: `📅 TREINO (${activeProgram}): ${newTitle.toUpperCase()}`,
-            content: `Foco: ${newFocus}. Data: ${dateStr}. Presença Obrigatória!`,
+            content: `Foco: ${newFocus}. Data: ${dateStr}. Confirmação até ${deadline.toLocaleTimeString()}.`,
             priority: 'HIGH',
             date: new Date(),
             authorRole: 'HEAD_COACH',
@@ -132,7 +140,19 @@ const PracticePlan: React.FC = () => {
         setNewFocus('');
         setNewDate('');
         
-        toast.success("Treino agendado e notificação enviada!");
+        toast.success("Treino agendado e prazo definido!");
+    };
+
+    const generateWhatsAppInvite = (p: PracticeSession) => {
+        const deadlineStr = p.deadlineDate ? new Date(p.deadlineDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Indefinido';
+        const msg = `🏈 *CONVOCAÇÃO DE TREINO - ${p.title.toUpperCase()}*\n` +
+                    `📅 *Data:* ${new Date(p.date).toLocaleString([], {weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}\n` +
+                    `🎯 *Foco:* ${p.focus}\n` +
+                    `⚠️ *Prazo de Confirmação:* ${deadlineStr}\n\n` +
+                    `👉 *Confirme no App:* ${window.location.origin}/#/schedule`;
+        
+        const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
     };
 
     const addTime = (timeStr: string, minutes: number): string => {
@@ -250,6 +270,25 @@ const PracticePlan: React.FC = () => {
                                     <Input label="Título" value={newTitle} onChange={e => setNewTitle(e.target.value)} required placeholder="Ex: Preparação Playoffs" />
                                     <Input label="Data e Hora" type="datetime-local" value={newDate} onChange={e => setNewDate(e.target.value)} required />
                                 </div>
+                                
+                                {/* DEADLINE CONFIGURATION */}
+                                <div className="p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
+                                    <label className="text-xs font-bold text-yellow-500 uppercase block mb-2 flex items-center gap-2">
+                                        <AlertCircleIcon className="w-4 h-4" /> Configuração de RSVP (Prazo)
+                                    </label>
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-sm text-text-secondary">Fechar confirmações</span>
+                                        <input 
+                                            type="number" 
+                                            min="1" max="48" 
+                                            value={newDeadlineHours} 
+                                            onChange={e => setNewDeadlineHours(Number(e.target.value))}
+                                            className="w-16 bg-black/40 border border-white/20 rounded p-1 text-center text-white" 
+                                        />
+                                        <span className="text-sm text-text-secondary">horas antes do treino.</span>
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
                                         <label className="text-xs font-bold text-text-secondary uppercase block mb-1.5 ml-1">Categoria</label>
@@ -341,6 +380,14 @@ const PracticePlan: React.FC = () => {
                             </div>
                             <p className="text-xs text-text-secondary mt-1">{new Date(practice.date).toLocaleDateString()} • {new Date(practice.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                             <p className="text-xs text-highlight mt-1 font-bold">{practice.focus}</p>
+                            
+                            {canEdit && (
+                                <div className="mt-3 pt-3 border-t border-white/10 flex justify-end">
+                                    <button onClick={(e) => { e.stopPropagation(); generateWhatsAppInvite(practice); }} className="text-xs bg-green-600/20 text-green-400 hover:bg-green-600 hover:text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors font-bold">
+                                        <ShareIcon className="w-3 h-3" /> WhatsApp Invite
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
