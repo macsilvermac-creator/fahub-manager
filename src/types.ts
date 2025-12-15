@@ -1,8 +1,167 @@
 
-export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER' | 'CANDIDATE';
+export type UserRole = 'PLATFORM_OWNER' | 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER' | 'CANDIDATE';
 
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
 export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH';
+
+// --- PLATFORM BACKOFFICE TYPES ---
+export interface Tenant {
+    id: string;
+    name: string;
+    plan: 'ROOKIE' | 'STARTER' | 'ALL_PRO';
+    status: 'ACTIVE' | 'DELINQUENT' | 'TRIAL';
+    mrr: number; // Monthly Recurring Revenue
+    joinedAt: Date;
+    logoUrl: string;
+    contactEmail: string;
+}
+
+export interface ServiceTicket {
+    id: string;
+    tenantId: string;
+    tenantName: string;
+    serviceName: string; // ex: "Análise de Vídeo"
+    status: 'PENDING' | 'IN_PROGRESS' | 'DELIVERED';
+    purchasedAt: Date;
+    deliverableUrl?: string;
+    assignedTo?: string; // Nome do analista do FAHUB
+}
+
+export interface PlatformMetric {
+    totalRevenue: number;
+    activeTeams: number;
+    pendingServices: number;
+    churnRate: number;
+}
+
+// ... (Mantenha o resto dos tipos inalterados) ...
+
+// --- NEW DIGITAL STORE & DRM TYPES ---
+export type ProductType = 'GAME_VIDEO' | 'SCOUT_REPORT' | 'COURSE' | 'DOCUMENT';
+
+export interface DigitalProduct {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    type: ProductType;
+    durationHours: number; // Duração do acesso em horas
+    coverUrl: string;
+}
+
+export interface Entitlement {
+    id: string;
+    userId: string;
+    productId: string;
+    resourceId?: string; // ID específico (ex: gameId) se o produto for específico
+    purchaseDate: Date;
+    expiresAt: Date;
+    status: 'ACTIVE' | 'EXPIRED';
+}
+
+// --- GAME INTELLIGENCE TYPES ---
+export interface GameStatsSnapshot {
+    totalYards: number;
+    passYards: number;
+    rushYards: number;
+    turnovers: number;
+    firstDowns: number;
+    generatedAt: Date;
+}
+
+export interface GameDrive {
+    id: string;
+    quarter: number;
+    playCount: number;
+    passPlays: number;
+    runPlays: number;
+    totalYardsEst: number;
+    result: 'TOUCHDOWN' | 'FIELD_GOAL' | 'PUNT' | 'TURNOVER' | 'END_OF_HALF';
+    summary: string;
+    keyPlayerNumber?: number;
+}
+
+// --- ACADEMY AI TYPES ---
+export interface GymExercise {
+    name: string;
+    sets: string;
+    reps: string;
+    notes?: string;
+}
+
+export interface GymDay {
+    title: string;
+    focus: string;
+    exercises: GymExercise[];
+}
+
+// --- RECRUITMENT TYPES ---
+export interface RecruitmentCandidate {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    position: string;
+    age: number;
+    height: string;
+    weight: number;
+    experience: string;
+    status: 'NEW' | 'TRYOUT' | 'SELECTED' | 'ONBOARDING' | 'REJECTED';
+    createdAt: Date;
+    combineStats?: CombineStats;
+    notes?: string;
+    rating?: number;
+    aiAnalysis?: string;
+}
+
+// --- STRATEGY & OKR TYPES ---
+export interface KeyResult {
+    id: string;
+    title: string;
+    currentValue: number;
+    targetValue: number;
+    unit: string;
+    lastUpdated: Date;
+}
+
+export interface Objective {
+    id: string;
+    title: string;
+    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING';
+    status: 'ON_TRACK' | 'BEHIND' | 'COMPLETED' | 'AT_RISK';
+    progress: number;
+    deadline: Date;
+    owner: string;
+    keyResults: KeyResult[];
+}
+
+// --- ADVANCED FINANCE TYPES ---
+export interface Subscription {
+    id: string;
+    title: string;
+    amount: number;
+    frequency: 'MONTHLY' | 'YEARLY';
+    active: boolean;
+    nextBillingDate: Date;
+    assignedTo: number[]; // Player IDs
+}
+
+export interface Budget {
+    category: string;
+    limit: number;
+    spent: number;
+}
+
+export interface Bill {
+    id: string;
+    title: string;
+    amount: number;
+    dueDate: Date;
+    status: 'PENDING' | 'PAID' | 'OVERDUE';
+    category: string;
+}
+
+// --- EXISTING TYPES BELOW (UNCHANGED OR EXTENDED) ---
 
 export interface CombineStats {
     fortyYards?: number;
@@ -21,26 +180,11 @@ export interface WellnessEntry {
     rpe: number;
 }
 
-// --- NOVOS TIPOS PARA IA ---
-export interface GymExercise {
-    name: string;
-    sets: string;
-    reps: string;
-    notes?: string;
-}
-
-export interface GymDay {
-    title: string;
-    focus: string;
-    exercises: GymExercise[];
-}
-// ---------------------------
-
 export interface SavedWorkout {
     id: string;
     date: Date;
     title: string;
-    content: string | GymDay[]; // Suporta texto legado e novo JSON
+    content: string; // Pode ser texto ou JSON stringificado de GymDay[]
     category: string;
 }
 
@@ -101,7 +245,7 @@ export interface Player {
     xp: number;
     badges?: string[];
     rating: number;
-    status: 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'IR';
+    status: 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'IR' | 'QUESTIONABLE' | 'DOUBTFUL';
     rosterCategory: RosterCategory;
     depthChartOrder: number;
     combineStats?: CombineStats;
@@ -121,7 +265,6 @@ export interface Player {
     medicalReports?: MedicalReport[];
     rosterHistory?: any[];
     hcNotes?: string;
-    isProfileComplete?: boolean;
 }
 
 export interface GameScoutingReport {
@@ -201,6 +344,10 @@ export interface Game {
     homeTeamName?: string;
     sponsors?: any[];
     officialReport?: GameReport;
+    // Enhanced Stats
+    drives?: GameDrive[];
+    halftimeStats?: GameStatsSnapshot;
+    finalStats?: GameStatsSnapshot;
 }
 
 export interface TeamSettings {
@@ -255,12 +402,12 @@ export interface PracticeSession {
     title: string;
     focus: string;
     date: Date;
+    deadlineDate?: Date; // Added for RSVP
     category: PracticeCategory;
     locationType: string;
     instructor: string;
-    attendees: string[];
-    checkedInAttendees?: string[];
-    deadlineDate?: Date; 
+    attendees: string[]; // RSVPs
+    checkedInAttendees?: string[]; // Actual Presence (Roll Call)
     notes: string;
     drills: Drill[];
     script: PracticeScriptItem[];
@@ -353,7 +500,7 @@ export interface Transaction {
 export interface EquipmentItem {
     id: string;
     name: string;
-    category: 'HELMET' | 'PADS' | 'JERSEY' | 'BALL' | 'DRINK' | 'FOOD' | 'MERCH';
+    category: 'HELMET' | 'PADS' | 'JERSEY' | 'BALL' | 'DRINK' | 'FOOD' | 'MERCH' | 'ACCESSORIES' | 'CLEATS';
     quantity: number;
     condition: 'NEW' | 'USED' | 'DAMAGED';
     forSale: boolean;
@@ -385,7 +532,7 @@ export interface Announcement {
     content: string;
     priority: 'NORMAL' | 'HIGH' | 'URGENT';
     date: Date;
-    authorRole: UserRole;
+    authorRole: UserRole | string;
     readBy?: string[];
 }
 
@@ -440,11 +587,9 @@ export interface User {
     role: UserRole;
     avatarUrl: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    program?: ProgramType;
     cpf?: string;
-    phone?: string;
-    teamName?: string;
-    program?: ProgramType; 
-    isProfileComplete?: boolean; 
+    isProfileComplete?: boolean;
 }
 
 export type CourseLevel = 'FAN' | 'PLAYER' | 'COACH';
@@ -760,12 +905,13 @@ export interface Team {
     logoUrl?: string;
 }
 
-// Gamification Types (Updated)
+// Gamification Types
 export interface QuizQuestion {
     id: string;
     question: string;
     options: string[];
-    correctAnswer: number; // index (0-3)
+    correctAnswer: number; // index
+    imageUrl?: string; // For play diagram
     explanation?: string;
 }
 
@@ -781,7 +927,6 @@ export interface QuizResult {
     playerId: number;
     score: number;
     date: Date;
-    timeSpent?: number;
 }
 
 export interface ScoutChartData {
@@ -809,100 +954,4 @@ export interface DisciplineRecord {
     fineAmount?: number;
     punishment?: string;
     reportedBy: string;
-}
-
-export interface RecruitmentCandidate {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    position: string;
-    age: number;
-    height: string;
-    weight: number;
-    experience: string;
-    status: 'NEW' | 'TRYOUT' | 'SELECTED' | 'ONBOARDING' | 'CONVERTED' | 'REJECTED';
-    tryoutDate?: Date;
-    rating?: number; // 1-100
-    aiAnalysis?: string; 
-    verifiedBy?: string; 
-    notes?: string;
-    createdAt: Date;
-    combineStats?: CombineStats;
-}
-
-export interface KeyResult {
-    id: string;
-    title: string;
-    currentValue: number;
-    targetValue: number;
-    unit: string;
-    lastUpdated: Date;
-}
-
-export interface Objective {
-    id: string;
-    title: string;
-    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING';
-    status: 'ON_TRACK' | 'COMPLETED' | 'BEHIND';
-    progress: number;
-    deadline: Date;
-    owner: string;
-    keyResults: KeyResult[];
-}
-
-export interface Subscription {
-    id: string;
-    title: string;
-    amount: number;
-    frequency: 'MONTHLY' | 'YEARLY';
-    active: boolean;
-    nextBillingDate: Date;
-    assignedTo: number[]; // Player IDs
-}
-
-export interface PaymentAgreement {
-    id: string;
-    playerId: number;
-    playerName: string;
-    totalDebt: number;
-    installments: number;
-    installmentAmount: number;
-    startDate: Date;
-    status: 'ACTIVE' | 'COMPLETED' | 'DEFAULTED';
-}
-
-export interface Budget {
-    id: string;
-    category: TransactionCategory;
-    limit: number;
-    spent: number;
-    period: string; // "2025-01"
-}
-
-export interface Vendor {
-    id: string;
-    name: string;
-    category: string;
-    rating: number;
-}
-
-export interface Bill {
-    id: string;
-    vendorId: string;
-    vendorName: string;
-    title: string;
-    amount: number;
-    dueDate: Date;
-    status: 'PENDING' | 'PAID' | 'OVERDUE';
-    category: TransactionCategory;
-}
-
-export interface PurchaseRequest {
-    id: string;
-    requesterName: string;
-    itemName: string;
-    estimatedCost: number;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    reason: string;
 }

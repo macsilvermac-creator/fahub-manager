@@ -1,7 +1,7 @@
 
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense } from 'react';
 // @ts-ignore
-import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -10,9 +10,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { ToastProvider } from './contexts/ToastContext';
 import { UserRole } from './types';
 import { authService } from './services/authService';
-import { storageService } from './services/storageService';
 
-// FAHUB MANAGER v3.1
+// FAHUB MANAGER v3.3 - Platform Ops
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
@@ -50,6 +49,8 @@ const BroadcastOverlay = React.lazy(() => import('./pages/BroadcastOverlay'));
 const Logistics = React.lazy(() => import('./pages/Logistics'));
 const Recruitment = React.lazy(() => import('./pages/Recruitment'));
 const Goals = React.lazy(() => import('./pages/Goals'));
+const DigitalStore = React.lazy(() => import('./pages/DigitalStore'));
+const PlatformHQ = React.lazy(() => import('./pages/PlatformHQ')); // NEW SUPER ADMIN PAGE
 
 const ROLES = {
   MASTER: ['MASTER'] as UserRole[],
@@ -58,31 +59,26 @@ const ROLES = {
   STAFF: ['MASTER', 'HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD', 'FINANCIAL_MANAGER', 'MARKETING_MANAGER', 'COMMERCIAL_MANAGER', 'SPORTS_DIRECTOR'] as UserRole[],
   PLAYER_VIEW: ['MASTER', 'HEAD_COACH', 'PLAYER', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'] as UserRole[],
   COMMERCIAL: ['MASTER', 'COMMERCIAL_MANAGER'] as UserRole[],
-  MARKETING: ['MASTER', 'MARKETING_MANAGER'] as UserRole[]
+  MARKETING: ['MASTER', 'MARKETING_MANAGER'] as UserRole[],
+  // Allow Platform Owner (simulated by MASTER for now in dev, but logically separated)
+  PLATFORM: ['PLATFORM_OWNER', 'MASTER'] as UserRole[] 
 };
 
-// --- COMPONENTE DE CHECAGEM DE ONBOARDING ---
-// Garante que o usuário aprovado preencha seus dados antes de acessar o sistema
 const OnboardingCheck: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const location = useLocation();
     
-    // Safety check: Don't check on public routes
-    if (location.pathname.startsWith('/public') || location.pathname === '/login' || location.pathname === '/register') {
+    if (location.pathname.startsWith('/public') || location.pathname === '/login' || location.pathname === '/register' || location.pathname.startsWith('/broadcast')) {
         return <>{children}</>;
     }
 
     const user = authService.getCurrentUser();
 
-    // 1. Se não tiver usuário, o ProtectedRoute (dentro das rotas) vai lidar.
     if (!user) return <>{children}</>;
 
-    // 2. Se o usuário estiver aprovado, mas com perfil incompleto, força Onboarding.
-    // Exceção: Se ele JÁ ESTIVER na tela de onboarding.
     if (user.status === 'APPROVED' && !user.isProfileComplete && location.pathname !== '/onboarding') {
         return <Navigate to="/onboarding" replace />;
     }
 
-    // 3. Se o usuário TENTAR acessar onboarding mas JÁ ESTIVER completo, manda pra dashboard.
     if (user.status === 'APPROVED' && user.isProfileComplete && location.pathname === '/onboarding') {
         return <Navigate to="/dashboard" replace />;
     }
@@ -105,32 +101,30 @@ const Main: React.FC = () => {
                 <Route path="/public/team" element={<PublicTeam />} /> 
                 <Route path="/broadcast/:gameId" element={<BroadcastOverlay />} />
                 
-                {/* Rotas Protegidas (Envolvidas pelo Layout e OnboardingCheck) */}
+                {/* Rotas Protegidas */}
                 <Route path="/*" element={
                     <OnboardingCheck>
-                        {/* Se cair no /onboarding, o Layout pode ou não aparecer. 
-                            Vamos renderizar o Layout para manter o Header, mas a Sidebar pode estar fechada */}
                         <Layout>
                         <ErrorBoundary>
                             <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LoadingScreen /></div>}>
                                 <Routes>
-                                {/* Onboarding Route (User Accesses this post-approval) */}
                                 <Route path="/onboarding" element={<Onboarding />} />
-
                                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                                 
-                                {/* CORE */}
+                                {/* Platform Owner Route */}
+                                <Route path="/platform-hq" element={<ProtectedRoute allowedRoles={ROLES.PLATFORM}><PlatformHQ /></ProtectedRoute>} />
+
                                 <Route path="/dashboard" element={<Dashboard />} />
                                 <Route path="/profile" element={<MyProfile />} />
                                 <Route path="/schedule" element={<Schedule />} />
                                 <Route path="/locker-room" element={<LockerRoom />} />
                                 <Route path="/academy" element={<Academy />} />
                                 <Route path="/marketplace" element={<Marketplace />} />
+                                <Route path="/digital-store" element={<DigitalStore />} />
                                 <Route path="/communications" element={<Communications />} />
                                 <Route path="/help" element={<HelpCenter />} />
                                 <Route path="/resources" element={<Resources />} />
                                 
-                                {/* COACHING & OPERAÇÕES */}
                                 <Route path="/roster" element={<ProtectedRoute allowedRoles={ROLES.PLAYER_VIEW}><Roster /></ProtectedRoute>} />
                                 <Route path="/practice" element={<ProtectedRoute allowedRoles={ROLES.PLAYER_VIEW}><PracticePlan /></ProtectedRoute>} />
                                 <Route path="/gemini-playbook" element={<ProtectedRoute allowedRoles={ROLES.PLAYER_VIEW}><GeminiPlaybook /></ProtectedRoute>} />
@@ -140,7 +134,6 @@ const Main: React.FC = () => {
                                 <Route path="/youth" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><YouthProgram /></ProtectedRoute>} />
                                 <Route path="/event-desk" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><EventDesk /></ProtectedRoute>} />
                                 
-                                {/* OFFICE / ADMIN */}
                                 <Route path="/finance" element={<ProtectedRoute allowedRoles={ROLES.FINANCE}><Finance /></ProtectedRoute>} />
                                 <Route path="/commercial" element={<ProtectedRoute allowedRoles={ROLES.COMMERCIAL}><Commercial /></ProtectedRoute>} />
                                 <Route path="/marketing" element={<ProtectedRoute allowedRoles={ROLES.MARKETING}><Marketing /></ProtectedRoute>} />
@@ -152,7 +145,6 @@ const Main: React.FC = () => {
                                 <Route path="/settings" element={<ProtectedRoute allowedRoles={ROLES.MASTER}><TeamSettingsPage /></ProtectedRoute>} />
                                 <Route path="/admin" element={<ProtectedRoute allowedRoles={ROLES.MASTER}><AdminPanel /></ProtectedRoute>} />
                                 
-                                {/* EXTERNAL */}
                                 <Route path="/officiating" element={<Officiating />} />
                                 <Route path="/league" element={<LeagueManager />} />
                                 <Route path="/confederation" element={<Confederation />} />
