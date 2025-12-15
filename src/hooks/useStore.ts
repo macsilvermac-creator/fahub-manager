@@ -1,9 +1,9 @@
 
 // ARQUIVO DESCONTINUADO
-// Se você está vendo este arquivo, atualize suas importações para:
-// import { useStore } from '@/hooks/useStore';
+// Este arquivo foi substituído por src/utils/storeHooks.ts
+// O Vercel pode manter cache de arquivos deletados, então mantemos este arquivo vazio ou com um aviso.
+// Se você está vendo este arquivo em um import, atualize para @/utils/storeHooks
 
-export const useData = () => {
-    console.error("useData está DEPRECATED. Use useStore.");
-    return null;
+export const useStore = () => {
+    throw new Error("useStore de src/hooks/useStore.ts está obsoleto. Use @/utils/storeHooks");
 };

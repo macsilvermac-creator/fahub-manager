@@ -6,7 +6,8 @@ import { storageService } from '../services/storageService';
 import { predictPlayCall } from '../services/geminiService';
 import { ScissorsIcon, FilterIcon, SettingsIcon, SparklesIcon, PenIcon, EraserIcon, BrainIcon, EyeIcon, TrendingUpIcon, SearchIcon, ScanIcon, XIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
-import { useStore } from '@/hooks/useStore';
+// Importação corrigida para usar o novo hook em utils
+import { useAppStore } from '@/utils/storeHooks';
 
 interface VideoSource {
     id: string;
@@ -21,7 +22,7 @@ const VideoAnalysis: React.FC = () => {
     
     // REATIVIDADE: Escuta qual programa (Flag ou Tackle) está ativo no Dashboard
     // @ts-ignore
-    const activeProgram = useStore('activeProgram', storageService.getActiveProgram);
+    const activeProgram = useAppStore('activeProgram', storageService.getActiveProgram);
     const taggingMode = activeProgram === 'FLAG' ? 'FLAG' : 'FULLPADS';
 
     // Refs
