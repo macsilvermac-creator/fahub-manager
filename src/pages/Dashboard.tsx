@@ -13,7 +13,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import Skeleton from '../components/Skeleton';
 import LazyImage from '@/components/LazyImage';
 import { useToast } from '../contexts/ToastContext';
-import { useData } from './hooks/useData';
+import { useData } from '@/hooks/useData';
 
 // Lazy Load Modules
 const PracticePlan = React.lazy(() => import('./PracticePlan'));
@@ -264,7 +264,6 @@ const Dashboard: React.FC = () => {
     const [userProgram, setUserProgram] = useState<ProgramType>('BOTH'); 
     
     // --- PROTOCOLO FAHUB: REACTIVE DATA HOOKS ---
-    // Substitui os antigos useEffects com setTimeout
     const players = useData('players', storageService.getPlayers);
     const games = useData('games', storageService.getGames);
     // @ts-ignore
@@ -329,7 +328,6 @@ const Dashboard: React.FC = () => {
     }
 
     if (isPlayerView) {
-        // Encontra o próprio player
         const user = authService.getCurrentUser();
         const currentPlayer = players.find(p => p.name === user?.name) || players[0];
         return <PlayerCareerMode player={currentPlayer} navigate={navigate} nextGame={nextGame} xpLeaders={xpLeaders} />;

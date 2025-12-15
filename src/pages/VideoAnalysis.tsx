@@ -6,6 +6,7 @@ import { storageService } from '../services/storageService';
 import { predictPlayCall } from '../services/geminiService';
 import { ScissorsIcon, FilterIcon, SettingsIcon, SparklesIcon, PenIcon, EraserIcon, BrainIcon, EyeIcon, TrendingUpIcon, SearchIcon, ScanIcon, XIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
+import { useData } from '@/hooks/useData';
 
 interface VideoSource {
     id: string;
@@ -18,6 +19,11 @@ const VideoAnalysis: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const [activeTab, setActiveTab] = useState<'CUTTER' | 'LIBRARY' | 'REPORTS'>('CUTTER');
     
+    // REATIVIDADE: Escuta qual programa (Flag ou Tackle) está ativo no Dashboard
+    // @ts-ignore
+    const activeProgram = useData('activeProgram', storageService.getActiveProgram);
+    const taggingMode = activeProgram === 'FLAG' ? 'FLAG' : 'FULLPADS';
+
     // Refs
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -55,6 +61,7 @@ const VideoAnalysis: React.FC = () => {
     const [drawingActive, setDrawingActive] = useState(false);
 
     useEffect(() => {
+        // Agora usa o Lazy Load, não carrega na memória principal até aqui
         setClips(storageService.getClips());
     }, []);
 
@@ -74,6 +81,7 @@ const VideoAnalysis: React.FC = () => {
 
     const handlePredictPlay = async () => {
         setIsPredicting(true);
+        // O serviço gemini agora lida com o erro de chave internamente
         const result = await predictPlayCall(clips, tagData.down, tagData.distance);
         setPrediction(result);
         setIsPredicting(false);
@@ -165,7 +173,9 @@ const VideoAnalysis: React.FC = () => {
                         </div>
                         <div>
                             <h2 className="text-3xl font-bold text-text-primary">Vision Core</h2>
-                            <p className="text-text-secondary">Análise de Vídeo & Inteligência Tática.</p>
+                            <p className="text-text-secondary">
+                                Análise de Vídeo • <span className="text-highlight font-bold">{taggingMode === 'FLAG' ? 'FLAG 5v5' : 'FULL PADS 11v11'}</span>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -262,7 +272,7 @@ const VideoAnalysis: React.FC = () => {
                             {/* Prediction Widget */}
                             <div className="bg-gradient-to-br from-indigo-900/40 to-black p-4 rounded-xl border border-indigo-500/30 mb-4 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-2 opacity-20"><SparklesIcon className="w-12 h-12 text-indigo-400"/></div>
-                                <h4 className="text-xs font-bold text-indigo-300 uppercase mb-2">Previsão Tática</h4>
+                                <h4 className="text-xs font-bold text-indigo-300 uppercase mb-2">Previsão Tática ({taggingMode})</h4>
                                 <div className="flex gap-2 mb-2">
                                     <input className="w-16 bg-black/40 border border-indigo-500/30 rounded p-1 text-white text-xs text-center" value={tagData.down} onChange={e => setTagData({...tagData, down: Number(e.target.value) as any})} placeholder="Down" />
                                     <span className="text-white text-xs flex items-center">&</span>
@@ -285,11 +295,11 @@ const VideoAnalysis: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <label className="text-[10px] text-text-secondary uppercase">Formação</label>
-                                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" value={tagData.offensiveFormation} onChange={e => setTagData({...tagData, offensiveFormation: e.target.value})} placeholder="Ex: Trips Right" />
+                                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" value={tagData.offensiveFormation} onChange={e => setTagData({...tagData, offensiveFormation: e.target.value})} placeholder={taggingMode === 'FLAG' ? "Ex: Twins Left" : "Ex: I-Form"} />
                                     </div>
                                     <div>
                                         <label className="text-[10px] text-text-secondary uppercase">Jogada</label>
-                                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" value={tagData.offensivePlayCall} onChange={e => setTagData({...tagData, offensivePlayCall: e.target.value})} placeholder="Ex: Mesh" />
+                                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" value={tagData.offensivePlayCall} onChange={e => setTagData({...tagData, offensivePlayCall: e.target.value})} placeholder="Ex: Mesh / Zone" />
                                     </div>
                                 </div>
 
