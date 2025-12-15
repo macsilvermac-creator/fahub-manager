@@ -4,8 +4,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../components/Card';
 import LazyImage from '../../components/LazyImage';
-import { ClipboardIcon } from '../../components/icons/UiIcons';
-import { TrophyIcon, UsersIcon, BookIcon, ShopIcon, ActivityIcon } from '../../components/icons/NavIcons';
+import { ClipboardIcon, UsersIcon, ActivityIcon } from '../../components/icons/UiIcons';
+import { TrophyIcon, BookIcon, ShopIcon } from '../../components/icons/NavIcons';
 
 interface PlayerCareerModeProps {
     player: any;
