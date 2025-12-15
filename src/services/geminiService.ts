@@ -1,5 +1,6 @@
+
 import { GoogleGenAI } from "@google/genai";
-import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement, CombineStats } from "../types";
+import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement, CombineStats, QuizQuestion, GymDay } from "../types";
 
 // @ts-ignore
 const ENV_API_KEY = process.env.API_KEY || "";
@@ -8,13 +9,11 @@ let runtimeKey: string | null = null;
 let aiClientInstance: GoogleGenAI | null = null;
 
 // --- AI CACHE SYSTEM (MEMOIZATION) ---
-// Armazena resultados para evitar chamadas repetidas (Economia de $$ e Latência Zero)
 const AI_CACHE: Record<string, { timestamp: number, data: any }> = {};
 const CACHE_TTL = 1000 * 60 * 60; // 1 Hora de Cache
 
 const getCacheKey = (model: string, prompt: string): string => {
-    // Cria uma chave única baseada no modelo e no conteúdo do prompt
-    return btoa(encodeURIComponent(`${model}:${prompt.substring(0, 100)}`)); // Base64 simples do início do prompt
+    return btoa(encodeURIComponent(`${model}:${prompt.substring(0, 100)}`)); 
 };
 
 const checkCache = (key: string) => {
@@ -25,8 +24,7 @@ const checkCache = (key: string) => {
         delete AI_CACHE[key];
         return null;
     }
-    
-    console.log("⚡ [AI CACHE] Hit! Servindo resposta instantânea.");
+    console.log("⚡ [AI CACHE] Hit!");
     return entry.data;
 };
 
@@ -67,7 +65,6 @@ const generateJson = async (prompt: string): Promise<any> => {
     const model = 'gemini-2.5-flash';
     const cacheKey = getCacheKey(model, prompt);
     
-    // 1. Verifica Cache
     const cached = checkCache(cacheKey);
     if (cached) return cached;
 
@@ -87,11 +84,10 @@ const generateJson = async (prompt: string): Promise<any> => {
         if (response.text) {
             try {
                 const parsed = JSON.parse(cleanJsonString(response.text));
-                // 2. Salva no Cache
                 setCache(cacheKey, parsed);
                 return parsed;
             } catch (parseError) {
-                console.warn("⚠️ JSON Parse Error. Tentando corrigir...", response.text);
+                console.warn("⚠️ JSON Parse Error, trying fix.");
                 const jsonMatch = response.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
                 if (jsonMatch) {
                     const corrected = JSON.parse(jsonMatch[0]);
@@ -111,8 +107,6 @@ const generateJson = async (prompt: string): Promise<any> => {
 const generateText = async (prompt: string): Promise<string> => {
     const model = 'gemini-2.5-flash';
     const cacheKey = getCacheKey(model, prompt);
-
-    // 1. Verifica Cache
     const cached = checkCache(cacheKey);
     if (cached) return cached;
 
@@ -124,19 +118,58 @@ const generateText = async (prompt: string): Promise<string> => {
             config: { temperature: 0.7 }
         });
         const text = response.text || "";
-        
-        // 2. Salva no Cache
         setCache(cacheKey, text);
         return text;
-
     } catch (e: any) {
         console.error("❌ Erro Gemini Texto:", e.message);
         throw e;
     }
 };
 
-// --- EXPORTED FUNCTIONS ---
+// --- NEW AGENTS FOR ACADEMY & PLAYBOOK ---
 
+export const generateQuizFromContent = async (topic: string): Promise<QuizQuestion[]> => {
+    const prompt = `Create a quiz for Football players about: "${topic}". Return JSON Array: [{ question: string, options: string[], correctAnswer: number (index 0-3), explanation: string }]. Generate 5 hard questions. Language: PT-BR.`;
+    return (await generateJson(prompt)) || [];
+};
+
+export const generateStructuredGymPlan = async (goal: string, equipment: string): Promise<GymDay[]> => {
+    const prompt = `Create a 3-day Football Gym Plan. Goal: "${goal}". Equipment: "${equipment}". 
+    Return JSON structure: 
+    [
+        {
+            "title": "Day 1: Upper Power",
+            "focus": "Explosive Push",
+            "exercises": [
+                { "name": "Bench Press", "sets": "4", "reps": "5", "notes": "Explosive up" }
+            ]
+        }
+    ]
+    Language: PT-BR (but keep standard exercise names in English if common).`;
+    
+    return (await generateJson(prompt)) || [];
+};
+
+export const explainPlayImage = async (base64Image: string, playerQuestion: string): Promise<string> => {
+    try {
+        const ai = getClient();
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: {
+                parts: [
+                    { text: `You are an expert American Football Coach. Analyze this play diagram. The player asks: "${playerQuestion}". Explain their responsibility clearly in Portuguese (PT-BR). Keep it tactical and encouraging.` },
+                    { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
+                ]
+            }
+        });
+        return response.text || "Não consegui analisar a imagem.";
+    } catch (e) {
+        console.error(e);
+        return "Erro ao analisar imagem da jogada.";
+    }
+};
+
+// --- EXISTING EXPORTS ---
 export const classifyCoachVoiceNote = async (text: string) => {
     const prompt = `Analyze football coach note: "${text}". Return JSON: { category: 'OFFENSE'|'DEFENSE'|'SPECIAL'|'GENERAL', tags: string[], sentiment: 'POSITIVE'|'NEGATIVE'|'NEUTRAL', action?: string }`;
     return (await generateJson(prompt)) || { category: 'GENERAL', tags: [], sentiment: 'NEUTRAL' };
@@ -162,7 +195,6 @@ export const predictPlayCall = async (history: VideoClip[], down: number, dist: 
 };
 
 export const importPlaybookFromImage = async (base64: string): Promise<PlayElement[]> => {
-    // Imagens não são cacheadas por padrão devido ao tamanho da string base64
     try {
         const ai = getClient();
         const response = await ai.models.generateContent({

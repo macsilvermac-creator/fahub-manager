@@ -21,11 +21,26 @@ export interface WellnessEntry {
     rpe: number;
 }
 
+// --- NOVOS TIPOS PARA IA ---
+export interface GymExercise {
+    name: string;
+    sets: string;
+    reps: string;
+    notes?: string;
+}
+
+export interface GymDay {
+    title: string;
+    focus: string;
+    exercises: GymExercise[];
+}
+// ---------------------------
+
 export interface SavedWorkout {
     id: string;
     date: Date;
     title: string;
-    content: string;
+    content: string | GymDay[]; // Suporta texto legado e novo JSON
     category: string;
 }
 
@@ -106,6 +121,7 @@ export interface Player {
     medicalReports?: MedicalReport[];
     rosterHistory?: any[];
     hcNotes?: string;
+    isProfileComplete?: boolean;
 }
 
 export interface GameScoutingReport {
@@ -242,8 +258,8 @@ export interface PracticeSession {
     category: PracticeCategory;
     locationType: string;
     instructor: string;
-    attendees: string[]; // List of Player IDs who RSVP'd (Disse que vai)
-    checkedInAttendees?: string[]; // List of Player IDs who actually showed up (Confirmado pelo Coach)
+    attendees: string[];
+    checkedInAttendees?: string[];
     deadlineDate?: Date; 
     notes: string;
     drills: Drill[];
@@ -744,13 +760,13 @@ export interface Team {
     logoUrl?: string;
 }
 
-// Gamification Types
+// Gamification Types (Updated)
 export interface QuizQuestion {
     id: string;
     question: string;
     options: string[];
-    correctAnswer: number; // index
-    imageUrl?: string; // For play diagram
+    correctAnswer: number; // index (0-3)
+    explanation?: string;
 }
 
 export interface PlaybookQuiz {
