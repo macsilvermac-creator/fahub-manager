@@ -144,7 +144,6 @@ const saveAndCache = <T>(ramKey: string, storageKey: string, data: T) => {
             localStorage.setItem(storageKey, JSON.stringify(data));
             
             // 3. Dispara Sincronização em Background (Fire & Forget)
-            // Aqui é a mágica: O UI não espera isso terminar.
             syncService.triggerSync(ramKey, data); 
             
         } catch (e) {
@@ -164,6 +163,7 @@ export const storageService = {
     },
 
     initializeRAM: () => {
+        console.group("🚀 FAHUB PROTOCOL: SYSTEM BOOT");
         if (RAM_DB.settings === null) {
             try {
                 const storedSettings = localStorage.getItem(KEYS.SETTINGS);
@@ -177,6 +177,10 @@ export const storageService = {
         
         loadIfNeeded('players', KEYS.PLAYERS);
         loadIfNeeded('games', KEYS.GAMES);
+        
+        console.log("✅ Core Memory Loaded: Players, Games, Settings");
+        console.log(`⚡ Active Program: ${RAM_DB.activeProgram}`);
+        console.groupEnd();
         return true; 
     },
 
@@ -406,7 +410,6 @@ export const storageService = {
 
     getPermissions: () => [],
     seedDatabaseToCloud: async () => {
-        // Force full sync for seeding
         await syncService.processQueue();
     },
     exportFullDatabase: () => {
