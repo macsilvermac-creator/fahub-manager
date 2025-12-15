@@ -76,7 +76,7 @@ const PracticePlan: React.FC = () => {
         
         // Detect Program Context
         const prog = storageService.getActiveProgram();
-        setActiveProgram(prog);
+        setActiveProgram(prog === 'BOTH' ? 'TACKLE' : prog);
         setQuickBlocks(prog === 'FLAG' ? QUICK_BLOCKS_FLAG : QUICK_BLOCKS_TACKLE);
         setNewDuration(prog === 'FLAG' ? 90 : 120); 
     }, []);

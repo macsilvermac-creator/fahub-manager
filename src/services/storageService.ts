@@ -1,10 +1,11 @@
 
-import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, EquipmentItem, EventSale, RecruitmentCandidate, Objective, Subscription, Budget, Bill, KanbanTask, NationalTeamCandidate, Affiliate, RefereeProfile, LegalDocument, ProgramType, AssociationFinance } from '../types';
+import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, EquipmentItem, EventSale, RecruitmentCandidate, Objective, Subscription, Budget, Bill, KanbanTask, NationalTeamCandidate, Affiliate, RefereeProfile, LegalDocument, ProgramType, AssociationFinance, GameStatsSnapshot, DigitalProduct, Entitlement } from '../types';
 import { firebaseDataService } from './firebaseDataService';
 import { syncService } from './syncService';
 
 // Keys for LocalStorage
 const KEYS = {
+    // ... existing keys ...
     PLAYERS: 'gridiron_players',
     GAMES: 'gridiron_games',
     SETTINGS: 'gridiron_settings',
@@ -35,7 +36,8 @@ const KEYS = {
     SUBSCRIPTIONS: 'gridiron_subscriptions',
     BUDGETS: 'gridiron_budgets',
     BILLS: 'gridiron_bills',
-    ACTIVE_PROGRAM: 'gridiron_active_program'
+    ACTIVE_PROGRAM: 'gridiron_active_program',
+    ENTITLEMENTS: 'gridiron_entitlements' // NEW KEY
 };
 
 const dateReviver = (key: string, value: any) => {
@@ -60,48 +62,45 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
     legalAgreementsSigned: []
 };
 
-// Internal RAM Database
+// ... existing RAM_DB and helpers ...
 const RAM_DB: Record<string, any> = {};
 const LISTENERS: Record<string, Function[]> = {};
 
-// Helper to get from disk
 const getFromDisk = <T>(key: string, defaultValue: T): T => {
+    if (RAM_DB[key] !== undefined) {
+        return RAM_DB[key] as T;
+    }
     try {
         const stored = localStorage.getItem(key);
-        return stored ? JSON.parse(stored, dateReviver) : defaultValue;
+        const data = stored ? JSON.parse(stored, dateReviver) : defaultValue;
+        RAM_DB[key] = data;
+        return data;
     } catch {
         return defaultValue;
     }
 };
 
-// Helper to save to disk and notify
 const saveToDisk = (key: string, value: any, syncEntity?: string) => {
     localStorage.setItem(key, JSON.stringify(value));
     RAM_DB[key] = value;
-    
-    // Notify local listeners
     if (LISTENERS[key]) {
         LISTENERS[key].forEach(cb => cb(value));
     }
-
-    // Trigger Cloud Sync
     if (syncEntity) {
         syncService.triggerSync(syncEntity, value);
     }
 };
 
 export const storageService = {
+    // ... existing initialization ...
     initializeRAM: () => {
-        RAM_DB[KEYS.PLAYERS] = getFromDisk(KEYS.PLAYERS, []);
-        RAM_DB[KEYS.GAMES] = getFromDisk(KEYS.GAMES, []);
+        console.log("🚀 [SYSTEM] Booting Lazy Storage...");
         RAM_DB[KEYS.SETTINGS] = getFromDisk(KEYS.SETTINGS, INITIAL_TEAM_SETTINGS);
-        RAM_DB[KEYS.TRANSACTIONS] = getFromDisk(KEYS.TRANSACTIONS, []);
         RAM_DB[KEYS.ACTIVE_PROGRAM] = getFromDisk(KEYS.ACTIVE_PROGRAM, 'TACKLE');
-        // Load others on demand or here if critical
+        RAM_DB[KEYS.ENTITLEMENTS] = getFromDisk(KEYS.ENTITLEMENTS, []);
     },
 
     subscribe: (keyName: string, callback: Function) => {
-        // Map generic names to specific keys if needed, or use direct keys
         let internalKey = '';
         if (keyName === 'players') internalKey = KEYS.PLAYERS;
         else if (keyName === 'games') internalKey = KEYS.GAMES;
@@ -116,14 +115,16 @@ export const storageService = {
         };
     },
 
-    // --- PLAYERS ---
+    // ... existing methods for players, games, etc ...
     getPlayers: (): Player[] => getFromDisk(KEYS.PLAYERS, []),
     savePlayers: (players: Player[]) => saveToDisk(KEYS.PLAYERS, players, 'players'),
+    
     registerAthlete: (player: Player) => {
-        const players = storageService.getPlayers();
+        const players = storageService.getPlayers(); 
         const updated = [...players, player];
         storageService.savePlayers(updated);
     },
+    
     addPlayerXP: (playerId: number, amount: number, reason: string) => {
         const players = storageService.getPlayers();
         const updated = players.map(p => {
@@ -136,14 +137,15 @@ export const storageService = {
         storageService.logAuditAction('GAMIFICATION', `Player ${playerId} +${amount} XP: ${reason}`);
     },
 
-    // --- GAMES ---
     getGames: (): Game[] => getFromDisk(KEYS.GAMES, []),
     saveGames: (games: Game[]) => saveToDisk(KEYS.GAMES, games, 'games'),
+    
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const games = storageService.getGames();
         const updated = games.map(g => g.id === gameId ? { ...g, ...updates } : g);
         storageService.saveGames(updated);
     },
+    
     finalizeGameReport: (gameId: number, report: GameReport, score: string, winner: string) => {
         const games = storageService.getGames();
         const updated = games.map(g => g.id === gameId ? {
@@ -156,34 +158,113 @@ export const storageService = {
         storageService.saveGames(updated);
     },
 
-    // --- TEAM SETTINGS ---
+    processDriveStats: (gameId: string, driveData: any) => {
+        const games = storageService.getGames();
+        const players = storageService.getPlayers();
+        let gameUpdated = false;
+        let playersUpdated = false;
+
+        const updatedGames = games.map(g => {
+            if (g.id === Number(gameId) || g.id === String(gameId) as any) {
+                gameUpdated = true;
+                let newScore = g.score || "0-0";
+                if (driveData.result === 'TOUCHDOWN') {
+                    const parts = newScore.split('-');
+                    const home = parseInt(parts[0]) + 6;
+                    newScore = `${home}-${parts[1]}`;
+                } else if (driveData.result === 'FIELD_GOAL') {
+                     const parts = newScore.split('-');
+                     const home = parseInt(parts[0]) + 3;
+                     newScore = `${home}-${parts[1]}`;
+                }
+                const newDrive = {
+                    id: `drive-${Date.now()}`,
+                    quarter: g.currentQuarter || 1,
+                    ...driveData
+                };
+                return { 
+                    ...g, 
+                    score: newScore,
+                    drives: [...(g.drives || []), newDrive] 
+                };
+            }
+            return g;
+        });
+
+        if (driveData.keyPlayerNumber) {
+            const updatedPlayers = players.map(p => {
+                if (p.jerseyNumber === driveData.keyPlayerNumber) {
+                    playersUpdated = true;
+                    const xpGain = (driveData.result === 'TOUCHDOWN' ? 50 : 10) + (driveData.totalYardsEst || 0);
+                    return { ...p, xp: (p.xp || 0) + xpGain };
+                }
+                return p;
+            });
+            if (playersUpdated) storageService.savePlayers(updatedPlayers);
+        }
+
+        if (gameUpdated) {
+            storageService.saveGames(updatedGames);
+        }
+    },
+
+    generateGameSnapshot: (gameId: string, type: 'HALFTIME' | 'FINAL') => {
+        const games = storageService.getGames();
+        let targetGame = games.find(g => g.id === Number(gameId) || g.id === String(gameId) as any);
+        if(!targetGame) return null;
+
+        const drives = targetGame.drives || [];
+        const relevantDrives = type === 'HALFTIME' ? drives.filter(d => d.quarter <= 2) : drives;
+
+        const snapshot: GameStatsSnapshot = {
+            totalYards: relevantDrives.reduce((acc, d) => acc + (d.totalYardsEst || 0), 0),
+            passYards: relevantDrives.filter(d => d.result !== 'PUNT').reduce((acc, d) => acc + (d.totalYardsEst ? d.totalYardsEst * 0.6 : 0), 0), 
+            rushYards: relevantDrives.filter(d => d.result !== 'PUNT').reduce((acc, d) => acc + (d.totalYardsEst ? d.totalYardsEst * 0.4 : 0), 0),
+            turnovers: relevantDrives.filter(d => d.result === 'TURNOVER').length,
+            firstDowns: Math.floor(relevantDrives.reduce((acc, d) => acc + (d.totalYardsEst || 0), 0) / 10),
+            generatedAt: new Date()
+        };
+
+        const updatedGames = games.map(g => {
+            if (g.id === targetGame.id) {
+                if (type === 'HALFTIME') return { ...g, halftimeStats: snapshot, status: 'HALFTIME' as const };
+                if (type === 'FINAL') return { ...g, finalStats: snapshot };
+            }
+            return g;
+        });
+
+        storageService.saveGames(updatedGames);
+        return snapshot;
+    },
+
     getTeamSettings: (): TeamSettings => getFromDisk(KEYS.SETTINGS, INITIAL_TEAM_SETTINGS),
     saveTeamSettings: (s: TeamSettings) => saveToDisk(KEYS.SETTINGS, s, 'settings'),
 
-    // --- PROGRAM CONTEXT ---
     getActiveProgram: (): ProgramType => getFromDisk(KEYS.ACTIVE_PROGRAM, 'TACKLE'),
     setActiveProgram: (program: ProgramType) => saveToDisk(KEYS.ACTIVE_PROGRAM, program),
 
-    // --- FINANCE ---
     getTransactions: (): Transaction[] => getFromDisk(KEYS.TRANSACTIONS, []),
     saveTransactions: (t: Transaction[]) => saveToDisk(KEYS.TRANSACTIONS, t, 'transactions'),
     
     getInvoices: (): Invoice[] => getFromDisk(KEYS.INVOICES, []),
     saveInvoices: (i: Invoice[]) => saveToDisk(KEYS.INVOICES, i),
-    generateMonthlyInvoices: () => { /* Mock Implementation */ },
+    
     createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string) => {
         const invoices = storageService.getInvoices();
-        // Mock creation logic
-        const newInvoices: Invoice[] = ids.map(id => ({
-            id: `inv-${Date.now()}-${id}`,
-            playerId: id,
-            playerName: 'Player', // Fetch real name
-            title,
-            amount,
-            dueDate,
-            status: 'PENDING',
-            category: category as any
-        }));
+        const players = storageService.getPlayers();
+        const newInvoices: Invoice[] = ids.map(id => {
+            const p = players.find(pl => pl.id === id);
+            return {
+                id: `inv-${Date.now()}-${id}`,
+                playerId: id,
+                playerName: p?.name || 'Player',
+                title,
+                amount,
+                dueDate,
+                status: 'PENDING',
+                category: category as any
+            };
+        });
         storageService.saveInvoices([...invoices, ...newInvoices]);
     },
 
@@ -196,7 +277,6 @@ export const storageService = {
     getBills: (): Bill[] => getFromDisk(KEYS.BILLS, []),
     saveBills: (b: Bill[]) => saveToDisk(KEYS.BILLS, b),
 
-    // --- OTHER ENTITIES (Simple Getters/Setters) ---
     getPracticeSessions: (): PracticeSession[] => getFromDisk(KEYS.PRACTICE, []),
     savePracticeSessions: (p: PracticeSession[]) => saveToDisk(KEYS.PRACTICE, p),
     togglePracticeAttendance: (practiceId: string, userId: string) => {
@@ -324,7 +404,89 @@ export const storageService = {
     getObjectives: (): Objective[] => getFromDisk(KEYS.OBJECTIVES, []),
     saveObjectives: (o: Objective[]) => saveToDisk(KEYS.OBJECTIVES, o),
 
-    // --- MOCKS FOR EXTERNAL MODULES ---
+    // --- DIGITAL PRODUCTS (NEW) ---
+    getDigitalProducts: (): DigitalProduct[] => {
+        // Mock Products if empty
+        return [
+            {
+                id: 'prod-video-analysis',
+                title: 'Análise de Vídeo (Jogo Individual)',
+                description: 'Acesso completo às filmagens e dados do scout deste jogo por 48 horas.',
+                price: 19.90,
+                type: 'GAME_VIDEO',
+                durationHours: 48,
+                coverUrl: 'https://source.unsplash.com/random/400x300/?football,video'
+            },
+            {
+                id: 'prod-scout-report',
+                title: 'Scout Report Completo',
+                description: 'PDF detalhado com tendências e estatísticas do adversário. Acesso por 7 dias.',
+                price: 29.90,
+                type: 'SCOUT_REPORT',
+                durationHours: 168, // 7 days
+                coverUrl: 'https://source.unsplash.com/random/400x300/?document,analytics'
+            }
+        ];
+    },
+
+    getEntitlements: (): Entitlement[] => getFromDisk(KEYS.ENTITLEMENTS, []),
+
+    // Core Logic: Buy and Grant Access
+    purchaseDigitalProduct: (userId: string, product: DigitalProduct, resourceId?: string) => {
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + product.durationHours);
+
+        const newEntitlement: Entitlement = {
+            id: `ent-${Date.now()}`,
+            userId,
+            productId: product.id,
+            resourceId: resourceId, // e.g. gameId
+            purchaseDate: new Date(),
+            expiresAt: expiresAt,
+            status: 'ACTIVE'
+        };
+
+        const currentEntitlements = storageService.getEntitlements();
+        const updated = [...currentEntitlements, newEntitlement];
+        saveToDisk(KEYS.ENTITLEMENTS, updated);
+        
+        // Also log transaction
+        const newTx: Transaction = {
+            id: `tx-dig-${Date.now()}`,
+            title: `Compra Digital: ${product.title}`,
+            amount: product.price,
+            type: 'INCOME',
+            category: 'STORE',
+            date: new Date(),
+            status: 'PAID',
+            verifiedBy: 'System'
+        };
+        const txs = storageService.getTransactions();
+        storageService.saveTransactions([newTx, ...txs]);
+        
+        return newEntitlement;
+    },
+
+    // Check if user has access to a resource
+    checkAccess: (userId: string, productId: string, resourceId?: string): boolean => {
+        const entitlements = storageService.getEntitlements();
+        const now = new Date();
+
+        return entitlements.some(e => {
+            // Check User match
+            if (e.userId !== userId) return false;
+            // Check Product match
+            if (e.productId !== productId) return false;
+            // Check Resource Specificity (if required)
+            if (resourceId && e.resourceId && e.resourceId !== resourceId) return false;
+            // Check Expiration
+            if (new Date(e.expiresAt) < now) return false;
+            
+            return true;
+        });
+    },
+
+    // --- MOCKS FOR EXTERNAL MODULES (Preserved for compatibility) ---
     getConfederationStats: () => ({ totalAthletes: 1250, totalTeams: 18, totalGamesThisYear: 42, activeAffiliates: 5, growthRate: 12 }),
     getNationalTeamScouting: (): NationalTeamCandidate[] => [],
     getAffiliatesStatus: (): Affiliate[] => [],
@@ -363,6 +525,7 @@ export const storageService = {
     },
 
     createChampionship: (name: string, year: number, division: string) => {},
+    generateMonthlyInvoices: () => {},
 
     exportFullDatabase: () => {
         const data = JSON.stringify(localStorage);

@@ -42,7 +42,8 @@ const Roster: React.FC = () => {
 
     useEffect(() => {
         setPlayers(storageService.getPlayers());
-        setActiveProgram(storageService.getActiveProgram());
+        const prog = storageService.getActiveProgram();
+        setActiveProgram(prog === 'BOTH' ? 'TACKLE' : prog);
         if (isPlayer) setViewMode('CARDS');
     }, [isPlayer]);
 
