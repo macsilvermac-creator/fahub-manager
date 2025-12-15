@@ -34,8 +34,6 @@ export interface PlatformMetric {
     churnRate: number;
 }
 
-// ... (Mantenha o resto dos tipos inalterados) ...
-
 // --- NEW DIGITAL STORE & DRM TYPES ---
 export type ProductType = 'GAME_VIDEO' | 'SCOUT_REPORT' | 'COURSE' | 'DOCUMENT';
 
@@ -160,8 +158,6 @@ export interface Bill {
     status: 'PENDING' | 'PAID' | 'OVERDUE';
     category: string;
 }
-
-// --- EXISTING TYPES BELOW (UNCHANGED OR EXTENDED) ---
 
 export interface CombineStats {
     fortyYards?: number;

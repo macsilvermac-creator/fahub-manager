@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { DigitalProduct, Entitlement } from '../types';
 import { storageService } from '../services/storageService';
 import { authService } from '../services/authService';
-import Card from '../components/Card';
 import { TrophyIcon, BriefcaseIcon } from '../components/icons/NavIcons';
 import { LockIcon, CheckCircleIcon, SparklesIcon, CloudIcon, ShieldCheckIcon, WalletIcon } from '../components/icons/UiIcons';
 import PaymentModal from '../components/PaymentModal';
