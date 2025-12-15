@@ -13,7 +13,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import Skeleton from '../components/Skeleton';
 import LazyImage from '@/components/LazyImage';
 import { useToast } from '../contexts/ToastContext';
-import { useData } from '@/hooks/useData';
+import { useStore } from '@/hooks/useStore';
 
 // Lazy Load Modules
 const PracticePlan = React.lazy(() => import('./PracticePlan'));
@@ -263,11 +263,11 @@ const Dashboard: React.FC = () => {
     const [activeModule, setActiveModule] = useState<string>('');
     const [userProgram, setUserProgram] = useState<ProgramType>('BOTH'); 
     
-    // --- PROTOCOLO FAHUB: REACTIVE DATA HOOKS ---
-    const players = useData('players', storageService.getPlayers);
-    const games = useData('games', storageService.getGames);
+    // --- PROTOCOLO FAHUB: REACTIVE DATA HOOKS (Novo Arquivo) ---
+    const players = useStore('players', storageService.getPlayers);
+    const games = useStore('games', storageService.getGames);
     // @ts-ignore
-    const activeProgram = useData('activeProgram', storageService.getActiveProgram);
+    const activeProgram = useStore('activeProgram', storageService.getActiveProgram);
 
     // Derived States (Memoized for Performance)
     const { rawCoachStats, xpLeaders, nextGame } = useMemo(() => {
