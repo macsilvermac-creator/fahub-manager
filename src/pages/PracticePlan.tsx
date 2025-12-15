@@ -1,14 +1,16 @@
 
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
-import { PracticeSession, PracticeCategory, PracticeScriptItem, Announcement } from '../types';
+import { PracticeSession, PracticeCategory, PracticeScriptItem, Announcement, Player } from '../types';
 import { storageService } from '../services/storageService';
 import { generatePracticeScript } from '../services/geminiService';
-import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon, ShareIcon, AlertCircleIcon } from '../components/icons/UiIcons';
+import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon, ShareIcon, AlertCircleIcon, UsersIcon, CheckCircleIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
 import Button from '../components/Button'; 
 import Input from '../components/Input';
 import { useToast } from '../contexts/ToastContext';
+import Modal from '../components/Modal'; 
+import LazyImage from '../components/LazyImage';
 
 // PRESETS TACKLE
 const QUICK_BLOCKS_TACKLE = [
@@ -34,6 +36,7 @@ const PracticePlan: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const toast = useToast();
     const [practices, setPractices] = useState<PracticeSession[]>([]);
+    const [players, setPlayers] = useState<Player[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [selectedPractice, setSelectedPractice] = useState<PracticeSession | null>(null);
     const [activeMode, setActiveMode] = useState<'SCRIPT' | 'PERFORMANCE'>('SCRIPT');
@@ -48,8 +51,7 @@ const PracticePlan: React.FC = () => {
     const [newDate, setNewDate] = useState('');
     const [newCategory, setNewCategory] = useState<PracticeCategory>('TACTICAL');
     const [newDuration, setNewDuration] = useState(120); 
-    // DEADLINE STATE
-    const [newDeadlineHours, setNewDeadlineHours] = useState(2); // Default 2h antes
+    const [newDeadlineHours, setNewDeadlineHours] = useState(2);
 
     // Script Management State
     const [generatedScript, setGeneratedScript] = useState<PracticeScriptItem[]>([]);
@@ -61,17 +63,22 @@ const PracticePlan: React.FC = () => {
     const [timerSeconds, setTimerSeconds] = useState(0);
     const [activeScriptItemId, setActiveScriptItemId] = useState<string | null>(null);
 
+    // CHAMADA DIGITAL STATE
+    const [isRollCallOpen, setIsRollCallOpen] = useState(false);
+    const [rollCallPractice, setRollCallPractice] = useState<PracticeSession | null>(null);
+
     const isPlayer = currentRole === 'PLAYER';
     const canEdit = !isPlayer; 
 
     useEffect(() => {
         setPractices(storageService.getPracticeSessions());
+        setPlayers(storageService.getPlayers());
         
         // Detect Program Context
         const prog = storageService.getActiveProgram();
         setActiveProgram(prog);
         setQuickBlocks(prog === 'FLAG' ? QUICK_BLOCKS_FLAG : QUICK_BLOCKS_TACKLE);
-        setNewDuration(prog === 'FLAG' ? 90 : 120); // Treinos de flag tendem a ser mais curtos
+        setNewDuration(prog === 'FLAG' ? 90 : 120); 
     }, []);
 
     useEffect(() => {
@@ -93,7 +100,6 @@ const PracticePlan: React.FC = () => {
         }
 
         const practiceDate = new Date(newDate);
-        // Calcula Deadline
         const deadline = new Date(practiceDate);
         deadline.setHours(deadline.getHours() - newDeadlineHours);
 
@@ -102,11 +108,12 @@ const PracticePlan: React.FC = () => {
             title: newTitle,
             focus: newFocus,
             date: practiceDate,
-            deadlineDate: deadline, // Saves deadline
+            deadlineDate: deadline, 
             category: newCategory,
             locationType: 'FIELD',
             instructor: 'Coach',
             attendees: [],
+            checkedInAttendees: [], // New list for real presence
             notes: `Programa: ${activeProgram}`,
             drills: [],
             script: generatedScript.length > 0 ? generatedScript : [], 
@@ -143,6 +150,42 @@ const PracticePlan: React.FC = () => {
         toast.success("Treino agendado e prazo definido!");
     };
 
+    // --- ROLL CALL LOGIC (CHAMADA DIGITAL) ---
+    const openRollCall = (practice: PracticeSession) => {
+        setRollCallPractice(practice);
+        setIsRollCallOpen(true);
+    };
+
+    const handleCheckIn = (playerId: string) => {
+        if (!rollCallPractice) return;
+        
+        // 1. Atualiza no Storage (Lógica centralizada)
+        storageService.confirmPracticePresence(rollCallPractice.id, playerId);
+        
+        // 2. Atualiza Local State para feedback imediato
+        setRollCallPractice(prev => {
+            if (!prev) return null;
+            const currentCheckedIn = prev.checkedInAttendees || [];
+            return {
+                ...prev,
+                checkedInAttendees: [...currentCheckedIn, playerId]
+            };
+        });
+        
+        // Atualiza a lista principal para refletir mudança se fechar modal
+        const updatedPractices = practices.map(p => {
+            if (p.id === rollCallPractice.id) {
+                const currentCheckedIn = p.checkedInAttendees || [];
+                return { ...p, checkedInAttendees: [...currentCheckedIn, playerId] };
+            }
+            return p;
+        });
+        setPractices(updatedPractices);
+
+        toast.success("Presença confirmada! +50 XP");
+    };
+
+    // --- UTILS ---
     const generateWhatsAppInvite = (p: PracticeSession) => {
         const deadlineStr = p.deadlineDate ? new Date(p.deadlineDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Indefinido';
         const msg = `🏈 *CONVOCAÇÃO DE TREINO - ${p.title.toUpperCase()}*\n` +
@@ -185,7 +228,6 @@ const PracticePlan: React.FC = () => {
         setGeneratedScript(updated);
     };
 
-    // --- AI WIZARD INTEGRATION (CONTEXT AWARE) ---
     const handleAiGenerateScript = async () => {
         if (!newFocus) {
             toast.warning("Defina um foco principal primeiro.");
@@ -195,7 +237,6 @@ const PracticePlan: React.FC = () => {
         toast.info(`🤖 IA Criando roteiro para ${activeProgram}...`);
         
         try {
-            // Context Injection
             const context = activeProgram === 'FLAG' ? 'Flag Football 5v5' : 'American Football 11v11 Tackle';
             const promptContext = `${newFocus} (${context})`;
             
@@ -372,24 +413,43 @@ const PracticePlan: React.FC = () => {
                 <div className="lg:col-span-1 space-y-4 no-print">
                     <h3 className="font-bold text-white px-2">Próximos Treinos</h3>
                     {practices.length === 0 && <p className="text-text-secondary px-2 italic">Nenhum treino agendado.</p>}
-                    {practices.map(practice => (
-                        <div key={practice.id} onClick={() => setSelectedPractice(practice)} className={`p-4 rounded-xl border cursor-pointer hover:bg-white/5 transition-all ${selectedPractice?.id === practice.id ? 'bg-highlight/10 border-highlight' : 'bg-secondary border-white/5'}`}>
-                            <div className="flex justify-between items-start">
-                                <h4 className="font-bold text-white">{practice.title}</h4>
-                                <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-text-secondary">{practice.script?.length || 0} drills</span>
-                            </div>
-                            <p className="text-xs text-text-secondary mt-1">{new Date(practice.date).toLocaleDateString()} • {new Date(practice.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                            <p className="text-xs text-highlight mt-1 font-bold">{practice.focus}</p>
-                            
-                            {canEdit && (
-                                <div className="mt-3 pt-3 border-t border-white/10 flex justify-end">
-                                    <button onClick={(e) => { e.stopPropagation(); generateWhatsAppInvite(practice); }} className="text-xs bg-green-600/20 text-green-400 hover:bg-green-600 hover:text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors font-bold">
-                                        <ShareIcon className="w-3 h-3" /> WhatsApp Invite
-                                    </button>
+                    {practices.map(practice => {
+                         const confirmedCount = practice.attendees?.length || 0;
+                         const checkedInCount = practice.checkedInAttendees?.length || 0;
+                         const isPast = new Date() > new Date(practice.date);
+                         
+                         return (
+                            <div key={practice.id} onClick={() => setSelectedPractice(practice)} className={`p-4 rounded-xl border cursor-pointer hover:bg-white/5 transition-all ${selectedPractice?.id === practice.id ? 'bg-highlight/10 border-highlight' : 'bg-secondary border-white/5'}`}>
+                                <div className="flex justify-between items-start">
+                                    <h4 className="font-bold text-white">{practice.title}</h4>
+                                    {/* Action Button for Coach */}
+                                    {canEdit && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); openRollCall(practice); }} 
+                                            className="text-[10px] bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded font-bold flex items-center gap-1 shadow-lg"
+                                        >
+                                            <UsersIcon className="w-3 h-3" /> Chamada
+                                        </button>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    ))}
+                                <p className="text-xs text-text-secondary mt-1">{new Date(practice.date).toLocaleDateString()} • {new Date(practice.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                <p className="text-xs text-highlight mt-1 font-bold">{practice.focus}</p>
+                                
+                                <div className="flex gap-4 mt-2 pt-2 border-t border-white/10 text-[10px] text-text-secondary">
+                                    <span>RSVP: <strong className="text-white">{confirmedCount}</strong></span>
+                                    {checkedInCount > 0 && <span>Presentes: <strong className="text-green-400">{checkedInCount}</strong></span>}
+                                </div>
+                                
+                                {canEdit && !isPast && (
+                                    <div className="mt-3 flex justify-end">
+                                        <button onClick={(e) => { e.stopPropagation(); generateWhatsAppInvite(practice); }} className="text-xs bg-green-600/20 text-green-400 hover:bg-green-600 hover:text-white px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors font-bold">
+                                            <ShareIcon className="w-3 h-3" /> WhatsApp Invite
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                         );
+                    })}
                 </div>
 
                 <div className="lg:col-span-2">
@@ -453,6 +513,54 @@ const PracticePlan: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* CHAMADA DIGITAL MODAL */}
+            <Modal isOpen={isRollCallOpen} onClose={() => setIsRollCallOpen(false)} title="Chamada Digital (Roll Call)">
+                <div className="space-y-4">
+                    <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/20 mb-4">
+                        <h4 className="text-white font-bold text-sm">Lista de Confirmados (RSVP)</h4>
+                        <p className="text-xs text-blue-200">
+                            Clique no botão para confirmar presença e dar XP. Apenas atletas que confirmaram no app aparecem aqui.
+                        </p>
+                    </div>
+                    
+                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar space-y-2">
+                        {rollCallPractice?.attendees?.length === 0 && (
+                            <p className="text-center text-text-secondary italic py-8">Ninguém confirmou presença para este treino.</p>
+                        )}
+                        
+                        {rollCallPractice?.attendees?.map(playerId => {
+                            const player = players.find(p => p.id === Number(playerId));
+                            if (!player) return null;
+                            const isCheckedIn = (rollCallPractice.checkedInAttendees || []).includes(String(playerId));
+                            
+                            return (
+                                <div key={playerId} className={`flex items-center justify-between p-3 rounded-lg border ${isCheckedIn ? 'bg-green-900/20 border-green-500/50' : 'bg-secondary border-white/5'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <LazyImage src={player.avatarUrl} className="w-10 h-10 rounded-full" />
+                                        <div>
+                                            <p className="font-bold text-white text-sm">{player.name}</p>
+                                            <p className="text-xs text-text-secondary">{player.position}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={() => !isCheckedIn && handleCheckIn(String(playerId))}
+                                        disabled={isCheckedIn}
+                                        className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${isCheckedIn ? 'bg-green-600 text-white cursor-default' : 'bg-white/10 hover:bg-green-600 hover:text-white text-text-secondary'}`}
+                                    >
+                                        {isCheckedIn ? <><CheckCircleIcon className="w-4 h-4" /> Presente (+50 XP)</> : 'Check-in'}
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    
+                    <div className="pt-4 border-t border-white/10 flex justify-end">
+                        <button onClick={() => setIsRollCallOpen(false)} className="text-text-secondary hover:text-white text-sm">Fechar</button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

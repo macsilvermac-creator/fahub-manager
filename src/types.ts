@@ -242,8 +242,9 @@ export interface PracticeSession {
     category: PracticeCategory;
     locationType: string;
     instructor: string;
-    attendees: string[]; // List of Player IDs who confirmed
-    deadlineDate?: Date; // New: Deadline for RSVP
+    attendees: string[]; // List of Player IDs who RSVP'd (Disse que vai)
+    checkedInAttendees?: string[]; // List of Player IDs who actually showed up (Confirmado pelo Coach)
+    deadlineDate?: Date; 
     notes: string;
     drills: Drill[];
     script: PracticeScriptItem[];

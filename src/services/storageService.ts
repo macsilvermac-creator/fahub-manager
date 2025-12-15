@@ -215,7 +215,7 @@ export const storageService = {
     getPracticeSessions: (): PracticeSession[] => loadIfNeeded<PracticeSession>('practice', KEYS.PRACTICE),
     savePracticeSessions: (p: PracticeSession[]) => saveAndCache('practice', KEYS.PRACTICE, p),
     
-    // NEW: Toggle Practice Attendance
+    // RSVP Logic (Athlete Side)
     togglePracticeAttendance: (practiceId: string, playerId: string) => {
         const practices = loadIfNeeded<PracticeSession>('practice', KEYS.PRACTICE);
         const updated = practices.map(p => {
@@ -230,6 +230,42 @@ export const storageService = {
             return p;
         });
         saveAndCache('practice', KEYS.PRACTICE, updated);
+    },
+
+    // CHAMADA DIGITAL (Coach Side - Real Attendance + XP)
+    confirmPracticePresence: (practiceId: string, playerId: string) => {
+        const practices = loadIfNeeded<PracticeSession>('practice', KEYS.PRACTICE);
+        const players = loadIfNeeded<Player>('players', KEYS.PLAYERS);
+        
+        let xpGranted = false;
+        
+        // 1. Atualiza a lista de presença real no treino
+        const updatedPractices = practices.map(p => {
+            if (p.id === practiceId) {
+                const checkedIn = p.checkedInAttendees || [];
+                if (!checkedIn.includes(playerId)) {
+                    xpGranted = true;
+                    return { ...p, checkedInAttendees: [...checkedIn, playerId] };
+                }
+            }
+            return p;
+        });
+        
+        if (!xpGranted) return; // Se já estava confirmado, não faz nada
+        
+        saveAndCache('practice', KEYS.PRACTICE, updatedPractices);
+
+        // 2. Dá XP para o jogador
+        const updatedPlayers = players.map(p => {
+            if (p.id === Number(playerId)) {
+                return { ...p, xp: (p.xp || 0) + 50 }; // +50 XP por treino
+            }
+            return p;
+        });
+        saveAndCache('players', KEYS.PLAYERS, updatedPlayers);
+        
+        // 3. Log de Auditoria
+        storageService.logAuditAction('ATTENDANCE', `Atleta ID ${playerId} compareceu ao treino ${practiceId}. +50 XP.`);
     },
 
     getTransactions: (): Transaction[] => loadIfNeeded<Transaction>('transactions', KEYS.TRANSACTIONS),

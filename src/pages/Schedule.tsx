@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Game, PracticeSession } from '../types';
-import { TrashIcon, CheckCircleIcon, DumbbellIcon, XIcon } from '../components/icons/UiIcons';
+import { TrashIcon, CheckCircleIcon, DumbbellIcon, XIcon, ClockIcon } from '../components/icons/UiIcons';
 import { TrophyIcon } from '../components/icons/NavIcons';
 import ConfirmationModal from '../components/ConfirmationModal';
 import GameManagementModal from '../components/GameManagementModal';
@@ -29,7 +29,6 @@ const Schedule: React.FC = () => {
     const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [userId, setUserId] = useState<string | null>(null);
     const [playerId, setPlayerId] = useState<string | number | null>(null);
 
     const [newOpponent, setNewOpponent] = useState('');
@@ -44,7 +43,6 @@ const Schedule: React.FC = () => {
         // Get Current User ID for RSVP logic
         const user = authService.getCurrentUser();
         if (user) {
-            setUserId(user.id);
             // Also try to find the player ID corresponding to this user
             const p = storageService.getPlayers().find(player => player.name === user.name);
             if(p) setPlayerId(p.id);
@@ -81,10 +79,13 @@ const Schedule: React.FC = () => {
         
         const practice = item.details as PracticeSession;
         
-        // Deadline Check
-        if (practice.deadlineDate && new Date() > new Date(practice.deadlineDate)) {
-            toast.error("Prazo de confirmação encerrado.");
-            return;
+        // Deadline Logic Check
+        if (practice.deadlineDate) {
+            const deadline = new Date(practice.deadlineDate);
+            if (new Date() > deadline) {
+                toast.error("Prazo de confirmação encerrado!");
+                return;
+            }
         }
 
         // Toggle Logic
@@ -164,9 +165,13 @@ const Schedule: React.FC = () => {
                         const isGame = item.type === 'GAME';
                         const practice = !isGame ? (item.details as PracticeSession) : null;
                         
-                        // RSVP State
+                        // RSVP Logic
                         const isConfirmed = practice && playerId ? (practice.attendees || []).includes(String(playerId)) : false;
-                        const isDeadlinePassed = practice?.deadlineDate ? new Date() > new Date(practice.deadlineDate) : false;
+                        const isCheckedIn = practice && playerId ? (practice.checkedInAttendees || []).includes(String(playerId)) : false;
+                        
+                        // Deadline Logic
+                        const deadline = practice?.deadlineDate ? new Date(practice.deadlineDate) : null;
+                        const isDeadlinePassed = deadline ? new Date() > deadline : false;
                         
                         return (
                             <div 
@@ -190,11 +195,14 @@ const Schedule: React.FC = () => {
                                         </div>
                                         <p className="text-sm text-text-secondary">{item.description}</p>
                                         
-                                        {/* Deadline Info */}
-                                        {!isGame && practice?.deadlineDate && !isPast && (
-                                            <p className={`text-[10px] mt-1 ${isDeadlinePassed ? 'text-red-400 font-bold' : 'text-yellow-400'}`}>
-                                                {isDeadlinePassed ? 'Inscrições Encerradas' : `Confirme até: ${new Date(practice.deadlineDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`}
-                                            </p>
+                                        {/* Visual Feedback for Deadline */}
+                                        {!isGame && deadline && !isPast && (
+                                            <div className="flex items-center gap-1 mt-1">
+                                                <ClockIcon className={`w-3 h-3 ${isDeadlinePassed ? 'text-red-400' : 'text-yellow-400'}`} />
+                                                <span className={`text-[10px] ${isDeadlinePassed ? 'text-red-400 font-bold' : 'text-yellow-400'}`}>
+                                                    {isDeadlinePassed ? 'Inscrições Encerradas' : `Confirme até: ${deadline.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`}
+                                                </span>
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -205,18 +213,18 @@ const Schedule: React.FC = () => {
                                         <p className="text-sm text-text-secondary">{item.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                                     </div>
                                     
-                                    {/* Botão de RSVP (Atleta) */}
+                                    {/* Botão de RSVP (Atleta) - Smart Button Logic */}
                                     {isPlayer && !isGame && !isPast && (
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handleRSVP(item); }}
-                                            disabled={isDeadlinePassed}
-                                            className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-md ${
-                                                isConfirmed 
-                                                ? 'bg-green-600 text-white hover:bg-green-500' 
-                                                : isDeadlinePassed 
-                                                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed border border-gray-600'
-                                                    : 'bg-white/10 border border-white/20 text-white hover:bg-white/20'
-                                            }`}
+                                            disabled={isDeadlinePassed && !isConfirmed} // Allow removing confirmed even if deadline passed? Usually NO.
+                                            className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-md 
+                                                ${isConfirmed 
+                                                    ? 'bg-green-600 text-white hover:bg-green-500 ring-2 ring-green-400/50' 
+                                                    : isDeadlinePassed 
+                                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
+                                                        : 'bg-white/10 border border-white/20 text-white hover:bg-white/20'
+                                                }`}
                                         >
                                             {isConfirmed ? (
                                                 <><CheckCircleIcon className="w-4 h-4"/> Eu Vou</>
@@ -226,6 +234,13 @@ const Schedule: React.FC = () => {
                                                 'Confirmar?'
                                             )}
                                         </button>
+                                    )}
+                                    
+                                    {/* Visual Indicator for Past Presence */}
+                                    {isPlayer && !isGame && isPast && (
+                                        <div className={`px-3 py-1 rounded text-[10px] font-bold border ${isCheckedIn ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-red-400 border-red-500/30 bg-red-500/10'}`}>
+                                            {isCheckedIn ? 'PRESENÇA CONFIRMADA (+50 XP)' : 'FALTA'}
+                                        </div>
                                     )}
                                     
                                     {/* Admin Delete */}
