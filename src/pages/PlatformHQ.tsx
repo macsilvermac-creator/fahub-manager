@@ -1,11 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Card from '../components/Card';
-import { Tenant, ServiceTicket, PlatformMetric, Transaction } from '../types';
-import { storageService } from '../services/storageService';
-import { BuildingIcon, WalletIcon, ClipboardIcon, CheckCircleIcon, SparklesIcon, GlobeIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
-import { TrophyIcon } from '../components/icons/NavIcons';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Tenant, ServiceTicket, PlatformMetric } from '../types';
+import { BuildingIcon, WalletIcon, ClipboardIcon, CheckCircleIcon, SparklesIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
+import { TrophyIcon, GlobeIcon } from '../components/icons/NavIcons'; // Fixed Import
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 // MOCK DATA PARA DEMONSTRAÇÃO
 const MOCK_TENANTS: Tenant[] = [
@@ -42,13 +41,6 @@ const PlatformHQ: React.FC = () => {
     const handleUpdateTicket = (id: string, newStatus: 'IN_PROGRESS' | 'DELIVERED') => {
         const updated = tickets.map(t => t.id === id ? { ...t, status: newStatus } : t);
         setTickets(updated);
-        // Em um app real, isso notificaria o cliente via email/push
-    };
-
-    const getStatusColor = (status: string) => {
-        if (status === 'PENDING') return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
-        if (status === 'IN_PROGRESS') return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
-        return 'bg-green-500/20 text-green-400 border-green-500/50';
     };
 
     return (

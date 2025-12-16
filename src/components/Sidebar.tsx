@@ -6,11 +6,11 @@ import {
   DashboardIcon, RosterIcon, ScheduleIcon, FinanceIcon, 
   AiPlaybookIcon, PracticeIcon, FlagIcon, TrophyIcon, 
   MegaphoneIcon, ShopIcon, BriefcaseIcon, AcademyIcon, VideoIcon,
-  WhistleIcon, TicketIcon
+  WhistleIcon, TicketIcon, GlobeIcon
 } from './icons/NavIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
-import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, UserPlusIcon, LockIcon, EyeIcon, WalletIcon, GlobeIcon } from './icons/UiIcons';
+import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, UserPlusIcon, LockIcon, EyeIcon, WalletIcon } from './icons/UiIcons';
 
 interface SidebarProps {
   isOpen: boolean;

@@ -20,11 +20,11 @@ export interface ServiceTicket {
     id: string;
     tenantId: string;
     tenantName: string;
-    serviceName: string; // ex: "Análise de Vídeo"
+    serviceName: string;
     status: 'PENDING' | 'IN_PROGRESS' | 'DELIVERED';
     purchasedAt: Date;
     deliverableUrl?: string;
-    assignedTo?: string; // Nome do analista do FAHUB
+    assignedTo?: string;
 }
 
 export interface PlatformMetric {
@@ -43,7 +43,7 @@ export interface DigitalProduct {
     description: string;
     price: number;
     type: ProductType;
-    durationHours: number; // Duração do acesso em horas
+    durationHours: number;
     coverUrl: string;
 }
 
@@ -51,114 +51,13 @@ export interface Entitlement {
     id: string;
     userId: string;
     productId: string;
-    resourceId?: string; // ID específico (ex: gameId) se o produto for específico
+    resourceId?: string;
     purchaseDate: Date;
     expiresAt: Date;
     status: 'ACTIVE' | 'EXPIRED';
 }
 
-// --- GAME INTELLIGENCE TYPES ---
-export interface GameStatsSnapshot {
-    totalYards: number;
-    passYards: number;
-    rushYards: number;
-    turnovers: number;
-    firstDowns: number;
-    generatedAt: Date;
-}
-
-export interface GameDrive {
-    id: string;
-    quarter: number;
-    playCount: number;
-    passPlays: number;
-    runPlays: number;
-    totalYardsEst: number;
-    result: 'TOUCHDOWN' | 'FIELD_GOAL' | 'PUNT' | 'TURNOVER' | 'END_OF_HALF';
-    summary: string;
-    keyPlayerNumber?: number;
-}
-
-// --- ACADEMY AI TYPES ---
-export interface GymExercise {
-    name: string;
-    sets: string;
-    reps: string;
-    notes?: string;
-}
-
-export interface GymDay {
-    title: string;
-    focus: string;
-    exercises: GymExercise[];
-}
-
-// --- RECRUITMENT TYPES ---
-export interface RecruitmentCandidate {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    position: string;
-    age: number;
-    height: string;
-    weight: number;
-    experience: string;
-    status: 'NEW' | 'TRYOUT' | 'SELECTED' | 'ONBOARDING' | 'REJECTED';
-    createdAt: Date;
-    combineStats?: CombineStats;
-    notes?: string;
-    rating?: number;
-    aiAnalysis?: string;
-}
-
-// --- STRATEGY & OKR TYPES ---
-export interface KeyResult {
-    id: string;
-    title: string;
-    currentValue: number;
-    targetValue: number;
-    unit: string;
-    lastUpdated: Date;
-}
-
-export interface Objective {
-    id: string;
-    title: string;
-    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING';
-    status: 'ON_TRACK' | 'BEHIND' | 'COMPLETED' | 'AT_RISK';
-    progress: number;
-    deadline: Date;
-    owner: string;
-    keyResults: KeyResult[];
-}
-
-// --- ADVANCED FINANCE TYPES ---
-export interface Subscription {
-    id: string;
-    title: string;
-    amount: number;
-    frequency: 'MONTHLY' | 'YEARLY';
-    active: boolean;
-    nextBillingDate: Date;
-    assignedTo: number[]; // Player IDs
-}
-
-export interface Budget {
-    category: string;
-    limit: number;
-    spent: number;
-}
-
-export interface Bill {
-    id: string;
-    title: string;
-    amount: number;
-    dueDate: Date;
-    status: 'PENDING' | 'PAID' | 'OVERDUE';
-    category: string;
-}
-
+// --- BASE TYPES ---
 export interface CombineStats {
     fortyYards?: number;
     benchPress?: number;
@@ -180,7 +79,7 @@ export interface SavedWorkout {
     id: string;
     date: Date;
     title: string;
-    content: string; // Pode ser texto ou JSON stringificado de GymDay[]
+    content: string;
     category: string;
 }
 
@@ -321,6 +220,27 @@ export interface GameReport {
     isFinalized: boolean;
 }
 
+export interface GameStatsSnapshot {
+    totalYards: number;
+    passYards: number;
+    rushYards: number;
+    turnovers: number;
+    firstDowns: number;
+    generatedAt: Date;
+}
+
+export interface GameDrive {
+    id: string;
+    quarter: number;
+    playCount: number;
+    passPlays: number;
+    runPlays: number;
+    totalYardsEst: number;
+    result: 'TOUCHDOWN' | 'FIELD_GOAL' | 'PUNT' | 'TURNOVER' | 'END_OF_HALF';
+    summary: string;
+    keyPlayerNumber?: number;
+}
+
 export interface Game {
     id: number;
     opponent: string;
@@ -340,7 +260,6 @@ export interface Game {
     homeTeamName?: string;
     sponsors?: any[];
     officialReport?: GameReport;
-    // Enhanced Stats
     drives?: GameDrive[];
     halftimeStats?: GameStatsSnapshot;
     finalStats?: GameStatsSnapshot;
@@ -398,12 +317,12 @@ export interface PracticeSession {
     title: string;
     focus: string;
     date: Date;
-    deadlineDate?: Date; // Added for RSVP
+    deadlineDate?: Date;
     category: PracticeCategory;
     locationType: string;
     instructor: string;
-    attendees: string[]; // RSVPs
-    checkedInAttendees?: string[]; // Actual Presence (Roll Call)
+    attendees: string[];
+    checkedInAttendees?: string[];
     notes: string;
     drills: Drill[];
     script: PracticeScriptItem[];
@@ -491,6 +410,31 @@ export interface Transaction {
     createdAt?: Date;
     aiGenerated?: boolean;
     verifiedBy?: string;
+}
+
+export interface Subscription {
+    id: string;
+    title: string;
+    amount: number;
+    frequency: 'MONTHLY' | 'YEARLY';
+    active: boolean;
+    nextBillingDate: Date;
+    assignedTo: number[]; 
+}
+
+export interface Budget {
+    category: string;
+    limit: number;
+    spent: number;
+}
+
+export interface Bill {
+    id: string;
+    title: string;
+    amount: number;
+    dueDate: Date;
+    status: 'PENDING' | 'PAID' | 'OVERDUE';
+    category: string;
 }
 
 export interface EquipmentItem {
@@ -950,4 +894,56 @@ export interface DisciplineRecord {
     fineAmount?: number;
     punishment?: string;
     reportedBy: string;
+}
+
+// --- NEW RECRUITMENT TYPES ---
+export interface KeyResult {
+    id: string;
+    title: string;
+    currentValue: number;
+    targetValue: number;
+    unit: string;
+    lastUpdated: Date;
+}
+
+export interface Objective {
+    id: string;
+    title: string;
+    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING';
+    status: 'ON_TRACK' | 'BEHIND' | 'COMPLETED' | 'AT_RISK';
+    progress: number;
+    deadline: Date;
+    owner: string;
+    keyResults: KeyResult[];
+}
+
+export interface RecruitmentCandidate {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    position: string;
+    age: number;
+    height: string;
+    weight: number;
+    experience: string;
+    status: 'NEW' | 'TRYOUT' | 'SELECTED' | 'ONBOARDING' | 'REJECTED';
+    createdAt: Date;
+    combineStats?: CombineStats;
+    notes?: string;
+    rating?: number;
+    aiAnalysis?: string;
+}
+
+export interface GymExercise {
+    name: string;
+    sets: string;
+    reps: string;
+    notes?: string;
+}
+
+export interface GymDay {
+    title: string;
+    focus: string;
+    exercises: GymExercise[];
 }

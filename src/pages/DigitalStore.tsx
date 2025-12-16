@@ -13,37 +13,37 @@ const FAHUB_SERVICES: DigitalProduct[] = [
     {
         id: 'srv-scout-ai',
         title: 'FAHUB Intelligence Suite',
-        description: 'Desbloqueie o poder total do Gemini 2.5 Pro para análise de vídeo automática, predição de jogadas em tempo real e relatórios de scout detalhados.',
+        description: 'Desbloqueie o poder total do Gemini 2.5 Pro para análise de vídeo automática.',
         price: 149.90,
         type: 'SCOUT_REPORT',
-        durationHours: 720, // 30 dias
+        durationHours: 720,
         coverUrl: '' 
     },
     {
         id: 'srv-video-cloud',
         title: 'Video Cloud 4K (1TB)',
-        description: 'Armazenamento de alta performance para seus jogos. Upload sem compressão, streaming adaptativo para os atletas e ferramenta de corte ilimitada.',
+        description: 'Armazenamento de alta performance para seus jogos.',
         price: 89.90,
         type: 'GAME_VIDEO',
-        durationHours: 720, // 30 dias
+        durationHours: 720,
         coverUrl: ''
     },
     {
         id: 'srv-national-db',
         title: 'Acesso Scout Nacional',
-        description: 'Visualize dados avançados de atletas de outros estados. Ideal para recrutamento e preparação para torneios nacionais.',
+        description: 'Visualize dados avançados de atletas de outros estados.',
         price: 199.00,
         type: 'DOCUMENT',
-        durationHours: 2160, // 3 meses (Temporada)
+        durationHours: 2160,
         coverUrl: ''
     },
     {
         id: 'srv-academy-pro',
         title: 'Academy Pro (Certificação)',
-        description: 'Libera acesso a todos os cursos técnicos avançados para sua comissão técnica e certificação oficial da Confederação.',
+        description: 'Libera acesso a todos os cursos técnicos avançados.',
         price: 299.00,
         type: 'COURSE',
-        durationHours: 8760, // 1 ano
+        durationHours: 8760,
         coverUrl: ''
     }
 ];
@@ -51,9 +51,8 @@ const FAHUB_SERVICES: DigitalProduct[] = [
 const DigitalStore: React.FC = () => {
     const toast = useToast();
     const [entitlements, setEntitlements] = useState<Entitlement[]>([]);
-    const [balance, setBalance] = useState(0); // Créditos do time no sistema
+    const [balance, setBalance] = useState(0);
 
-    // Purchase State
     const [selectedService, setSelectedService] = useState<DigitalProduct | null>(null);
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
@@ -65,12 +64,9 @@ const DigitalStore: React.FC = () => {
 
     const loadData = () => {
         if (user) {
-            // Load Active Subscriptions
             const allEntitlements = storageService.getEntitlements();
             const myEntitlements = allEntitlements.filter(e => e.userId === user.id && new Date(e.expiresAt) > new Date());
             setEntitlements(myEntitlements);
-
-            // Mock Credits Balance
             setBalance(450.00); 
         }
     };
@@ -86,7 +82,7 @@ const DigitalStore: React.FC = () => {
             toast.success(`Serviço "${selectedService.title}" ativado com sucesso!`);
             setIsPaymentOpen(false);
             setSelectedService(null);
-            loadData(); // Refresh active services
+            loadData();
         }
     };
 
@@ -106,10 +102,7 @@ const DigitalStore: React.FC = () => {
 
     return (
         <div className="space-y-8 pb-12 animate-fade-in">
-            {/* Header / Hero Section */}
             <div className="bg-gradient-to-r from-gray-900 to-indigo-900 rounded-3xl p-8 border border-white/10 relative overflow-hidden shadow-2xl">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-highlight/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div>
                         <div className="inline-flex items-center gap-2 bg-indigo-500/20 border border-indigo-500/50 px-3 py-1 rounded-full text-xs font-bold text-indigo-300 mb-2">
@@ -117,7 +110,7 @@ const DigitalStore: React.FC = () => {
                         </div>
                         <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">Marketplace de Serviços</h1>
                         <p className="text-indigo-200 mt-2 max-w-xl text-sm md:text-base">
-                            Potencialize sua gestão contratando módulos adicionais de inteligência, infraestrutura e dados exclusivos fornecidos pelo FAHUB.
+                            Potencialize sua gestão contratando módulos adicionais.
                         </p>
                     </div>
                     
@@ -187,15 +180,6 @@ const DigitalStore: React.FC = () => {
                                         <h3 className="text-xl font-bold text-white leading-tight mb-2">{service.title}</h3>
                                         <p className="text-xs text-text-secondary leading-relaxed">{service.description}</p>
                                     </div>
-
-                                    <div className="bg-black/20 rounded-lg p-3 mb-4">
-                                        <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">Incluso no pacote:</p>
-                                        <ul className="text-xs text-gray-300 space-y-1">
-                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-highlight rounded-full"></div> Acesso Imediato</li>
-                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-highlight rounded-full"></div> Suporte Prioritário</li>
-                                            <li className="flex items-center gap-2"><div className="w-1 h-1 bg-highlight rounded-full"></div> Updates Automáticos</li>
-                                        </ul>
-                                    </div>
                                 </div>
 
                                 <div className="p-6 pt-0 mt-auto border-t border-white/5">
@@ -208,9 +192,6 @@ const DigitalStore: React.FC = () => {
                                                 <span className="text-xs text-text-secondary">,{service.price.toFixed(2).split('.')[1]}</span>
                                             </div>
                                         </div>
-                                        <span className="text-xs font-bold bg-white/5 px-2 py-1 rounded text-text-secondary">
-                                            {service.durationHours > 720 ? 'Anual' : 'Mensal'}
-                                        </span>
                                     </div>
 
                                     {activeSub ? (
@@ -235,13 +216,12 @@ const DigitalStore: React.FC = () => {
                 </div>
             </div>
 
-            {/* PAYMENT MODAL */}
             <PaymentModal 
                 isOpen={isPaymentOpen}
                 onClose={() => setIsPaymentOpen(false)}
                 onSuccess={handlePaymentSuccess}
                 amount={selectedService?.price || 0}
-                description={selectedService ? `Contratação: ${selectedService.title} (${selectedService.durationHours / 24} dias)` : 'Serviço FAHUB'}
+                description={selectedService ? `Contratação: ${selectedService.title}` : 'Serviço FAHUB'}
             />
         </div>
     );

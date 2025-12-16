@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
-import { generateMarketingContent } from '../services/geminiService';
+import { generateMarketingContent, setRuntimeKey } from '../services/geminiService';
 import { SocialPost, Announcement, Course } from '../types';
-import { MegaphoneIcon, AcademyIcon, TicketIcon } from '../components/icons/NavIcons';
-import { SparklesIcon, UsersIcon, BellIcon, ShareIcon, GlobeIcon, UserPlusIcon, QrcodeIcon, LinkIcon } from '../components/icons/UiIcons';
+import { MegaphoneIcon, AcademyIcon, TicketIcon, GlobeIcon } from '../components/icons/NavIcons';
+import { SparklesIcon, UsersIcon, BellIcon, ShareIcon, UserPlusIcon, QrcodeIcon, LinkIcon, KeyIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
 import Card from '../components/Card';
 import LazyImage from '../components/LazyImage';
 
@@ -20,6 +20,8 @@ const Marketing: React.FC = () => {
     const [platform, setPlatform] = useState('INSTAGRAM');
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedContent, setGeneratedContent] = useState('');
+    const [manualApiKey, setManualApiKey] = useState('');
+    const [apiError, setApiError] = useState('');
 
     // Community & Internal Data
     const [courses, setCourses] = useState<Course[]>([]);
@@ -37,9 +39,23 @@ const Marketing: React.FC = () => {
     const handleGenerate = async () => {
         if (!topic) return;
         setIsGenerating(true);
-        const content = await generateMarketingContent(topic, platform);
-        setGeneratedContent(content);
-        setIsGenerating(false);
+        setApiError('');
+        
+        // Se o usuário digitou uma chave, usa ela
+        if (manualApiKey) {
+            setRuntimeKey(manualApiKey);
+        }
+
+        try {
+            const content = await generateMarketingContent(topic, platform);
+            setGeneratedContent(content);
+        } catch (error: any) {
+            console.error(error);
+            setApiError(error.message || "Erro ao conectar com a IA.");
+            setGeneratedContent("Erro: Verifique a Chave de API abaixo.");
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const handleSavePost = () => {
@@ -131,6 +147,24 @@ const Marketing: React.FC = () => {
                                         <option value="WEBSITE">Site (Notícia)</option>
                                     </select>
                                 </div>
+                                
+                                {/* API KEY CONFIG (FIX FOR MISSING KEY) */}
+                                <div className="pt-2">
+                                    <details className="text-xs text-text-secondary cursor-pointer">
+                                        <summary className="flex items-center gap-1 hover:text-white"><KeyIcon className="w-3 h-3"/> Configurar Chave API (Opcional)</summary>
+                                        <div className="mt-2 p-2 bg-black/20 rounded border border-white/10">
+                                            <p className="mb-1">Se a IA não funcionar, cole sua chave Google AI Studio aqui:</p>
+                                            <input 
+                                                type="password" 
+                                                className="w-full bg-black/40 border border-white/10 rounded p-1 text-white" 
+                                                placeholder="AIzaSy..." 
+                                                value={manualApiKey}
+                                                onChange={e => setManualApiKey(e.target.value)}
+                                            />
+                                        </div>
+                                    </details>
+                                </div>
+
                                 <button onClick={handleGenerate} disabled={isGenerating || !topic} className="w-full bg-gradient-to-r from-pink-500 to-orange-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 disabled:opacity-50">
                                      {isGenerating ? 'Criando...' : <><SparklesIcon className="w-4 h-4"/> ✨ Gerar Copy</>}
                                 </button>
@@ -138,6 +172,12 @@ const Marketing: React.FC = () => {
                         </Card>
 
                         <Card title="Preview & Agendamento">
+                            {apiError && (
+                                <div className="bg-red-900/50 border border-red-500/30 p-3 rounded mb-4 flex items-center gap-2 text-red-200 text-xs">
+                                    <AlertTriangleIcon className="w-4 h-4" />
+                                    {apiError.includes('API key') ? 'Chave de API inválida ou ausente. Configure no menu à esquerda.' : apiError}
+                                </div>
+                            )}
                             {generatedContent ? (
                                 <div className="space-y-4">
                                     <textarea className="w-full h-40 bg-black/20 border border-white/10 rounded p-3 text-white text-sm" value={generatedContent} onChange={e => setGeneratedContent(e.target.value)} />
@@ -146,8 +186,9 @@ const Marketing: React.FC = () => {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="h-full flex items-center justify-center text-text-secondary opacity-50">
-                                    Gere um conteúdo ao lado para visualizar.
+                                <div className="h-full flex items-center justify-center text-text-secondary opacity-50 text-center text-sm p-4">
+                                    Gere um conteúdo ao lado para visualizar aqui. <br/>
+                                    Certifique-se de ter uma chave API válida.
                                 </div>
                             )}
                         </Card>
