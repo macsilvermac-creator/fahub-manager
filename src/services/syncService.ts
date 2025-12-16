@@ -16,8 +16,6 @@ class SyncService {
         window.addEventListener('offline', () => this.handleConnectionChange(false));
     }
 
-    // --- PUBLIC API ---
-
     public getConnectionStatus(): boolean {
         return this.isOnline;
     }
@@ -28,13 +26,12 @@ class SyncService {
 
     public subscribe(listener: SyncListener): () => void {
         this.listeners.push(listener);
-        listener(this.status); // Emit initial status immediately
+        listener(this.status);
         return () => {
             this.listeners = this.listeners.filter(l => l !== listener);
         };
     }
 
-    // Chamado pelo StorageService quando um dado muda localmente
     public triggerSync(entity: string, data: any) {
         if (!this.isOnline) {
             this.enqueueAction(entity, data);
@@ -44,7 +41,6 @@ class SyncService {
 
         this.updateStatus('SYNCING');
 
-        // Debounce: Aguarda 2s antes de enviar para não sobrecarregar a rede em digitação rápida
         if (this.syncDebounceTimer) clearTimeout(this.syncDebounceTimer);
         
         this.syncDebounceTimer = setTimeout(async () => {
@@ -53,13 +49,11 @@ class SyncService {
                 this.updateStatus('SAVED');
             } catch (error) {
                 console.error(`Erro ao sincronizar ${entity}:`, error);
-                this.enqueueAction(entity, data); // Fallback para fila se falhar
+                this.enqueueAction(entity, data);
                 this.updateStatus('ERROR');
             }
         }, 2000);
     }
-
-    // --- INTERNAL LOGIC ---
 
     private updateStatus(newStatus: SyncStatus) {
         if (this.status !== newStatus) {
@@ -70,8 +64,6 @@ class SyncService {
 
     private handleConnectionChange(status: boolean) {
         this.isOnline = status;
-        console.log(status ? '🌐 Online - Tentando reconciliação...' : '📴 Offline - Modo Local Ativo');
-        
         if (status) {
             this.processQueue();
         } else {
@@ -92,9 +84,7 @@ class SyncService {
 
     public enqueueAction(type: string, payload: any) {
         const queue = this.getQueue();
-        // Remove duplicatas (mantém apenas a versão mais recente da entidade para otimizar)
         const filtered = queue.filter(item => item.type !== type);
-        
         filtered.push({
             id: `act-${Date.now()}-${Math.random()}`,
             type,
@@ -102,7 +92,6 @@ class SyncService {
             timestamp: Date.now()
         });
         this.saveQueue(filtered);
-        console.log(`📥 [Offline] Ação enfileirada: ${type}`);
     }
 
     public async processQueue() {
@@ -113,57 +102,32 @@ class SyncService {
         }
 
         this.updateStatus('SYNCING');
-        console.log(`🔄 Processando ${queue.length} itens da fila offline...`);
         
         const remainingQueue = [];
-        let successCount = 0;
-
         for (const item of queue) {
             try {
                 await this.performCloudSync(item.type, item.payload);
-                successCount++;
             } catch (e) {
-                console.error(`Falha ao processar item da fila ${item.type}:`, e);
-                remainingQueue.push(item); // Mantém na fila se falhar
+                remainingQueue.push(item);
             }
         }
 
         this.saveQueue(remainingQueue);
-        
         if (remainingQueue.length === 0) {
             this.updateStatus('SAVED');
-            console.log('✅ Reconciliação completa.');
         } else {
-            this.updateStatus('ERROR'); // Ainda tem itens pendentes
-            console.warn(`⚠️ ${remainingQueue.length} itens restaram na fila.`);
+            this.updateStatus('ERROR');
         }
     }
 
-    // Roteador de Sincronização
     private async performCloudSync(entity: string, data: any) {
-        // Mapeia nomes internos para funções do firebaseDataService
         switch (entity) {
-            case 'players':
-            case 'SYNC_PLAYERS':
-                return await firebaseDataService.syncPlayers(data);
-            case 'games':
-            case 'SYNC_GAMES':
-                return await firebaseDataService.syncGames(data);
-            case 'transactions':
-            case 'SYNC_TRANSACTIONS':
-                return await firebaseDataService.syncTransactions(data);
-            case 'settings':
-                return await firebaseDataService.saveTeamSettings(data);
-            default:
-                console.warn(`Entidade desconhecida para sync: ${entity}`);
-                return Promise.resolve();
+            case 'players': return await firebaseDataService.syncPlayers(data);
+            case 'games': return await firebaseDataService.syncGames(data);
+            case 'transactions': return await firebaseDataService.syncTransactions(data);
+            case 'settings': return await firebaseDataService.saveTeamSettings(data);
+            default: return Promise.resolve();
         }
-    }
-
-    // Método legacy para manter compatibilidade com inicialização antiga, se necessário
-    public registerProcessor(fn: any) {
-         // No-op na nova arquitetura, pois o router interno cuida disso
-         console.log("Processor registered via legacy method (No-op)");
     }
 
     public init() {

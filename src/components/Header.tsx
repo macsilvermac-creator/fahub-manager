@@ -13,7 +13,6 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
   const user = authService.getCurrentUser();
 
   useEffect(() => {
-    // Inscreve no serviço de sync para atualizações em tempo real
     const unsubscribe = syncService.subscribe((status: any) => {
         setSyncStatus(status);
     });
@@ -22,14 +21,10 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
 
   const getStatusDisplay = () => {
       switch(syncStatus) {
-          case 'SAVED':
-              return { icon: <CheckCircleIcon className="w-3 h-3" />, text: 'Salvo', color: 'text-green-400 border-green-500/20 bg-green-500/10' };
-          case 'SYNCING':
-              return { icon: <RefreshIcon className="w-3 h-3 animate-spin" />, text: 'Sincronizando...', color: 'text-blue-400 border-blue-500/20 bg-blue-500/10' };
-          case 'OFFLINE':
-              return { icon: <WifiOffIcon className="w-3 h-3" />, text: 'Offline (Local)', color: 'text-gray-400 border-gray-500/20 bg-gray-500/10' };
-          case 'ERROR':
-              return { icon: <AlertCircleIcon className="w-3 h-3" />, text: 'Erro no Sync', color: 'text-red-400 border-red-500/20 bg-red-500/10' };
+          case 'SAVED': return { icon: <CheckCircleIcon className="w-3 h-3" />, text: 'Salvo', color: 'text-green-400 border-green-500/20 bg-green-500/10' };
+          case 'SYNCING': return { icon: <RefreshIcon className="w-3 h-3 animate-spin" />, text: 'Sincronizando...', color: 'text-blue-400 border-blue-500/20 bg-blue-500/10' };
+          case 'OFFLINE': return { icon: <WifiOffIcon className="w-3 h-3" />, text: 'Offline (Local)', color: 'text-gray-400 border-gray-500/20 bg-gray-500/10' };
+          case 'ERROR': return { icon: <AlertCircleIcon className="w-3 h-3" />, text: 'Erro no Sync', color: 'text-red-400 border-red-500/20 bg-red-500/10' };
       }
   };
 
@@ -43,18 +38,13 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
       </div>
       
       <div className="flex items-center space-x-4">
-        {/* Sync Status Indicator */}
-        <div 
-            className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold border transition-colors uppercase tracking-wider ${statusDisplay.color}`}
-            title="Status da Nuvem"
-        >
+        <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold border transition-colors uppercase tracking-wider ${statusDisplay.color}`}>
             {statusDisplay.icon}
             <span>{statusDisplay.text}</span>
         </div>
 
         <button className="p-2 text-text-secondary rounded-full hover:bg-white/5 hover:text-white transition-colors relative">
           <BellIcon />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
         </button>
 
         <div className="relative">

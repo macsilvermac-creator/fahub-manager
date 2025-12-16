@@ -12,13 +12,11 @@ import Skeleton from '../components/Skeleton';
 import { useToast } from '../contexts/ToastContext';
 import { useAppStore } from '@/utils/storeHooks';
 
-// --- LAZY COMPONENTS (Code Splitting) ---
 const StatusWidgets = React.lazy(() => import('../features/dashboard/StatusWidgets'));
 const ExecutiveDashboard = React.lazy(() => import('../features/dashboard/ExecutiveDashboard'));
 const CoachHubButtons = React.lazy(() => import('../features/dashboard/CoachHubButtons'));
 const PlayerCareerMode = React.lazy(() => import('../features/dashboard/PlayerCareerMode'));
 
-// Lazy Modules
 const PracticePlan = React.lazy(() => import('./PracticePlan'));
 const CoachGameDay = React.lazy(() => import('./CoachGameDay'));
 const Roster = React.lazy(() => import('./Roster'));
@@ -29,7 +27,6 @@ const VideoAnalysis = React.lazy(() => import('./VideoAnalysis'));
 const TacticalLab = React.lazy(() => import('./TacticalLab'));
 const Academy = React.lazy(() => import('./Academy'));
 
-// --- MEMOIZED WIDGETS ---
 const StatusWidgetsMemo = React.memo(StatusWidgets);
 const ExecutiveDashboardMemo = React.memo(ExecutiveDashboard);
 const CoachHubButtonsMemo = React.memo(CoachHubButtons);
@@ -42,16 +39,12 @@ const Dashboard: React.FC = () => {
     const [activeModule, setActiveModule] = useState<string>('');
     const [userProgram, setUserProgram] = useState<ProgramType>('BOTH'); 
     
-    // --- REATIVIDADE MÁXIMA ---
-    // Substituímos storageService.getPlayers() direto por este hook.
-    // Agora, se você mudar um dado em outra aba, o Dashboard atualiza sozinho.
+    // --- REATIVIDADE ---
     const players = useAppStore('players', storageService.getPlayers);
     const games = useAppStore('games', storageService.getGames);
     // @ts-ignore
     const activeProgram = useAppStore('activeProgram', storageService.getActiveProgram);
 
-    // --- PERFORMANCE OPTIMIZATION ---
-    // Cálculos pesados isolados. Só rodam se players ou games mudarem.
     const { xpLeaders, nextGame, systemHealth } = useMemo(() => {
         const now = new Date();
         const next = games
@@ -67,7 +60,6 @@ const Dashboard: React.FC = () => {
         };
     }, [players, games]);
 
-    // Check role views
     const searchParams = new URLSearchParams(window.location.search);
     const roleOverride = searchParams.get('role');
     const isMasterView = currentRole === 'MASTER' && roleOverride !== 'COACH';
@@ -78,7 +70,6 @@ const Dashboard: React.FC = () => {
         const user = authService.getCurrentUser();
         if (user) {
             setUserProgram(user.program || 'BOTH');
-            // Se o usuário tem programa fixo (ex: FLAG), força o contexto
             if (user.program === 'FLAG' || user.program === 'TACKLE') {
                 if (activeProgram !== user.program) {
                      storageService.setActiveProgram(user.program);
@@ -94,17 +85,14 @@ const Dashboard: React.FC = () => {
 
     const handleCopyInvite = () => {
         const teamName = storageService.getTeamSettings().teamName;
-        const url = window.location.origin + '/#/register';
-        const msg = `🏈 *CONVOCAÇÃO OFICIAL: ${teamName.toUpperCase()}*\n\n🔗 *Link de Acesso:* ${url}`;
+        const msg = `🏈 *CONVOCAÇÃO OFICIAL: ${teamName.toUpperCase()}*`;
         navigator.clipboard.writeText(msg);
         toast.success("Convite copiado!");
     };
 
-    // --- RENDER ---
     return (
         <Suspense fallback={<div className="p-8 space-y-4"><Skeleton height="100px" /><Skeleton height="300px" /></div>}>
             
-            {/* MASTER VIEW */}
             {isMasterView && (
                 <div className="space-y-6 animate-fade-in pb-20">
                     <StatusWidgetsMemo systemHealth={systemHealth} />
@@ -112,7 +100,6 @@ const Dashboard: React.FC = () => {
                 </div>
             )}
 
-            {/* PLAYER VIEW */}
             {isPlayerView && (
                 <PlayerCareerMode 
                     player={players.find(p => p.name === authService.getCurrentUser()?.name) || players[0]} 
@@ -121,7 +108,6 @@ const Dashboard: React.FC = () => {
                 />
             )}
 
-            {/* COACH VIEW */}
             {isHeadCoach && (
                 <>
                     {!activeHub ? (
@@ -169,26 +155,10 @@ const Dashboard: React.FC = () => {
                             </div>
 
                             <Suspense fallback={<div className="p-4 space-y-4"><Skeleton height="50px" /><Skeleton height="400px" /></div>}>
-                                {activeHub === 'TRAINING' && (
-                                    <>
-                                        {activeModule === 'PRACTICE' && <PracticePlan />}
-                                    </>
-                                )}
-                                {activeHub === 'GAME' && (
-                                    <>
-                                         {activeModule === 'MISSION_CONTROL' && <CoachGameDay />}
-                                    </>
-                                )}
-                                {activeHub === 'PLANNING' && (
-                                     <>
-                                         {activeModule === 'ROSTER' && <Roster />}
-                                     </>
-                                )}
-                                {activeHub === 'STUDY' && (
-                                     <>
-                                         {activeModule === 'VIDEO' && <VideoAnalysis />}
-                                     </>
-                                )}
+                                {activeHub === 'TRAINING' && activeModule === 'PRACTICE' && <PracticePlan />}
+                                {activeHub === 'GAME' && activeModule === 'MISSION_CONTROL' && <CoachGameDay />}
+                                {activeHub === 'PLANNING' && activeModule === 'ROSTER' && <Roster />}
+                                {activeHub === 'STUDY' && activeModule === 'VIDEO' && <VideoAnalysis />}
                              </Suspense>
                         </div>
                     )}
