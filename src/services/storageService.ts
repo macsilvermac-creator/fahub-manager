@@ -1,45 +1,41 @@
 
-import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, EquipmentItem, EventSale, RecruitmentCandidate, Objective, Subscription, Budget, Bill, KanbanTask, NationalTeamCandidate, Affiliate, RefereeProfile, LegalDocument, ProgramType, AssociationFinance, Drill, Entitlement, DigitalProduct, League } from '../types';
+import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, MarketplaceItem, YouthClass, YouthStudent, RecruitmentCandidate, Objective, Subscription, Budget, Bill, KanbanTask, RefereeProfile, LegalDocument, ProgramType, Drill, Entitlement, DigitalProduct, League, SponsorDeal, SocialPost, EquipmentItem, EventSale, GameReport, VideoClip, VideoPlaylist, CoachGameNote, CoachCareer, CrewLogistics } from '../types';
 import { firebaseDataService } from './firebaseDataService';
 import { syncService } from './syncService';
+import { get, set, setMany, values } from 'idb-keyval';
 
-// Chaves do LocalStorage
-const PLAYERS_KEY = 'gridiron_players';
-const GAMES_KEY = 'gridiron_games';
-const TEAM_SETTINGS_KEY = 'gridiron_settings';
-const PRACTICE_KEY = 'gridiron_practice';
-const TRANSACTIONS_KEY = 'gridiron_transactions';
-const INVOICES_KEY = 'gridiron_invoices';
-const STAFF_KEY = 'gridiron_staff';
-const TASKS_KEY = 'gridiron_tasks';
-const ANNOUNCEMENTS_KEY = 'gridiron_announcements';
-const CHAT_KEY = 'gridiron_chat';
-const DOCUMENTS_KEY = 'gridiron_documents';
-const INVENTORY_KEY = 'gridiron_inventory';
-const SPONSORS_KEY = 'gridiron_sponsors';
-const SOCIAL_POSTS_KEY = 'gridiron_social_posts';
-const MARKETPLACE_KEY = 'gridiron_marketplace';
-const SALES_KEY = 'gridiron_sales';
-const COURSES_KEY = 'gridiron_courses';
-const TACTICAL_PLAYS_KEY = 'gridiron_tactical_plays';
-const CLIPS_KEY = 'gridiron_clips';
-const PLAYLISTS_KEY = 'gridiron_playlists';
-const YOUTH_CLASSES_KEY = 'gridiron_youth_classes';
-const COACH_PROFILES_KEY = 'gridiron_coach_profiles';
-const COACH_NOTES_KEY = 'gridiron_coach_notes';
-const SOCIAL_FEED_KEY = 'gridiron_social_feed';
-const AUDIT_LOGS_KEY = 'gridiron_audit_logs';
-const ACTIVE_PROGRAM_KEY = 'gridiron_active_program';
-const CANDIDATES_KEY = 'gridiron_candidates';
-const OBJECTIVES_KEY = 'gridiron_objectives';
-const ENTITLEMENTS_KEY = 'gridiron_entitlements';
-const DRILL_LIBRARY_KEY = 'gridiron_drill_library';
-
-const dateReviver = (key: string, value: any) => {
-    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
-        return new Date(value);
-    }
-    return value;
+// Chaves do Banco de Dados
+const KEYS = {
+    PLAYERS: 'gridiron_players',
+    GAMES: 'gridiron_games',
+    SETTINGS: 'gridiron_settings',
+    PRACTICE: 'gridiron_practice',
+    TRANSACTIONS: 'gridiron_transactions',
+    INVOICES: 'gridiron_invoices',
+    STAFF: 'gridiron_staff',
+    TASKS: 'gridiron_tasks',
+    ANNOUNCEMENTS: 'gridiron_announcements',
+    CHAT: 'gridiron_chat',
+    DOCUMENTS: 'gridiron_documents',
+    INVENTORY: 'gridiron_inventory',
+    SPONSORS: 'gridiron_sponsors',
+    SOCIAL_POSTS: 'gridiron_social_posts',
+    MARKETPLACE: 'gridiron_marketplace',
+    SALES: 'gridiron_sales',
+    COURSES: 'gridiron_courses',
+    PLAYS: 'gridiron_tactical_plays',
+    CLIPS: 'gridiron_clips',
+    PLAYLISTS: 'gridiron_playlists',
+    YOUTH_CLASSES: 'gridiron_youth_classes',
+    COACH_NOTES: 'gridiron_coach_notes',
+    COACH_PROFILES: 'gridiron_coach_profiles',
+    FEED: 'gridiron_social_feed',
+    LOGS: 'gridiron_audit_logs',
+    ACTIVE_PROGRAM: 'gridiron_active_program',
+    CANDIDATES: 'gridiron_candidates',
+    OBJECTIVES: 'gridiron_objectives',
+    ENTITLEMENTS: 'gridiron_entitlements',
+    DRILLS: 'gridiron_drill_library'
 };
 
 const INITIAL_TEAM_SETTINGS: TeamSettings = {
@@ -57,31 +53,8 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
     legalAgreementsSigned: []
 };
 
-// Defined Legal Documents
-export const LEGAL_DOCUMENTS: LegalDocument[] = [
-    {
-        id: 'doc-compliance-01',
-        title: 'Política de Integridade Financeira e Compliance',
-        version: '1.0',
-        requiredRole: ['HEAD_COACH', 'FINANCIAL_MANAGER', 'MASTER'],
-        createdAt: new Date(),
-        content: `1. OBJETIVO
-        Esta política visa garantir a transparência, a ética e a responsabilidade na gestão dos recursos financeiros da equipe/entidade.
-
-        2. RESPONSABILIDADES
-        O Diretor Financeiro (CFO) é responsável por manter os registros precisos. O Head Coach e o Presidente (Master) têm dever de fiscalização.
-
-        3. PRESTAÇÃO DE CONTAS
-        Todas as transações acima de R$ 100,00 devem ter comprovante anexado (digitalização via IA permitida).
-
-        4. PROIBIÇÕES
-        É estritamente proibido o uso de fundos da equipe para despesas pessoais não autorizadas.
-
-        Ao assinar este documento digitalmente, declaro estar ciente das regras acima e sujeito às penalidades do estatuto.`
-    }
-];
-
 // --- IN-MEMORY DATABASE & OBSERVERS ---
+// Mantemos os dados em RAM para leitura instantânea (0ms latência na UI)
 const RAM_DB: Record<string, any> = {
     players: [],
     games: [],
@@ -117,17 +90,20 @@ const RAM_DB: Record<string, any> = {
 
 const LISTENERS: Record<string, Function[]> = {};
 
-// Helper: Persistência Centralizada com Notificação
-const persist = (key: string, ramKey: string, data: any, syncEntity?: string) => {
+// Helper: Persistência Híbrida (RAM Imediata + IndexedDB Background)
+const persist = (dbKey: string, ramKey: string, data: any, syncEntity?: string) => {
+    // 1. Atualiza RAM imediatamente (UI Reage agora)
     RAM_DB[ramKey] = data;
-    localStorage.setItem(key, JSON.stringify(data));
     
-    // Notifica assinantes
+    // 2. Notifica assinantes React
     if (LISTENERS[ramKey]) {
         LISTENERS[ramKey].forEach(cb => cb(data));
     }
 
-    // Aciona Sync
+    // 3. Salva no IndexedDB (Assíncrono - Não trava a thread)
+    set(dbKey, data).catch(err => console.error(`Erro ao salvar ${dbKey} no IDB:`, err));
+
+    // 4. Aciona Sync Cloud (Se houver internet)
     if (syncEntity) {
         if (syncService.getConnectionStatus()) {
            syncService.triggerSync(syncEntity, data);
@@ -137,47 +113,107 @@ const persist = (key: string, ramKey: string, data: any, syncEntity?: string) =>
     }
 };
 
-const getListFromDisk = <T>(key: string): T[] => {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored, dateReviver) : [];
+const dateReviver = (key: string, value: any) => {
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+        return new Date(value);
+    }
+    return value;
 };
 
 export const storageService = {
-    initializeRAM: () => {
-        RAM_DB.players = getListFromDisk(PLAYERS_KEY);
-        RAM_DB.games = getListFromDisk(GAMES_KEY);
+    // --- INITIALIZATION (ASYNC MIGRATION) ---
+    initializeRAM: async () => {
+        console.time("DB_INIT");
         
-        const storedSettings = localStorage.getItem(TEAM_SETTINGS_KEY);
-        RAM_DB.settings = storedSettings ? JSON.parse(storedSettings, dateReviver) : INITIAL_TEAM_SETTINGS;
+        // Tenta carregar do IndexedDB primeiro
+        try {
+            const keys = Object.values(KEYS);
+            // Carrega tudo em paralelo
+            const values = await Promise.all(keys.map(key => get(key)));
+            
+            let hasDataInIDB = false;
+
+            // Popula RAM com dados do IDB
+            // Mapeamento manual para garantir integridade e tipos
+            const keyMap: Record<string, string> = {
+                [KEYS.PLAYERS]: 'players',
+                [KEYS.GAMES]: 'games',
+                [KEYS.SETTINGS]: 'settings',
+                [KEYS.TRANSACTIONS]: 'transactions',
+                [KEYS.PRACTICE]: 'practice',
+                [KEYS.INVOICES]: 'invoices',
+                [KEYS.STAFF]: 'staff',
+                [KEYS.TASKS]: 'tasks',
+                [KEYS.ANNOUNCEMENTS]: 'announcements',
+                [KEYS.CHAT]: 'chat',
+                [KEYS.DOCUMENTS]: 'documents',
+                [KEYS.INVENTORY]: 'inventory',
+                [KEYS.SPONSORS]: 'sponsors',
+                [KEYS.SOCIAL_POSTS]: 'socialPosts',
+                [KEYS.MARKETPLACE]: 'marketplace',
+                [KEYS.SALES]: 'sales',
+                [KEYS.COURSES]: 'courses',
+                [KEYS.PLAYS]: 'plays',
+                [KEYS.CLIPS]: 'clips',
+                [KEYS.PLAYLISTS]: 'playlists',
+                [KEYS.YOUTH_CLASSES]: 'youthClasses',
+                [KEYS.COACH_NOTES]: 'coachNotes',
+                [KEYS.COACH_PROFILES]: 'coachProfiles',
+                [KEYS.FEED]: 'feed',
+                [KEYS.LOGS]: 'logs',
+                [KEYS.ACTIVE_PROGRAM]: 'activeProgram',
+                [KEYS.CANDIDATES]: 'candidates',
+                [KEYS.OBJECTIVES]: 'objectives',
+                [KEYS.ENTITLEMENTS]: 'entitlements',
+                [KEYS.DRILLS]: 'drills'
+            };
+
+            keys.forEach((key, index) => {
+                const val = values[index];
+                if (val) {
+                    hasDataInIDB = true;
+                    const ramKey = keyMap[key];
+                    if (ramKey) {
+                        RAM_DB[ramKey] = val;
+                    }
+                }
+            });
+
+            // Estratégia de Migração: Se IDB vazio, checa LocalStorage (Legado)
+            if (!hasDataInIDB) {
+                console.log("⚠️ IDB Vazio. Verificando LocalStorage para migração...");
+                const lsPlayers = localStorage.getItem(KEYS.PLAYERS);
+                
+                if (lsPlayers) {
+                    console.log("🔄 Migrando dados do LocalStorage para IndexedDB...");
+                    const migrationPromises = [];
+                    
+                    for (const [keyName, storageKey] of Object.entries(KEYS)) {
+                        const lsData = localStorage.getItem(storageKey);
+                        if (lsData) {
+                            const parsed = JSON.parse(lsData, dateReviver);
+                            // Salva no IDB
+                            migrationPromises.push(set(storageKey, parsed));
+                            // Carrega na RAM
+                            const ramKey = keyMap[storageKey];
+                            if(ramKey) RAM_DB[ramKey] = parsed;
+                        }
+                    }
+                    await Promise.all(migrationPromises);
+                    console.log("✅ Migração Concluída. Dados seguros no IndexedDB.");
+                } else {
+                    console.log("🆕 Instalação Limpa.");
+                }
+            } else {
+                 console.log("✅ Dados carregados do IndexedDB.");
+            }
+
+        } catch (e) {
+            console.error("Critical DB Error:", e);
+            // Fallback para LocalStorage se IDB falhar catastroficamente (improvável)
+        }
         
-        RAM_DB.practice = getListFromDisk(PRACTICE_KEY);
-        RAM_DB.transactions = getListFromDisk(TRANSACTIONS_KEY);
-        RAM_DB.invoices = getListFromDisk(INVOICES_KEY);
-        RAM_DB.staff = getListFromDisk(STAFF_KEY);
-        RAM_DB.tasks = getListFromDisk(TASKS_KEY);
-        RAM_DB.announcements = getListFromDisk(ANNOUNCEMENTS_KEY);
-        RAM_DB.chat = getListFromDisk(CHAT_KEY);
-        RAM_DB.documents = getListFromDisk(DOCUMENTS_KEY);
-        RAM_DB.inventory = getListFromDisk(INVENTORY_KEY);
-        RAM_DB.sponsors = getListFromDisk(SPONSORS_KEY);
-        RAM_DB.socialPosts = getListFromDisk(SOCIAL_POSTS_KEY);
-        RAM_DB.marketplace = getListFromDisk(MARKETPLACE_KEY);
-        RAM_DB.sales = getListFromDisk(SALES_KEY);
-        RAM_DB.courses = getListFromDisk(COURSES_KEY);
-        RAM_DB.plays = getListFromDisk(TACTICAL_PLAYS_KEY);
-        RAM_DB.clips = getListFromDisk(CLIPS_KEY);
-        RAM_DB.playlists = getListFromDisk(PLAYLISTS_KEY);
-        RAM_DB.youthClasses = getListFromDisk(YOUTH_CLASSES_KEY);
-        RAM_DB.coachNotes = getListFromDisk(COACH_NOTES_KEY);
-        RAM_DB.feed = getListFromDisk(SOCIAL_FEED_KEY);
-        RAM_DB.logs = getListFromDisk(AUDIT_LOGS_KEY);
-        RAM_DB.candidates = getListFromDisk(CANDIDATES_KEY);
-        RAM_DB.objectives = getListFromDisk(OBJECTIVES_KEY);
-        RAM_DB.entitlements = getListFromDisk(ENTITLEMENTS_KEY);
-        RAM_DB.drills = getListFromDisk(DRILL_LIBRARY_KEY);
-        
-        const storedProgram = localStorage.getItem(ACTIVE_PROGRAM_KEY);
-        RAM_DB.activeProgram = storedProgram ? JSON.parse(storedProgram) : 'TACKLE';
+        console.timeEnd("DB_INIT");
     },
 
     // --- REATIVIDADE ---
@@ -191,7 +227,7 @@ export const storageService = {
 
     // --- PLAYERS ---
     getPlayers: (): Player[] => RAM_DB.players,
-    savePlayers: (players: Player[]) => persist(PLAYERS_KEY, 'players', players, 'players'),
+    savePlayers: (players: Player[]) => persist(KEYS.PLAYERS, 'players', players, 'players'),
     
     registerAthlete: (player: Player) => {
         const newPlayer = { ...player, teamId: 'ts-1', rosterCategory: 'ACTIVE' as const };
@@ -213,7 +249,7 @@ export const storageService = {
 
     // --- GAMES ---
     getGames: (): Game[] => RAM_DB.games,
-    saveGames: (games: Game[]) => persist(GAMES_KEY, 'games', games, 'games'),
+    saveGames: (games: Game[]) => persist(KEYS.GAMES, 'games', games, 'games'),
     
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const updated = RAM_DB.games.map((g: Game) => g.id === gameId ? { ...g, ...updates } : g);
@@ -233,7 +269,7 @@ export const storageService = {
 
     // --- PRACTICE ---
     getPracticeSessions: (): PracticeSession[] => RAM_DB.practice,
-    savePracticeSessions: (p: PracticeSession[]) => persist(PRACTICE_KEY, 'practice', p),
+    savePracticeSessions: (p: PracticeSession[]) => persist(KEYS.PRACTICE, 'practice', p),
     
     togglePracticeAttendance: (practiceId: string, userId: string) => {
         const updated = RAM_DB.practice.map((p: PracticeSession) => {
@@ -259,21 +295,21 @@ export const storageService = {
         storageService.savePracticeSessions(updated);
     },
     
-    getDrillLibrary: (): Drill[] => RAM_DB.drills,
+    getDrillLibrary: (): Drill[] => RAM_DB.drills || [],
 
     // --- SETTINGS ---
     getTeamSettings: (): TeamSettings => RAM_DB.settings,
-    saveTeamSettings: (s: TeamSettings) => persist(TEAM_SETTINGS_KEY, 'settings', s, 'settings'),
+    saveTeamSettings: (s: TeamSettings) => persist(KEYS.SETTINGS, 'settings', s, 'settings'),
 
-    getActiveProgram: (): ProgramType => RAM_DB.activeProgram,
-    setActiveProgram: (p: ProgramType) => persist(ACTIVE_PROGRAM_KEY, 'activeProgram', p),
+    getActiveProgram: (): ProgramType => RAM_DB.activeProgram || 'TACKLE',
+    setActiveProgram: (p: ProgramType) => persist(KEYS.ACTIVE_PROGRAM, 'activeProgram', p),
 
     // --- FINANCE ---
     getTransactions: (): Transaction[] => RAM_DB.transactions,
-    saveTransactions: (t: Transaction[]) => persist(TRANSACTIONS_KEY, 'transactions', t, 'transactions'),
+    saveTransactions: (t: Transaction[]) => persist(KEYS.TRANSACTIONS, 'transactions', t, 'transactions'),
     
     getInvoices: (): Invoice[] => RAM_DB.invoices,
-    saveInvoices: (i: Invoice[]) => persist(INVOICES_KEY, 'invoices', i),
+    saveInvoices: (i: Invoice[]) => persist(KEYS.INVOICES, 'invoices', i),
     
     createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string) => {
         const newInvoices: Invoice[] = ids.map(id => {
@@ -293,7 +329,7 @@ export const storageService = {
     },
 
     getEventSales: (): EventSale[] => RAM_DB.sales,
-    saveEventSales: (s: EventSale[]) => persist(SALES_KEY, 'sales', s),
+    saveEventSales: (s: EventSale[]) => persist(KEYS.SALES, 'sales', s),
 
     getSubscriptions: (): Subscription[] => [], 
     saveSubscriptions: (s: Subscription[]) => {}, 
@@ -304,63 +340,62 @@ export const storageService = {
 
     // --- STAFF ---
     getStaff: (): StaffMember[] => RAM_DB.staff,
-    saveStaff: (s: StaffMember[]) => persist(STAFF_KEY, 'staff', s),
+    saveStaff: (s: StaffMember[]) => persist(KEYS.STAFF, 'staff', s),
 
     // --- RECRUITMENT ---
     getCandidates: (): RecruitmentCandidate[] => RAM_DB.candidates,
-    saveCandidates: (c: RecruitmentCandidate[]) => persist(CANDIDATES_KEY, 'candidates', c),
+    saveCandidates: (c: RecruitmentCandidate[]) => persist(KEYS.CANDIDATES, 'candidates', c),
 
     // --- GOALS ---
     getObjectives: (): Objective[] => RAM_DB.objectives,
-    saveObjectives: (o: Objective[]) => persist(OBJECTIVES_KEY, 'objectives', o),
+    saveObjectives: (o: Objective[]) => persist(KEYS.OBJECTIVES, 'objectives', o),
 
     // --- TASKS ---
     getTasks: (): KanbanTask[] => RAM_DB.tasks,
-    saveTasks: (t: KanbanTask[]) => persist(TASKS_KEY, 'tasks', t),
+    saveTasks: (t: KanbanTask[]) => persist(KEYS.TASKS, 'tasks', t),
 
     // --- COMMUNICATION ---
     getAnnouncements: (): Announcement[] => RAM_DB.announcements,
-    saveAnnouncements: (a: Announcement[]) => persist(ANNOUNCEMENTS_KEY, 'announcements', a),
+    saveAnnouncements: (a: Announcement[]) => persist(KEYS.ANNOUNCEMENTS, 'announcements', a),
     
     getChatMessages: (): ChatMessage[] => RAM_DB.chat,
-    saveChatMessages: (m: ChatMessage[]) => persist(CHAT_KEY, 'chat', m),
+    saveChatMessages: (m: ChatMessage[]) => persist(KEYS.CHAT, 'chat', m),
     
     getSocialFeed: (): SocialFeedPost[] => RAM_DB.feed,
     saveSocialFeedPost: (p: SocialFeedPost) => {
         const updated = [p, ...RAM_DB.feed];
-        persist(SOCIAL_FEED_KEY, 'feed', updated);
+        persist(KEYS.FEED, 'feed', updated);
     },
     toggleLikePost: (postId: string) => {
         const updated = RAM_DB.feed.map((p: SocialFeedPost) => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
-        persist(SOCIAL_FEED_KEY, 'feed', updated);
+        persist(KEYS.FEED, 'feed', updated);
     },
 
     // --- RESOURCES ---
     getDocuments: (): TeamDocument[] => RAM_DB.documents,
-    saveDocuments: (d: TeamDocument[]) => persist(DOCUMENTS_KEY, 'documents', d),
+    saveDocuments: (d: TeamDocument[]) => persist(KEYS.DOCUMENTS, 'documents', d),
     
     getInventory: (): EquipmentItem[] => RAM_DB.inventory,
-    saveInventory: (i: EquipmentItem[]) => persist(INVENTORY_KEY, 'inventory', i),
+    saveInventory: (i: EquipmentItem[]) => persist(KEYS.INVENTORY, 'inventory', i),
 
     // --- COMMERCIAL ---
     getSponsors: (): SponsorDeal[] => RAM_DB.sponsors,
-    saveSponsors: (s: SponsorDeal[]) => persist(SPONSORS_KEY, 'sponsors', s),
+    saveSponsors: (s: SponsorDeal[]) => persist(KEYS.SPONSORS, 'sponsors', s),
 
     getSocialPosts: (): SocialPost[] => RAM_DB.socialPosts,
-    saveSocialPosts: (p: SocialPost[]) => persist(SOCIAL_POSTS_KEY, 'socialPosts', p),
+    saveSocialPosts: (p: SocialPost[]) => persist(KEYS.SOCIAL_POSTS, 'socialPosts', p),
 
     getMarketplaceItems: (): MarketplaceItem[] => RAM_DB.marketplace,
-    saveMarketplaceItems: (i: MarketplaceItem[]) => persist(MARKETPLACE_KEY, 'marketplace', i),
+    saveMarketplaceItems: (i: MarketplaceItem[]) => persist(KEYS.MARKETPLACE, 'marketplace', i),
 
     // --- ACADEMY & DRM ---
     getCourses: (): Course[] => RAM_DB.courses,
-    saveCourses: (c: Course[]) => persist(COURSES_KEY, 'courses', c),
+    saveCourses: (c: Course[]) => persist(KEYS.COURSES, 'courses', c),
     
     getEntitlements: (): Entitlement[] => RAM_DB.entitlements,
     checkAccess: (userId: string, productId: string) => true,
     purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
         console.log("Product purchased:", product.title);
-        // Mock implementation of adding entitlement
         const newEntitlement: Entitlement = {
             id: `ent-${Date.now()}`,
             userId,
@@ -369,8 +404,8 @@ export const storageService = {
             expiresAt: new Date(Date.now() + product.durationHours * 3600000),
             status: 'ACTIVE'
         };
-        RAM_DB.entitlements.push(newEntitlement);
-        persist(ENTITLEMENTS_KEY, 'entitlements', RAM_DB.entitlements);
+        const updated = [...RAM_DB.entitlements, newEntitlement];
+        persist(KEYS.ENTITLEMENTS, 'entitlements', updated);
     },
 
     savePlayerWorkout: (playerId: number, content: string, title: string) => {
@@ -387,17 +422,17 @@ export const storageService = {
 
     // --- TACTICAL ---
     getTacticalPlays: (): TacticalPlay[] => RAM_DB.plays,
-    saveTacticalPlays: (t: TacticalPlay[]) => persist(TACTICAL_PLAYS_KEY, 'plays', t),
+    saveTacticalPlays: (t: TacticalPlay[]) => persist(KEYS.PLAYS, 'plays', t),
 
     // --- VIDEO ---
     getClips: (): VideoClip[] => RAM_DB.clips,
-    saveClips: (c: VideoClip[]) => persist(CLIPS_KEY, 'clips', c),
+    saveClips: (c: VideoClip[]) => persist(KEYS.CLIPS, 'clips', c),
     getPlaylists: (): VideoPlaylist[] => RAM_DB.playlists,
-    savePlaylists: (p: VideoPlaylist[]) => persist(PLAYLISTS_KEY, 'playlists', p),
+    savePlaylists: (p: VideoPlaylist[]) => persist(KEYS.PLAYLISTS, 'playlists', p),
 
     // --- YOUTH ---
     getYouthClasses: (): YouthClass[] => RAM_DB.youthClasses,
-    saveYouthClasses: (c: YouthClass[]) => persist(YOUTH_CLASSES_KEY, 'youthClasses', c),
+    saveYouthClasses: (c: YouthClass[]) => persist(KEYS.YOUTH_CLASSES, 'youthClasses', c),
     getYouthStudents: (): YouthStudent[] => {
         let allStudents: YouthStudent[] = [];
         RAM_DB.youthClasses.forEach((c: YouthClass) => allStudents = [...allStudents, ...c.students]);
@@ -406,16 +441,15 @@ export const storageService = {
 
     // --- COACH ---
     getCoachGameNotes: (): CoachGameNote[] => RAM_DB.coachNotes,
-    saveCoachGameNotes: (n: CoachGameNote[]) => persist(COACH_NOTES_KEY, 'coachNotes', n),
+    saveCoachGameNotes: (n: CoachGameNote[]) => persist(KEYS.COACH_NOTES, 'coachNotes', n),
     
     getCoachProfile: (id: string): CoachCareer | null => {
-         const profiles = JSON.parse(localStorage.getItem(COACH_PROFILES_KEY) || '{}');
+         const profiles = RAM_DB.coachProfiles || {};
          return profiles[id] || null;
     },
     saveCoachProfile: (id: string, p: CoachCareer) => {
-         const profiles = JSON.parse(localStorage.getItem(COACH_PROFILES_KEY) || '{}');
-         profiles[id] = p;
-         localStorage.setItem(COACH_PROFILES_KEY, JSON.stringify(profiles));
+         const profiles = { ...RAM_DB.coachProfiles, [id]: p };
+         persist(KEYS.COACH_PROFILES, 'coachProfiles', profiles);
     },
 
     // --- LOGS ---
@@ -432,7 +466,7 @@ export const storageService = {
             ipAddress: '127.0.0.1'
         };
         const updated = [newLog, ...RAM_DB.logs];
-        persist(AUDIT_LOGS_KEY, 'logs', updated);
+        persist(KEYS.LOGS, 'logs', updated);
     },
 
     // --- UTILS & MOCKS ---
@@ -444,15 +478,26 @@ export const storageService = {
         await firebaseDataService.syncGames(RAM_DB.games);
         await firebaseDataService.syncTransactions(RAM_DB.transactions);
     },
-    exportFullDatabase: () => {
-        const data = JSON.stringify(RAM_DB);
-        const blob = new Blob([data], {type: 'application/json'});
+    
+    // 🔥 BOTÃO DE PÂNICO: EXPORTAR TUDO 🔥
+    exportFullDatabase: async () => {
+        // Coleta tudo da RAM (que deve estar sincronizada com IDB)
+        const backupData = {
+            timestamp: new Date().toISOString(),
+            version: '3.6-IDB',
+            data: RAM_DB
+        };
+        
+        const dataStr = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([dataStr], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `fahub_backup_${Date.now()}.json`;
+        a.download = `fahub_PANIC_BACKUP_${Date.now()}.json`;
         a.click();
+        URL.revokeObjectURL(url);
     },
+    
     uploadFile: async (file: File, folder: string) => {
         return firebaseDataService.uploadFile(file, folder);
     },
@@ -478,7 +523,6 @@ export const storageService = {
         console.log(`Transfer ${id} processed: ${decision} by ${by}`);
     },
 
-    // --- LIGA E FEDERAÇÃO (MOCK DATA ROBUSTO PARA EVITAR CRASH) ---
     getLeague: (): League => {
         return {
             id: 'main-league',
@@ -486,28 +530,20 @@ export const storageService = {
             season: '2025',
             teams: [
                 { teamId: 't1', teamName: 'FAHUB Stars', logoUrl: 'https://ui-avatars.com/api/?name=FS&background=00A86B&color=fff', wins: 6, losses: 1, draws: 0, pointsFor: 180, pointsAgainst: 95 },
-                { teamId: 't2', teamName: 'São Paulo Bulls', logoUrl: 'https://ui-avatars.com/api/?name=SB&background=red&color=fff', wins: 5, losses: 2, draws: 0, pointsFor: 150, pointsAgainst: 110 },
-                { teamId: 't3', teamName: 'Minas Locomotiva', logoUrl: 'https://ui-avatars.com/api/?name=ML&background=blue&color=fff', wins: 3, losses: 4, draws: 0, pointsFor: 100, pointsAgainst: 125 },
-                { teamId: 't4', teamName: 'Rio Challengers', logoUrl: 'https://ui-avatars.com/api/?name=RC&background=orange&color=fff', wins: 1, losses: 6, draws: 0, pointsFor: 80, pointsAgainst: 190 },
-                { teamId: 't5', teamName: 'Tubarões do Cerrado', logoUrl: 'https://ui-avatars.com/api/?name=TC&background=teal&color=fff', wins: 4, losses: 3, draws: 0, pointsFor: 120, pointsAgainst: 130 }
+                { teamId: 't2', teamName: 'São Paulo Bulls', logoUrl: 'https://ui-avatars.com/api/?name=SB&background=red&color=fff', wins: 5, losses: 2, draws: 0, pointsFor: 150, pointsAgainst: 110 }
             ]
         };
     },
 
     getPublicLeagueStats: () => {
-        const teams = [
-             { teamId: 't1', teamName: 'FAHUB Stars', logoUrl: 'https://ui-avatars.com/api/?name=FS&background=00A86B&color=fff', wins: 6, losses: 1, draws: 0, pointsFor: 180, pointsAgainst: 95 },
-             { teamId: 't2', teamName: 'São Paulo Bulls', logoUrl: 'https://ui-avatars.com/api/?name=SB&background=red&color=fff', wins: 5, losses: 2, draws: 0, pointsFor: 150, pointsAgainst: 110 }
-        ];
-
         return { 
             name: 'Liga Nacional BFA', 
             season: '2025', 
-            leagueTable: teams, 
+            leagueTable: [], 
             leaders: { 
-                passing: [{id: 'p1', name: 'Tom Brady', jerseyNumber: 12, statValue: 3500, avatarUrl: 'https://ui-avatars.com/api/?name=TB'}], 
-                rushing: [{id: 'p2', name: 'Derrick Henry', jerseyNumber: 22, statValue: 1200, avatarUrl: 'https://ui-avatars.com/api/?name=DH'}], 
-                defense: [{id: 'p3', name: 'Aaron Donald', jerseyNumber: 99, statValue: 15, position: 'DT', avatarUrl: 'https://ui-avatars.com/api/?name=AD'}] 
+                passing: [], 
+                rushing: [], 
+                defense: [] 
             } 
         };
     },
@@ -524,18 +560,14 @@ export const storageService = {
         availability: 'AVAILABLE',
         totalGames: 42,
         balance: 450.00,
-        certifications: [
-             { id: 'cert-1', name: 'Regras IFAF 2024', issueDate: new Date(), expiryDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), status: 'ACTIVE' }
-        ]
+        certifications: []
     } as RefereeProfile),
 
     getCrewLogistics: (gameId: number) => ({
         gameId,
         meetingPoint: 'Hotel Plaza',
         meetingTime: '13:00',
-        carPools: [
-            { driver: 'Ref A', passengers: ['Ref B', 'Ref C'], vehicle: 'Sedan Prata' }
-        ],
+        carPools: [],
         uniformColor: 'Tradicional (Listrado)'
     } as CrewLogistics),
 
@@ -544,3 +576,20 @@ export const storageService = {
     createChampionship: () => {},
     generateMonthlyInvoices: () => {}
 };
+
+export const LEGAL_DOCUMENTS: LegalDocument[] = [
+    {
+        id: 'termos-financeiros-v1',
+        title: 'Política de Integridade Financeira',
+        version: '1.0',
+        requiredRole: ['MASTER', 'FINANCIAL_MANAGER'],
+        createdAt: new Date(),
+        content: `TERMO DE RESPONSABILIDADE FINANCEIRA
+
+1. O acesso ao módulo financeiro é estritamente monitorado.
+2. Todas as transações (entradas e saídas) são registradas com IP e ID do usuário.
+3. É proibido alterar registros passados sem justificativa formal no campo de observações.
+4. O uso indevido dos recursos do time acarretará em sanções administrativas e legais.
+5. Ao prosseguir, você declara estar ciente destas normas e assume total responsabilidade pelas ações realizadas com sua credencial.`
+    }
+];

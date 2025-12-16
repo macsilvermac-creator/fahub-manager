@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { storageService } from '../services/storageService';
-import { LockIcon, AlertTriangleIcon, TrashIcon, RefreshIcon } from '../components/icons/UiIcons';
+import { SparklesIcon, AlertTriangleIcon, LockIcon, CloudIcon, TrashIcon } from '../components/icons/UiIcons';
 import Button from '../components/Button';
 import Input from '../components/Input';
 
@@ -14,6 +14,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [seedStatus, setSeedStatus] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,19 +22,27 @@ const Login: React.FC = () => {
     setLoading(true);
     
     try {
-      await authService.login(email, password);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Tempo limite de conexão excedido.")), 8000)
+      );
+
+      await Promise.race([authService.login(email, password), timeoutPromise]);
+      
       navigate('/dashboard');
       window.location.reload();
     } catch (err: any) {
       console.error(err);
-      setError(err.message);
+      if (err.message.includes('invalid-credential')) {
+        setError("Senha incorreta.");
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleEmergencyLogin = () => {
-      // MASTER ADMIN BACKDOOR FOR DEV ONLY
       const mockUser = {
           id: 'dev-master',
           email: 'admin@gridiron.com',
@@ -47,16 +56,28 @@ const Login: React.FC = () => {
       window.location.reload();
   };
 
+  const handlePanicBackup = async () => {
+      if(confirm("SEGURANÇA: Deseja baixar uma cópia de TODOS os dados do sistema agora? Isso é recomendado antes de atualizações.")) {
+          try {
+             storageService.exportFullDatabase();
+             alert("Backup iniciado! Verifique seus downloads.");
+          } catch(e: any) {
+             alert("Erro no backup: " + e.message);
+          }
+      }
+  };
+
   const handleHardReset = () => {
-      if(confirm("ATENÇÃO: Isso limpará TODOS os dados locais (Cache e Banco de Dados) para corrigir erros fatais. Continuar?")) {
+      if(confirm("PERIGO: Isso limpará TODOS os dados locais para corrigir erros fatais. \n\nVocê perderá dados não salvos se não tiver backup. Continuar?")) {
           localStorage.clear();
+          // Limpa IndexedDB se houver (via idb-keyval, o browser cuidará disso no clear site data, mas aqui forçamos o reload)
           window.location.reload();
       }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary p-4 overflow-hidden">
-      <div className="bg-secondary p-6 rounded-2xl border border-white/10 w-full max-w-sm shadow-2xl animate-fade-in">
+      <div className="bg-secondary p-6 rounded-2xl border border-white/10 w-full max-w-sm shadow-2xl">
         
         <div className="text-center mb-5">
             <div className="flex justify-center mb-3">
@@ -69,10 +90,7 @@ const Login: React.FC = () => {
         </div>
 
         {error && (
-            <div className="bg-red-900/50 text-red-200 p-3 rounded mb-4 text-xs text-center border border-red-500/20 flex flex-col gap-1">
-                <div className="flex items-center justify-center gap-2 font-bold">
-                    <AlertTriangleIcon className="w-4 h-4" /> Acesso Negado
-                </div>
+            <div className="bg-red-900/50 text-red-200 p-2 rounded mb-3 text-xs text-center border border-red-500/20">
                 {error}
             </div>
         )}
@@ -109,18 +127,24 @@ const Login: React.FC = () => {
         <div className="mt-4 pt-3 border-t border-white/10 text-center space-y-2">
             <Link to="/register">
                 <Button variant="ghost" fullWidth size="sm" className="text-xs text-text-secondary hover:text-white border border-white/5 hover:bg-white/5">
-                    SOLICITAR ACESSO (NOVO USUÁRIO)
+                    CRIAR NOVA CONTA
                 </Button>
             </Link>
             
-            <div className="flex justify-between pt-2 opacity-40 hover:opacity-100 transition-opacity">
-                <button onClick={handleEmergencyLogin} className="text-[9px] text-text-secondary hover:text-highlight flex items-center gap-1">
-                    <LockIcon className="w-3 h-3" /> Master Dev
+            <div className="flex justify-between pt-2 opacity-60 hover:opacity-100 transition-opacity">
+                <button onClick={handlePanicBackup} className="text-[9px] text-green-400 hover:text-white flex items-center gap-1 border border-green-500/30 px-2 py-1 rounded">
+                    <CloudIcon className="w-3 h-3" /> Backup de Pânico
                 </button>
-                <button onClick={handleHardReset} className="text-[9px] text-text-secondary hover:text-red-500 flex items-center gap-1" title="Corrigir Bugs Críticos">
-                    <TrashIcon className="w-3 h-3" /> Reset App
-                </button>
+                <div className="flex gap-2">
+                    <button onClick={handleEmergencyLogin} className="text-[9px] text-text-secondary hover:text-highlight flex items-center gap-1">
+                        <LockIcon className="w-3 h-3" /> Dev
+                    </button>
+                    <button onClick={handleHardReset} className="text-[9px] text-text-secondary hover:text-red-500 flex items-center gap-1" title="Resetar Dados">
+                        <TrashIcon className="w-3 h-3" /> Reset
+                    </button>
+                </div>
             </div>
+            {seedStatus && <p className="text-[10px] text-green-400">{seedStatus}</p>}
         </div>
       </div>
     </div>

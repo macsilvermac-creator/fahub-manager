@@ -101,6 +101,7 @@ const Main: React.FC = () => {
 
   useEffect(() => {
       const init = async () => {
+          // Inicializa o banco de dados assincronamente (migração localStorage -> IndexedDB)
           await storageService.initializeRAM();
           setDbReady(true);
       };
@@ -109,9 +110,11 @@ const Main: React.FC = () => {
 
   if (!dbReady) {
       return (
-          <div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]">
+          <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#0B1120]">
               <LoadingScreen />
-              <p className="text-white mt-4 text-xs">Inicializando Banco de Dados...</p>
+              <p className="text-white mt-4 text-xs font-mono animate-pulse">
+                Otimizando Banco de Dados...
+              </p>
           </div>
       );
   }
