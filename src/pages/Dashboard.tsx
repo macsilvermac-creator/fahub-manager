@@ -30,7 +30,6 @@ const TacticalLab = React.lazy(() => import('./TacticalLab'));
 const Academy = React.lazy(() => import('./Academy'));
 
 // --- MEMOIZED WIDGETS ---
-// Prevenção de re-render desnecessário
 const StatusWidgetsMemo = React.memo(StatusWidgets);
 const ExecutiveDashboardMemo = React.memo(ExecutiveDashboard);
 const CoachHubButtonsMemo = React.memo(CoachHubButtons);
@@ -43,13 +42,15 @@ const Dashboard: React.FC = () => {
     const [activeModule, setActiveModule] = useState<string>('');
     const [userProgram, setUserProgram] = useState<ProgramType>('BOTH'); 
     
-    // Reactive Data Hooks (Optimized)
+    // --- REATIVIDADE MÁXIMA ---
+    // Substituímos storageService.getPlayers() direto por este hook.
+    // Agora, se você mudar um dado em outra aba, o Dashboard atualiza sozinho.
     const players = useAppStore('players', storageService.getPlayers);
     const games = useAppStore('games', storageService.getGames);
     // @ts-ignore
     const activeProgram = useAppStore('activeProgram', storageService.getActiveProgram);
 
-    // --- PERFORMANCE OPTIMIZATION: USEMEMO ---
+    // --- PERFORMANCE OPTIMIZATION ---
     // Cálculos pesados isolados. Só rodam se players ou games mudarem.
     const { xpLeaders, nextGame, systemHealth } = useMemo(() => {
         const now = new Date();
@@ -77,11 +78,14 @@ const Dashboard: React.FC = () => {
         const user = authService.getCurrentUser();
         if (user) {
             setUserProgram(user.program || 'BOTH');
+            // Se o usuário tem programa fixo (ex: FLAG), força o contexto
             if (user.program === 'FLAG' || user.program === 'TACKLE') {
-                storageService.setActiveProgram(user.program);
+                if (activeProgram !== user.program) {
+                     storageService.setActiveProgram(user.program);
+                }
             }
         }
-    }, []);
+    }, [activeProgram]);
 
     const handleProgramSwitch = (program: 'TACKLE' | 'FLAG') => {
         storageService.setActiveProgram(program);

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { BellIcon, ChevronDownIcon, WifiOffIcon, RefreshIcon, CheckCircleIcon, AlertCircleIcon } from './icons/UiIcons';
 import { syncService } from '../services/syncService';
+import { authService } from '../services/authService';
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -9,6 +10,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ children }) => {
   const [syncStatus, setSyncStatus] = useState<'SAVED' | 'SYNCING' | 'OFFLINE' | 'ERROR'>('SAVED');
+  const user = authService.getCurrentUser();
 
   useEffect(() => {
     // Inscreve no serviço de sync para atualizações em tempo real
@@ -21,13 +23,13 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
   const getStatusDisplay = () => {
       switch(syncStatus) {
           case 'SAVED':
-              return { icon: <CheckCircleIcon className="w-4 h-4" />, text: 'Salvo', color: 'text-green-400 border-green-500/20 bg-green-500/10' };
+              return { icon: <CheckCircleIcon className="w-3 h-3" />, text: 'Salvo', color: 'text-green-400 border-green-500/20 bg-green-500/10' };
           case 'SYNCING':
-              return { icon: <RefreshIcon className="w-4 h-4 animate-spin" />, text: 'Sincronizando...', color: 'text-blue-400 border-blue-500/20 bg-blue-500/10' };
+              return { icon: <RefreshIcon className="w-3 h-3 animate-spin" />, text: 'Sincronizando...', color: 'text-blue-400 border-blue-500/20 bg-blue-500/10' };
           case 'OFFLINE':
-              return { icon: <WifiOffIcon className="w-4 h-4" />, text: 'Offline (Local)', color: 'text-gray-400 border-gray-500/20 bg-gray-500/10' };
+              return { icon: <WifiOffIcon className="w-3 h-3" />, text: 'Offline (Local)', color: 'text-gray-400 border-gray-500/20 bg-gray-500/10' };
           case 'ERROR':
-              return { icon: <AlertCircleIcon className="w-4 h-4" />, text: 'Erro no Sync', color: 'text-red-400 border-red-500/20 bg-red-500/10' };
+              return { icon: <AlertCircleIcon className="w-3 h-3" />, text: 'Erro no Sync', color: 'text-red-400 border-red-500/20 bg-red-500/10' };
       }
   };
 
@@ -43,21 +45,22 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
       <div className="flex items-center space-x-4">
         {/* Sync Status Indicator */}
         <div 
-            className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border transition-colors ${statusDisplay.color}`}
+            className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold border transition-colors uppercase tracking-wider ${statusDisplay.color}`}
             title="Status da Nuvem"
         >
             {statusDisplay.icon}
             <span>{statusDisplay.text}</span>
         </div>
 
-        <button className="p-2 text-text-secondary rounded-full hover:bg-white/5 hover:text-white transition-colors">
+        <button className="p-2 text-text-secondary rounded-full hover:bg-white/5 hover:text-white transition-colors relative">
           <BellIcon />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
         </button>
 
         <div className="relative">
-          <button className="flex items-center space-x-2 p-2 rounded-md hover:bg-white/5 transition-colors">
-            <img className="h-8 w-8 rounded-full object-cover border border-white/10" src="https://ui-avatars.com/api/?name=Admin&background=random" alt="User avatar" />
-            <span className="hidden md:block text-white text-sm font-medium">Admin</span>
+          <button className="flex items-center space-x-2 p-1 pr-3 rounded-full hover:bg-white/5 transition-colors border border-transparent hover:border-white/10">
+            <img className="h-8 w-8 rounded-full object-cover border border-white/10" src={user?.avatarUrl || "https://ui-avatars.com/api/?name=User"} alt="User avatar" />
+            <span className="hidden md:block text-white text-sm font-medium">{user?.name?.split(' ')[0] || 'Usuário'}</span>
             <ChevronDownIcon />
           </button>
         </div>

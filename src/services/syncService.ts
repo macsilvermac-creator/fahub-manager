@@ -28,7 +28,7 @@ class SyncService {
 
     public subscribe(listener: SyncListener): () => void {
         this.listeners.push(listener);
-        listener(this.status); // Emit initial status
+        listener(this.status); // Emit initial status immediately
         return () => {
             this.listeners = this.listeners.filter(l => l !== listener);
         };
@@ -53,7 +53,7 @@ class SyncService {
                 this.updateStatus('SAVED');
             } catch (error) {
                 console.error(`Erro ao sincronizar ${entity}:`, error);
-                this.enqueueAction(entity, data); // Fallback para fila
+                this.enqueueAction(entity, data); // Fallback para fila se falhar
                 this.updateStatus('ERROR');
             }
         }, 2000);
@@ -62,8 +62,10 @@ class SyncService {
     // --- INTERNAL LOGIC ---
 
     private updateStatus(newStatus: SyncStatus) {
-        this.status = newStatus;
-        this.listeners.forEach(l => l(newStatus));
+        if (this.status !== newStatus) {
+            this.status = newStatus;
+            this.listeners.forEach(l => l(newStatus));
+        }
     }
 
     private handleConnectionChange(status: boolean) {
@@ -90,7 +92,7 @@ class SyncService {
 
     public enqueueAction(type: string, payload: any) {
         const queue = this.getQueue();
-        // Remove duplicatas (mantém apenas a versão mais recente da entidade)
+        // Remove duplicatas (mantém apenas a versão mais recente da entidade para otimizar)
         const filtered = queue.filter(item => item.type !== type);
         
         filtered.push({
@@ -139,6 +141,7 @@ class SyncService {
 
     // Roteador de Sincronização
     private async performCloudSync(entity: string, data: any) {
+        // Mapeia nomes internos para funções do firebaseDataService
         switch (entity) {
             case 'players':
             case 'SYNC_PLAYERS':
@@ -157,10 +160,10 @@ class SyncService {
         }
     }
 
-    // Método para registrar processador externo (usado no Main.tsx para evitar loop de dependência circular na inicialização)
+    // Método legacy para manter compatibilidade com inicialização antiga, se necessário
     public registerProcessor(fn: any) {
-         // Mantido para compatibilidade, mas a lógica interna agora usa firebaseDataService direto para evitar loops
-         console.log("Processor registered via legacy method (No-op in new architecture)");
+         // No-op na nova arquitetura, pois o router interno cuida disso
+         console.log("Processor registered via legacy method (No-op)");
     }
 
     public init() {

@@ -18,7 +18,7 @@ const Roster: React.FC = () => {
     const toast = useToast();
     
     // --- REACTIVE DATA STORE ---
-    // Substitui useState e useEffect manuais por um hook que escuta o storageService
+    // A mágica acontece aqui. O Roster agora "ouve" o banco de dados.
     const players = useAppStore('players', storageService.getPlayers);
     // @ts-ignore
     const activeProgram = useAppStore('activeProgram', storageService.getActiveProgram);
@@ -55,7 +55,8 @@ const Roster: React.FC = () => {
 
     const handleAddPlayer = (newPlayerData: Omit<Player, 'id' | 'level' | 'xp' | 'badges' | 'rating' | 'status'>) => {
         try {
-            const newId = Math.max(0, ...players.map(p => p.id)) + 1;
+            // Gera um ID numérico seguro
+            const newId = Date.now();
             const newPlayer: Player = {
                 id: newId,
                 level: 1,
@@ -113,6 +114,7 @@ const Roster: React.FC = () => {
     // O filtro só roda se as dependências mudarem, evitando recálculo a cada render
     const filteredPlayers = useMemo(() => {
         return players.filter(p => {
+            // Filtro de Modalidade (Contexto Seguro)
             if (activeProgram === 'FLAG' && p.program === 'TACKLE') return false;
             if (activeProgram === 'TACKLE' && p.program === 'FLAG') return false;
 
