@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { Player, PracticeSession } from '../types';
 import LazyImage from './LazyImage';
-import { CheckCircleIcon, XIcon, SearchIcon, UsersIcon } from './icons/UiIcons';
+import { CheckCircleIcon, SearchIcon } from './icons/UiIcons';
 
 interface CheckInModalProps {
     isOpen: boolean;
@@ -58,7 +58,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({ isOpen, onClose, session, a
             return (session.attendees || []).includes(String(p.id)) || presentIds.has(String(p.id));
         }
         
-        return true; // Show all active players for manual addition
+        return true; 
     }).sort((a, b) => {
         // Sort: Present first, then Alphabetical
         const aPresent = presentIds.has(String(a.id));
