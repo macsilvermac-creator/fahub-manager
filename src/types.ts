@@ -321,8 +321,8 @@ export interface PracticeSession {
     category: PracticeCategory;
     locationType: string;
     instructor: string;
-    attendees: string[];
-    checkedInAttendees?: string[];
+    attendees: string[]; // RSVP (Intenção)
+    checkedInAttendees?: string[]; // Presença Real (Check-in)
     notes: string;
     drills: Drill[];
     script: PracticeScriptItem[];
@@ -852,7 +852,6 @@ export interface QuizQuestion {
     options: string[];
     correctAnswer: number; // index
     imageUrl?: string; // For play diagram
-    explanation?: string;
 }
 
 export interface PlaybookQuiz {
@@ -867,6 +866,7 @@ export interface QuizResult {
     playerId: number;
     score: number;
     date: Date;
+    
 }
 
 export interface ScoutChartData {
