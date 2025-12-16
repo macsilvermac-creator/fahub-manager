@@ -1,5 +1,5 @@
 
-import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, EquipmentItem, EventSale, RecruitmentCandidate, Objective, Subscription, Budget, Bill, KanbanTask, NationalTeamCandidate, Affiliate, RefereeProfile, LegalDocument, ProgramType, AssociationFinance, Drill, Entitlement, DigitalProduct } from '../types';
+import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, EquipmentItem, EventSale, RecruitmentCandidate, Objective, Subscription, Budget, Bill, KanbanTask, NationalTeamCandidate, Affiliate, RefereeProfile, LegalDocument, ProgramType, AssociationFinance, Drill, Entitlement, DigitalProduct, League } from '../types';
 import { firebaseDataService } from './firebaseDataService';
 import { syncService } from './syncService';
 
@@ -130,7 +130,6 @@ const persist = (key: string, ramKey: string, data: any, syncEntity?: string) =>
     // Aciona Sync
     if (syncEntity) {
         if (syncService.getConnectionStatus()) {
-           // Lógica de sync direto poderia vir aqui, mas delegamos ao syncService
            syncService.triggerSync(syncEntity, data);
         } else {
            syncService.enqueueAction(syncEntity, data);
@@ -296,7 +295,7 @@ export const storageService = {
     getEventSales: (): EventSale[] => RAM_DB.sales,
     saveEventSales: (s: EventSale[]) => persist(SALES_KEY, 'sales', s),
 
-    getSubscriptions: (): Subscription[] => [], // Mock for now
+    getSubscriptions: (): Subscription[] => [], 
     saveSubscriptions: (s: Subscription[]) => {}, 
     getBudgets: (): Budget[] => [], 
     saveBudgets: (b: Budget[]) => {}, 
@@ -358,9 +357,20 @@ export const storageService = {
     saveCourses: (c: Course[]) => persist(COURSES_KEY, 'courses', c),
     
     getEntitlements: (): Entitlement[] => RAM_DB.entitlements,
-    checkAccess: (userId: string, productId: string) => true, // Mock
+    checkAccess: (userId: string, productId: string) => true,
     purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
         console.log("Product purchased:", product.title);
+        // Mock implementation of adding entitlement
+        const newEntitlement: Entitlement = {
+            id: `ent-${Date.now()}`,
+            userId,
+            productId: product.id,
+            purchaseDate: new Date(),
+            expiresAt: new Date(Date.now() + product.durationHours * 3600000),
+            status: 'ACTIVE'
+        };
+        RAM_DB.entitlements.push(newEntitlement);
+        persist(ENTITLEMENTS_KEY, 'entitlements', RAM_DB.entitlements);
     },
 
     savePlayerWorkout: (playerId: number, content: string, title: string) => {
@@ -427,7 +437,6 @@ export const storageService = {
 
     // --- UTILS & MOCKS ---
     syncFromCloud: async () => {
-         // Placeholder for real cloud sync logic call
          return true;
     },
     seedDatabaseToCloud: async () => { 
@@ -469,8 +478,42 @@ export const storageService = {
         console.log(`Transfer ${id} processed: ${decision} by ${by}`);
     },
 
+    // --- LIGA E FEDERAÇÃO (MOCK DATA ROBUSTO PARA EVITAR CRASH) ---
+    getLeague: (): League => {
+        return {
+            id: 'main-league',
+            name: 'Liga Nacional de Futebol Americano',
+            season: '2025',
+            teams: [
+                { teamId: 't1', teamName: 'FAHUB Stars', logoUrl: 'https://ui-avatars.com/api/?name=FS&background=00A86B&color=fff', wins: 6, losses: 1, draws: 0, pointsFor: 180, pointsAgainst: 95 },
+                { teamId: 't2', teamName: 'São Paulo Bulls', logoUrl: 'https://ui-avatars.com/api/?name=SB&background=red&color=fff', wins: 5, losses: 2, draws: 0, pointsFor: 150, pointsAgainst: 110 },
+                { teamId: 't3', teamName: 'Minas Locomotiva', logoUrl: 'https://ui-avatars.com/api/?name=ML&background=blue&color=fff', wins: 3, losses: 4, draws: 0, pointsFor: 100, pointsAgainst: 125 },
+                { teamId: 't4', teamName: 'Rio Challengers', logoUrl: 'https://ui-avatars.com/api/?name=RC&background=orange&color=fff', wins: 1, losses: 6, draws: 0, pointsFor: 80, pointsAgainst: 190 },
+                { teamId: 't5', teamName: 'Tubarões do Cerrado', logoUrl: 'https://ui-avatars.com/api/?name=TC&background=teal&color=fff', wins: 4, losses: 3, draws: 0, pointsFor: 120, pointsAgainst: 130 }
+            ]
+        };
+    },
+
+    getPublicLeagueStats: () => {
+        const teams = [
+             { teamId: 't1', teamName: 'FAHUB Stars', logoUrl: 'https://ui-avatars.com/api/?name=FS&background=00A86B&color=fff', wins: 6, losses: 1, draws: 0, pointsFor: 180, pointsAgainst: 95 },
+             { teamId: 't2', teamName: 'São Paulo Bulls', logoUrl: 'https://ui-avatars.com/api/?name=SB&background=red&color=fff', wins: 5, losses: 2, draws: 0, pointsFor: 150, pointsAgainst: 110 }
+        ];
+
+        return { 
+            name: 'Liga Nacional BFA', 
+            season: '2025', 
+            leagueTable: teams, 
+            leaders: { 
+                passing: [{id: 'p1', name: 'Tom Brady', jerseyNumber: 12, statValue: 3500, avatarUrl: 'https://ui-avatars.com/api/?name=TB'}], 
+                rushing: [{id: 'p2', name: 'Derrick Henry', jerseyNumber: 22, statValue: 1200, avatarUrl: 'https://ui-avatars.com/api/?name=DH'}], 
+                defense: [{id: 'p3', name: 'Aaron Donald', jerseyNumber: 99, statValue: 15, position: 'DT', avatarUrl: 'https://ui-avatars.com/api/?name=AD'}] 
+            } 
+        };
+    },
+
     getPublicGameData: (id: string) => RAM_DB.games.find((g: Game) => String(g.id) === id),
-    getPublicLeagueStats: () => ({ name: 'Liga Nacional', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
+    
     getReferees: () => [],
     
     getRefereeProfile: (id: string) => ({
