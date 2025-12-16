@@ -59,7 +59,7 @@ const Login: React.FC = () => {
   const handlePanicBackup = async () => {
       if(confirm("SEGURANÇA: Deseja baixar uma cópia de TODOS os dados do sistema agora? Isso é recomendado antes de atualizações.")) {
           try {
-             storageService.exportFullDatabase();
+             await storageService.exportFullDatabase();
              alert("Backup iniciado! Verifique seus downloads.");
           } catch(e: any) {
              alert("Erro no backup: " + e.message);
@@ -68,9 +68,9 @@ const Login: React.FC = () => {
   };
 
   const handleHardReset = () => {
-      if(confirm("PERIGO: Isso limpará TODOS os dados locais para corrigir erros fatais. \n\nVocê perderá dados não salvos se não tiver backup. Continuar?")) {
+      if(confirm("PERIGO: Isso limpará TODOS os dados locais (Cache e Banco de Dados) para corrigir erros fatais. \n\nVocê perderá dados não salvos se não tiver backup. Continuar?")) {
           localStorage.clear();
-          // Limpa IndexedDB se houver (via idb-keyval, o browser cuidará disso no clear site data, mas aqui forçamos o reload)
+          // Limpa IndexedDB também (via idb-keyval clean ou reload forçado)
           window.location.reload();
       }
   };

@@ -2,7 +2,7 @@
 import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, MarketplaceItem, YouthClass, YouthStudent, RecruitmentCandidate, Objective, Subscription, Budget, Bill, KanbanTask, RefereeProfile, LegalDocument, ProgramType, Drill, Entitlement, DigitalProduct, League, SponsorDeal, SocialPost, EquipmentItem, EventSale, GameReport, VideoClip, VideoPlaylist, CoachGameNote, CoachCareer, CrewLogistics } from '../types';
 import { firebaseDataService } from './firebaseDataService';
 import { syncService } from './syncService';
-import { get, set, setMany, values } from 'idb-keyval';
+import { get, set } from 'idb-keyval';
 
 // Chaves do Banco de Dados
 const KEYS = {
@@ -133,7 +133,6 @@ export const storageService = {
             
             let hasDataInIDB = false;
 
-            // Popula RAM com dados do IDB
             // Mapeamento manual para garantir integridade e tipos
             const keyMap: Record<string, string> = {
                 [KEYS.PLAYERS]: 'players',
@@ -168,6 +167,7 @@ export const storageService = {
                 [KEYS.DRILLS]: 'drills'
             };
 
+            // Popula RAM com dados do IDB
             keys.forEach((key, index) => {
                 const val = values[index];
                 if (val) {
@@ -210,7 +210,6 @@ export const storageService = {
 
         } catch (e) {
             console.error("Critical DB Error:", e);
-            // Fallback para LocalStorage se IDB falhar catastroficamente (improvável)
         }
         
         console.timeEnd("DB_INIT");
