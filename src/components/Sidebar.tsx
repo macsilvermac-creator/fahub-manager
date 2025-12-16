@@ -19,6 +19,7 @@ interface SidebarProps {
   setRole: (role: UserRole) => void;
 }
 
+// MEMOIZED COMPONENT: Prevents re-renders when parent state unrelated to nav changes
 const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, setRole }) => {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
@@ -67,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 <div>
                     <span className="text-lg font-bold text-white block leading-none">FAHUB</span>
                     <span className="text-[10px] text-text-secondary uppercase tracking-widest font-semibold">
-                        Manager v3.5
+                        Manager v3.6
                     </span>
                 </div>
             </div>

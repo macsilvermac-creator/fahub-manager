@@ -24,7 +24,7 @@ const Roster: React.FC = () => {
     // Estado do Programa Ativo (Herdado do Dashboard ou do Usuário)
     const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
     
-    // INFINITE SCROLL STATE
+    // INFINITE SCROLL STATE (PERFORMANCE FIX)
     const [visibleCount, setVisibleCount] = useState(12);
     const loaderRef = useRef<HTMLDivElement>(null);
 
@@ -35,12 +35,13 @@ const Roster: React.FC = () => {
     const [compareSelection, setCompareSelection] = useState<number[]>([]);
     const [showCompareModal, setShowCompareModal] = useState(false);
 
-    // --- PERMISSÕES RÍGIDAS (Segregação de Funções) ---
+    // --- PERMISSÕES RÍGIDAS ---
     const isPlayer = currentRole === 'PLAYER';
     const canCreateDelete = currentRole === 'MASTER'; 
     const canManageRoster = currentRole === 'MASTER' || currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
 
     useEffect(() => {
+        // Carregamento inicial
         setPlayers(storageService.getPlayers());
         const prog = storageService.getActiveProgram();
         setActiveProgram(prog === 'BOTH' ? 'TACKLE' : prog);
@@ -109,7 +110,8 @@ const Roster: React.FC = () => {
         }
     };
 
-    // --- FILTRAGEM SEGREGADA (FLAG vs TACKLE) ---
+    // --- FILTRAGEM OTIMIZADA (MEMOIZATION) ---
+    // O filtro só roda se as dependências mudarem, evitando recálculo a cada render
     const filteredPlayers = useMemo(() => {
         return players.filter(p => {
             if (activeProgram === 'FLAG' && p.program === 'TACKLE') return false;
@@ -137,21 +139,22 @@ const Roster: React.FC = () => {
         });
     }, [players, activeCategory, unitFilter, activeProgram]);
 
+    // PAGINAÇÃO VISUAL (Evita renderizar 100 cards de uma vez)
     const displayedPlayers = filteredPlayers.slice(0, visibleCount);
 
-    // --- INFINITE SCROLL LOGIC ---
+    // --- INFINITE SCROLL OBSERVER ---
     useEffect(() => {
         const observer = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting) {
                 // Se o loader estiver visível e houver mais itens, carrega mais
                 if (displayedPlayers.length < filteredPlayers.length) {
-                    // Pequeno delay artificial para UX
+                    // Pequeno delay artificial para UX suave, sem travar main thread
                     setTimeout(() => {
                          setVisibleCount(prev => prev + 12);
-                    }, 300);
+                    }, 100);
                 }
             }
-        }, { threshold: 1.0 });
+        }, { threshold: 0.1 });
 
         if (loaderRef.current) {
             observer.observe(loaderRef.current);
@@ -161,7 +164,7 @@ const Roster: React.FC = () => {
     }, [displayedPlayers.length, filteredPlayers.length]);
 
 
-    // --- Depth Chart Helpers ---
+    // --- Depth Chart Helpers (Mantidos) ---
     const getPlayersByUnit = (unit: 'OFFENSE' | 'DEFENSE' | 'SPECIAL') => {
         const offPositions = activeProgram === 'FLAG' 
             ? ['QB', 'WR', 'C', 'ATH']
@@ -322,6 +325,7 @@ const Roster: React.FC = () => {
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {filteredPlayers.length === 0 && <p className="col-span-full text-center text-text-secondary py-12 italic">Nenhum atleta nesta categoria/filtro para o programa {activeProgram}.</p>}
+                            
                             {displayedPlayers.map(player => (
                                 <div key={player.id} className="relative group">
                                     <AthleteCard 
@@ -353,7 +357,7 @@ const Roster: React.FC = () => {
                             ))}
                         </div>
                         
-                        {/* INFINITE SCROLL LOADER */}
+                        {/* INFINITE SCROLL LOADER (Intersection Observer Target) */}
                         {visibleCount < filteredPlayers.length && (
                              <div ref={loaderRef} className="w-full py-8 flex justify-center items-center">
                                  <div className="flex items-center gap-2 text-text-secondary animate-pulse">

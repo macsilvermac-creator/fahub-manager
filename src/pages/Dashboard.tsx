@@ -29,6 +29,12 @@ const VideoAnalysis = React.lazy(() => import('./VideoAnalysis'));
 const TacticalLab = React.lazy(() => import('./TacticalLab'));
 const Academy = React.lazy(() => import('./Academy'));
 
+// --- MEMOIZED WIDGETS ---
+// Prevenção de re-render desnecessário
+const StatusWidgetsMemo = React.memo(StatusWidgets);
+const ExecutiveDashboardMemo = React.memo(ExecutiveDashboard);
+const CoachHubButtonsMemo = React.memo(CoachHubButtons);
+
 const Dashboard: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const navigate = useNavigate();
@@ -37,14 +43,15 @@ const Dashboard: React.FC = () => {
     const [activeModule, setActiveModule] = useState<string>('');
     const [userProgram, setUserProgram] = useState<ProgramType>('BOTH'); 
     
-    // Reactive Data Hooks
+    // Reactive Data Hooks (Optimized)
     const players = useAppStore('players', storageService.getPlayers);
     const games = useAppStore('games', storageService.getGames);
     // @ts-ignore
     const activeProgram = useAppStore('activeProgram', storageService.getActiveProgram);
 
-    // Derived States
-    const { xpLeaders, nextGame } = useMemo(() => {
+    // --- PERFORMANCE OPTIMIZATION: USEMEMO ---
+    // Cálculos pesados isolados. Só rodam se players ou games mudarem.
+    const { xpLeaders, nextGame, systemHealth } = useMemo(() => {
         const now = new Date();
         const next = games
             .filter((g: Game) => new Date(g.date) >= now && g.status === 'SCHEDULED')
@@ -54,7 +61,8 @@ const Dashboard: React.FC = () => {
         
         return {
             xpLeaders: sortedPlayers,
-            nextGame: next
+            nextGame: next,
+            systemHealth: { api: true, db: 'RAM Optimized', version: '3.6 Turbo' }
         };
     }, [players, games]);
 
@@ -88,8 +96,6 @@ const Dashboard: React.FC = () => {
         toast.success("Convite copiado!");
     };
 
-    const systemHealth = { api: true, db: 'RAM Reactive', version: '3.2.0-Lazy' };
-
     // --- RENDER ---
     return (
         <Suspense fallback={<div className="p-8 space-y-4"><Skeleton height="100px" /><Skeleton height="300px" /></div>}>
@@ -97,8 +103,8 @@ const Dashboard: React.FC = () => {
             {/* MASTER VIEW */}
             {isMasterView && (
                 <div className="space-y-6 animate-fade-in pb-20">
-                    <StatusWidgets systemHealth={systemHealth} />
-                    <ExecutiveDashboard handleCopyInvite={handleCopyInvite} />
+                    <StatusWidgetsMemo systemHealth={systemHealth} />
+                    <ExecutiveDashboardMemo handleCopyInvite={handleCopyInvite} />
                 </div>
             )}
 
@@ -142,7 +148,7 @@ const Dashboard: React.FC = () => {
                                 )}
                             </div>
                             
-                            <CoachHubButtons setActiveHub={setActiveHub} setActiveModule={setActiveModule} nextGame={nextGame} program={activeProgram} />
+                            <CoachHubButtonsMemo setActiveHub={setActiveHub} setActiveModule={setActiveModule} nextGame={nextGame} program={activeProgram} />
                         </div>
                     ) : (
                         <div className="pb-20 min-h-screen">
@@ -156,7 +162,6 @@ const Dashboard: React.FC = () => {
                                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${activeProgram === 'TACKLE' ? 'bg-blue-900 text-blue-300' : 'bg-yellow-900 text-yellow-300'}`}>{activeProgram}</span>
                                     </div>
                                 </div>
-                                {/* Sub-module navigation can be improved here, currently simplistic */}
                             </div>
 
                             <Suspense fallback={<div className="p-4 space-y-4"><Skeleton height="50px" /><Skeleton height="400px" /></div>}>
