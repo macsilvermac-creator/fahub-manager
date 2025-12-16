@@ -26,10 +26,9 @@ class SyncService {
         return this.status;
     }
 
-    // Permite que o Header.tsx "escute" mudanças de status
     public subscribe(listener: SyncListener): () => void {
         this.listeners.push(listener);
-        listener(this.status); // Emite status atual imediatamente
+        listener(this.status); // Emit initial status immediately
         return () => {
             this.listeners = this.listeners.filter(l => l !== listener);
         };
