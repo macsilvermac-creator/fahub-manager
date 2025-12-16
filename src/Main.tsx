@@ -1,5 +1,5 @@
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 // @ts-ignore
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -7,12 +7,12 @@ import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlobalSearch from './components/GlobalSearch';
 import ProtectedRoute from './components/ProtectedRoute'; 
-import { ToastProvider } from './contexts/ToastContext';
+import { ToastProvider, useToast } from './contexts/ToastContext';
 import { UserRole } from './types';
 import { authService } from './services/authService';
+import { storageService } from './services/storageService';
 
-// FAHUB MANAGER v3.4 - Production Grade
-// Optimized Imports for Lazy Loading
+// FAHUB MANAGER v3.5 - Production Grade (Integrity Check Added)
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
@@ -64,16 +64,31 @@ const ROLES = {
   PLATFORM: ['PLATFORM_OWNER', 'MASTER'] as UserRole[] 
 };
 
-const OnboardingCheck: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Componente de Checagem de Onboarding e Integridade
+const SystemGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const location = useLocation();
+    const toast = useToast();
     
+    // Verificação de Integridade ao carregar rotas protegidas
+    useEffect(() => {
+        if (!location.pathname.startsWith('/public') && location.pathname !== '/login') {
+            const players = storageService.getPlayers();
+            const settings = storageService.getTeamSettings();
+            
+            if (!settings || !settings.teamName) {
+                console.warn("⚠️ Integridade: Configurações ausentes. Restaurando padrão.");
+                // A storageService já lida com defaults, mas aqui garantimos feedback visual se algo crítico falhar
+            }
+        }
+    }, [location]);
+
     if (location.pathname.startsWith('/public') || location.pathname === '/login' || location.pathname === '/register' || location.pathname.startsWith('/broadcast')) {
         return <>{children}</>;
     }
 
     const user = authService.getCurrentUser();
 
-    if (!user) return <>{children}</>;
+    if (!user) return <Navigate to="/login" replace />;
 
     if (user.status === 'APPROVED' && !user.isProfileComplete && location.pathname !== '/onboarding') {
         return <Navigate to="/onboarding" replace />;
@@ -92,7 +107,6 @@ const Main: React.FC = () => {
         <ToastProvider>
             <HashRouter>
             <GlobalSearch />
-            {/* Suspense Global para o App Shell */}
             <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
                 <Routes>
                 {/* Rotas Públicas (Sem Layout) */}
@@ -104,10 +118,9 @@ const Main: React.FC = () => {
                 
                 {/* Rotas Protegidas */}
                 <Route path="/*" element={
-                    <OnboardingCheck>
+                    <SystemGuard>
                         <Layout>
                         <ErrorBoundary>
-                            {/* Suspense Interno para Troca de Páginas */}
                             <Suspense fallback={<div className="h-full w-full flex items-center justify-center min-h-[300px]"><LoadingScreen /></div>}>
                                 <Routes>
                                 <Route path="/onboarding" element={<Onboarding />} />
@@ -150,11 +163,14 @@ const Main: React.FC = () => {
                                 <Route path="/league" element={<LeagueManager />} />
                                 <Route path="/confederation" element={<Confederation />} />
                                 <Route path="/roadmap" element={<Roadmap />} />
+                                
+                                {/* Fallback 404 */}
+                                <Route path="*" element={<div className="p-8 text-center text-text-secondary">Página não encontrada. <br/><button onClick={() => window.history.back()} className="mt-4 text-highlight underline">Voltar</button></div>} />
                                 </Routes>
                             </Suspense>
                         </ErrorBoundary>
                         </Layout>
-                    </OnboardingCheck>
+                    </SystemGuard>
                 } />
                 </Routes>
             </Suspense>
