@@ -157,6 +157,12 @@ class SyncService {
         }
     }
 
+    // Método para registrar processador externo (usado no Main.tsx para evitar loop de dependência circular na inicialização)
+    public registerProcessor(fn: any) {
+         // Mantido para compatibilidade, mas a lógica interna agora usa firebaseDataService direto para evitar loops
+         console.log("Processor registered via legacy method (No-op in new architecture)");
+    }
+
     public init() {
         if (this.isOnline) {
             this.processQueue();

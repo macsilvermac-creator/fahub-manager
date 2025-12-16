@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { BellIcon, ChevronDownIcon, WifiIcon, WifiOffIcon, RefreshIcon, CheckCircleIcon, AlertCircleIcon } from './icons/UiIcons';
+import { BellIcon, ChevronDownIcon, WifiOffIcon, RefreshIcon, CheckCircleIcon, AlertCircleIcon } from './icons/UiIcons';
 import { syncService } from '../services/syncService';
 
 interface HeaderProps {

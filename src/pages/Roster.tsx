@@ -11,18 +11,23 @@ import { storageService } from '../services/storageService';
 import PrintLayout from '../components/PrintLayout';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext'; 
+import { useAppStore } from '@/utils/storeHooks';
 
 const Roster: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const toast = useToast();
-    const [players, setPlayers] = useState<Player[]>([]);
+    
+    // --- REACTIVE DATA STORE ---
+    // Substitui useState e useEffect manuais por um hook que escuta o storageService
+    const players = useAppStore('players', storageService.getPlayers);
+    // @ts-ignore
+    const activeProgram = useAppStore('activeProgram', storageService.getActiveProgram);
+
+    // Local UI State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
     const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
     const [viewMode, setViewMode] = useState<'CARDS' | 'DEPTH_CHART'>('CARDS');
-    
-    // Estado do Programa Ativo (Herdado do Dashboard ou do Usuário)
-    const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
     
     // INFINITE SCROLL STATE (PERFORMANCE FIX)
     const [visibleCount, setVisibleCount] = useState(12);
@@ -41,10 +46,6 @@ const Roster: React.FC = () => {
     const canManageRoster = currentRole === 'MASTER' || currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
 
     useEffect(() => {
-        // Carregamento inicial
-        setPlayers(storageService.getPlayers());
-        const prog = storageService.getActiveProgram();
-        setActiveProgram(prog === 'BOTH' ? 'TACKLE' : prog);
         if (isPlayer) setViewMode('CARDS');
     }, [isPlayer]);
 
@@ -67,8 +68,8 @@ const Roster: React.FC = () => {
                 ...newPlayerData
             };
             
+            // Apenas chama o método de escrita. A UI atualizará sozinha via useAppStore
             storageService.registerAthlete(newPlayer);
-            setPlayers(storageService.getPlayers());
             setIsAddModalOpen(false);
             toast.success(`Atleta ${newPlayer.name} recrutado para o elenco ${newPlayer.program}!`); 
         } catch (error: any) {
@@ -83,7 +84,6 @@ const Roster: React.FC = () => {
     const confirmDeletePlayer = () => {
         if (playerToDelete) {
             const updatedPlayers = players.filter(p => p.id !== playerToDelete.id);
-            setPlayers(updatedPlayers);
             storageService.savePlayers(updatedPlayers);
             toast.info(`${playerToDelete.name} removido do elenco.`); 
             setPlayerToDelete(null);
@@ -93,7 +93,6 @@ const Roster: React.FC = () => {
     const handleMovePlayer = (player: Player, newCategory: RosterCategory) => {
         if (!canManageRoster) return;
         const updated = players.map(p => p.id === player.id ? { ...p, rosterCategory: newCategory } : p);
-        setPlayers(updated);
         storageService.savePlayers(updated);
         toast.success(`${player.name} movido para ${newCategory}`); 
     };
