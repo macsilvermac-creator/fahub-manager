@@ -7,12 +7,12 @@ import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import GlobalSearch from './components/GlobalSearch';
 import ProtectedRoute from './components/ProtectedRoute'; 
-import { ToastProvider, useToast } from './contexts/ToastContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { UserRole } from './types';
 import { authService } from './services/authService';
 import { storageService } from './services/storageService';
 
-// FAHUB MANAGER v3.5 - Production Grade (Integrity Check Added)
+// FAHUB MANAGER v3.5 - Production Grade
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
@@ -68,12 +68,11 @@ const ROLES = {
 const SystemGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const location = useLocation();
     
-    // Verificação de Integridade ao carregar rotas protegidas
     useEffect(() => {
         if (!location.pathname.startsWith('/public') && location.pathname !== '/login') {
             const settings = storageService.getTeamSettings();
             if (!settings || !settings.teamName) {
-                console.warn("⚠️ Integridade: Configurações ausentes. Restaurando padrão.");
+                console.warn("⚠️ Integridade: Configurações ausentes.");
             }
         }
     }, [location]);
@@ -112,7 +111,7 @@ const Main: React.FC = () => {
       return (
           <div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]">
               <LoadingScreen />
-              <p className="text-white mt-4 text-xs">Migrando Banco de Dados...</p>
+              <p className="text-white mt-4 text-xs">Inicializando Banco de Dados...</p>
           </div>
       );
   }
@@ -124,7 +123,7 @@ const Main: React.FC = () => {
             <GlobalSearch />
             <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
                 <Routes>
-                {/* Rotas Públicas (Sem Layout) */}
+                {/* Rotas Públicas */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/public/league" element={<PublicLeague />} />
@@ -179,7 +178,6 @@ const Main: React.FC = () => {
                                 <Route path="/confederation" element={<Confederation />} />
                                 <Route path="/roadmap" element={<Roadmap />} />
                                 
-                                {/* Fallback 404 */}
                                 <Route path="*" element={<div className="p-8 text-center text-text-secondary">Página não encontrada. <br/><button onClick={() => window.history.back()} className="mt-4 text-highlight underline">Voltar</button></div>} />
                                 </Routes>
                             </Suspense>
