@@ -2,8 +2,12 @@
 import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, MarketplaceItem, YouthClass, YouthStudent, TransferRequest, CoachCareer, CoachGameNote, GameReport, CrewLogistics, VideoClip, VideoPlaylist, SponsorDeal, SocialPost, EquipmentItem, EventSale, RecruitmentCandidate, Objective, Subscription, Budget, Bill, KanbanTask, NationalTeamCandidate, Affiliate, RefereeProfile, LegalDocument, ProgramType, AssociationFinance, GameStatsSnapshot, DigitalProduct, Entitlement, Drill } from '../types';
 import { firebaseDataService } from './firebaseDataService';
 import { syncService } from './syncService';
+import { get, set, setMany, values } from 'idb-keyval';
 
-// Keys for LocalStorage
+// --- CONFIGURAÇÃO DE SEGURANÇA ---
+const USE_INDEXED_DB = true; // Mude para false para "Rollback" imediato para LocalStorage
+
+// Keys for Storage
 const KEYS = {
     PLAYERS: 'gridiron_players',
     GAMES: 'gridiron_games',
@@ -68,55 +72,122 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
     legalAgreementsSigned: []
 };
 
+// --- RAM CACHE (A Verdade da UI) ---
+// O segredo da performance: A UI lê daqui (Síncrono), o sistema salva no disco (Assíncrono)
 const RAM_DB: Record<string, any> = {};
 const LISTENERS: Record<string, Function[]> = {};
 
-const getFromDisk = <T>(key: string, defaultValue: T): T => {
-    if (RAM_DB[key] !== undefined) {
-        return RAM_DB[key] as T;
-    }
+// Helper: Lê do LocalStorage (Modo Legado/Fallback)
+const getFromLegacyDisk = <T>(key: string, defaultValue: T): T => {
     try {
         const stored = localStorage.getItem(key);
-        if (!stored) {
-            RAM_DB[key] = defaultValue; 
-            return defaultValue;
-        }
-        const data = JSON.parse(stored, dateReviver);
-        RAM_DB[key] = data; 
-        return data;
-    } catch (e) {
-        console.error(`❌ Data corruption detected for key: ${key}`, e);
-        RAM_DB[key] = defaultValue;
+        if (!stored) return defaultValue;
+        return JSON.parse(stored, dateReviver);
+    } catch {
         return defaultValue;
     }
 };
 
-const saveToDisk = (key: string, value: any, syncEntity?: string) => {
+// Helper: Salva dados (Estratégia Híbrida)
+const persistData = (key: string, value: any, syncEntity?: string) => {
+    // 1. Atualiza RAM (Instantâneo)
     RAM_DB[key] = value;
+    
+    // 2. Notifica Componentes (Reatividade)
     if (LISTENERS[key]) {
         LISTENERS[key].forEach(cb => cb(value));
     }
-    setTimeout(() => {
-        try {
+
+    // 3. Persistência
+    if (USE_INDEXED_DB) {
+        // Modo Performance: Salva no IndexedDB em background
+        // Não usamos 'await' aqui para não bloquear a UI
+        set(key, value).catch(err => console.error(`Failed to save ${key} to IDB`, err));
+        
+        // BACKUP DE SEGURANÇA: Salva chaves críticas também no LocalStorage por enquanto
+        if (key === KEYS.SETTINGS || key === KEYS.ACTIVE_PROGRAM) {
             localStorage.setItem(key, JSON.stringify(value));
-        } catch (e) {
-            console.error("❌ Storage Error", e);
         }
-    }, 0);
+    } else {
+        // Modo Legado/Rollback (Lento, mas seguro)
+        setTimeout(() => {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+            } catch (e) {
+                console.error("❌ LocalStorage Full/Error", e);
+            }
+        }, 0);
+    }
+
+    // 4. Cloud Sync
     if (syncEntity) {
         syncService.triggerSync(syncEntity, value);
     }
 };
 
 export const storageService = {
-    initializeRAM: () => {
-        console.log("🚀 [SYSTEM] Booting Lazy Storage...");
-        getFromDisk(KEYS.SETTINGS, INITIAL_TEAM_SETTINGS);
-        getFromDisk(KEYS.ACTIVE_PROGRAM, 'TACKLE');
+    // --- INICIALIZAÇÃO ASSÍNCRONA ---
+    // Carrega tudo do disco para a RAM antes do App abrir
+    initializeRAM: async () => {
+        console.time("DB_INIT");
+        console.log(`🚀 [SYSTEM] Booting Storage... Mode: ${USE_INDEXED_DB ? 'IndexedDB (Turbo)' : 'LocalStorage (Legacy)'}`);
+
+        if (USE_INDEXED_DB) {
+            try {
+                // 1. Tenta carregar Players do IndexedDB para testar
+                const players = await get(KEYS.PLAYERS);
+                
+                if (!players && localStorage.getItem(KEYS.PLAYERS)) {
+                    console.log("⚠️ [MIGRATION] Migrando dados do LocalStorage para IndexedDB...");
+                    // Se IDB está vazio mas LocalStorage tem dados, faz a migração
+                    const migrationPromises = Object.values(KEYS).map(async (key) => {
+                        const legacyData = getFromLegacyDisk(key, null);
+                        if (legacyData) {
+                            RAM_DB[key] = legacyData;
+                            await set(key, legacyData);
+                        } else {
+                            RAM_DB[key] = key.includes('settings') ? INITIAL_TEAM_SETTINGS : [];
+                        }
+                    });
+                    await Promise.all(migrationPromises);
+                    console.log("✅ [MIGRATION] Dados migrados com sucesso!");
+                } else {
+                    // Carregamento Normal do IDB
+                    const keysToLoad = Object.values(KEYS);
+                    // Carregar em paralelo é muito mais rápido
+                    const loadedValues = await Promise.all(keysToLoad.map(k => get(k)));
+                    
+                    keysToLoad.forEach((key, index) => {
+                        RAM_DB[key] = loadedValues[index] || (key.includes('settings') ? INITIAL_TEAM_SETTINGS : []);
+                    });
+                }
+            } catch (e) {
+                console.error("❌ Critical DB Error. Falling back to LocalStorage.", e);
+                // Fallback de emergência
+                Object.values(KEYS).forEach(key => {
+                    RAM_DB[key] = getFromLegacyDisk(key, key.includes('settings') ? INITIAL_TEAM_SETTINGS : []);
+                });
+            }
+        } else {
+            // Modo Legado
+            Object.values(KEYS).forEach(key => {
+                RAM_DB[key] = getFromLegacyDisk(key, key.includes('settings') ? INITIAL_TEAM_SETTINGS : []);
+            });
+        }
+        
+        console.timeEnd("DB_INIT");
+        return true;
+    },
+
+    // --- ACESSO AOS DADOS (Leitura Direta da RAM - Instantâneo) ---
+    // Como a RAM já está populada, não precisamos de await aqui
+    getFromRAM: <T>(key: string, defaultValue: T): T => {
+        return (RAM_DB[key] as T) || defaultValue;
     },
 
     subscribe: (keyName: string, callback: Function) => {
         let internalKey = keyName;
+        // Mapping friendly names to internal keys
         if (keyName === 'players') internalKey = KEYS.PLAYERS;
         else if (keyName === 'games') internalKey = KEYS.GAMES;
         else if (keyName === 'activeProgram') internalKey = KEYS.ACTIVE_PROGRAM;
@@ -130,35 +201,45 @@ export const storageService = {
     },
 
     // --- SYNC & CLOUD ---
+    
+    // Fetch latest data from cloud and update RAM/Disk
     syncFromCloud: async () => {
-        console.log("☁️ Sync requested...");
         try {
+            console.log("☁️ Syncing from Cloud...");
             const players = await firebaseDataService.getPlayers();
-            if(players.length) saveToDisk(KEYS.PLAYERS, players);
-            
+            if (players && players.length > 0) persistData(KEYS.PLAYERS, players);
+
             const games = await firebaseDataService.getGames();
-            if(games.length) saveToDisk(KEYS.GAMES, games);
+            if (games && games.length > 0) persistData(KEYS.GAMES, games);
             
-            console.log("☁️ Sync complete.");
-        } catch(e) {
-            console.warn("Cloud sync failed (Offline?)");
+            const txs = await firebaseDataService.getTransactions();
+            if (txs && txs.length > 0) persistData(KEYS.TRANSACTIONS, txs);
+            
+            const settings = await firebaseDataService.getTeamSettings();
+            if (settings) persistData(KEYS.SETTINGS, settings);
+
+            console.log("✅ Cloud Sync Completed");
+            return true;
+        } catch (e) {
+            console.warn("⚠️ Cloud Sync Error (Offline?):", e);
+            return false;
         }
     },
-    
+
     uploadFile: async (file: File, folder: string): Promise<string> => {
         return firebaseDataService.uploadFile(file, folder);
     },
 
     seedDatabaseToCloud: async () => {
-        const players = getFromDisk<Player[]>(KEYS.PLAYERS, []);
-        const games = getFromDisk<Game[]>(KEYS.GAMES, []);
+        const players = RAM_DB[KEYS.PLAYERS] || [];
+        const games = RAM_DB[KEYS.GAMES] || [];
         if (players.length > 0) await firebaseDataService.syncPlayers(players);
         if (games.length > 0) await firebaseDataService.syncGames(games);
         alert("Seed complete.");
     },
 
     exportFullDatabase: () => {
-        const data = JSON.stringify(localStorage);
+        const data = JSON.stringify(RAM_DB); // Exporta da RAM, que é a verdade atual
         const blob = new Blob([data], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -168,8 +249,8 @@ export const storageService = {
     },
 
     // --- PLAYERS ---
-    getPlayers: (): Player[] => getFromDisk(KEYS.PLAYERS, []),
-    savePlayers: (players: Player[]) => saveToDisk(KEYS.PLAYERS, players, 'players'),
+    getPlayers: (): Player[] => RAM_DB[KEYS.PLAYERS] || [],
+    savePlayers: (players: Player[]) => persistData(KEYS.PLAYERS, players, 'players'),
     
     registerAthlete: (player: Player) => {
         const players = storageService.getPlayers(); 
@@ -190,8 +271,8 @@ export const storageService = {
     },
 
     // --- GAMES ---
-    getGames: (): Game[] => getFromDisk(KEYS.GAMES, []),
-    saveGames: (games: Game[]) => saveToDisk(KEYS.GAMES, games, 'games'),
+    getGames: (): Game[] => RAM_DB[KEYS.GAMES] || [],
+    saveGames: (games: Game[]) => persistData(KEYS.GAMES, games, 'games'),
     
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const games = storageService.getGames();
@@ -212,23 +293,23 @@ export const storageService = {
     },
     
     getPublicGameData: (gameId: string) => {
-        const games = getFromDisk<Game[]>(KEYS.GAMES, []);
-        return games.find(g => String(g.id) === gameId) || null;
+        const games = RAM_DB[KEYS.GAMES] || [];
+        return games.find((g: Game) => String(g.id) === gameId) || null;
     },
 
     // --- SETTINGS & PROGRAM ---
-    getTeamSettings: (): TeamSettings => getFromDisk(KEYS.SETTINGS, INITIAL_TEAM_SETTINGS),
-    saveTeamSettings: (s: TeamSettings) => saveToDisk(KEYS.SETTINGS, s, 'settings'),
+    getTeamSettings: (): TeamSettings => RAM_DB[KEYS.SETTINGS] || INITIAL_TEAM_SETTINGS,
+    saveTeamSettings: (s: TeamSettings) => persistData(KEYS.SETTINGS, s, 'settings'),
 
-    getActiveProgram: (): ProgramType => getFromDisk(KEYS.ACTIVE_PROGRAM, 'TACKLE'),
-    setActiveProgram: (program: ProgramType) => saveToDisk(KEYS.ACTIVE_PROGRAM, program),
+    getActiveProgram: (): ProgramType => RAM_DB[KEYS.ACTIVE_PROGRAM] || 'TACKLE',
+    setActiveProgram: (program: ProgramType) => persistData(KEYS.ACTIVE_PROGRAM, program),
 
     // --- FINANCE ---
-    getTransactions: (): Transaction[] => getFromDisk(KEYS.TRANSACTIONS, []),
-    saveTransactions: (t: Transaction[]) => saveToDisk(KEYS.TRANSACTIONS, t, 'transactions'),
+    getTransactions: (): Transaction[] => RAM_DB[KEYS.TRANSACTIONS] || [],
+    saveTransactions: (t: Transaction[]) => persistData(KEYS.TRANSACTIONS, t, 'transactions'),
     
-    getInvoices: (): Invoice[] => getFromDisk(KEYS.INVOICES, []),
-    saveInvoices: (i: Invoice[]) => saveToDisk(KEYS.INVOICES, i),
+    getInvoices: (): Invoice[] => RAM_DB[KEYS.INVOICES] || [],
+    saveInvoices: (i: Invoice[]) => persistData(KEYS.INVOICES, i),
     
     generateMonthlyInvoices: () => {
         const subscriptions = storageService.getSubscriptions().filter(s => s.active);
@@ -257,18 +338,18 @@ export const storageService = {
         storageService.saveInvoices([...invoices, ...newInvoices]);
     },
     
-    getSubscriptions: (): Subscription[] => getFromDisk(KEYS.SUBSCRIPTIONS, []),
-    saveSubscriptions: (s: Subscription[]) => saveToDisk(KEYS.SUBSCRIPTIONS, s),
+    getSubscriptions: (): Subscription[] => RAM_DB[KEYS.SUBSCRIPTIONS] || [],
+    saveSubscriptions: (s: Subscription[]) => persistData(KEYS.SUBSCRIPTIONS, s),
 
-    getBudgets: (): Budget[] => getFromDisk(KEYS.BUDGETS, []),
-    saveBudgets: (b: Budget[]) => saveToDisk(KEYS.BUDGETS, b),
+    getBudgets: (): Budget[] => RAM_DB[KEYS.BUDGETS] || [],
+    saveBudgets: (b: Budget[]) => persistData(KEYS.BUDGETS, b),
 
-    getBills: (): Bill[] => getFromDisk(KEYS.BILLS, []),
-    saveBills: (b: Bill[]) => saveToDisk(KEYS.BILLS, b),
+    getBills: (): Bill[] => RAM_DB[KEYS.BILLS] || [],
+    saveBills: (b: Bill[]) => persistData(KEYS.BILLS, b),
 
     // --- PRACTICE ---
-    getPracticeSessions: (): PracticeSession[] => getFromDisk(KEYS.PRACTICE, []),
-    savePracticeSessions: (p: PracticeSession[]) => saveToDisk(KEYS.PRACTICE, p),
+    getPracticeSessions: (): PracticeSession[] => RAM_DB[KEYS.PRACTICE] || [],
+    savePracticeSessions: (p: PracticeSession[]) => persistData(KEYS.PRACTICE, p),
 
     togglePracticeAttendance: (practiceId: string, userId: string) => {
         const practices = storageService.getPracticeSessions();
@@ -300,70 +381,70 @@ export const storageService = {
         });
     },
 
-    getDrillLibrary: (): Drill[] => getFromDisk(KEYS.DRILL_LIBRARY, []),
+    getDrillLibrary: (): Drill[] => RAM_DB[KEYS.DRILL_LIBRARY] || [],
 
     // --- STAFF ---
-    getStaff: (): StaffMember[] => getFromDisk(KEYS.STAFF, []),
-    saveStaff: (s: StaffMember[]) => saveToDisk(KEYS.STAFF, s),
+    getStaff: (): StaffMember[] => RAM_DB[KEYS.STAFF] || [],
+    saveStaff: (s: StaffMember[]) => persistData(KEYS.STAFF, s),
 
     // --- RECRUITMENT ---
-    getCandidates: (): RecruitmentCandidate[] => getFromDisk(KEYS.CANDIDATES, []),
-    saveCandidates: (c: RecruitmentCandidate[]) => saveToDisk(KEYS.CANDIDATES, c),
+    getCandidates: (): RecruitmentCandidate[] => RAM_DB[KEYS.CANDIDATES] || [],
+    saveCandidates: (c: RecruitmentCandidate[]) => persistData(KEYS.CANDIDATES, c),
 
     // --- GOALS ---
-    getObjectives: (): Objective[] => getFromDisk(KEYS.OBJECTIVES, []),
-    saveObjectives: (o: Objective[]) => saveToDisk(KEYS.OBJECTIVES, o),
+    getObjectives: (): Objective[] => RAM_DB[KEYS.OBJECTIVES] || [],
+    saveObjectives: (o: Objective[]) => persistData(KEYS.OBJECTIVES, o),
 
     // --- TASKS ---
-    getTasks: (): KanbanTask[] => getFromDisk(KEYS.TASKS, []),
-    saveTasks: (t: KanbanTask[]) => saveToDisk(KEYS.TASKS, t),
+    getTasks: (): KanbanTask[] => RAM_DB[KEYS.TASKS] || [],
+    saveTasks: (t: KanbanTask[]) => persistData(KEYS.TASKS, t),
 
     // --- COMMUNICATION ---
-    getAnnouncements: (): Announcement[] => getFromDisk(KEYS.ANNOUNCEMENTS, []),
-    saveAnnouncements: (a: Announcement[]) => saveToDisk(KEYS.ANNOUNCEMENTS, a),
+    getAnnouncements: (): Announcement[] => RAM_DB[KEYS.ANNOUNCEMENTS] || [],
+    saveAnnouncements: (a: Announcement[]) => persistData(KEYS.ANNOUNCEMENTS, a),
 
-    getChatMessages: (): ChatMessage[] => getFromDisk(KEYS.CHAT, []),
-    saveChatMessages: (m: ChatMessage[]) => saveToDisk(KEYS.CHAT, m),
+    getChatMessages: (): ChatMessage[] => RAM_DB[KEYS.CHAT] || [],
+    saveChatMessages: (m: ChatMessage[]) => persistData(KEYS.CHAT, m),
     
-    getSocialFeed: (): SocialFeedPost[] => getFromDisk(KEYS.FEED, []),
+    getSocialFeed: (): SocialFeedPost[] => RAM_DB[KEYS.FEED] || [],
     saveSocialFeedPost: (p: SocialFeedPost) => {
-        const feed = getFromDisk<SocialFeedPost[]>(KEYS.FEED, []);
-        saveToDisk(KEYS.FEED, [p, ...feed]);
+        const feed = RAM_DB[KEYS.FEED] || [];
+        persistData(KEYS.FEED, [p, ...feed]);
     },
     toggleLikePost: (postId: string) => {
-        const feed = getFromDisk<SocialFeedPost[]>(KEYS.FEED, []);
-        const updated = feed.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
-        saveToDisk(KEYS.FEED, updated);
+        const feed = RAM_DB[KEYS.FEED] || [];
+        const updated = feed.map((p: SocialFeedPost) => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
+        persistData(KEYS.FEED, updated);
     },
 
     // --- RESOURCES ---
-    getDocuments: (): TeamDocument[] => getFromDisk(KEYS.DOCUMENTS, []),
-    saveDocuments: (d: TeamDocument[]) => saveToDisk(KEYS.DOCUMENTS, d),
+    getDocuments: (): TeamDocument[] => RAM_DB[KEYS.DOCUMENTS] || [],
+    saveDocuments: (d: TeamDocument[]) => persistData(KEYS.DOCUMENTS, d),
 
-    getInventory: (): EquipmentItem[] => getFromDisk(KEYS.INVENTORY, []),
-    saveInventory: (i: EquipmentItem[]) => saveToDisk(KEYS.INVENTORY, i),
+    getInventory: (): EquipmentItem[] => RAM_DB[KEYS.INVENTORY] || [],
+    saveInventory: (i: EquipmentItem[]) => persistData(KEYS.INVENTORY, i),
 
     // --- COMMERCIAL ---
-    getSponsors: (): SponsorDeal[] => getFromDisk(KEYS.SPONSORS, []),
-    saveSponsors: (s: SponsorDeal[]) => saveToDisk(KEYS.SPONSORS, s),
+    getSponsors: (): SponsorDeal[] => RAM_DB[KEYS.SPONSORS] || [],
+    saveSponsors: (s: SponsorDeal[]) => persistData(KEYS.SPONSORS, s),
 
-    getSocialPosts: (): SocialPost[] => getFromDisk(KEYS.SOCIAL_POSTS, []),
-    saveSocialPosts: (p: SocialPost[]) => saveToDisk(KEYS.SOCIAL_POSTS, p),
+    getSocialPosts: (): SocialPost[] => RAM_DB[KEYS.SOCIAL_POSTS] || [],
+    saveSocialPosts: (p: SocialPost[]) => persistData(KEYS.SOCIAL_POSTS, p),
 
-    getMarketplaceItems: (): MarketplaceItem[] => getFromDisk(KEYS.MARKETPLACE, []),
-    saveMarketplaceItems: (i: MarketplaceItem[]) => saveToDisk(KEYS.MARKETPLACE, i),
+    getMarketplaceItems: (): MarketplaceItem[] => RAM_DB[KEYS.MARKETPLACE] || [],
+    saveMarketplaceItems: (i: MarketplaceItem[]) => persistData(KEYS.MARKETPLACE, i),
 
-    getEventSales: (): EventSale[] => getFromDisk(KEYS.SALES, []),
-    saveEventSales: (s: EventSale[]) => saveToDisk(KEYS.SALES, s),
+    getEventSales: (): EventSale[] => RAM_DB[KEYS.SALES] || [],
+    saveEventSales: (s: EventSale[]) => persistData(KEYS.SALES, s),
     
     // --- DIGITAL STORE & DRM ---
-    getEntitlements: (): Entitlement[] => getFromDisk(KEYS.ENTITLEMENTS, []),
+    getEntitlements: (): Entitlement[] => RAM_DB[KEYS.ENTITLEMENTS] || [],
     checkAccess: (userId: string, productId: string): boolean => {
-        const entitlements = getFromDisk<Entitlement[]>(KEYS.ENTITLEMENTS, []);
-        return entitlements.some(e => e.userId === userId && e.productId === productId && new Date(e.expiresAt) > new Date());
+        const entitlements = RAM_DB[KEYS.ENTITLEMENTS] || [];
+        return entitlements.some((e: Entitlement) => e.userId === userId && e.productId === productId && new Date(e.expiresAt) > new Date());
     },
     purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
-        const entitlements = getFromDisk<Entitlement[]>(KEYS.ENTITLEMENTS, []);
+        const entitlements = RAM_DB[KEYS.ENTITLEMENTS] || [];
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + product.durationHours);
         
@@ -375,16 +456,16 @@ export const storageService = {
             expiresAt,
             status: 'ACTIVE'
         };
-        saveToDisk(KEYS.ENTITLEMENTS, [...entitlements, newEntitlement]);
+        persistData(KEYS.ENTITLEMENTS, [...entitlements, newEntitlement]);
     },
 
     // --- ACADEMY ---
-    getCourses: (): Course[] => getFromDisk(KEYS.COURSES, []),
-    saveCourses: (c: Course[]) => saveToDisk(KEYS.COURSES, c),
+    getCourses: (): Course[] => RAM_DB[KEYS.COURSES] || [],
+    saveCourses: (c: Course[]) => persistData(KEYS.COURSES, c),
     
     savePlayerWorkout: (playerId: number, content: string, title: string) => {
-        const players = getFromDisk<Player[]>(KEYS.PLAYERS, []);
-        const updated = players.map(p => {
+        const players = RAM_DB[KEYS.PLAYERS] || [];
+        const updated = players.map((p: Player) => {
             if(p.id === playerId) {
                 const workouts = p.savedWorkouts || [];
                 workouts.push({ id: `w-${Date.now()}`, date: new Date(), title, content, category: 'GYM' });
@@ -392,48 +473,48 @@ export const storageService = {
             }
             return p;
         });
-        saveToDisk(KEYS.PLAYERS, updated, 'players');
+        persistData(KEYS.PLAYERS, updated, 'players');
     },
 
     // --- TACTICAL ---
-    getTacticalPlays: (): TacticalPlay[] => getFromDisk(KEYS.PLAYS, []),
-    saveTacticalPlays: (t: TacticalPlay[]) => saveToDisk(KEYS.PLAYS, t),
+    getTacticalPlays: (): TacticalPlay[] => RAM_DB[KEYS.PLAYS] || [],
+    saveTacticalPlays: (t: TacticalPlay[]) => persistData(KEYS.PLAYS, t),
 
     // --- VIDEO ---
-    getClips: (): VideoClip[] => getFromDisk(KEYS.CLIPS, []),
-    saveClips: (c: VideoClip[]) => saveToDisk(KEYS.CLIPS, c),
+    getClips: (): VideoClip[] => RAM_DB[KEYS.CLIPS] || [],
+    saveClips: (c: VideoClip[]) => persistData(KEYS.CLIPS, c),
 
-    getPlaylists: (): VideoPlaylist[] => getFromDisk(KEYS.PLAYLISTS, []),
-    savePlaylists: (p: VideoPlaylist[]) => saveToDisk(KEYS.PLAYLISTS, p),
+    getPlaylists: (): VideoPlaylist[] => RAM_DB[KEYS.PLAYLISTS] || [],
+    savePlaylists: (p: VideoPlaylist[]) => persistData(KEYS.PLAYLISTS, p),
 
     // --- YOUTH ---
-    getYouthClasses: (): YouthClass[] => getFromDisk(KEYS.YOUTH, []),
-    saveYouthClasses: (c: YouthClass[]) => saveToDisk(KEYS.YOUTH, c),
+    getYouthClasses: (): YouthClass[] => RAM_DB[KEYS.YOUTH] || [],
+    saveYouthClasses: (c: YouthClass[]) => persistData(KEYS.YOUTH, c),
     getYouthStudents: (): YouthStudent[] => {
-        const classes = getFromDisk<YouthClass[]>(KEYS.YOUTH, []);
+        const classes = RAM_DB[KEYS.YOUTH] || [];
         let allStudents: YouthStudent[] = [];
-        classes.forEach(c => allStudents = [...allStudents, ...c.students]);
+        classes.forEach((c: YouthClass) => allStudents = [...allStudents, ...c.students]);
         return allStudents;
     },
 
     // --- COACH ---
-    getCoachGameNotes: (): CoachGameNote[] => getFromDisk(KEYS.COACH_NOTES, []),
-    saveCoachGameNotes: (n: CoachGameNote[]) => saveToDisk(KEYS.COACH_NOTES, n),
+    getCoachGameNotes: (): CoachGameNote[] => RAM_DB[KEYS.COACH_NOTES] || [],
+    saveCoachGameNotes: (n: CoachGameNote[]) => persistData(KEYS.COACH_NOTES, n),
     
     getCoachProfile: (id: string): CoachCareer | null => {
-        const profiles = getFromDisk<Record<string, CoachCareer>>(KEYS.COACH_PROFILES, {});
+        const profiles = RAM_DB[KEYS.COACH_PROFILES] || {};
         return profiles[id] || null;
     },
     saveCoachProfile: (id: string, p: CoachCareer) => {
-        const profiles = getFromDisk<Record<string, CoachCareer>>(KEYS.COACH_PROFILES, {});
+        const profiles = RAM_DB[KEYS.COACH_PROFILES] || {};
         profiles[id] = p;
-        saveToDisk(KEYS.COACH_PROFILES, profiles);
+        persistData(KEYS.COACH_PROFILES, profiles);
     },
 
     // --- LOGS ---
-    getAuditLogs: (): AuditLog[] => getFromDisk(KEYS.LOGS, []),
+    getAuditLogs: (): AuditLog[] => RAM_DB[KEYS.LOGS] || [],
     logAuditAction: (action: string, detail: string) => {
-        const logs = getFromDisk<AuditLog[]>(KEYS.LOGS, []);
+        const logs = RAM_DB[KEYS.LOGS] || [];
         const newLog: AuditLog = {
             id: `log-${Date.now()}`,
             action,
@@ -444,27 +525,27 @@ export const storageService = {
             role: 'SYSTEM',
             ipAddress: '127.0.0.1'
         };
-        saveToDisk(KEYS.LOGS, [newLog, ...logs]);
+        persistData(KEYS.LOGS, [newLog, ...logs]);
     },
     
     // --- OFFICIATING & LEAGUE ---
-    getReferees: (): RefereeProfile[] => getFromDisk(KEYS.REFEREES, []),
+    getReferees: (): RefereeProfile[] => RAM_DB[KEYS.REFEREES] || [],
     getRefereeProfile: (id: string): RefereeProfile | null => {
-        const refs = getFromDisk<RefereeProfile[]>(KEYS.REFEREES, []);
-        return refs.find(r => r.id === id) || null;
+        const refs = RAM_DB[KEYS.REFEREES] || [];
+        return refs.find((r: RefereeProfile) => r.id === id) || null;
     },
-    getCrewLogistics: (gameId: number): CrewLogistics | null => null, // Mock
+    getCrewLogistics: (gameId: number): CrewLogistics | null => null, 
     getAssociationFinancials: (): AssociationFinance => ({ totalReceivableFromLeagues: 0, totalPayableToReferees: 0, cashBalance: 0 }),
     
     // --- CONFEDERATION ---
     getConfederationStats: (): any => ({ totalAthletes: 12500, totalTeams: 142, totalGamesThisYear: 320, activeAffiliates: 18, growthRate: 15 }),
     getNationalTeamScouting: (): NationalTeamCandidate[] => [],
     getAffiliatesStatus: (): Affiliate[] => [],
-    getTransferRequests: (): TransferRequest[] => getFromDisk(KEYS.TRANSFERS, []),
+    getTransferRequests: (): TransferRequest[] => RAM_DB[KEYS.TRANSFERS] || [],
     processTransfer: (id: string, decision: 'APPROVE' | 'REJECT', by: string) => {
-        const reqs = getFromDisk<TransferRequest[]>(KEYS.TRANSFERS, []);
-        const updated = reqs.map(r => r.id === id ? { ...r, status: decision === 'APPROVE' ? 'APPROVED' : 'REJECTED' } : r);
-        saveToDisk(KEYS.TRANSFERS, updated);
+        const reqs = RAM_DB[KEYS.TRANSFERS] || [];
+        const updated = reqs.map((r: TransferRequest) => r.id === id ? { ...r, status: decision === 'APPROVE' ? 'APPROVED' : 'REJECTED' } : r);
+        persistData(KEYS.TRANSFERS, updated);
     },
     
     getPublicLeagueStats: (): any => {
@@ -480,7 +561,7 @@ export const storageService = {
         console.log("Creating championship", name);
     },
     
-    checkDocumentSigned: (docId: string) => true, // Mock
+    checkDocumentSigned: (docId: string) => true,
     addTeamXP: (xp: number) => console.log("Team XP +", xp),
     
 };

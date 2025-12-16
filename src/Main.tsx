@@ -1,5 +1,5 @@
 
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 // @ts-ignore
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -67,17 +67,13 @@ const ROLES = {
 // Componente de Checagem de Onboarding e Integridade
 const SystemGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const location = useLocation();
-    const toast = useToast();
     
     // Verificação de Integridade ao carregar rotas protegidas
     useEffect(() => {
         if (!location.pathname.startsWith('/public') && location.pathname !== '/login') {
-            const players = storageService.getPlayers();
             const settings = storageService.getTeamSettings();
-            
             if (!settings || !settings.teamName) {
                 console.warn("⚠️ Integridade: Configurações ausentes. Restaurando padrão.");
-                // A storageService já lida com defaults, mas aqui garantimos feedback visual se algo crítico falhar
             }
         }
     }, [location]);
@@ -102,6 +98,25 @@ const SystemGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const Main: React.FC = () => {
+  const [dbReady, setDbReady] = useState(false);
+
+  useEffect(() => {
+      const init = async () => {
+          await storageService.initializeRAM();
+          setDbReady(true);
+      };
+      init();
+  }, []);
+
+  if (!dbReady) {
+      return (
+          <div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]">
+              <LoadingScreen />
+              <p className="text-white mt-4 text-xs">Migrando Banco de Dados...</p>
+          </div>
+      );
+  }
+
   return (
     <ErrorBoundary>
         <ToastProvider>
