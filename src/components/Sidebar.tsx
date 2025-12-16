@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 // @ts-ignore
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
@@ -19,7 +19,7 @@ interface SidebarProps {
   setRole: (role: UserRole) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRole }) => {
+const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, setRole }) => {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
   const isRealMaster = user?.role === 'MASTER';
@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
                 <div>
                     <span className="text-lg font-bold text-white block leading-none">FAHUB</span>
                     <span className="text-[10px] text-text-secondary uppercase tracking-widest font-semibold">
-                        Manager v3.3
+                        Manager v3.5
                     </span>
                 </div>
             </div>
@@ -246,6 +246,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
                       <UsersIcon className="w-5 h-5 mr-3" />
                       <span>Confederação</span>
                   </NavLink>
+                  <NavLink to="/admin" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                    <ClipboardIcon className="w-5 h-5 mr-3" />
+                    <span>Admin Panel</span>
+                </NavLink>
                </div>
              </>
           )}
@@ -270,10 +274,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
                    PLATFORM HQ (OWNER)
                 </NavLink>
 
-                <NavLink to="/admin" onClick={handleLinkClick} className="flex items-center justify-center w-full bg-red-900/20 hover:bg-red-900/40 text-red-400 text-[10px] font-bold py-2 rounded-lg border border-red-500/30 mb-3 transition-all group">
-                   <ShieldCheckIcon className="w-3 h-3 mr-2" />
-                   ADMIN DO TIME
-               </NavLink>
                <div className="grid grid-cols-4 gap-1">
                     <button onClick={() => { setRole('MASTER'); navigate('/dashboard'); }} className={`text-[8px] font-bold border rounded py-1.5 transition-colors ${currentRole === 'MASTER' ? 'bg-red-600 text-white border-red-500 shadow-glow' : 'text-text-secondary border-white/10 hover:text-white hover:bg-white/5'}`} title="Visão Dono">MST</button>
                     <button onClick={() => { setRole('HEAD_COACH'); navigate('/dashboard'); }} className={`text-[8px] font-bold border rounded py-1.5 transition-colors ${currentRole === 'HEAD_COACH' ? 'bg-blue-600 text-white border-blue-500' : 'text-text-secondary border-white/10 hover:text-white hover:bg-white/5'}`} title="Visão Técnico">HC</button>
@@ -293,6 +293,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentRole, setRo
       </div>
     </aside>
   );
-};
+});
 
 export default Sidebar;

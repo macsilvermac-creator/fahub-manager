@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 // @ts-ignore
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
-import { LockIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
+import { storageService } from '../services/storageService';
+import { LockIcon, AlertTriangleIcon, TrashIcon, RefreshIcon } from '../components/icons/UiIcons';
 import Button from '../components/Button';
 import Input from '../components/Input';
 
@@ -20,7 +21,7 @@ const Login: React.FC = () => {
     setLoading(true);
     
     try {
-      const user = await authService.login(email, password);
+      await authService.login(email, password);
       navigate('/dashboard');
       window.location.reload();
     } catch (err: any) {
@@ -44,6 +45,13 @@ const Login: React.FC = () => {
       localStorage.setItem('gridiron_current_user', JSON.stringify(mockUser));
       navigate('/dashboard');
       window.location.reload();
+  };
+
+  const handleHardReset = () => {
+      if(confirm("ATENÇÃO: Isso limpará TODOS os dados locais (Cache e Banco de Dados) para corrigir erros fatais. Continuar?")) {
+          localStorage.clear();
+          window.location.reload();
+      }
   };
 
   return (
@@ -105,9 +113,12 @@ const Login: React.FC = () => {
                 </Button>
             </Link>
             
-            <div className="flex justify-center pt-2 opacity-30 hover:opacity-100 transition-opacity">
+            <div className="flex justify-between pt-2 opacity-40 hover:opacity-100 transition-opacity">
                 <button onClick={handleEmergencyLogin} className="text-[9px] text-text-secondary hover:text-highlight flex items-center gap-1">
                     <LockIcon className="w-3 h-3" /> Master Dev
+                </button>
+                <button onClick={handleHardReset} className="text-[9px] text-text-secondary hover:text-red-500 flex items-center gap-1" title="Corrigir Bugs Críticos">
+                    <TrashIcon className="w-3 h-3" /> Reset App
                 </button>
             </div>
         </div>

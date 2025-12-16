@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { ImageIcon } from './icons/UiIcons';
 
 interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   placeholderColor?: string;
@@ -39,7 +40,7 @@ const LazyImage: React.FC<LazyImageProps> = ({ src, alt, className, placeholderC
   }, []);
 
   return (
-    <div className={`relative overflow-hidden ${className} ${!isLoaded ? placeholderColor : ''}`}>
+    <div className={`relative overflow-hidden ${className} ${!isLoaded && !hasError ? placeholderColor : ''}`}>
       {/* Skeleton Loading State */}
       {!isLoaded && !hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/5 animate-pulse">
@@ -51,10 +52,11 @@ const LazyImage: React.FC<LazyImageProps> = ({ src, alt, className, placeholderC
         </div>
       )}
       
-      {/* Error State Fallback */}
+      {/* Error State Fallback (Visual Shield) */}
       {hasError ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-gray-600 border border-white/5">
-            <span className="text-[9px] font-mono text-gray-500 uppercase">{fallbackText || 'IMG'}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-secondary text-gray-600 border border-white/5">
+            <ImageIcon className="w-6 h-6 opacity-30 mb-1" />
+            <span className="text-[8px] font-mono text-gray-500 uppercase">{fallbackText ? fallbackText.substring(0,6) : 'IMG ERR'}</span>
         </div>
       ) : (
         <img
