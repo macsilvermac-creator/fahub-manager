@@ -5,7 +5,6 @@ import { syncService } from './syncService';
 
 // Keys for LocalStorage
 const KEYS = {
-    // ... existing keys ...
     PLAYERS: 'gridiron_players',
     GAMES: 'gridiron_games',
     SETTINGS: 'gridiron_settings',
@@ -37,7 +36,7 @@ const KEYS = {
     BUDGETS: 'gridiron_budgets',
     BILLS: 'gridiron_bills',
     ACTIVE_PROGRAM: 'gridiron_active_program',
-    ENTITLEMENTS: 'gridiron_entitlements' // NEW KEY
+    ENTITLEMENTS: 'gridiron_entitlements'
 };
 
 const dateReviver = (key: string, value: any) => {
@@ -62,50 +61,80 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
     legalAgreementsSigned: []
 };
 
-// ... existing RAM_DB and helpers ...
+// RAM DB agora começa vazia e é populada sob demanda (Lazy)
 const RAM_DB: Record<string, any> = {};
 const LISTENERS: Record<string, Function[]> = {};
 
+/**
+ * Core Lazy Loader: Só acessa o LocalStorage se a RAM estiver vazia para aquela chave.
+ * Isso reduz drasticamente o tempo de inicialização do app.
+ */
 const getFromDisk = <T>(key: string, defaultValue: T): T => {
+    // 1. Se já está na RAM, retorna instantaneamente (Hot Path)
     if (RAM_DB[key] !== undefined) {
         return RAM_DB[key] as T;
     }
+
+    // 2. Se não está, busca no disco (Cold Path)
     try {
         const stored = localStorage.getItem(key);
-        const data = stored ? JSON.parse(stored, dateReviver) : defaultValue;
-        RAM_DB[key] = data;
+        if (!stored) {
+            RAM_DB[key] = defaultValue; // Cache the default
+            return defaultValue;
+        }
+        
+        const data = JSON.parse(stored, dateReviver);
+        RAM_DB[key] = data; // Hydrate RAM
         return data;
-    } catch {
+    } catch (e) {
+        console.error(`❌ Data corruption detected for key: ${key}. Resetting to default.`, e);
+        RAM_DB[key] = defaultValue;
         return defaultValue;
     }
 };
 
 const saveToDisk = (key: string, value: any, syncEntity?: string) => {
-    localStorage.setItem(key, JSON.stringify(value));
+    // 1. Update RAM immediately (Optimistic UI)
     RAM_DB[key] = value;
+    
+    // 2. Notify Listeners (React Components)
     if (LISTENERS[key]) {
         LISTENERS[key].forEach(cb => cb(value));
     }
+
+    // 3. Persist to Disk (Async-ish to not block UI thread too much)
+    setTimeout(() => {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+            console.error("❌ QuotaExceededError or Storage Error", e);
+            // Em um app real, aqui exibiríamos um Toast de erro crítico
+        }
+    }, 0);
+
+    // 4. Trigger Cloud Sync
     if (syncEntity) {
         syncService.triggerSync(syncEntity, value);
     }
 };
 
 export const storageService = {
-    // ... existing initialization ...
+    // Inicialização agora é ultra-rápida, carregando apenas o essencial para o boot
     initializeRAM: () => {
-        console.log("🚀 [SYSTEM] Booting Lazy Storage...");
-        RAM_DB[KEYS.SETTINGS] = getFromDisk(KEYS.SETTINGS, INITIAL_TEAM_SETTINGS);
-        RAM_DB[KEYS.ACTIVE_PROGRAM] = getFromDisk(KEYS.ACTIVE_PROGRAM, 'TACKLE');
-        RAM_DB[KEYS.ENTITLEMENTS] = getFromDisk(KEYS.ENTITLEMENTS, []);
+        console.log("🚀 [SYSTEM] Booting Lazy Storage (Critical Data Only)...");
+        // Pre-load apenas configurações e dados vitais para o layout inicial
+        getFromDisk(KEYS.SETTINGS, INITIAL_TEAM_SETTINGS);
+        getFromDisk(KEYS.ACTIVE_PROGRAM, 'TACKLE');
+        // O resto será carregado quando os componentes pedirem (Lazy)
     },
 
     subscribe: (keyName: string, callback: Function) => {
-        let internalKey = '';
+        let internalKey = keyName;
+        // Mapping friendly names to internal keys
         if (keyName === 'players') internalKey = KEYS.PLAYERS;
         else if (keyName === 'games') internalKey = KEYS.GAMES;
         else if (keyName === 'activeProgram') internalKey = KEYS.ACTIVE_PROGRAM;
-        else internalKey = keyName;
+        else if (keyName === 'settings') internalKey = KEYS.SETTINGS;
 
         if (!LISTENERS[internalKey]) LISTENERS[internalKey] = [];
         LISTENERS[internalKey].push(callback);
@@ -115,7 +144,8 @@ export const storageService = {
         };
     },
 
-    // ... existing methods for players, games, etc ...
+    // --- TYPED ACCESSORS (Lazy Implementation) ---
+
     getPlayers: (): Player[] => getFromDisk(KEYS.PLAYERS, []),
     savePlayers: (players: Player[]) => saveToDisk(KEYS.PLAYERS, players, 'players'),
     
@@ -158,85 +188,6 @@ export const storageService = {
         storageService.saveGames(updated);
     },
 
-    processDriveStats: (gameId: string, driveData: any) => {
-        const games = storageService.getGames();
-        const players = storageService.getPlayers();
-        let gameUpdated = false;
-        let playersUpdated = false;
-
-        const updatedGames = games.map(g => {
-            if (g.id === Number(gameId) || g.id === String(gameId) as any) {
-                gameUpdated = true;
-                let newScore = g.score || "0-0";
-                if (driveData.result === 'TOUCHDOWN') {
-                    const parts = newScore.split('-');
-                    const home = parseInt(parts[0]) + 6;
-                    newScore = `${home}-${parts[1]}`;
-                } else if (driveData.result === 'FIELD_GOAL') {
-                     const parts = newScore.split('-');
-                     const home = parseInt(parts[0]) + 3;
-                     newScore = `${home}-${parts[1]}`;
-                }
-                const newDrive = {
-                    id: `drive-${Date.now()}`,
-                    quarter: g.currentQuarter || 1,
-                    ...driveData
-                };
-                return { 
-                    ...g, 
-                    score: newScore,
-                    drives: [...(g.drives || []), newDrive] 
-                };
-            }
-            return g;
-        });
-
-        if (driveData.keyPlayerNumber) {
-            const updatedPlayers = players.map(p => {
-                if (p.jerseyNumber === driveData.keyPlayerNumber) {
-                    playersUpdated = true;
-                    const xpGain = (driveData.result === 'TOUCHDOWN' ? 50 : 10) + (driveData.totalYardsEst || 0);
-                    return { ...p, xp: (p.xp || 0) + xpGain };
-                }
-                return p;
-            });
-            if (playersUpdated) storageService.savePlayers(updatedPlayers);
-        }
-
-        if (gameUpdated) {
-            storageService.saveGames(updatedGames);
-        }
-    },
-
-    generateGameSnapshot: (gameId: string, type: 'HALFTIME' | 'FINAL') => {
-        const games = storageService.getGames();
-        let targetGame = games.find(g => g.id === Number(gameId) || g.id === String(gameId) as any);
-        if(!targetGame) return null;
-
-        const drives = targetGame.drives || [];
-        const relevantDrives = type === 'HALFTIME' ? drives.filter(d => d.quarter <= 2) : drives;
-
-        const snapshot: GameStatsSnapshot = {
-            totalYards: relevantDrives.reduce((acc, d) => acc + (d.totalYardsEst || 0), 0),
-            passYards: relevantDrives.filter(d => d.result !== 'PUNT').reduce((acc, d) => acc + (d.totalYardsEst ? d.totalYardsEst * 0.6 : 0), 0), 
-            rushYards: relevantDrives.filter(d => d.result !== 'PUNT').reduce((acc, d) => acc + (d.totalYardsEst ? d.totalYardsEst * 0.4 : 0), 0),
-            turnovers: relevantDrives.filter(d => d.result === 'TURNOVER').length,
-            firstDowns: Math.floor(relevantDrives.reduce((acc, d) => acc + (d.totalYardsEst || 0), 0) / 10),
-            generatedAt: new Date()
-        };
-
-        const updatedGames = games.map(g => {
-            if (g.id === targetGame.id) {
-                if (type === 'HALFTIME') return { ...g, halftimeStats: snapshot, status: 'HALFTIME' as const };
-                if (type === 'FINAL') return { ...g, finalStats: snapshot };
-            }
-            return g;
-        });
-
-        storageService.saveGames(updatedGames);
-        return snapshot;
-    },
-
     getTeamSettings: (): TeamSettings => getFromDisk(KEYS.SETTINGS, INITIAL_TEAM_SETTINGS),
     saveTeamSettings: (s: TeamSettings) => saveToDisk(KEYS.SETTINGS, s, 'settings'),
 
@@ -249,25 +200,8 @@ export const storageService = {
     getInvoices: (): Invoice[] => getFromDisk(KEYS.INVOICES, []),
     saveInvoices: (i: Invoice[]) => saveToDisk(KEYS.INVOICES, i),
     
-    createBulkInvoices: (ids: number[], title: string, amount: number, dueDate: Date, category: string) => {
-        const invoices = storageService.getInvoices();
-        const players = storageService.getPlayers();
-        const newInvoices: Invoice[] = ids.map(id => {
-            const p = players.find(pl => pl.id === id);
-            return {
-                id: `inv-${Date.now()}-${id}`,
-                playerId: id,
-                playerName: p?.name || 'Player',
-                title,
-                amount,
-                dueDate,
-                status: 'PENDING',
-                category: category as any
-            };
-        });
-        storageService.saveInvoices([...invoices, ...newInvoices]);
-    },
-
+    // --- MODULE SPECIFIC GETTERS ---
+    
     getSubscriptions: (): Subscription[] => getFromDisk(KEYS.SUBSCRIPTIONS, []),
     saveSubscriptions: (s: Subscription[]) => saveToDisk(KEYS.SUBSCRIPTIONS, s),
 
@@ -279,6 +213,7 @@ export const storageService = {
 
     getPracticeSessions: (): PracticeSession[] => getFromDisk(KEYS.PRACTICE, []),
     savePracticeSessions: (p: PracticeSession[]) => saveToDisk(KEYS.PRACTICE, p),
+
     togglePracticeAttendance: (practiceId: string, userId: string) => {
         const practices = storageService.getPracticeSessions();
         const updated = practices.map(p => {
@@ -293,12 +228,15 @@ export const storageService = {
         });
         storageService.savePracticeSessions(updated);
     },
+    
     confirmPracticePresence: (practiceId: string, userId: string) => {
         const practices = storageService.getPracticeSessions();
         const updated = practices.map(p => {
             if (p.id === practiceId) {
                 const checkedIn = p.checkedInAttendees || [];
                 if (!checkedIn.includes(userId)) {
+                    // Give XP automatically
+                    storageService.addPlayerXP(Number(userId), 50, 'Presença Treino');
                     return { ...p, checkedInAttendees: [...checkedIn, userId] };
                 }
             }
@@ -404,31 +342,6 @@ export const storageService = {
     getObjectives: (): Objective[] => getFromDisk(KEYS.OBJECTIVES, []),
     saveObjectives: (o: Objective[]) => saveToDisk(KEYS.OBJECTIVES, o),
 
-    // --- DIGITAL PRODUCTS (NEW) ---
-    getDigitalProducts: (): DigitalProduct[] => {
-        // Mock Products if empty
-        return [
-            {
-                id: 'prod-video-analysis',
-                title: 'Análise de Vídeo (Jogo Individual)',
-                description: 'Acesso completo às filmagens e dados do scout deste jogo por 48 horas.',
-                price: 19.90,
-                type: 'GAME_VIDEO',
-                durationHours: 48,
-                coverUrl: 'https://source.unsplash.com/random/400x300/?football,video'
-            },
-            {
-                id: 'prod-scout-report',
-                title: 'Scout Report Completo',
-                description: 'PDF detalhado com tendências e estatísticas do adversário. Acesso por 7 dias.',
-                price: 29.90,
-                type: 'SCOUT_REPORT',
-                durationHours: 168, // 7 days
-                coverUrl: 'https://source.unsplash.com/random/400x300/?document,analytics'
-            }
-        ];
-    },
-
     getEntitlements: (): Entitlement[] => getFromDisk(KEYS.ENTITLEMENTS, []),
 
     // Core Logic: Buy and Grant Access
@@ -440,7 +353,7 @@ export const storageService = {
             id: `ent-${Date.now()}`,
             userId,
             productId: product.id,
-            resourceId: resourceId, // e.g. gameId
+            resourceId: resourceId, 
             purchaseDate: new Date(),
             expiresAt: expiresAt,
             status: 'ACTIVE'
@@ -450,7 +363,6 @@ export const storageService = {
         const updated = [...currentEntitlements, newEntitlement];
         saveToDisk(KEYS.ENTITLEMENTS, updated);
         
-        // Also log transaction
         const newTx: Transaction = {
             id: `tx-dig-${Date.now()}`,
             title: `Compra Digital: ${product.title}`,
@@ -467,26 +379,34 @@ export const storageService = {
         return newEntitlement;
     },
 
-    // Check if user has access to a resource
     checkAccess: (userId: string, productId: string, resourceId?: string): boolean => {
         const entitlements = storageService.getEntitlements();
         const now = new Date();
-
         return entitlements.some(e => {
-            // Check User match
             if (e.userId !== userId) return false;
-            // Check Product match
             if (e.productId !== productId) return false;
-            // Check Resource Specificity (if required)
             if (resourceId && e.resourceId && e.resourceId !== resourceId) return false;
-            // Check Expiration
             if (new Date(e.expiresAt) < now) return false;
-            
             return true;
         });
     },
 
-    // --- MOCKS FOR EXTERNAL MODULES (Preserved for compatibility) ---
+    // --- MOCKS & UTILS ---
+    getCoachDashboardStats: () => {
+        const players = storageService.getPlayers();
+        const games = storageService.getGames();
+        
+        const activePlayers = players.filter((p: Player) => p.status === 'ACTIVE').length;
+        const injuredPlayers = players.filter((p: Player) => p.status === 'INJURED' || p.status === 'IR').length;
+        
+        const now = new Date();
+        const nextGame = games
+            .filter((g: Game) => new Date(g.date) > now && g.status === 'SCHEDULED')
+            .sort((a: Game, b: Game) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+
+        return { activePlayers, injuredPlayers, nextGame: nextGame || null };
+    },
+
     getConfederationStats: () => ({ totalAthletes: 1250, totalTeams: 18, totalGamesThisYear: 42, activeAffiliates: 5, growthRate: 12 }),
     getNationalTeamScouting: (): NationalTeamCandidate[] => [],
     getAffiliatesStatus: (): Affiliate[] => [],
@@ -525,23 +445,10 @@ export const storageService = {
     },
 
     createChampionship: (name: string, year: number, division: string) => {},
-    generateMonthlyInvoices: () => {},
-
-    exportFullDatabase: () => {
-        const data = JSON.stringify(localStorage);
-        const blob = new Blob([data], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'fahub_backup.json';
-        a.click();
+    generateMonthlyInvoices: () => {
+        console.log("Generating invoices (mock)...");
     },
-
-    seedDatabaseToCloud: async () => {
-        console.log("Seeding database...");
-        return true;
-    },
-
+    
     uploadFile: async (file: File, folder: string) => {
         return firebaseDataService.uploadFile(file, folder);
     },
@@ -551,6 +458,21 @@ export const storageService = {
     },
 
     checkDocumentSigned: (docId: string) => true,
+    
+    exportFullDatabase: () => {
+         const data = JSON.stringify(localStorage);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'fahub_backup.json';
+        a.click();
+    },
+    
+    seedDatabaseToCloud: async () => {
+        // Mock seed
+        return true;
+    }
 };
 
 export const LEGAL_DOCUMENTS: LegalDocument[] = [

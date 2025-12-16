@@ -11,7 +11,8 @@ import { ToastProvider } from './contexts/ToastContext';
 import { UserRole } from './types';
 import { authService } from './services/authService';
 
-// FAHUB MANAGER v3.3 - Platform Ops
+// FAHUB MANAGER v3.4 - Production Grade
+// Optimized Imports for Lazy Loading
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Roster = React.lazy(() => import('./pages/Roster'));
 const Finance = React.lazy(() => import('./pages/Finance'));
@@ -50,7 +51,7 @@ const Logistics = React.lazy(() => import('./pages/Logistics'));
 const Recruitment = React.lazy(() => import('./pages/Recruitment'));
 const Goals = React.lazy(() => import('./pages/Goals'));
 const DigitalStore = React.lazy(() => import('./pages/DigitalStore'));
-const PlatformHQ = React.lazy(() => import('./pages/PlatformHQ')); // NEW SUPER ADMIN PAGE
+const PlatformHQ = React.lazy(() => import('./pages/PlatformHQ'));
 
 const ROLES = {
   MASTER: ['MASTER'] as UserRole[],
@@ -60,7 +61,6 @@ const ROLES = {
   PLAYER_VIEW: ['MASTER', 'HEAD_COACH', 'PLAYER', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'] as UserRole[],
   COMMERCIAL: ['MASTER', 'COMMERCIAL_MANAGER'] as UserRole[],
   MARKETING: ['MASTER', 'MARKETING_MANAGER'] as UserRole[],
-  // Allow Platform Owner (simulated by MASTER for now in dev, but logically separated)
   PLATFORM: ['PLATFORM_OWNER', 'MASTER'] as UserRole[] 
 };
 
@@ -92,9 +92,10 @@ const Main: React.FC = () => {
         <ToastProvider>
             <HashRouter>
             <GlobalSearch />
+            {/* Suspense Global para o App Shell */}
             <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
                 <Routes>
-                {/* Rotas Públicas */}
+                {/* Rotas Públicas (Sem Layout) */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/public/league" element={<PublicLeague />} />
@@ -106,12 +107,12 @@ const Main: React.FC = () => {
                     <OnboardingCheck>
                         <Layout>
                         <ErrorBoundary>
-                            <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LoadingScreen /></div>}>
+                            {/* Suspense Interno para Troca de Páginas */}
+                            <Suspense fallback={<div className="h-full w-full flex items-center justify-center min-h-[300px]"><LoadingScreen /></div>}>
                                 <Routes>
                                 <Route path="/onboarding" element={<Onboarding />} />
                                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                                 
-                                {/* Platform Owner Route */}
                                 <Route path="/platform-hq" element={<ProtectedRoute allowedRoles={ROLES.PLATFORM}><PlatformHQ /></ProtectedRoute>} />
 
                                 <Route path="/dashboard" element={<Dashboard />} />
