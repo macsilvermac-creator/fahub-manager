@@ -8,36 +8,57 @@ import Card from '../components/Card';
 import LazyImage from '../components/LazyImage';
 import { 
     AlertTriangleIcon, CheckCircleIcon, DumbbellIcon, UsersIcon, SparklesIcon, 
-    ActivityIcon, ShieldCheckIcon, TrendingUpIcon, LockIcon 
+    ActivityIcon, ShieldCheckIcon, TrendingUpIcon, LockIcon, WalletIcon, TargetIcon
 } from '../components/icons/UiIcons';
-import { TrophyIcon, BookIcon } from '../components/icons/NavIcons';
+// Added FlagIcon to the imports from NavIcons to fix 'Cannot find name FlagIcon'
+import { TrophyIcon, BookIcon, FinanceIcon, FlagIcon } from '../components/icons/NavIcons';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { useToast } from '../contexts/ToastContext';
 
+// Importação das Visões Segmentadas do Dashboard
+import StatusWidgets from '../features/dashboard/StatusWidgets';
+import ExecutiveDashboard from '../features/dashboard/ExecutiveDashboard';
+import CoachHubButtons from '../features/dashboard/CoachHubButtons';
+import PlayerCareerMode from '../features/dashboard/PlayerCareerMode';
+
 const Dashboard: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const navigate = useNavigate();
     const toast = useToast();
+    
+    // States Centralizados
     const [players, setPlayers] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
+    const [objectives, setObjectives] = useState<any[]>([]);
     const [me, setMe] = useState<any>(null);
     const [aiInsight, setAiInsight] = useState<string>('');
     const [loadingAi, setLoadingAi] = useState(false);
+    const [systemHealth, setSystemHealth] = useState<any>(null);
+
+    // States de Navegação Interna (Modo Coach)
+    const [activeHub, setActiveHub] = useState<string | null>(null);
+    const [activeModule, setActiveModule] = useState<string>('');
 
     useEffect(() => {
         const allPlayers = storageService.getPlayers();
         setPlayers(allPlayers);
         setStats(storageService.getCoachDashboardStats());
+        setObjectives(storageService.getObjectives());
         
         const user = authService.getCurrentUser();
         const myData = allPlayers.find(p => p.name === user?.name);
-        const activeMe = myData || allPlayers[0];
-        setMe(activeMe);
+        setMe(myData || allPlayers[0]);
 
-        if (currentRole === 'PLAYER' && activeMe) {
-            fetchAiInsight(activeMe);
+        setSystemHealth({ 
+            api: true, 
+            db: 'IndexedDB', 
+            version: '6.5 PRO' 
+        });
+
+        if (currentRole === 'PLAYER' && (myData || allPlayers[0])) {
+            fetchAiInsight(myData || allPlayers[0]);
         }
     }, [currentRole]);
 
@@ -54,199 +75,57 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const radarData = useMemo(() => {
-        if (!me) return [];
-        return [
-            { subject: 'Velocidade', A: me.rating - 5, fullMark: 100 },
-            { subject: 'Força', A: me.rating + 2, fullMark: 100 },
-            { subject: 'Agilidade', A: me.rating - 10, fullMark: 100 },
-            { subject: 'Football IQ', A: me.rating + 5, fullMark: 100 },
-            { subject: 'Técnica', A: me.rating, fullMark: 100 },
-        ];
-    }, [me]);
-
-    const criticalAlerts = useMemo(() => {
-        return players.filter(p => ['INJURED', 'IR', 'QUESTIONABLE', 'DOUBTFUL'].includes(p.status));
+    const xpLeaders = useMemo(() => {
+        return [...players].sort((a, b) => (b.xp || 0) - (a.xp || 0)).slice(0, 5);
     }, [players]);
 
+    const handleCopyInvite = () => {
+        const url = `${window.location.origin}/#/register`;
+        navigator.clipboard.writeText(url);
+        toast.success("Link de convite para atletas copiado!");
+    };
+
+    // --- RENDERIZAÇÃO POR ENTIDADE ---
+
+    // 1. VISÃO ATLETA
     if (currentRole === 'PLAYER' && me) {
+        return <PlayerCareerMode player={me} nextGame={stats?.nextGame} xpLeaders={xpLeaders} />;
+    }
+
+    // 2. VISÃO COACH
+    if (currentRole === 'HEAD_COACH') {
         return (
             <div className="space-y-6 animate-fade-in pb-20">
-                <div className="relative bg-gradient-to-br from-[#0F172A] to-black rounded-3xl p-6 border border-white/10 overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-highlight/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
-                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-                        <div className="relative group cursor-pointer" onClick={() => navigate('/profile')}>
-                            <div className="w-28 h-28 rounded-full p-[3px] bg-gradient-to-br from-highlight to-cyan-400">
-                                <LazyImage src={me.avatarUrl} className="w-full h-full rounded-full object-cover border-4 border-black" />
-                            </div>
-                            <div className="absolute -bottom-2 -right-2 bg-black text-white font-black text-xl w-10 h-10 flex items-center justify-center rounded-lg border-2 border-highlight shadow-lg">
-                                {me.level}
-                            </div>
-                        </div>
-                        <div className="flex-1 text-center md:text-left">
-                            <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">{me.name}</h1>
-                            <p className="text-highlight font-bold text-sm mb-4">#{me.jerseyNumber} • {me.position} • {me.class}</p>
-                            
-                            <div className="bg-white/5 rounded-xl p-3 border border-white/5 mb-3 max-w-md">
-                                <div className="flex justify-between text-[10px] font-bold text-text-secondary uppercase mb-1">
-                                    <span>Comprometimento Temporada</span>
-                                    <span className="text-highlight">95%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden">
-                                    <div className="h-full bg-highlight shadow-glow" style={{ width: `95%` }}></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center justify-center bg-white/5 p-4 rounded-xl border border-white/10 min-w-[100px] shadow-inner">
-                            <span className="text-[10px] text-text-secondary font-bold uppercase">Overall</span>
-                            <span className="text-5xl font-black text-white tracking-tighter">{me.rating}</span>
-                        </div>
-                    </div>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Central do Treinador</h2>
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <Card title="Governança de Equipamento" className="lg:col-span-1">
-                        <div className="space-y-4">
-                            <div className="bg-black/20 p-3 rounded-xl border border-white/5 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <ShieldCheckIcon className="w-5 h-5 text-highlight" />
-                                    <div>
-                                        <p className="text-white text-xs font-bold">Capacete Riddell Speed</p>
-                                        <p className="text-[10px] text-text-secondary">ID: RID-25-442 • OK</p>
-                                    </div>
-                                </div>
-                                <CheckCircleIcon className="w-4 h-4 text-highlight" />
-                            </div>
-                            <div className="bg-red-900/10 p-3 rounded-xl border border-red-500/20 flex items-center justify-between group cursor-pointer hover:bg-red-900/20 transition-all">
-                                <div className="flex items-center gap-3">
-                                    <AlertTriangleIcon className="w-5 h-5 text-red-500" />
-                                    <div>
-                                        <p className="text-white text-xs font-bold">Shoulder Pad Xenith</p>
-                                        <p className="text-[10px] text-red-300">Aguardando Aceite Digital</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => toast.success("Termo assinado!")} className="text-[8px] font-black bg-red-600 text-white px-2 py-1 rounded">ASSINAR</button>
-                            </div>
-                            <div className="bg-blue-900/10 p-3 rounded-xl border border-blue-500/20 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <LockIcon className="w-5 h-5 text-blue-400" />
-                                    <div>
-                                        <p className="text-white text-xs font-bold">Seguro Atleta (Apólice)</p>
-                                        <p className="text-[10px] text-blue-300">Válido até Dez/2025</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </Card>
-
-                    <Card title="Radar de Habilidades" className="lg:col-span-1">
-                        <div className="h-64 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                                    <Radar
-                                        name="Atleta"
-                                        dataKey="A"
-                                        stroke="#059669"
-                                        fill="#059669"
-                                        fillOpacity={0.5}
-                                    />
-                                </RadarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </Card>
-
-                    <Card title="PDI (Coach AI)" className="lg:col-span-1 border-l-4 border-l-purple-500">
-                        <div className="space-y-4">
-                            {loadingAi ? (
-                                <div className="flex flex-col items-center justify-center py-10 animate-pulse">
-                                    <SparklesIcon className="w-8 h-8 text-purple-400 mb-2" />
-                                    <p className="text-xs text-text-secondary">Consultando Oráculo...</p>
-                                </div>
-                            ) : (
-                                <div className="animate-fade-in h-full flex flex-col">
-                                    <div className="bg-purple-900/10 p-4 rounded-2xl border border-purple-500/20 mb-4">
-                                        <p className="text-white text-xs leading-relaxed italic">
-                                            "{aiInsight}"
-                                        </p>
-                                    </div>
-                                    <div className="mt-auto flex gap-2">
-                                        <button onClick={() => navigate('/academy')} className="flex-1 bg-secondary p-2 rounded-lg border border-white/5 text-[10px] font-bold text-white uppercase hover:border-highlight transition-all">Ver Drills</button>
-                                        <button onClick={() => navigate('/gemini-playbook')} className="flex-1 bg-secondary p-2 rounded-lg border border-white/5 text-[10px] font-bold text-white uppercase hover:border-purple-500 transition-all">Estudar IA</button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </Card>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="bg-green-900/10 border-green-500/20">
-                        <p className="text-[10px] text-green-400 font-bold uppercase mb-1">Atestado Médico (Passport)</p>
-                        <div className="flex items-center justify-between">
-                            <p className="text-xl font-black text-white">VÁLIDO</p>
-                            <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                        </div>
-                    </Card>
-                    <Card className="bg-blue-900/10 border-blue-500/20">
-                        <p className="text-[10px] text-blue-400 font-bold uppercase mb-1">Experiência (XP)</p>
-                        <p className="text-xl font-black text-white">{me.xp} <span className="text-xs font-normal text-text-secondary">PTS</span></p>
-                    </Card>
-                    <Card className="bg-red-900/10 border-red-500/20">
-                        <p className="text-[10px] text-red-400 font-bold uppercase mb-1">Faturas Loja/Mensalidade</p>
-                        <p className="text-xl font-black text-white">R$ 0,00</p>
-                    </Card>
-                    <Card className="bg-yellow-900/10 border-yellow-500/20">
-                        <p className="text-[10px] text-yellow-400 font-bold uppercase mb-1">Evento Próximo</p>
-                        <p className="text-xs font-black text-white uppercase truncate">vs Gladiators • Sab 14h</p>
-                    </Card>
-                </div>
+                <CoachHubButtons 
+                    setActiveHub={setActiveHub} 
+                    setActiveModule={setActiveModule} 
+                    nextGame={stats?.nextGame} 
+                    program={storageService.getActiveProgram()} 
+                />
             </div>
         );
     }
 
+    // 3. VISÃO ÁRBITRO (Pode ir direto para a página de Oficiais se preferir)
+    if (currentRole === 'REFEREE') {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                <FlagIcon className="w-16 h-16 text-yellow-500 mb-4" />
+                <h2 className="text-2xl font-bold text-white">Modo Oficial Ativado</h2>
+                <p className="text-text-secondary mb-6">Acesse a Súmula Digital no menu lateral para iniciar o jogo.</p>
+                <button onClick={() => navigate('/officiating')} className="bg-yellow-500 text-black font-black px-8 py-3 rounded-xl uppercase shadow-lg">Ir para o Campo</button>
+            </div>
+        );
+    }
+
+    // 4. VISÃO MASTER (PADRÃO)
     return (
         <div className="space-y-6 animate-fade-in pb-20">
-             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="bg-secondary/80">
-                    <p className="text-xs text-text-secondary uppercase font-bold">Atletas Ativos</p>
-                    <p className="text-3xl font-black text-white">{stats?.activePlayers || 0}</p>
-                </Card>
-                <Card className="bg-secondary/80">
-                    <p className="text-xs text-text-secondary uppercase font-bold">Assiduidade</p>
-                    <p className="text-3xl font-black text-green-400">91%</p>
-                </Card>
-                <Card className="bg-secondary/80 border-red-500/30">
-                    <p className="text-xs text-red-400 uppercase font-bold">Alertas Médicos</p>
-                    <p className="text-3xl font-black text-red-500">{criticalAlerts.length}</p>
-                </Card>
-                <Card className="bg-secondary/80">
-                    <p className="text-xs text-text-secondary uppercase font-bold">Próximo Jogo</p>
-                    <p className="text-xl font-bold text-white uppercase truncate">vs {stats?.nextGame?.opponent || 'N/A'}</p>
-                </Card>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card title="Triagem Médica Prioritária">
-                    <div className="space-y-4">
-                        {criticalAlerts.length === 0 ? (
-                            <p className="text-text-secondary italic text-sm">Nenhum atleta em risco imediato.</p>
-                        ) : (
-                            criticalAlerts.map(p => (
-                                <div key={p.id} className="flex items-center justify-between p-3 bg-red-900/10 rounded-xl border border-red-500/20">
-                                    <div className="flex items-center gap-3">
-                                        <LazyImage src={p.avatarUrl} className="w-10 h-10 rounded-full" />
-                                        <span className="text-white font-bold">{p.name}</span>
-                                    </div>
-                                    <span className="text-[10px] font-black text-red-400 uppercase">Consultar Médico</span>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </Card>
-            </div>
+            <StatusWidgets systemHealth={systemHealth} />
+            <ExecutiveDashboard handleCopyInvite={handleCopyInvite} />
         </div>
     );
 };
