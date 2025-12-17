@@ -6,14 +6,11 @@ import {
   DashboardIcon, RosterIcon, ScheduleIcon, FinanceIcon, 
   AiPlaybookIcon, PracticeIcon, FlagIcon, TrophyIcon, 
   MegaphoneIcon, ShopIcon, BriefcaseIcon, AcademyIcon, VideoIcon,
-  WhistleIcon, TicketIcon, GlobeIcon, KanbanIcon, TargetIcon, SettingsNavIcon, BookIcon,
-  // Add missing icon FolderIcon
-  FolderIcon
+  WhistleIcon, TicketIcon, GlobeIcon, KanbanIcon, TargetIcon, SettingsNavIcon, BookIcon, FolderIcon, SchoolIcon
 } from './icons/NavIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
-// Add missing icons BuildingIcon, MapIcon, MicIcon
-import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, LockIcon, WalletIcon, DumbbellIcon, ActivityIcon, UserPlusIcon, HeartIcon, BuildingIcon, MapIcon, MicIcon } from './icons/UiIcons';
+import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, LockIcon, WalletIcon, DumbbellIcon, ActivityIcon, UserPlusIcon, HeartIcon } from './icons/UiIcons';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -53,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 </div>
                 <div>
                     <span className="text-sm font-black text-white block leading-none tracking-tighter italic">FAHUB <span className="text-highlight">PRO</span></span>
-                    <span className="text-[8px] text-text-secondary uppercase tracking-widest font-bold">Manager v3.5</span>
+                    <span className="text-[8px] text-text-secondary uppercase tracking-widest font-bold">Manager v5.0</span>
                 </div>
             </div>
       </div>
@@ -63,94 +60,85 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
           
           <NavLink to="/dashboard" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
             <DashboardIcon className="w-4 h-4 mr-3" />
-            <span>Painel Principal</span>
+            <span>Dashboard</span>
           </NavLink>
 
-          <NavLink to="/profile" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <UsersIcon className="w-4 h-4 mr-3" />
-            <span>Meu Perfil</span>
-          </NavLink>
-
-          {/* VISÃO GOD / MASTER COMPLETA */}
+          {/* VISÃO GOD / MASTER COMPLETA - TODAS AS ENTIDADES */}
           {isMaster && (
             <>
-              <SectionLabel>Core & Planejamento</SectionLabel>
+              <SectionLabel>Estratégia & Core</SectionLabel>
               <NavLink to="/goals" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <TargetIcon className="w-4 h-4 mr-3 text-purple-400" />
-                <span>Estratégia (OKRs)</span>
+                <span>OKRs & Metas</span>
               </NavLink>
               <NavLink to="/tasks" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <KanbanIcon className="w-4 h-4 mr-3 text-blue-400" />
-                <span>WorkFlow (Kanban)</span>
+                <span>Fluxo Kanban</span>
               </NavLink>
               <NavLink to="/communications" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <MegaphoneIcon className="w-4 h-4 mr-3 text-yellow-400" />
-                <span>Comunicações</span>
+                <span>Mural de Avisos</span>
               </NavLink>
 
-              <SectionLabel>Técnico & Campo</SectionLabel>
+              <SectionLabel>Departamento Técnico</SectionLabel>
               <NavLink to="/roster" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <RosterIcon className="w-4 h-4 mr-3 text-blue-500" />
-                <span>Gestão de Elenco</span>
+                <span>Roster (Elenco)</span>
               </NavLink>
               <NavLink to="/practice" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <PracticeIcon className="w-4 h-4 mr-3 text-green-500" />
-                <span>Treinos (Scripts)</span>
-              </NavLink>
-              <NavLink to="/tactical-lab" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <WhistleIcon className="w-4 h-4 mr-3 text-orange-500" />
-                <span>Tactical Lab</span>
+                <span>Scripts de Treino</span>
               </NavLink>
               <NavLink to="/gemini-playbook" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <AiPlaybookIcon className="w-4 h-4 mr-3 text-purple-500" />
                 <span>Playbook IA</span>
               </NavLink>
+              <NavLink to="/tactical-lab" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <WhistleIcon className="w-4 h-4 mr-3 text-orange-500" />
+                <span>Tactical Lab</span>
+              </NavLink>
               <NavLink to="/video" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <VideoIcon className="w-4 h-4 mr-3 text-cyan-500" />
-                <span>Vision Core (Vídeo)</span>
+                <span>Vídeo & Scout</span>
               </NavLink>
               <NavLink to="/recruitment" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <UserPlusIcon className="w-4 h-4 mr-3 text-pink-500" />
-                <span>Scouting / Tryouts</span>
+                <span>Tryouts (Recrutamento)</span>
               </NavLink>
 
-              <SectionLabel>Operações & Financeiro</SectionLabel>
+              <SectionLabel>Operações & Receita</SectionLabel>
               <NavLink to="/finance" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <FinanceIcon className="w-4 h-4 mr-3 text-green-400" />
                 <span>Financeiro (CFO)</span>
               </NavLink>
               <NavLink to="/commercial" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <BriefcaseIcon className="w-4 h-4 mr-3 text-blue-400" />
-                <span>Comercial / CRM</span>
-              </NavLink>
-              <NavLink to="/marketing" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <MegaphoneIcon className="w-4 h-4 mr-3 text-pink-400" />
-                <span>Marketing / IA Post</span>
+                <span>Comercial & Patrocínio</span>
               </NavLink>
               <NavLink to="/inventory" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <ClipboardIcon className="w-4 h-4 mr-3 text-yellow-400" />
-                <span>Inventário</span>
+                <span>Inventário (Ativos)</span>
               </NavLink>
               <NavLink to="/event-desk" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <TicketIcon className="w-4 h-4 mr-3 text-orange-400" />
-                <span>Event Desk (PDV)</span>
+                <span>Eventos & Bilheteria</span>
               </NavLink>
-              <NavLink to="/digital-store" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+              <NavLink to="/marketplace" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <ShopIcon className="w-4 h-4 mr-3 text-cyan-400" />
-                <span>SaaS Store</span>
+                <span>Loja Digital</span>
               </NavLink>
 
               <SectionLabel>Ecossistema & Apoio</SectionLabel>
               <NavLink to="/logistics" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <BusIcon className="w-4 h-4 mr-3 text-blue-300" />
-                <span>Logística</span>
+                <span>Logística (Viagem)</span>
               </NavLink>
               <NavLink to="/staff" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <UsersIcon className="w-4 h-4 mr-3 text-indigo-400" />
                 <span>Staff & RH</span>
               </NavLink>
               <NavLink to="/youth" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <AcademyIcon className="w-4 h-4 mr-3 text-pink-300" />
+                <SchoolIcon className="w-4 h-4 mr-3 text-pink-300" />
                 <span>Escolinhas (Base)</span>
               </NavLink>
               <NavLink to="/academy" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
@@ -160,10 +148,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
               <NavLink to="/locker-room" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <UsersIcon className="w-4 h-4 mr-3 text-pink-500" />
                 <span>Vestiário Social</span>
-              </NavLink>
-              <NavLink to="/resources" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <FolderIcon className="w-4 h-4 mr-3 text-gray-400" />
-                <span>Arquivos / Docs</span>
               </NavLink>
 
               <SectionLabel>Governança Macro</SectionLabel>
@@ -179,12 +163,8 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 <GlobeIcon className="w-4 h-4 mr-3 text-green-600" />
                 <span>Confederação</span>
               </NavLink>
-              <NavLink to="/broadcast-booth" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <MicIcon className="w-4 h-4 mr-3 text-red-500" />
-                <span>Broadcaster Booth</span>
-              </NavLink>
 
-              <SectionLabel>Administração</SectionLabel>
+              <SectionLabel>Configuração</SectionLabel>
               <NavLink to="/admin" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <LockIcon className="w-4 h-4 mr-3" />
                 <span>Painel Admin</span>
@@ -193,36 +173,24 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 <SettingsNavIcon className="w-4 h-4 mr-3" />
                 <span>Ajustes Time</span>
               </NavLink>
-              <NavLink to="/platform-hq" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <BuildingIcon className="w-4 h-4 mr-3" />
-                <span>Platform HQ</span>
-              </NavLink>
-              <NavLink to="/roadmap" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <MapIcon className="w-4 h-4 mr-3" />
-                <span>Roadmap</span>
-              </NavLink>
             </>
           )}
 
-          {/* VISÃO ATLETA (Reduzida para foco) */}
+          {/* VISÃO ATLETA (Otimizada para foco no campo) */}
           {!isMaster && currentRole === 'PLAYER' && (
              <>
-                <SectionLabel>Área do Atleta</SectionLabel>
+                <SectionLabel>Minha Área</SectionLabel>
                 <NavLink to="/profile" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                   <UsersIcon className="w-4 h-4 mr-3" />
                   <span>Meu Perfil</span>
                 </NavLink>
                 <NavLink to="/schedule" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                   <ScheduleIcon className="w-4 h-4 mr-3" />
-                  <span>Agenda de Jogos</span>
+                  <span>Agenda</span>
                 </NavLink>
                 <NavLink to="/academy" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                   <AcademyIcon className="w-4 h-4 mr-3" />
                   <span>Iron Lab (Treino)</span>
-                </NavLink>
-                <NavLink to="/locker-room" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                  <HeartIcon className="w-4 h-4 mr-3 text-pink-500" />
-                  <span>Vestiário</span>
                 </NavLink>
                 <NavLink to="/marketplace" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                   <ShopIcon className="w-4 h-4 mr-3" />
@@ -233,10 +201,10 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
         </nav>
       </div>
 
-      {/* GOD MODE SWITCHER (ONLY FOR MASTER) */}
+      {/* GOD MODE SWITCHER (PERSISTENTE) */}
       {isGodUser && (
         <div className="p-3 bg-black/40 border-t border-white/5 shrink-0">
-            <p className="text-[9px] font-black text-highlight uppercase mb-2 text-center tracking-widest">God Mode (Role Switcher)</p>
+            <p className="text-[9px] font-black text-highlight uppercase mb-2 text-center tracking-widest">God Mode (Context Switch)</p>
             <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={() => { setRole('MASTER'); navigate('/dashboard'); }} 

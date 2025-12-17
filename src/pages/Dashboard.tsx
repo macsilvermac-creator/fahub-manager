@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
         return players.filter(p => ['INJURED', 'IR', 'QUESTIONABLE', 'DOUBTFUL'].includes(p.status));
     }, [players]);
 
-    // VIEW: ATLETA (Refinada v4.5)
+    // VIEW: ATLETA (Refinada v5.0)
     if (currentRole === 'PLAYER' && me) {
         return (
             <div className="space-y-6 animate-fade-in pb-20">
@@ -107,44 +107,43 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Governança e Inventário (Faltava este controle para o atleta) */}
-                    <Card title="Patrimônio & Compliance" className="lg:col-span-1">
+                    {/* Patrimônio & Governança (Disponível desde o dia 1) */}
+                    <Card title="Governança de Equipamento" className="lg:col-span-1">
                         <div className="space-y-4">
                             <div className="bg-black/20 p-3 rounded-xl border border-white/5 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <ShieldCheckIcon className="w-5 h-5 text-highlight" />
                                     <div>
-                                        <p className="text-white text-xs font-bold">Capacete Riddell</p>
-                                        <p className="text-[10px] text-text-secondary">ID: RID-2025-442</p>
+                                        <p className="text-white text-xs font-bold">Capacete Riddell Speed</p>
+                                        <p className="text-[10px] text-text-secondary">ID: RID-25-442 • OK</p>
                                     </div>
                                 </div>
-                                <span className="text-[9px] font-black bg-highlight text-white px-2 py-0.5 rounded">ACEITO</span>
+                                <CheckCircleIcon className="w-4 h-4 text-highlight" />
                             </div>
                             <div className="bg-red-900/10 p-3 rounded-xl border border-red-500/20 flex items-center justify-between group cursor-pointer hover:bg-red-900/20 transition-all">
                                 <div className="flex items-center gap-3">
                                     <AlertTriangleIcon className="w-5 h-5 text-red-500" />
                                     <div>
-                                        <p className="text-white text-xs font-bold">Shoulder Pad Schutt</p>
+                                        <p className="text-white text-xs font-bold">Shoulder Pad Xenith</p>
                                         <p className="text-[10px] text-red-300">Aguardando Aceite Digital</p>
                                     </div>
                                 </div>
-                                <button onClick={() => toast.success("Termo de Responsabilidade assinado!")} className="text-[8px] font-black bg-red-600 text-white px-2 py-1 rounded hover:bg-red-500">ASSINAR</button>
+                                <button onClick={() => toast.success("Termo assinado!")} className="text-[8px] font-black bg-red-600 text-white px-2 py-1 rounded">ASSINAR</button>
                             </div>
                             <div className="bg-blue-900/10 p-3 rounded-xl border border-blue-500/20 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <LockIcon className="w-5 h-5 text-blue-400" />
                                     <div>
-                                        <p className="text-white text-xs font-bold">Seguro Atleta 2025</p>
-                                        <p className="text-[10px] text-blue-300">Status: Regular</p>
+                                        <p className="text-white text-xs font-bold">Seguro Atleta (Apólice)</p>
+                                        <p className="text-[10px] text-blue-300">Válido até Dez/2025</p>
                                     </div>
                                 </div>
-                                <CheckCircleIcon className="w-4 h-4 text-blue-400" />
                             </div>
                         </div>
                     </Card>
 
                     {/* Skill Radar Chart */}
-                    <Card title="Radar de Performance" className="lg:col-span-1">
+                    <Card title="Radar de Habilidades" className="lg:col-span-1">
                         <div className="h-64 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
@@ -163,13 +162,13 @@ const Dashboard: React.FC = () => {
                         </div>
                     </Card>
 
-                    {/* AI Coach Insights */}
-                    <Card title="Coach AI: PDI" className="lg:col-span-1 border-l-4 border-l-purple-500">
+                    {/* AI Coach Insights (PDI) */}
+                    <Card title="PDI (Coach AI)" className="lg:col-span-1 border-l-4 border-l-purple-500">
                         <div className="space-y-4">
                             {loadingAi ? (
                                 <div className="flex flex-col items-center justify-center py-10 animate-pulse">
                                     <SparklesIcon className="w-8 h-8 text-purple-400 mb-2" />
-                                    <p className="text-xs text-text-secondary">Consultando Coach Virtual...</p>
+                                    <p className="text-xs text-text-secondary">Consultando Oráculo...</p>
                                 </div>
                             ) : (
                                 <div className="animate-fade-in h-full flex flex-col">
@@ -178,15 +177,9 @@ const Dashboard: React.FC = () => {
                                             "{aiInsight}"
                                         </p>
                                     </div>
-                                    <div className="mt-auto space-y-2">
-                                        <button onClick={() => navigate('/academy')} className="w-full bg-secondary p-2 rounded-lg border border-white/5 flex items-center justify-between group hover:border-highlight transition-all">
-                                            <span className="text-[10px] font-bold text-white uppercase">Ver Próximos Drills</span>
-                                            <TrendingUpIcon className="w-4 h-4 text-highlight group-hover:translate-x-1 transition-transform" />
-                                        </button>
-                                        <button onClick={() => navigate('/gemini-playbook')} className="w-full bg-secondary p-2 rounded-lg border border-white/5 flex items-center justify-between group hover:border-purple-400 transition-all">
-                                            <span className="text-[10px] font-bold text-white uppercase">Estudar Playbook</span>
-                                            <BookIcon className="w-4 h-4 text-purple-400 group-hover:translate-x-1 transition-transform" />
-                                        </button>
+                                    <div className="mt-auto flex gap-2">
+                                        <button onClick={() => navigate('/academy')} className="flex-1 bg-secondary p-2 rounded-lg border border-white/5 text-[10px] font-bold text-white uppercase hover:border-highlight transition-all">Ver Drills</button>
+                                        <button onClick={() => navigate('/gemini-playbook')} className="flex-1 bg-secondary p-2 rounded-lg border border-white/5 text-[10px] font-bold text-white uppercase hover:border-purple-500 transition-all">Estudar IA</button>
                                     </div>
                                 </div>
                             )}
@@ -194,33 +187,33 @@ const Dashboard: React.FC = () => {
                     </Card>
                 </div>
 
-                {/* Health Passport & Stats */}
+                {/* Health Passport & Quick Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card className="bg-green-900/10 border-green-500/20">
-                        <p className="text-[10px] text-green-400 font-bold uppercase mb-1">Atestado Médico</p>
+                        <p className="text-[10px] text-green-400 font-bold uppercase mb-1">Atestado Médico (Passport)</p>
                         <div className="flex items-center justify-between">
                             <p className="text-xl font-black text-white">VÁLIDO</p>
                             <CheckCircleIcon className="w-5 h-5 text-green-500" />
                         </div>
                     </Card>
                     <Card className="bg-blue-900/10 border-blue-500/20">
-                        <p className="text-[10px] text-blue-400 font-bold uppercase mb-1">XP Acumulado</p>
-                        <p className="text-xl font-black text-white">{me.xp} <span className="text-xs font-normal text-text-secondary">/ 5000</span></p>
+                        <p className="text-[10px] text-blue-400 font-bold uppercase mb-1">Experiência (XP)</p>
+                        <p className="text-xl font-black text-white">{me.xp} <span className="text-xs font-normal text-text-secondary">PTS</span></p>
                     </Card>
                     <Card className="bg-red-900/10 border-red-500/20">
-                        <p className="text-[10px] text-red-400 font-bold uppercase mb-1">Dívidas Loja/Mensalidade</p>
+                        <p className="text-[10px] text-red-400 font-bold uppercase mb-1">Faturas Loja/Mensalidade</p>
                         <p className="text-xl font-black text-white">R$ 0,00</p>
                     </Card>
                     <Card className="bg-yellow-900/10 border-yellow-500/20">
-                        <p className="text-[10px] text-yellow-400 font-bold uppercase mb-1">Próximo Compromisso</p>
-                        <p className="text-sm font-black text-white uppercase truncate">vs Guardians • Sab 14h</p>
+                        <p className="text-[10px] text-yellow-400 font-bold uppercase mb-1">Evento Próximo</p>
+                        <p className="text-xs font-black text-white uppercase truncate">vs Gladiators • Sab 14h</p>
                     </Card>
                 </div>
             </div>
         );
     }
 
-    // VIEW: MASTER/COACH (Resumo Geral)
+    // VIEW: MASTER/COACH (Resumo Operacional)
     return (
         <div className="space-y-6 animate-fade-in pb-20">
              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -229,8 +222,8 @@ const Dashboard: React.FC = () => {
                     <p className="text-3xl font-black text-white">{stats?.activePlayers || 0}</p>
                 </Card>
                 <Card className="bg-secondary/80">
-                    <p className="text-xs text-text-secondary uppercase font-bold">Assiduidade Geral</p>
-                    <p className="text-3xl font-black text-green-400">88%</p>
+                    <p className="text-xs text-text-secondary uppercase font-bold">Assiduidade</p>
+                    <p className="text-3xl font-black text-green-400">91%</p>
                 </Card>
                 <Card className="bg-secondary/80 border-red-500/30">
                     <p className="text-xs text-red-400 uppercase font-bold">Alertas Médicos</p>
@@ -243,17 +236,21 @@ const Dashboard: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card title="Risco de Lesão (Alta Carga)">
+                <Card title="Triagem Médica Prioritária">
                     <div className="space-y-4">
-                        {criticalAlerts.map(p => (
-                            <div key={p.id} className="flex items-center justify-between p-3 bg-red-900/10 rounded-xl border border-red-500/20">
-                                <div className="flex items-center gap-3">
-                                    <LazyImage src={p.avatarUrl} className="w-10 h-10 rounded-full" />
-                                    <span className="text-white font-bold">{p.name}</span>
+                        {criticalAlerts.length === 0 ? (
+                            <p className="text-text-secondary italic text-sm">Nenhum atleta em risco imediato.</p>
+                        ) : (
+                            criticalAlerts.map(p => (
+                                <div key={p.id} className="flex items-center justify-between p-3 bg-red-900/10 rounded-xl border border-red-500/20">
+                                    <div className="flex items-center gap-3">
+                                        <LazyImage src={p.avatarUrl} className="w-10 h-10 rounded-full" />
+                                        <span className="text-white font-bold">{p.name}</span>
+                                    </div>
+                                    <span className="text-[10px] font-black text-red-400 uppercase">Consultar Médico</span>
                                 </div>
-                                <span className="text-[10px] font-black text-red-400 uppercase">Atenção Médica</span>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </Card>
             </div>
