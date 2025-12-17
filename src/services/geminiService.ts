@@ -11,6 +11,9 @@ let aiClientInstance: GoogleGenAI | null = null;
 const AI_CACHE: Record<string, { timestamp: number, data: any }> = {};
 const CACHE_TTL = 1000 * 60 * 60; // 1 Hora de Cache
 
+// --- SAFETY TIMEOUTS ---
+const TIMEOUT_MS = 15000; // 15s Hard Limit
+
 const getCacheKey = (model: string, prompt: string): string => {
     return btoa(encodeURIComponent(`${model}:${prompt.substring(0, 100)}`)); 
 };
@@ -36,8 +39,7 @@ const setCache = (key: string, data: any) => {
 
 const getClient = (): GoogleGenAI => {
     if (!ENV_API_KEY) {
-        console.warn("API Key missing in environment variables. AI features will be disabled.");
-        throw new Error("Chave de API não configurada no ambiente.");
+        throw new Error("Chave de API não configurada. Funcionalidade IA indisponível.");
     }
     if (!aiClientInstance) {
         aiClientInstance = new GoogleGenAI({ apiKey: ENV_API_KEY });
@@ -60,9 +62,9 @@ const generateJson = async (prompt: string): Promise<any> => {
 
     try {
         const ai = getClient();
-        console.log("🤖 Gemini Request (JSON):", prompt.substring(0, 50) + "...");
+        console.log("🤖 Gemini Request (JSON)...");
         
-        const response = await ai.models.generateContent({
+        const apiCall = ai.models.generateContent({
             model: model,
             contents: prompt,
             config: { 
@@ -70,6 +72,14 @@ const generateJson = async (prompt: string): Promise<any> => {
                 temperature: 0.4,
             }
         });
+
+        // Timeout Promise Race
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("IA demorou muito para responder (Timeout).")), TIMEOUT_MS)
+        );
+
+        // @ts-ignore
+        const response: any = await Promise.race([apiCall, timeoutPromise]);
         
         if (response.text) {
             try {
@@ -77,7 +87,7 @@ const generateJson = async (prompt: string): Promise<any> => {
                 setCache(cacheKey, parsed);
                 return parsed;
             } catch (parseError) {
-                console.warn("⚠️ JSON Parse Error, trying fix.");
+                console.warn("⚠️ JSON Parse Error, trying regex fix.");
                 const jsonMatch = response.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
                 if (jsonMatch) {
                     const corrected = JSON.parse(jsonMatch[0]);
@@ -90,7 +100,7 @@ const generateJson = async (prompt: string): Promise<any> => {
         return null;
     } catch (e: any) {
         console.error("❌ Erro Gemini JSON:", e.message);
-        throw e;
+        throw e; // Propagate error for UI handling
     }
 };
 
@@ -102,11 +112,20 @@ const generateText = async (prompt: string): Promise<string> => {
 
     try {
         const ai = getClient();
-        const response = await ai.models.generateContent({
+        
+        const apiCall = ai.models.generateContent({
             model: model,
             contents: prompt,
             config: { temperature: 0.7 }
         });
+
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("IA demorou muito (Timeout).")), TIMEOUT_MS)
+        );
+
+        // @ts-ignore
+        const response: any = await Promise.race([apiCall, timeoutPromise]);
+        
         const text = response.text || "";
         setCache(cacheKey, text);
         return text;
@@ -116,98 +135,8 @@ const generateText = async (prompt: string): Promise<string> => {
     }
 };
 
-// --- NEW AGENTS ---
+// --- EXPORTED FUNCTIONS (AGENTS) ---
 
-export const generateDrillCards = async (focus: string, level: string): Promise<Drill[]> => {
-    const prompt = `Create 3 American Football Drills for focus: "${focus}". Level: ${level}.
-    Return JSON Array: [
-        {
-            "name": "Title of Drill",
-            "description": "Setup and Execution instructions (keep concise)",
-            "durationMinutes": 10,
-            "videoSearchTerm": "Youtube search term for this drill"
-        }
-    ]`;
-    
-    const result = await generateJson(prompt);
-    if (Array.isArray(result)) {
-        return result.map((d: any) => ({ ...d, id: `gen-${Date.now()}-${Math.random()}` }));
-    }
-    return [];
-};
-
-export const analyzeDriveFootage = async (base64Video: string): Promise<any> => {
-    try {
-        const ai = getClient();
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash", // Flash é ideal para vídeo rápido
-            contents: {
-                parts: [
-                    { text: `Analyze this American Football drive video. I need a statistical summary for the broadcast.
-                    Return JSON: 
-                    {
-                        "playCount": number,
-                        "passPlays": number,
-                        "runPlays": number,
-                        "totalYardsEst": number,
-                        "result": "TOUCHDOWN" | "FIELD_GOAL" | "PUNT" | "TURNOVER" | "END_OF_HALF",
-                        "keyPlayerNumber": number (if visible, else null),
-                        "summary": "Short text summary in Portuguese (PT-BR) for the announcer"
-                    }` },
-                    { inlineData: { mimeType: "video/mp4", data: base64Video.split(',')[1] } }
-                ]
-            },
-            config: { responseMimeType: "application/json" }
-        });
-        return response.text ? JSON.parse(cleanJsonString(response.text)) : null;
-    } catch (e) {
-        console.error("Erro Video Drive:", e);
-        throw new Error("Falha ao analisar vídeo da campanha.");
-    }
-};
-
-export const generateQuizFromContent = async (topic: string): Promise<QuizQuestion[]> => {
-    const prompt = `Create a quiz for Football players about: "${topic}". Return JSON Array: [{ question: string, options: string[], correctAnswer: number (index 0-3), explanation: string }]. Generate 5 hard questions. Language: PT-BR.`;
-    return (await generateJson(prompt)) || [];
-};
-
-export const generateStructuredGymPlan = async (goal: string, equipment: string): Promise<GymDay[]> => {
-    const prompt = `Create a 3-day Football Gym Plan. Goal: "${goal}". Equipment: "${equipment}". 
-    Return JSON structure: 
-    [
-        {
-            "title": "Day 1: Upper Power",
-            "focus": "Explosive Push",
-            "exercises": [
-                { "name": "Bench Press", "sets": "4", "reps": "5", "notes": "Explosive up" }
-            ]
-        }
-    ]
-    Language: PT-BR (but keep standard exercise names in English if common).`;
-    
-    return (await generateJson(prompt)) || [];
-};
-
-export const explainPlayImage = async (base64Image: string, playerQuestion: string): Promise<string> => {
-    try {
-        const ai = getClient();
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: {
-                parts: [
-                    { text: `You are an expert American Football Coach. Analyze this play diagram or game footage frame. The player asks: "${playerQuestion}". Explain the formation, identify key players if possible, and explain the concept clearly in Portuguese (PT-BR). Keep it tactical and encouraging.` },
-                    { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
-                ]
-            }
-        });
-        return response.text || "Não consegui analisar a imagem.";
-    } catch (e) {
-        console.error(e);
-        return "Erro ao analisar imagem da jogada.";
-    }
-};
-
-// --- EXISTING EXPORTS ---
 export const classifyCoachVoiceNote = async (text: string) => {
     const prompt = `Analyze football coach note: "${text}". Return JSON: { category: 'OFFENSE'|'DEFENSE'|'SPECIAL'|'GENERAL', tags: string[], sentiment: 'POSITIVE'|'NEGATIVE'|'NEUTRAL', action?: string }`;
     return (await generateJson(prompt)) || { category: 'GENERAL', tags: [], sentiment: 'NEUTRAL' };
@@ -263,7 +192,7 @@ export const scanFinancialDocument = async (base64: string) => {
             config: { responseMimeType: "application/json" }
         });
         return response.text ? JSON.parse(cleanJsonString(response.text)) : { title: "Erro", amount: 0 };
-    } catch (e) { throw new Error("Falha na leitura."); }
+    } catch (e) { throw new Error("Falha na leitura ou Timeout."); }
 };
 
 export const analyzeCombineStats = async (stats: CombineStats, pos: string) => {
@@ -280,3 +209,62 @@ export const generateInstallSchedule = async (c: string, w: string) => generateJ
 export const analyzePlayMatchup = (p: string, s: GameScoutingReport, o: string) => generateText(`Simulate play "${p}" vs "${o}". Short result.`);
 export const askRefereeBot = (q: string) => generateText(`Referee Bot: Answer based on IFAF rules: ${q}`);
 export const generateJudicialReport = (i: number, e: any[]) => generateText(`Write judicial report for game ${i}, ejections: ${JSON.stringify(e)}.`);
+
+// NEW:
+export const generateDrillCards = async (focus: string, level: string): Promise<Drill[]> => {
+    const prompt = `Create 3 American Football Drills for focus: "${focus}". Level: ${level}.
+    Return JSON Array: [
+        {
+            "name": "Title of Drill",
+            "description": "Setup and Execution instructions (keep concise)",
+            "durationMinutes": 10,
+            "videoSearchTerm": "Youtube search term for this drill"
+        }
+    ]`;
+    
+    const result = await generateJson(prompt);
+    if (Array.isArray(result)) {
+        return result.map((d: any) => ({ ...d, id: `gen-${Date.now()}-${Math.random()}` }));
+    }
+    return [];
+};
+
+export const generateQuizFromContent = async (topic: string): Promise<QuizQuestion[]> => {
+    const prompt = `Create a quiz for Football players about: "${topic}". Return JSON Array: [{ question: string, options: string[], correctAnswer: number (index 0-3), explanation: string }]. Generate 5 hard questions. Language: PT-BR.`;
+    return (await generateJson(prompt)) || [];
+};
+
+export const generateStructuredGymPlan = async (goal: string, equipment: string): Promise<GymDay[]> => {
+    const prompt = `Create a 3-day Football Gym Plan. Goal: "${goal}". Equipment: "${equipment}". 
+    Return JSON structure: 
+    [
+        {
+            "title": "Day 1: Upper Power",
+            "focus": "Explosive Push",
+            "exercises": [
+                { "name": "Bench Press", "sets": "4", "reps": "5", "notes": "Explosive up" }
+            ]
+        }
+    ]
+    Language: PT-BR.`;
+    
+    return (await generateJson(prompt)) || [];
+};
+
+export const explainPlayImage = async (base64Image: string, playerQuestion: string): Promise<string> => {
+    try {
+        const ai = getClient();
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: {
+                parts: [
+                    { text: `Coach analysis. Question: "${playerQuestion}". Explain the formation and concept in PT-BR.` },
+                    { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
+                ]
+            }
+        });
+        return response.text || "Não consegui analisar.";
+    } catch (e) {
+        return "Erro na visão computacional.";
+    }
+};
