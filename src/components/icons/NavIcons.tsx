@@ -1,248 +1,37 @@
 
-import React, { memo } from 'react';
-// @ts-ignore
-import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  DashboardIcon, RosterIcon, ScheduleIcon, FinanceIcon, 
-  AiPlaybookIcon, PracticeIcon, FlagIcon, TrophyIcon, 
-  MegaphoneIcon, ShopIcon, BriefcaseIcon, AcademyIcon, VideoIcon,
-  WhistleIcon, TicketIcon, GlobeIcon, KanbanIcon, TargetIcon, SettingsNavIcon, BookIcon, FolderIcon, SchoolIcon
-} from './icons/NavIcons';
-import { UserRole } from '../types';
-import { authService } from '../services/authService';
-import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, LockIcon, WalletIcon, DumbbellIcon, ActivityIcon, UserPlusIcon, HeartIcon, MicIcon, BuildingIcon, MapIcon } from './icons/UiIcons';
+import React from 'react';
 
-interface SidebarProps {
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-  currentRole: UserRole;
-  setRole: (role: UserRole) => void;
-}
+const iconProps = {
+  className: "h-6 w-6",
+  strokeWidth: "2",
+  fill: "none",
+  stroke: "currentColor",
+  strokeLinecap: "round" as "round",
+  strokeLinejoin: "round" as "round"
+};
 
-const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, setRole }) => {
-  const navigate = useNavigate();
-  const user = authService.getCurrentUser();
-  const isMaster = currentRole === 'MASTER';
-  const isGodUser = user?.role === 'MASTER';
-
-  const navLinkClasses = "flex items-center px-4 py-2 text-text-secondary rounded-lg hover:bg-white/5 hover:text-white transition-all text-xs font-bold mb-0.5 group";
-  const activeNavLinkClasses = "bg-highlight/10 text-highlight border-l-4 border-highlight font-black shadow-[0_0_15px_rgba(0,168,107,0.1)]";
-
-  const handleLinkClick = () => {
-    if (window.innerWidth < 1024) setIsOpen(false);
-  };
-
-  const handleLogout = () => {
-      authService.logout();
-      navigate('/login');
-  };
-
-  const SectionLabel = ({ children }: { children: string }) => (
-    <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mt-4 mb-1 border-b border-white/5 pb-1">{children}</p>
-  );
-
-  return (
-    <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0F172A] transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-linear lg:relative lg:translate-x-0 lg:flex lg:flex-shrink-0 flex flex-col h-full border-r border-white/5 shadow-2xl overflow-hidden`}>
-      <div className="h-16 flex items-center px-6 border-b border-white/5 bg-[#0B1120] shrink-0">
-            <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-highlight rounded-lg flex items-center justify-center shadow-lg transform -rotate-6">
-                    <span className="text-white font-black text-sm tracking-tighter">FH</span>
-                </div>
-                <div>
-                    <span className="text-sm font-black text-white block leading-none tracking-tighter italic">FAHUB <span className="text-highlight">PRO</span></span>
-                    <span className="text-[8px] text-text-secondary uppercase tracking-widest font-bold">Manager v5.5</span>
-                </div>
-            </div>
-      </div>
-      
-      <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar py-2 px-3">
-        <nav className="flex-1 space-y-0.5">
-          
-          <NavLink to="/dashboard" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <DashboardIcon className="w-4 h-4 mr-3" />
-            <span>Dashboard</span>
-          </NavLink>
-
-          {/* VISÃO GOD / MASTER COMPLETA */}
-          {isMaster && (
-            <>
-              <SectionLabel>Estratégia & Core</SectionLabel>
-              <NavLink to="/goals" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <TargetIcon className="w-4 h-4 mr-3 text-purple-400" />
-                <span>OKRs & Metas</span>
-              </NavLink>
-              <NavLink to="/tasks" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <KanbanIcon className="w-4 h-4 mr-3 text-blue-400" />
-                <span>Fluxo Kanban</span>
-              </NavLink>
-              <NavLink to="/communications" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <MegaphoneIcon className="w-4 h-4 mr-3 text-yellow-400" />
-                <span>Mural de Avisos</span>
-              </NavLink>
-
-              <SectionLabel>Departamento Técnico</SectionLabel>
-              <NavLink to="/roster" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <RosterIcon className="w-4 h-4 mr-3 text-blue-500" />
-                <span>Roster (Elenco)</span>
-              </NavLink>
-              <NavLink to="/practice" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <PracticeIcon className="w-4 h-4 mr-3 text-green-500" />
-                <span>Scripts de Treino</span>
-              </NavLink>
-              <NavLink to="/gemini-playbook" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <AiPlaybookIcon className="w-4 h-4 mr-3 text-purple-500" />
-                <span>Playbook IA</span>
-              </NavLink>
-              <NavLink to="/tactical-lab" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <WhistleIcon className="w-4 h-4 mr-3 text-orange-500" />
-                <span>Tactical Lab</span>
-              </NavLink>
-              <NavLink to="/video" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <VideoIcon className="w-4 h-4 mr-3 text-cyan-500" />
-                <span>Vídeo & Scout</span>
-              </NavLink>
-              <NavLink to="/recruitment" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <UserPlusIcon className="w-4 h-4 mr-3 text-pink-500" />
-                <span>Tryouts (Recrutamento)</span>
-              </NavLink>
-
-              <SectionLabel>Operações & Receita</SectionLabel>
-              <NavLink to="/finance" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <FinanceIcon className="w-4 h-4 mr-3 text-green-400" />
-                <span>Financeiro (CFO)</span>
-              </NavLink>
-              <NavLink to="/commercial" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <BriefcaseIcon className="w-4 h-4 mr-3 text-blue-400" />
-                <span>Comercial & Patrocínio</span>
-              </NavLink>
-              <NavLink to="/inventory" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <ClipboardIcon className="w-4 h-4 mr-3 text-yellow-400" />
-                <span>Inventário (Ativos)</span>
-              </NavLink>
-              <NavLink to="/event-desk" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <TicketIcon className="w-4 h-4 mr-3 text-orange-400" />
-                <span>Eventos & Bilheteria</span>
-              </NavLink>
-              <NavLink to="/digital-store" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <ShopIcon className="w-4 h-4 mr-3 text-cyan-400" />
-                <span>Loja Digital</span>
-              </NavLink>
-
-              <SectionLabel>Ecossistema & Apoio</SectionLabel>
-              <NavLink to="/logistics" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <BusIcon className="w-4 h-4 mr-3 text-blue-300" />
-                <span>Logística (Viagem)</span>
-              </NavLink>
-              <NavLink to="/staff" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <UsersIcon className="w-4 h-4 mr-3 text-indigo-400" />
-                <span>Staff & RH</span>
-              </NavLink>
-              <NavLink to="/youth" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <SchoolIcon className="w-4 h-4 mr-3 text-pink-300" />
-                <span>Escolinhas (Base)</span>
-              </NavLink>
-              <NavLink to="/academy" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <BookIcon className="w-4 h-4 mr-3 text-yellow-300" />
-                <span>Iron Academy</span>
-              </NavLink>
-              <NavLink to="/locker-room" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <UsersIcon className="w-4 h-4 mr-3 text-pink-500" />
-                <span>Vestiário Social</span>
-              </NavLink>
-              <NavLink to="/resources" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <FolderIcon className="w-4 h-4 mr-3 text-gray-400" />
-                <span>Arquivos / Docs</span>
-              </NavLink>
-
-              <SectionLabel>Governança Macro</SectionLabel>
-              <NavLink to="/officiating" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <FlagIcon className="w-4 h-4 mr-3 text-yellow-500" />
-                <span>Arbitragem</span>
-              </NavLink>
-              <NavLink to="/league" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <TrophyIcon className="w-4 h-4 mr-3 text-purple-600" />
-                <span>Federação (Live)</span>
-              </NavLink>
-              <NavLink to="/confederation" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <GlobeIcon className="w-4 h-4 mr-3 text-green-600" />
-                <span>Confederação</span>
-              </NavLink>
-              <NavLink to="/broadcast-booth" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <MicIcon className="w-4 h-4 mr-3 text-red-500" />
-                <span>Broadcaster Booth</span>
-              </NavLink>
-
-              <SectionLabel>Configuração</SectionLabel>
-              <NavLink to="/admin" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <LockIcon className="w-4 h-4 mr-3" />
-                <span>Painel Admin</span>
-              </NavLink>
-              <NavLink to="/settings" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <SettingsNavIcon className="w-4 h-4 mr-3" />
-                <span>Ajustes Time</span>
-              </NavLink>
-              <NavLink to="/platform-hq" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <BuildingIcon className="w-4 h-4 mr-3" />
-                <span>Platform HQ</span>
-              </NavLink>
-              <NavLink to="/roadmap" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <MapIcon className="w-4 h-4 mr-3" />
-                <span>Roadmap</span>
-              </NavLink>
-            </>
-          )}
-
-          {/* VISÃO ATLETA (Otimizada) */}
-          {!isMaster && currentRole === 'PLAYER' && (
-             <>
-                <SectionLabel>Minha Área</SectionLabel>
-                <NavLink to="/profile" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                  <UsersIcon className="w-4 h-4 mr-3" />
-                  <span>Meu Perfil</span>
-                </NavLink>
-                <NavLink to="/schedule" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                  <ScheduleIcon className="w-4 h-4 mr-3" />
-                  <span>Agenda</span>
-                </NavLink>
-                <NavLink to="/academy" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                  <AcademyIcon className="w-4 h-4 mr-3" />
-                  <span>Iron Lab (Treino)</span>
-                </NavLink>
-                <NavLink to="/marketplace" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                  <ShopIcon className="w-4 h-4 mr-3" />
-                  <span>Marketplace</span>
-                </NavLink>
-             </>
-          )}
-        </nav>
-      </div>
-
-      {/* GOD MODE SWITCHER */}
-      {isGodUser && (
-        <div className="p-3 bg-black/40 border-t border-white/5 shrink-0">
-            <p className="text-[9px] font-black text-highlight uppercase mb-2 text-center tracking-widest">God Mode (Context Switch)</p>
-            <div className="grid grid-cols-2 gap-2">
-                <button 
-                  onClick={() => { setRole('MASTER'); navigate('/dashboard'); }} 
-                  className={`text-[9px] py-1.5 rounded font-black border transition-all ${currentRole === 'MASTER' ? 'bg-highlight border-highlight text-white shadow-[0_0_10px_rgba(5,150,105,0.4)]' : 'border-white/10 text-text-secondary hover:text-white'}`}
-                >
-                  MASTER
-                </button>
-                <button 
-                  onClick={() => { setRole('PLAYER'); navigate('/dashboard'); }} 
-                  className={`text-[9px] py-1.5 rounded font-black border transition-all ${currentRole === 'PLAYER' ? 'bg-blue-600 border-blue-600 text-white' : 'border-white/10 text-text-secondary hover:text-white'}`}
-                >
-                  ATLETA
-                </button>
-            </div>
-        </div>
-      )}
-
-      <div className="p-3 bg-[#0B1120] border-t border-white/5 shrink-0">
-        <button onClick={handleLogout} className="w-full text-[10px] font-black text-red-400 hover:text-white flex items-center justify-center gap-2 py-2 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 rounded-lg transition-all uppercase tracking-widest">Encerrar Sessão</button>
-      </div>
-    </aside>
-  );
-});
-
-export default Sidebar;
+export const AcademyIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>;
+export const AiPlaybookIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path d="M12 10h-2v2H9v-2H7V9h2V7h1v2h2v1z"/></svg>;
+export const BookIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>;
+export const BriefcaseIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>;
+export const ChatIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>;
+export const DashboardIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
+export const FinanceIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>;
+export const FlagIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>;
+export const FolderIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>;
+export const FootballIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="6"></ellipse><path d="M12 6v12"></path><path d="M8 8v8"></path><path d="M16 8v8"></path></svg>;
+export const GlobeIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>;
+export const HeartPulseIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg>;
+export const KanbanIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>;
+export const MegaphoneIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14v-3z"></path><path d="M11.6 16.8L3 21v-3"></path></svg>;
+export const PracticeIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>;
+export const RosterIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
+export const ScheduleIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
+export const SchoolIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="m22 10-10-5-10 5 10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>;
+export const SettingsNavIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
+export const ShopIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>;
+export const TargetIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
+export const TicketIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M3 6h18"></path><path d="M3 18h18"></path><path d="M19 6v12"></path><path d="M5 6v12"></path><circle cx="12" cy="12" r="3"></circle></svg>;
+export const TrophyIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M8 21h8m-4-9v9m-8-3h16M6 4a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V4z"></path><path d="M6 4H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2"></path><path d="M18 4h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2"></path></svg>;
+export const VideoIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
+export const WhistleIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path></svg>;

@@ -63,6 +63,11 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
             <span>Dashboard</span>
           </NavLink>
 
+          <NavLink to="/profile" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <UsersIcon className="w-4 h-4 mr-3" />
+            <span>Meu Perfil</span>
+          </NavLink>
+
           {/* VISÃO GOD / MASTER COMPLETA */}
           {isMaster && (
             <>
@@ -77,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
               </NavLink>
               <NavLink to="/communications" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <MegaphoneIcon className="w-4 h-4 mr-3 text-yellow-400" />
-                <span>Mural de Avisos</span>
+                <span>Comunicações</span>
               </NavLink>
 
               <SectionLabel>Departamento Técnico</SectionLabel>
@@ -89,21 +94,21 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 <PracticeIcon className="w-4 h-4 mr-3 text-green-500" />
                 <span>Scripts de Treino</span>
               </NavLink>
-              <NavLink to="/gemini-playbook" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <AiPlaybookIcon className="w-4 h-4 mr-3 text-purple-500" />
-                <span>Playbook IA</span>
-              </NavLink>
               <NavLink to="/tactical-lab" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <WhistleIcon className="w-4 h-4 mr-3 text-orange-500" />
                 <span>Tactical Lab</span>
               </NavLink>
+              <NavLink to="/gemini-playbook" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <AiPlaybookIcon className="w-4 h-4 mr-3 text-purple-500" />
+                <span>Playbook IA</span>
+              </NavLink>
               <NavLink to="/video" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <VideoIcon className="w-4 h-4 mr-3 text-cyan-500" />
-                <span>Vídeo & Scout</span>
+                <span>Vision Lab (Vídeo)</span>
               </NavLink>
               <NavLink to="/recruitment" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <UserPlusIcon className="w-4 h-4 mr-3 text-pink-500" />
-                <span>Tryouts (Recrutamento)</span>
+                <span>Tryouts</span>
               </NavLink>
 
               <SectionLabel>Operações & Receita</SectionLabel>
@@ -113,25 +118,25 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
               </NavLink>
               <NavLink to="/commercial" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <BriefcaseIcon className="w-4 h-4 mr-3 text-blue-400" />
-                <span>Comercial & Patrocínio</span>
+                <span>Comercial & CRM</span>
               </NavLink>
               <NavLink to="/inventory" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <ClipboardIcon className="w-4 h-4 mr-3 text-yellow-400" />
-                <span>Inventário (Ativos)</span>
+                <span>Inventário</span>
               </NavLink>
               <NavLink to="/event-desk" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <TicketIcon className="w-4 h-4 mr-3 text-orange-400" />
-                <span>Eventos & Bilheteria</span>
+                <span>Event Desk (PDV)</span>
               </NavLink>
               <NavLink to="/digital-store" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <ShopIcon className="w-4 h-4 mr-3 text-cyan-400" />
-                <span>Loja Digital</span>
+                <span>Digital Store</span>
               </NavLink>
 
               <SectionLabel>Ecossistema & Apoio</SectionLabel>
               <NavLink to="/logistics" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <BusIcon className="w-4 h-4 mr-3 text-blue-300" />
-                <span>Logística (Viagem)</span>
+                <span>Logística</span>
               </NavLink>
               <NavLink to="/staff" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <UsersIcon className="w-4 h-4 mr-3 text-indigo-400" />
@@ -143,7 +148,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
               </NavLink>
               <NavLink to="/academy" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <BookIcon className="w-4 h-4 mr-3 text-yellow-300" />
-                <span>Iron Academy</span>
+                <span>Academy</span>
               </NavLink>
               <NavLink to="/locker-room" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <UsersIcon className="w-4 h-4 mr-3 text-pink-500" />
@@ -192,21 +197,25 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
             </>
           )}
 
-          {/* VISÃO ATLETA (Otimizada) */}
+          {/* VISÃO ATLETA (Reduzida para foco) */}
           {!isMaster && currentRole === 'PLAYER' && (
              <>
-                <SectionLabel>Minha Área</SectionLabel>
+                <SectionLabel>Área do Atleta</SectionLabel>
                 <NavLink to="/profile" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                   <UsersIcon className="w-4 h-4 mr-3" />
                   <span>Meu Perfil</span>
                 </NavLink>
                 <NavLink to="/schedule" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                   <ScheduleIcon className="w-4 h-4 mr-3" />
-                  <span>Agenda</span>
+                  <span>Agenda de Jogos</span>
                 </NavLink>
                 <NavLink to="/academy" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                   <AcademyIcon className="w-4 h-4 mr-3" />
                   <span>Iron Lab (Treino)</span>
+                </NavLink>
+                <NavLink to="/locker-room" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                  <HeartIcon className="w-4 h-4 mr-3 text-pink-500" />
+                  <span>Vestiário</span>
                 </NavLink>
                 <NavLink to="/marketplace" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                   <ShopIcon className="w-4 h-4 mr-3" />
@@ -217,10 +226,10 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
         </nav>
       </div>
 
-      {/* GOD MODE SWITCHER */}
+      {/* GOD MODE SWITCHER (ONLY FOR MASTER) */}
       {isGodUser && (
         <div className="p-3 bg-black/40 border-t border-white/5 shrink-0">
-            <p className="text-[9px] font-black text-highlight uppercase mb-2 text-center tracking-widest">God Mode (Context Switch)</p>
+            <p className="text-[9px] font-black text-highlight uppercase mb-2 text-center tracking-widest">God Mode (Role Switcher)</p>
             <div className="grid grid-cols-2 gap-2">
                 <button 
                   onClick={() => { setRole('MASTER'); navigate('/dashboard'); }} 
