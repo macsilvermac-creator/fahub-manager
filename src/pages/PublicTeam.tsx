@@ -1,9 +1,57 @@
+
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
 import { TeamSettings, Player, Game, SponsorDeal } from '../types';
 import LazyImage from '@/components/LazyImage';
 import { CalendarIcon, MapPinIcon, UsersIcon } from '../components/icons/UiIcons';
 import { GlobeIcon, TrophyIcon } from '../components/icons/NavIcons';
+
+// --- COUNTDOWN COMPONENT ---
+const Countdown: React.FC<{ targetDate: Date }> = ({ targetDate }) => {
+    const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = targetDate.getTime() - now;
+
+            if (distance < 0) {
+                clearInterval(interval);
+                return;
+            }
+
+            setTimeLeft({
+                days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+                hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+                seconds: Math.floor((distance % (1000 * 60)) / 1000)
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [targetDate]);
+
+    return (
+        <div className="grid grid-cols-4 gap-2 md:gap-4 text-center">
+            <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-2 md:p-3">
+                <span className="block text-2xl md:text-4xl font-black text-white">{String(timeLeft.days).padStart(2, '0')}</span>
+                <span className="text-[8px] md:text-xs text-text-secondary uppercase tracking-widest">Dias</span>
+            </div>
+            <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-2 md:p-3">
+                <span className="block text-2xl md:text-4xl font-black text-white">{String(timeLeft.hours).padStart(2, '0')}</span>
+                <span className="text-[8px] md:text-xs text-text-secondary uppercase tracking-widest">Horas</span>
+            </div>
+            <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-2 md:p-3">
+                <span className="block text-2xl md:text-4xl font-black text-white">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                <span className="text-[8px] md:text-xs text-text-secondary uppercase tracking-widest">Min</span>
+            </div>
+            <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-2 md:p-3">
+                <span className="block text-2xl md:text-4xl font-black text-highlight animate-pulse">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                <span className="text-[8px] md:text-xs text-text-secondary uppercase tracking-widest">Seg</span>
+            </div>
+        </div>
+    );
+};
 
 const PublicTeam: React.FC = () => {
     const [settings, setSettings] = useState<TeamSettings | null>(null);
@@ -21,7 +69,10 @@ const PublicTeam: React.FC = () => {
 
     if (!settings) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center text-white">Carregando...</div>;
 
-    const nextGame = games.find(g => g.status === 'SCHEDULED' && new Date(g.date) > new Date());
+    const nextGame = games
+        .filter(g => g.status === 'SCHEDULED' && new Date(g.date) > new Date())
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+
     const seasonRecord = {
         wins: games.filter(g => g.result === 'W').length,
         losses: games.filter(g => g.result === 'L').length
@@ -36,28 +87,36 @@ const PublicTeam: React.FC = () => {
                     <div className="w-32 h-32 md:w-48 md:h-48 bg-white/5 rounded-full p-2 border-4 border-white/10 shadow-2xl backdrop-blur-sm">
                         <LazyImage src={settings.logoUrl} className="w-full h-full object-contain" />
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 w-full">
                         <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest text-white/80 mb-4 border border-white/10">
                             <GlobeIcon className="w-4 h-4" /> Página Oficial
                         </div>
                         <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-2">{settings.teamName}</h1>
-                        <p className="text-xl text-gray-400 max-w-2xl">{settings.address} • Futebol Americano</p>
+                        <p className="text-xl text-gray-400 max-w-2xl mx-auto md:mx-0">{settings.address} • Futebol Americano</p>
                         
-                        <div className="flex flex-wrap justify-center md:justify-start gap-6 mt-6">
-                            <div className="bg-white/5 px-6 py-3 rounded-xl border border-white/10">
+                        {/* NEXT GAME CARD & COUNTDOWN */}
+                        {nextGame ? (
+                             <div className="mt-8 bg-gradient-to-r from-blue-900/60 to-blue-800/40 p-6 rounded-2xl border border-blue-500/30 w-full max-w-2xl mx-auto md:mx-0">
+                                <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                                    <div className="text-center md:text-left">
+                                        <p className="text-xs text-blue-300 font-bold uppercase tracking-widest mb-1">Próximo Confronto</p>
+                                        <h3 className="text-2xl md:text-3xl font-black text-white">VS {nextGame.opponent.toUpperCase()}</h3>
+                                        <div className="flex items-center justify-center md:justify-start gap-2 mt-2 text-sm text-gray-300">
+                                            <CalendarIcon className="w-4 h-4" />
+                                            {new Date(nextGame.date).toLocaleDateString()} • {new Date(nextGame.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                                        </div>
+                                    </div>
+                                    <div className="w-full md:w-auto">
+                                        <Countdown targetDate={new Date(nextGame.date)} />
+                                    </div>
+                                </div>
+                             </div>
+                        ) : (
+                             <div className="mt-6 inline-block bg-white/5 px-6 py-3 rounded-xl border border-white/10">
                                 <p className="text-xs text-gray-500 uppercase font-bold">Temporada 2025</p>
                                 <p className="text-2xl font-black text-white">{seasonRecord.wins}-{seasonRecord.losses}</p>
                             </div>
-                            {nextGame && (
-                                <div className="bg-gradient-to-r from-blue-900/40 to-blue-800/40 px-6 py-3 rounded-xl border border-blue-500/30">
-                                    <p className="text-xs text-blue-300 uppercase font-bold">Próximo Jogo</p>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-lg font-bold text-white">vs {nextGame.opponent}</span>
-                                        <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded">{new Date(nextGame.date).toLocaleDateString()}</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>

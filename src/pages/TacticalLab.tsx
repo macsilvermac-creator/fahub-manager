@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { Game, PlayElement, TacticalPlay, TacticalFrame, InstallMatrixItem } from '../types';
 import { storageService } from '../services/storageService';
 import { analyzePlayMatchup, generateInstallSchedule, importPlaybookFromImage } from '../services/geminiService';
-import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon, EyeIcon, ScanIcon, ImageIcon, EraserIcon } from '../components/icons/UiIcons';
+import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon, EyeIcon, ScanIcon, ImageIcon, EraserIcon, ShareIcon } from '../components/icons/UiIcons';
 import { WhistleIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext';
@@ -20,7 +20,8 @@ const TacticalLab: React.FC = () => {
     const toast = useToast();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const traceInputRef = useRef<HTMLInputElement>(null); // Ref para upload de decalque
+    const traceInputRef = useRef<HTMLInputElement>(null); 
+    const importJsonRef = useRef<HTMLInputElement>(null);
     const [activeTab, setActiveTab] = useState<'PLAYBOOK' | 'INSTALL'>('PLAYBOOK');
     
     // Playbook State
@@ -55,8 +56,10 @@ const TacticalLab: React.FC = () => {
     useEffect(() => {
         setGames(storageService.getGames());
         setSavedPlays(storageService.getTacticalPlays());
-        const teamSettings = storageService.getTeamSettings();
-        const initialMode = teamSettings.sportType || 'FULLPADS';
+        
+        // Auto-detect mode from Global Program Context
+        const activeProgram = storageService.getActiveProgram();
+        const initialMode = activeProgram === 'FLAG' ? 'FLAG' : 'FULLPADS';
         setSportMode(initialMode);
         resetTokens(initialMode);
     }, []);
@@ -207,7 +210,7 @@ const TacticalLab: React.FC = () => {
         setCurrentFrameIndex(-1);
         setIsPlaying(false);
         resetTokens(sportMode); 
-        setTraceImage(null); // Limpa imagem de decalque também
+        setTraceImage(null); 
     };
 
     const handleSimulate = async () => {
@@ -230,7 +233,8 @@ const TacticalLab: React.FC = () => {
             frames: frames,
             routes: [],
             aiAnalysis: simulationResult,
-            createdAt: new Date()
+            createdAt: new Date(),
+            program: sportMode === 'FULLPADS' ? 'TACKLE' : 'FLAG'
         };
         const updated = [newPlay, ...savedPlays];
         setSavedPlays(updated);
@@ -239,14 +243,43 @@ const TacticalLab: React.FC = () => {
         toast.success("Jogada salva na biblioteca!");
     };
 
-    const generateWristband = () => {
-        const plays = savedPlays.slice(0, 10).map(p => p.name).join('\n');
-        const blob = new Blob([plays], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
+    // --- JSON EXPORT/IMPORT ---
+    const handleExportLibrary = () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedPlays));
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `Wristband_${sportMode}.txt`;
+        a.setAttribute("href", dataStr);
+        a.setAttribute("download", `Playbook_${sportMode}_${new Date().toLocaleDateString()}.json`);
+        document.body.appendChild(a);
         a.click();
+        a.remove();
+        toast.success("Playbook exportado!");
+    };
+
+    const handleImportLibraryClick = () => {
+        importJsonRef.current?.click();
+    };
+
+    const handleJsonFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const imported = JSON.parse(event.target?.result as string);
+                    if (Array.isArray(imported)) {
+                        const merged = [...savedPlays, ...imported];
+                        setSavedPlays(merged);
+                        storageService.saveTacticalPlays(merged);
+                        toast.success(`${imported.length} jogadas importadas!`);
+                    } else {
+                        toast.error("Formato JSON inválido.");
+                    }
+                } catch (e) {
+                    toast.error("Erro ao ler arquivo.");
+                }
+            };
+            reader.readAsText(file);
+        }
     };
 
     // --- IMPORT PLAYBOOK FROM IMAGE (AI OCR) ---
@@ -282,7 +315,6 @@ const TacticalLab: React.FC = () => {
         }
     };
 
-    // --- TRACING MODE (MANUAL DECALQUE) ---
     const handleTraceClick = () => {
         traceInputRef.current?.click();
     };
@@ -303,59 +335,19 @@ const TacticalLab: React.FC = () => {
         }
     };
 
-    // --- SCOUT CARD GENERATOR (COACH BILL FEATURE) ---
+    // --- SCOUT CARD GENERATOR ---
     const handlePrintScoutCard = () => {
         if (!canvasRef.current) return;
-        
-        // Capture canvas image
         const dataUrl = canvasRef.current.toDataURL('image/png');
-        
         const win = window.open('', '_blank');
         if (!win) return;
 
         win.document.write(`
-            <html>
-                <head>
-                    <title>Scout Card - ${playName || 'Jogada'}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-                        h1 { font-size: 48px; margin-bottom: 10px; text-transform: uppercase; }
-                        h2 { font-size: 24px; color: #555; margin-bottom: 30px; }
-                        .card-container { 
-                            border: 4px solid black; 
-                            padding: 20px; 
-                            display: inline-block;
-                            width: 100%;
-                            max-width: 800px;
-                        }
-                        img { 
-                            width: 100%; 
-                            height: auto; 
-                            filter: grayscale(100%) contrast(150%); /* High Contrast for B&W Print */
-                            border: 2px solid #ccc;
-                        }
-                        .notes {
-                            margin-top: 20px;
-                            text-align: left;
-                            font-size: 18px;
-                            border-top: 2px dashed black;
-                            padding-top: 10px;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="card-container">
-                        <h1>${playName || 'JOGADA SEM NOME'}</h1>
-                        <h2>${conceptDescription || 'Conceito Tático'}</h2>
-                        <img src="${dataUrl}" />
-                        <div class="notes">
-                            <strong>COACH NOTES:</strong>
-                            <p>${simulationResult || 'Imprimir e usar no treino. Focar no alinhamento da defesa.'}</p>
-                        </div>
-                    </div>
-                    <script>window.onload = function() { window.print(); }</script>
-                </body>
-            </html>
+            <html><head><title>Scout Card</title></head><body style="text-align:center;">
+                <h1>${playName || 'PLAY'}</h1>
+                <img src="${dataUrl}" style="border:1px solid #000;"/>
+                <script>window.onload=function(){window.print();}</script>
+            </body></html>
         `);
         win.document.close();
     };
@@ -368,40 +360,6 @@ const TacticalLab: React.FC = () => {
         setActiveTab('PLAYBOOK');
     };
 
-    // --- INSTALL MATRIX LOGIC ---
-    const handleGenerateInstall = async () => {
-        if(!coachContext) return;
-        setIsGeneratingInstall(true);
-        const game = games.find(g => g.id === Number(selectedGameId));
-        const weekInfo = game ? `Jogo contra ${game.opponent}` : 'Semana de Bye / Off-Season';
-        
-        const generatedItems = await generateInstallSchedule(coachContext, weekInfo);
-        setInstallItems(generatedItems);
-        setIsGeneratingInstall(false);
-    };
-
-    const updateMatrixItem = (day: string, category: string, val: string) => {
-        // Find existing or create new
-        const existingIdx = installItems.findIndex(i => i.day === day && i.category === category);
-        const newItems = [...installItems];
-        
-        if (existingIdx >= 0) {
-            newItems[existingIdx] = { ...newItems[existingIdx], concept: val };
-        } else {
-            newItems.push({
-                id: `manual-${Date.now()}-${Math.random()}`,
-                day: day as any,
-                category: category as any,
-                concept: val
-            });
-        }
-        setInstallItems(newItems);
-    };
-
-    const getMatrixValue = (day: string, category: string) => {
-        return installItems.find(i => i.day === day && i.category === category)?.concept || '';
-    };
-
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -410,7 +368,7 @@ const TacticalLab: React.FC = () => {
                         <WhistleIcon className="text-highlight w-8 h-8" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-bold text-text-primary">Laboratório Tático</h2>
+                        <h2 className="text-3xl font-bold text-text-primary">Laboratório Tático <span className="text-sm font-normal text-text-secondary">({sportMode})</span></h2>
                         <p className="text-text-secondary">{isPlayer ? 'Estudo de Playbook e Simulação.' : 'Planejamento, Design e Instalação.'}</p>
                     </div>
                 </div>
@@ -491,7 +449,7 @@ const TacticalLab: React.FC = () => {
                                                 <input type="file" accept="image/*" className="hidden" ref={traceInputRef} onChange={handleTraceFileChange} />
                                                 
                                                 <button onClick={handleTraceClick} className="bg-yellow-600/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-600 hover:text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-2 transition-colors">
-                                                    <ImageIcon className="w-3 h-3"/> Decalque (Manual)
+                                                    <ImageIcon className="w-3 h-3"/> Decalque
                                                 </button>
 
                                                 <button onClick={handleImportClick} disabled={isImporting} className="bg-purple-600/20 text-purple-400 border border-purple-500/50 hover:bg-purple-600 hover:text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-2 transition-colors">
@@ -520,110 +478,30 @@ const TacticalLab: React.FC = () => {
                     </div>
 
                     <div className="flex justify-between items-center mt-8">
-                        <h3 className="text-xl font-bold text-white">Biblioteca do Playbook</h3>
-                        <button onClick={generateWristband} className="bg-secondary border border-white/10 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
-                            <PrinterIcon className="w-4 h-4"/> Exportar Wristband (.txt)
-                        </button>
+                        <h3 className="text-xl font-bold text-white">Biblioteca do Playbook ({savedPlays.length})</h3>
+                        <div className="flex gap-2">
+                            <input type="file" accept=".json" className="hidden" ref={importJsonRef} onChange={handleJsonFileChange} />
+                            <button onClick={handleImportLibraryClick} className="bg-secondary border border-white/10 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                                <ShareIcon className="w-4 h-4"/> Importar JSON
+                            </button>
+                            <button onClick={handleExportLibrary} className="bg-secondary border border-white/10 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                                <ShareIcon className="w-4 h-4"/> Exportar JSON
+                            </button>
+                        </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                         {savedPlays.map(play => (
                             <div key={play.id} onClick={() => loadPlay(play)} className="bg-secondary p-4 rounded-xl border border-white/5 hover:border-highlight/30 transition-colors cursor-pointer group relative">
                                 <h4 className="font-bold text-white">{play.name}</h4>
                                 <p className="text-xs text-text-secondary mt-1 line-clamp-2">{play.concept}</p>
+                                <span className={`absolute bottom-2 right-2 text-[8px] px-1 rounded uppercase border ${play.program === 'FLAG' ? 'border-yellow-500 text-yellow-500' : 'border-blue-500 text-blue-500'}`}>
+                                    {play.program || 'TACKLE'}
+                                </span>
                                 {play.frames && play.frames.length > 0 && <span className="absolute top-2 right-2 text-[10px] bg-green-500/20 text-green-400 px-1 rounded">Animado</span>}
                             </div>
                         ))}
                     </div>
                 </>
-            )}
-
-            {/* === TAB: INSTALL MATRIX (New Feature) === */}
-            {activeTab === 'INSTALL' && !isPlayer && (
-                <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 animate-slide-in">
-                    {/* Sidebar: AI Assistant */}
-                    <div className="xl:col-span-1 space-y-6">
-                        <Card title="Assistente de Planejamento (Co-Pilot)">
-                            <div className="space-y-4">
-                                <div className="bg-blue-900/20 p-3 rounded-lg border border-blue-500/20">
-                                    <p className="text-xs text-blue-300">
-                                        <strong>Como usar:</strong> Descreva sua visão para a semana. A IA organizará os conceitos no quadro. Você pode editar tudo manualmente depois.
-                                    </p>
-                                </div>
-                                
-                                <div>
-                                    <label className="text-xs font-bold text-text-secondary block mb-1">Adversário da Semana</label>
-                                    <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-sm" value={selectedGameId} onChange={e => setSelectedGameId(e.target.value)}>
-                                        <option value="">Off-Season / Bye Week</option>
-                                        {games.filter(g => new Date(g.date) > new Date()).map(g => (
-                                            <option key={g.id} value={g.id}>vs {g.opponent}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="text-xs font-bold text-text-secondary block mb-1">Sua Visão Estratégica</label>
-                                    <textarea 
-                                        className="w-full h-40 bg-black/20 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-highlight focus:outline-none"
-                                        placeholder="Ex: Time adversário joga muito em Cover 3. Quero focar em conceitos de Flood e Smash na terça. Na quarta, instalar a blitz Double A Gap."
-                                        value={coachContext}
-                                        onChange={e => setCoachContext(e.target.value)}
-                                    />
-                                </div>
-
-                                <button 
-                                    onClick={handleGenerateInstall}
-                                    disabled={isGeneratingInstall || !coachContext}
-                                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold py-2 rounded-lg flex justify-center items-center gap-2 hover:shadow-lg disabled:opacity-50"
-                                >
-                                    {isGeneratingInstall ? 'Organizando...' : <><SparklesIcon className="w-4 h-4"/> Gerar Matriz Inteligente</>}
-                                </button>
-                            </div>
-                        </Card>
-                    </div>
-
-                    {/* Main Content: The Matrix Grid */}
-                    <div className="xl:col-span-3">
-                        <Card title="Matriz de Instalação Semanal">
-                            <div className="overflow-x-auto">
-                                <table className="w-full border-collapse">
-                                    <thead>
-                                        <tr>
-                                            <th className="p-3 border border-white/10 bg-black/40 text-left text-xs text-text-secondary w-24">CATEGORIA</th>
-                                            {DAYS.map(day => (
-                                                <th key={day} className="p-3 border border-white/10 bg-black/40 text-center text-xs font-bold text-white w-1/5">{day}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {CATEGORIES.map(cat => (
-                                            <tr key={cat}>
-                                                <td className="p-3 border border-white/10 bg-secondary font-bold text-xs text-highlight uppercase">{cat}</td>
-                                                {DAYS.map(day => (
-                                                    <td key={`${day}-${cat}`} className="border border-white/10 bg-secondary/50 p-0 relative group min-h-[80px]">
-                                                        <textarea 
-                                                            className="w-full h-24 bg-transparent p-2 text-xs text-white resize-none focus:bg-white/5 focus:outline-none placeholder-white/10"
-                                                            placeholder="..."
-                                                            value={getMatrixValue(day, cat)}
-                                                            onChange={(e) => updateMatrixItem(day, cat, e.target.value)}
-                                                        />
-                                                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 pointer-events-none">
-                                                            <PenIcon className="w-3 h-3 text-text-secondary" />
-                                                        </div>
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="flex justify-end mt-4">
-                                <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2">
-                                    <PrinterIcon className="w-4 h-4" /> Imprimir Plano
-                                </button>
-                            </div>
-                        </Card>
-                    </div>
-                </div>
             )}
         </div>
     );

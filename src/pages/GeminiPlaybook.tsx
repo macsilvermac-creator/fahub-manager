@@ -1,8 +1,8 @@
 
 import React, { useState, useRef } from 'react';
 import Card from '../components/Card';
-import { generatePracticePlan, analyzeOpponentTendencies, suggestPlayConcepts, setRuntimeKey, explainPlayImage } from '../services/geminiService';
-import { SparklesIcon, AlertTriangleIcon, KeyIcon, SearchIcon, ImageIcon, CheckCircleIcon } from '../components/icons/UiIcons';
+import { generatePracticePlan, analyzeOpponentTendencies, suggestPlayConcepts, explainPlayImage } from '../services/geminiService';
+import { SparklesIcon, KeyIcon, SearchIcon, ImageIcon, CheckCircleIcon, EyeIcon } from '../components/icons/UiIcons';
 import { useToast } from '../contexts/ToastContext';
 
 // --- FEATURE FLAG ---
@@ -17,7 +17,6 @@ const GeminiPlaybook: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [scoutNotes, setScoutNotes] = useState('');
   const [tacticalSituation, setTacticalSituation] = useState('');
-  const [manualKey, setManualKey] = useState('');
   
   // Vision Inputs
   const [visionImage, setVisionImage] = useState<string | null>(null);
@@ -39,20 +38,18 @@ const GeminiPlaybook: React.FC = () => {
     setIsLoading(true);
     setGeneratedPlan('');
     setErrorMsg('');
-    if (manualKey) setRuntimeKey(manualKey);
     
     const finalPrompt = `
       Atue como um treinador especialista. Gere plano de drills. FOCO: ${prompt}
       Estrutura (HTML): <h3>Drill 1</h3><p>...</p>
     `;
 
-    const result = await generatePracticePlan(finalPrompt);
-    if (result.includes("Erro")) {
-        setErrorMsg(result);
-        toast.error("Falha na IA.");
-    } else {
+    try {
+        const result = await generatePracticePlan(finalPrompt);
         setGeneratedPlan(result);
         toast.success("Plano gerado!");
+    } catch (e) {
+        toast.error("Erro na IA. Verifique a configuração.");
     }
     setIsLoading(false);
   };
@@ -60,18 +57,24 @@ const GeminiPlaybook: React.FC = () => {
   const handleAnalyzeScout = async () => {
       if (!scoutNotes.trim()) return;
       setIsLoading(true);
-      if (manualKey) setRuntimeKey(manualKey);
-      const result = await analyzeOpponentTendencies(scoutNotes);
-      setScoutAnalysis(result);
+      try {
+          const result = await analyzeOpponentTendencies(scoutNotes);
+          setScoutAnalysis(result);
+      } catch (e) {
+          toast.error("Erro ao analisar scout.");
+      }
       setIsLoading(false);
   };
 
   const handleSuggestPlays = async () => {
       if (!tacticalSituation.trim()) return;
       setIsLoading(true);
-      if (manualKey) setRuntimeKey(manualKey);
-      const result = await suggestPlayConcepts(tacticalSituation);
-      setPlaySuggestions(result);
+      try {
+          const result = await suggestPlayConcepts(tacticalSituation);
+          setPlaySuggestions(result);
+      } catch (e) {
+          toast.error("Erro ao sugerir jogadas.");
+      }
       setIsLoading(false);
   };
 
@@ -80,17 +83,20 @@ const GeminiPlaybook: React.FC = () => {
           const reader = new FileReader();
           reader.readAsDataURL(e.target.files[0]);
           reader.onload = () => setVisionImage(reader.result as string);
+          toast.info("Imagem carregada. Faça sua pergunta.");
       }
   };
 
   const handleExplainImage = async () => {
-      if (!visionImage || !visionQuestion) return;
+      if (!visionImage || !visionQuestion) {
+          toast.warning("Envie uma imagem e faça uma pergunta.");
+          return;
+      }
       setIsLoading(true);
-      if (manualKey) setRuntimeKey(manualKey);
       try {
           const explanation = await explainPlayImage(visionImage, visionQuestion);
           setVisionExplanation(explanation);
-          toast.success("Análise concluída!");
+          toast.success("Análise tática concluída!");
       } catch (e) {
           toast.error("Erro na visão computacional.");
       } finally {
@@ -128,8 +134,8 @@ const GeminiPlaybook: React.FC = () => {
               🧠 Tática
           </button>
           {ENABLE_AI_BETA && (
-            <button onClick={() => setActiveAgent('VISION')} className={`px-6 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition-colors ${activeAgent === 'VISION' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary'}`}>
-                👁️ Vision (Beta)
+            <button onClick={() => setActiveAgent('VISION')} className={`px-6 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeAgent === 'VISION' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary'}`}>
+                <EyeIcon className="w-4 h-4"/> Vision (Beta)
             </button>
           )}
       </div>
@@ -145,28 +151,51 @@ const GeminiPlaybook: React.FC = () => {
                 </>
             )}
 
+            {activeAgent === 'SCOUT' && (
+                <>
+                    <textarea className="w-full bg-primary border border-tertiary rounded-lg p-3 text-white h-40 focus:outline-none" placeholder="Cole anotações do jogo..." value={scoutNotes} onChange={e => setScoutNotes(e.target.value)} />
+                    <button onClick={handleAnalyzeScout} disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg">{isLoading ? 'Processando...' : 'Gerar Relatório'}</button>
+                </>
+            )}
+
+            {activeAgent === 'TACTICS' && (
+                 <>
+                    <input className="w-full bg-primary border border-tertiary rounded-lg p-3 text-white focus:outline-none" placeholder="Ex: 3rd & 8 na Redzone" value={tacticalSituation} onChange={e => setTacticalSituation(e.target.value)} />
+                    <button onClick={handleSuggestPlays} disabled={isLoading} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg">{isLoading ? 'Pensando...' : 'Sugerir Jogadas'}</button>
+                </>
+            )}
+
             {activeAgent === 'VISION' && ENABLE_AI_BETA && (
                 <div className="space-y-4">
+                    <div className="p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
+                        <p className="text-xs text-yellow-200">
+                            <strong>Dica Pro:</strong> Tire um print de um vídeo ou foto de um desenho tático e peça para a IA explicar a responsabilidade de cada posição.
+                        </p>
+                    </div>
                     <div 
                         onClick={() => fileInputRef.current?.click()}
-                        className="bg-black/20 border-2 border-dashed border-white/10 rounded-xl h-40 flex flex-col items-center justify-center cursor-pointer hover:border-yellow-500/50 transition-all relative overflow-hidden"
+                        className="bg-black/20 border-2 border-dashed border-white/10 rounded-xl h-48 flex flex-col items-center justify-center cursor-pointer hover:border-yellow-500/50 transition-all relative overflow-hidden group"
                     >
                         <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleVisionUpload} />
                         {visionImage ? (
                              <img src={visionImage} className="absolute inset-0 w-full h-full object-contain bg-black" />
                         ) : (
-                             <div className="text-center text-text-secondary">
-                                 <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                 <p className="text-xs uppercase font-bold">Clique para enviar imagem da jogada</p>
+                             <div className="text-center text-text-secondary group-hover:text-yellow-400 transition-colors">
+                                 <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50 group-hover:opacity-100" />
+                                 <p className="text-xs uppercase font-bold">Upload de Frame ou Diagrama</p>
                              </div>
                         )}
                     </div>
-                    <input className="w-full bg-primary border border-tertiary rounded-lg p-3 text-white focus:outline-none" placeholder="Ex: Qual a minha responsabilidade como WR Z?" value={visionQuestion} onChange={e => setVisionQuestion(e.target.value)} />
-                    <button onClick={handleExplainImage} disabled={isLoading || !visionImage} className="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-bold py-3 rounded-lg">{isLoading ? 'Analisando...' : 'Explicar Jogada'}</button>
+                    <div>
+                        <label className="text-xs font-bold text-text-secondary uppercase mb-1">O que você quer saber?</label>
+                        <input className="w-full bg-primary border border-tertiary rounded-lg p-3 text-white focus:outline-none" placeholder="Ex: Qual a formação defensiva? O que o WR X deve fazer?" value={visionQuestion} onChange={e => setVisionQuestion(e.target.value)} />
+                    </div>
+                    <button onClick={handleExplainImage} disabled={isLoading || !visionImage} className="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-bold py-3 rounded-lg flex items-center justify-center gap-2">
+                        {isLoading ? 'IA Analisando Pixels...' : <><EyeIcon className="w-4 h-4"/> Analisar Visualmente</>}
+                    </button>
                 </div>
             )}
             
-            {/* ... Other Agents (Scout/Tactics) kept same as previous code ... */}
           </div>
         </Card>
 
@@ -180,7 +209,9 @@ const GeminiPlaybook: React.FC = () => {
 
             {!isLoading && activeAgent === 'VISION' && visionExplanation && (
                 <div className="prose prose-invert max-w-none text-sm p-4">
-                    <h3 className="font-bold text-yellow-400 mb-2">Análise Tática Visual</h3>
+                    <h3 className="font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                        <CheckCircleIcon className="w-5 h-5"/> Análise Visual Concluída
+                    </h3>
                     <div dangerouslySetInnerHTML={{ __html: formatPlanWithLinks(visionExplanation) }} />
                 </div>
             )}
@@ -190,8 +221,29 @@ const GeminiPlaybook: React.FC = () => {
                     <div dangerouslySetInnerHTML={{ __html: formatPlanWithLinks(generatedPlan) }} />
                 </div>
             )}
+
+            {!isLoading && activeAgent === 'SCOUT' && scoutAnalysis && (
+                <div className="space-y-4 p-4">
+                    <h4 className="font-bold text-blue-400">Análise de Tendências</h4>
+                    <p className="text-sm text-white">{scoutAnalysis.summary}</p>
+                    <div className="flex flex-wrap gap-2">
+                        {scoutAnalysis.keysToVictory?.map((k:string, i:number) => <span key={i} className="text-xs bg-white/10 px-2 py-1 rounded">{k}</span>)}
+                    </div>
+                </div>
+            )}
+
+            {!isLoading && activeAgent === 'TACTICS' && playSuggestions.length > 0 && (
+                <div className="space-y-4 p-4">
+                    {playSuggestions.map((p:any, i:number) => (
+                        <div key={i} className="bg-white/5 p-3 rounded">
+                            <p className="font-bold text-green-400">{p.name}</p>
+                            <p className="text-xs text-text-secondary">{p.reason}</p>
+                        </div>
+                    ))}
+                </div>
+            )}
             
-            {!isLoading && !generatedPlan && !visionExplanation && (
+            {!isLoading && !generatedPlan && !visionExplanation && !scoutAnalysis && playSuggestions.length === 0 && (
                  <div className="h-full flex flex-col items-center justify-center text-text-secondary opacity-50">
                     <SearchIcon className="w-16 h-16 mb-4" />
                     <p>Aguardando comando...</p>

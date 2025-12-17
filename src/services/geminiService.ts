@@ -1,11 +1,10 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement, CombineStats, QuizQuestion, GymDay } from "../types";
+import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement, CombineStats, QuizQuestion, GymDay, Drill } from "../types";
 
 // @ts-ignore
 const ENV_API_KEY = process.env.API_KEY || "";
 
-let runtimeKey: string | null = null;
 let aiClientInstance: GoogleGenAI | null = null;
 
 // --- AI CACHE SYSTEM (MEMOIZATION) ---
@@ -35,22 +34,13 @@ const setCache = (key: string, data: any) => {
     };
 };
 
-export const setRuntimeKey = (key: string) => {
-    console.log("🔑 Chave de API definida manualmente.");
-    runtimeKey = key;
-    aiClientInstance = null;
-};
-
 const getClient = (): GoogleGenAI => {
-    const activeKey = runtimeKey || ENV_API_KEY;
-    if (!activeKey) {
-        console.warn("API Key missing. AI features will fail.");
-    }
-    if (!aiClientInstance && activeKey) {
-        aiClientInstance = new GoogleGenAI({ apiKey: activeKey });
+    if (!ENV_API_KEY) {
+        console.warn("API Key missing in environment variables. AI features will be disabled.");
+        throw new Error("Chave de API não configurada no ambiente.");
     }
     if (!aiClientInstance) {
-        throw new Error("Chave de API ausente. Configure no painel ou .env");
+        aiClientInstance = new GoogleGenAI({ apiKey: ENV_API_KEY });
     }
     return aiClientInstance;
 };
@@ -126,7 +116,55 @@ const generateText = async (prompt: string): Promise<string> => {
     }
 };
 
-// --- NEW AGENTS FOR ACADEMY & PLAYBOOK ---
+// --- NEW AGENTS ---
+
+export const generateDrillCards = async (focus: string, level: string): Promise<Drill[]> => {
+    const prompt = `Create 3 American Football Drills for focus: "${focus}". Level: ${level}.
+    Return JSON Array: [
+        {
+            "name": "Title of Drill",
+            "description": "Setup and Execution instructions (keep concise)",
+            "durationMinutes": 10,
+            "videoSearchTerm": "Youtube search term for this drill"
+        }
+    ]`;
+    
+    const result = await generateJson(prompt);
+    if (Array.isArray(result)) {
+        return result.map((d: any) => ({ ...d, id: `gen-${Date.now()}-${Math.random()}` }));
+    }
+    return [];
+};
+
+export const analyzeDriveFootage = async (base64Video: string): Promise<any> => {
+    try {
+        const ai = getClient();
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash", // Flash é ideal para vídeo rápido
+            contents: {
+                parts: [
+                    { text: `Analyze this American Football drive video. I need a statistical summary for the broadcast.
+                    Return JSON: 
+                    {
+                        "playCount": number,
+                        "passPlays": number,
+                        "runPlays": number,
+                        "totalYardsEst": number,
+                        "result": "TOUCHDOWN" | "FIELD_GOAL" | "PUNT" | "TURNOVER" | "END_OF_HALF",
+                        "keyPlayerNumber": number (if visible, else null),
+                        "summary": "Short text summary in Portuguese (PT-BR) for the announcer"
+                    }` },
+                    { inlineData: { mimeType: "video/mp4", data: base64Video.split(',')[1] } }
+                ]
+            },
+            config: { responseMimeType: "application/json" }
+        });
+        return response.text ? JSON.parse(cleanJsonString(response.text)) : null;
+    } catch (e) {
+        console.error("Erro Video Drive:", e);
+        throw new Error("Falha ao analisar vídeo da campanha.");
+    }
+};
 
 export const generateQuizFromContent = async (topic: string): Promise<QuizQuestion[]> => {
     const prompt = `Create a quiz for Football players about: "${topic}". Return JSON Array: [{ question: string, options: string[], correctAnswer: number (index 0-3), explanation: string }]. Generate 5 hard questions. Language: PT-BR.`;
@@ -157,7 +195,7 @@ export const explainPlayImage = async (base64Image: string, playerQuestion: stri
             model: "gemini-2.5-flash",
             contents: {
                 parts: [
-                    { text: `You are an expert American Football Coach. Analyze this play diagram. The player asks: "${playerQuestion}". Explain their responsibility clearly in Portuguese (PT-BR). Keep it tactical and encouraging.` },
+                    { text: `You are an expert American Football Coach. Analyze this play diagram or game footage frame. The player asks: "${playerQuestion}". Explain the formation, identify key players if possible, and explain the concept clearly in Portuguese (PT-BR). Keep it tactical and encouraging.` },
                     { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
                 ]
             }
