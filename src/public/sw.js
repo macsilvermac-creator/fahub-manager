@@ -1,31 +1,31 @@
 
-const CACHE_NAME = 'fahub-manager-v3.1-cache';
+const CACHE_NAME = 'fahub-manager-v3.5-turbo';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json'
 ];
 
-// 1. Instalação: Cacheia o App Shell
+// 1. Instalação: Cacheia o App Shell imediatamente
 self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Força a ativação imediata
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('📦 [SW] Cache aberto');
+        console.log('⚡ [SW] Cache Turbo Iniciado');
         return cache.addAll(URLS_TO_CACHE);
       })
   );
-  self.skipWaiting();
 });
 
-// 2. Ativação: Limpa caches antigos
+// 2. Ativação: Limpa caches antigos para evitar conflitos de versão
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('🧹 [SW] Limpando cache antigo:', cacheName);
+            console.log('🧹 [SW] Limpando cache obsoleto:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -35,29 +35,31 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 3. Fetch: Estratégia Stale-While-Revalidate
-// Serve do cache imediatamente, mas busca na rede em background para atualizar
+// 3. Fetch Inteligente (Stale-While-Revalidate)
 self.addEventListener('fetch', (event) => {
-  // Ignora requisições não-GET, esquemas chrome-extension, ou API calls
-  if (event.request.method !== 'GET' || !event.request.url.startsWith('http') || event.request.url.includes('/api/')) {
-    return;
-  }
+  // Ignora requisições de API, extensões e esquemas não-HTTP
+  if (!event.request.url.startsWith('http') || event.request.method !== 'GET') return;
+  
+  // Ignora chamadas ao Gemini ou Firebase direto (deixa a rede cuidar)
+  if (event.request.url.includes('googleapis') || event.request.url.includes('firestore')) return;
 
   event.respondWith(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.match(event.request).then((response) => {
-        const fetchPromise = fetch(event.request).then((networkResponse) => {
-          // Se a resposta da rede for válida, atualiza o cache
-          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            cache.put(event.request, networkResponse.clone());
-          }
-          return networkResponse;
-        }).catch(() => {
-           // Se falhar rede e não tiver cache, retorna nada (ou página offline customizada)
-        });
+      return cache.match(event.request).then((cachedResponse) => {
+        // A. Busca na rede para atualizar o cache futuro (em background)
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+              cache.put(event.request, networkResponse.clone());
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+             // Se falhar rede, sem problemas, o usuário já está vendo o cache
+          });
 
-        // Retorna o cache se existir, senão espera a rede
-        return response || fetchPromise;
+        // B. Retorna o cache IMEDIATAMENTE se existir (Velocidade total), senão espera a rede
+        return cachedResponse || fetchPromise;
       });
     })
   );

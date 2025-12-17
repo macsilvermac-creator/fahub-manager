@@ -3,6 +3,7 @@ import { firebaseDataService } from './firebaseDataService';
 
 type SyncStatus = 'SAVED' | 'SYNCING' | 'OFFLINE' | 'ERROR';
 type SyncListener = (status: SyncStatus) => void;
+type SyncProcessor = () => Promise<boolean>;
 
 class SyncService {
     private isOnline: boolean = navigator.onLine;
@@ -10,10 +11,25 @@ class SyncService {
     private status: SyncStatus = navigator.onLine ? 'SAVED' : 'OFFLINE';
     private listeners: SyncListener[] = [];
     private syncDebounceTimer: any = null;
+    private processor: SyncProcessor | null = null;
 
     constructor() {
         window.addEventListener('online', () => this.handleConnectionChange(true));
         window.addEventListener('offline', () => this.handleConnectionChange(false));
+        
+        // PROTEÇÃO DE DADOS: Alerta se tentar fechar com dados pendentes
+        window.addEventListener('beforeunload', (e) => {
+            const queue = this.getQueue();
+            if (queue.length > 0) {
+                e.preventDefault();
+                e.returnValue = 'Existem dados não salvos. Tem certeza que deseja sair?';
+                return e.returnValue;
+            }
+        });
+    }
+
+    public registerProcessor(fn: SyncProcessor) {
+        this.processor = fn;
     }
 
     public getConnectionStatus(): boolean {
@@ -103,6 +119,21 @@ class SyncService {
 
         this.updateStatus('SYNCING');
         
+        // Se temos um processador injetado (via Layout), usamos ele para sincronia total
+        if (this.processor) {
+            try {
+                const success = await this.processor();
+                if (success) {
+                    this.saveQueue([]);
+                    this.updateStatus('SAVED');
+                    return;
+                }
+            } catch (e) {
+                console.error("Sync Processor falhou", e);
+            }
+        }
+
+        // Fallback: Tenta sincronizar item a item se o processador global falhar
         const remainingQueue = [];
         for (const item of queue) {
             try {
@@ -121,6 +152,8 @@ class SyncService {
     }
 
     private async performCloudSync(entity: string, data: any) {
+        // Mapeamento direto para evitar dependência circular se possível,
+        // mas idealmente usamos o firebaseDataService importado
         switch (entity) {
             case 'players': return await firebaseDataService.syncPlayers(data);
             case 'games': return await firebaseDataService.syncGames(data);
@@ -132,7 +165,8 @@ class SyncService {
 
     public init() {
         if (this.isOnline) {
-            this.processQueue();
+            // Pequeno delay na inicialização para não competir com a renderização inicial
+            setTimeout(() => this.processQueue(), 2000);
         }
     }
 }
