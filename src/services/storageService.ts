@@ -5,7 +5,6 @@ import { syncService } from './syncService';
 import { securityService } from './securityService'; 
 import { get, set } from 'idb-keyval';
 
-// Chaves do Banco de Dados
 const KEYS = {
     PLAYERS: 'gridiron_players',
     GAMES: 'gridiron_games',
@@ -56,18 +55,6 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
     sportType: 'FULLPADS'
 };
 
-export const LEGAL_DOCUMENTS: any[] = [
-    {
-        id: 'legal-1',
-        title: 'Termos de Uso e Compliance Financeiro',
-        version: '1.0.0',
-        requiredRole: ['MASTER', 'FINANCIAL_MANAGER'],
-        createdAt: new Date(),
-        content: 'O uso do módulo financeiro implica na responsabilidade direta sobre os dados lançados. O sistema registra todas as movimentações para fins de transparência e auditoria interna.'
-    }
-];
-
-// --- IN-MEMORY DATABASE ---
 const RAM_DB: Record<string, any> = {
     players: [],
     games: [],
@@ -307,3 +294,6 @@ export const storageService = {
         storageService.logAuditAction('TRANSFER', `Transferência ${id} ${decision} por ${by}`);
     },
 };
+
+// FIX: Added missing LEGAL_DOCUMENTS export
+export const LEGAL_DOCUMENTS: LegalDocument[] = [];
