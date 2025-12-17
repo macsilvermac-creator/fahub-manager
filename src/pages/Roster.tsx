@@ -6,12 +6,13 @@ import AddPlayerModal from '../components/AddPlayerModal';
 import PlayerDetailsModal from '../components/PlayerDetailsModal';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Modal from '../components/Modal';
-import { UsersIcon, ClipboardIcon, ChevronDownIcon, LockIcon, RefreshIcon } from '../components/icons/UiIcons';
+import { UsersIcon, ClipboardIcon, ChevronDownIcon, LockIcon, RefreshIcon, TrendingUpIcon } from '../components/icons/UiIcons';
 import { storageService } from '../services/storageService';
 import PrintLayout from '../components/PrintLayout';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext'; 
 import { useAppStore } from '@/utils/storeHooks';
+import LazyImage from '@/components/LazyImage';
 
 const Roster: React.FC = () => {
     const { currentRole } = useContext(UserContext);
@@ -151,9 +152,87 @@ const Roster: React.FC = () => {
         return () => observer.disconnect();
     }, [displayedPlayers.length, filteredPlayers.length]);
 
-    const getPlayersByUnit = (unit: 'OFFENSE' | 'DEFENSE' | 'SPECIAL') => {
-        // ... (Mantém lógica de sort existente) ...
-        return players.filter(p => (p.rosterCategory || 'ACTIVE') === 'ACTIVE'); // Simplificado para brevidade
+    const renderComparisonModal = () => {
+        const p1 = players.find(p => p.id === compareSelection[0]);
+        const p2 = players.find(p => p.id === compareSelection[1]);
+        if (!p1 || !p2) return null;
+
+        const renderBar = (val1: number, val2: number, max: number = 100, label: string) => (
+            <div className="mb-4">
+                <div className="flex justify-between text-xs text-text-secondary mb-1">
+                    <span className={val1 > val2 ? 'text-highlight font-bold' : ''}>{val1}</span>
+                    <span className="uppercase font-bold text-white">{label}</span>
+                    <span className={val2 > val1 ? 'text-blue-400 font-bold' : ''}>{val2}</span>
+                </div>
+                <div className="flex gap-1 h-2">
+                    <div className="flex-1 bg-black/40 rounded-l overflow-hidden flex justify-end">
+                        <div className="h-full bg-highlight" style={{ width: `${(val1 / max) * 100}%` }}></div>
+                    </div>
+                    <div className="w-px bg-white/20"></div>
+                    <div className="flex-1 bg-black/40 rounded-r overflow-hidden flex justify-start">
+                        <div className="h-full bg-blue-500" style={{ width: `${(val2 / max) * 100}%` }}></div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        return (
+            <div className="flex flex-col gap-6">
+                <div className="flex justify-between items-center bg-black/20 p-6 rounded-2xl border border-white/5">
+                    <div className="text-center w-1/3">
+                        <div className="relative inline-block">
+                            <LazyImage src={p1.avatarUrl} className="w-24 h-24 rounded-full border-4 border-highlight object-cover shadow-lg" />
+                            <div className="absolute -bottom-2 -right-2 bg-black text-white font-bold px-2 py-0.5 rounded border border-highlight text-xs">#{p1.jerseyNumber}</div>
+                        </div>
+                        <h3 className="text-xl font-bold text-white mt-2">{p1.name}</h3>
+                        <p className="text-sm text-text-secondary">{p1.position} • {p1.class}</p>
+                    </div>
+                    
+                    <div className="text-center w-1/3 flex flex-col items-center justify-center">
+                        <div className="bg-white/10 rounded-full p-3 mb-2">
+                            <TrendingUpIcon className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="text-xs text-text-secondary font-bold uppercase">Comparativo Direto</span>
+                    </div>
+
+                    <div className="text-center w-1/3">
+                         <div className="relative inline-block">
+                            <LazyImage src={p2.avatarUrl} className="w-24 h-24 rounded-full border-4 border-blue-500 object-cover shadow-lg" />
+                            <div className="absolute -bottom-2 -right-2 bg-black text-white font-bold px-2 py-0.5 rounded border border-blue-500 text-xs">#{p2.jerseyNumber}</div>
+                        </div>
+                        <h3 className="text-xl font-bold text-white mt-2">{p2.name}</h3>
+                        <p className="text-sm text-text-secondary">{p2.position} • {p2.class}</p>
+                    </div>
+                </div>
+
+                <div className="bg-secondary/40 p-6 rounded-xl border border-white/5">
+                    {renderBar(p1.rating, p2.rating, 100, "OVR (Geral)")}
+                    {renderBar(p1.xp, p2.xp, 5000, "Experiência (XP)")}
+                    {renderBar(Number(p1.weight), Number(p2.weight), 350, "Peso (lbs)")}
+                    {renderBar(p1.combineStats?.fortyYards ? (10 - p1.combineStats.fortyYards) * 10 : 0, p2.combineStats?.fortyYards ? (10 - p2.combineStats.fortyYards) * 10 : 0, 100, "Velocidade (Inv)")}
+                    {renderBar(p1.combineStats?.benchPress || 0, p2.combineStats?.benchPress || 0, 40, "Força (Bench)")}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                     <div className="bg-highlight/10 p-4 rounded-lg border border-highlight/20">
+                         <h4 className="font-bold text-highlight text-sm mb-2">Vantagens {p1.name.split(' ')[0]}</h4>
+                         <ul className="text-xs text-text-secondary space-y-1 list-disc pl-4">
+                             {p1.rating > p2.rating && <li>Maior Overall</li>}
+                             {p1.level > p2.level && <li>Mais Experiente</li>}
+                             {p1.badges && <li>Possui {p1.badges.length} insignias</li>}
+                         </ul>
+                     </div>
+                     <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/20">
+                         <h4 className="font-bold text-blue-400 text-sm mb-2">Vantagens {p2.name.split(' ')[0]}</h4>
+                         <ul className="text-xs text-text-secondary space-y-1 list-disc pl-4">
+                             {p2.rating > p1.rating && <li>Maior Overall</li>}
+                             {p2.level > p1.level && <li>Mais Experiente</li>}
+                             {p2.badges && <li>Possui {p2.badges.length} insignias</li>}
+                         </ul>
+                     </div>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -167,13 +246,24 @@ const Roster: React.FC = () => {
                     </h2>
                 </div>
                 <div className="flex gap-3 flex-wrap">
-                     <button onClick={() => setIsCompareMode(!isCompareMode)} className={`px-4 py-2 rounded-xl font-semibold border ${isCompareMode ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-secondary text-text-secondary border-white/10'}`}>
-                        {isCompareMode ? 'Comparar' : 'Comparar'}
+                     <button 
+                        onClick={() => {
+                            if (isCompareMode && compareSelection.length === 2) {
+                                setShowCompareModal(true);
+                            } else {
+                                setIsCompareMode(!isCompareMode);
+                                setCompareSelection([]);
+                            }
+                        }}
+                        className={`px-4 py-2 rounded-xl font-semibold border transition-all ${isCompareMode ? 'bg-indigo-600 border-indigo-500 text-white shadow-glow' : 'bg-secondary text-text-secondary border-white/10 hover:text-white'}`}
+                    >
+                        {isCompareMode ? (compareSelection.length === 2 ? 'Ver Comparação' : `Selecionar (${compareSelection.length}/2)`) : 'Comparar Atletas'}
                     </button>
+
                     {!isPlayer && (
                         <div className="bg-secondary p-1 rounded-lg flex border border-white/10">
-                            <button onClick={() => setViewMode('CARDS')} className={`px-4 py-2 rounded-md text-sm font-semibold ${viewMode === 'CARDS' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>Cards</button>
-                            <button onClick={() => setViewMode('DEPTH_CHART')} className={`px-4 py-2 rounded-md text-sm font-semibold ${viewMode === 'DEPTH_CHART' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>Tática</button>
+                            <button onClick={() => setViewMode('CARDS')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${viewMode === 'CARDS' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}>Cards</button>
+                            <button onClick={() => setViewMode('DEPTH_CHART')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${viewMode === 'DEPTH_CHART' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}>Tática</button>
                         </div>
                     )}
                     {canCreateDelete && (
@@ -206,8 +296,10 @@ const Roster: React.FC = () => {
                                         onDelete={canCreateDelete ? handleDeleteClick : () => {}}
                                     />
                                     {isCompareMode && (
-                                        <div className={`absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center cursor-pointer ${compareSelection.includes(player.id) ? 'ring-4 ring-indigo-500' : ''}`} onClick={() => toggleCompareSelect(player.id)}>
-                                            <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center border-white text-white">✓</div>
+                                        <div className={`absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center cursor-pointer transition-opacity ${compareSelection.includes(player.id) ? 'opacity-100 ring-4 ring-indigo-500' : 'opacity-0 hover:opacity-100'}`} onClick={() => toggleCompareSelect(player.id)}>
+                                            <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center ${compareSelection.includes(player.id) ? 'bg-indigo-600 border-white text-white' : 'border-white text-transparent'}`}>
+                                                <TrendingUpIcon className="w-6 h-6 text-white" />
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -225,8 +317,10 @@ const Roster: React.FC = () => {
                     </>
                 ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-x-auto pb-4">
-                       {/* Depth Chart Mock for brevity - Logic exists in previous implementation */}
-                       <div className="bg-secondary p-4 rounded text-center text-text-secondary">Depth Chart View Active</div>
+                       <div className="bg-secondary p-8 rounded-xl text-center text-text-secondary border border-white/5">
+                           <ClipboardIcon className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                           <p>Visualização Tática de Depth Chart (Disponível em breve)</p>
+                       </div>
                     </div>
                 )}
             </div>
@@ -235,8 +329,8 @@ const Roster: React.FC = () => {
             <PlayerDetailsModal isOpen={!!selectedPlayer} onClose={() => setSelectedPlayer(null)} player={selectedPlayer} />
             <ConfirmationModal isOpen={!!playerToDelete} onClose={() => setPlayerToDelete(null)} onConfirm={confirmDeletePlayer} title="Excluir Jogador?" message={`Confirmar exclusão de ${playerToDelete?.name}?`} confirmLabel="Excluir" />
 
-            <Modal isOpen={showCompareModal} onClose={() => setShowCompareModal(false)} title="Comparativo" maxWidth="max-w-4xl">
-                 <div className="p-4 text-center text-white">Comparação de Atletas (Mock)</div>
+            <Modal isOpen={showCompareModal} onClose={() => setShowCompareModal(false)} title="Análise Comparativa (Head-to-Head)" maxWidth="max-w-4xl">
+                 {renderComparisonModal()}
             </Modal>
         </div>
     );

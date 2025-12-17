@@ -37,9 +37,14 @@ const setCache = (key: string, data: any) => {
     };
 };
 
+// HELPER: Check Key
+export const isAiAvailable = (): boolean => {
+    return !!ENV_API_KEY && ENV_API_KEY.length > 10;
+};
+
 const getClient = (): GoogleGenAI => {
-    if (!ENV_API_KEY) {
-        throw new Error("Chave de API não configurada. Funcionalidade IA indisponível.");
+    if (!isAiAvailable()) {
+        throw new Error("Chave de API (Gemini) não configurada. Verifique o painel do Vercel.");
     }
     if (!aiClientInstance) {
         aiClientInstance = new GoogleGenAI({ apiKey: ENV_API_KEY });
@@ -54,6 +59,8 @@ const cleanJsonString = (input: string): string => {
 };
 
 const generateJson = async (prompt: string): Promise<any> => {
+    if (!isAiAvailable()) return null; // Fail fast gracefully
+
     const model = 'gemini-2.5-flash';
     const cacheKey = getCacheKey(model, prompt);
     
@@ -105,6 +112,8 @@ const generateJson = async (prompt: string): Promise<any> => {
 };
 
 const generateText = async (prompt: string): Promise<string> => {
+    if (!isAiAvailable()) return "IA Indisponível (Sem Chave API)";
+
     const model = 'gemini-2.5-flash';
     const cacheKey = getCacheKey(model, prompt);
     const cached = checkCache(cacheKey);

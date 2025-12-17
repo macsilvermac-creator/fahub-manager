@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ImageIcon } from './icons/UiIcons';
 
-interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+export interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   placeholderColor?: string;
   fallbackText?: string;
 }
