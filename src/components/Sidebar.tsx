@@ -10,7 +10,6 @@ import {
 } from './icons/NavIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
-// Fix: Imported DumbbellIcon from UiIcons
 import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, LockIcon, WalletIcon, DumbbellIcon } from './icons/UiIcons';
 
 interface SidebarProps {
@@ -36,14 +35,18 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
       navigate('/login');
   };
 
-  // REGRAS DE ACESSO LOJA (Refinamento Item 11)
+  // REGRAS DE ACESSO LOJA (Refinamento de Segurança)
+  // Somente Master, Árbitro, Broadcaster e Dono da Plataforma.
   const canSeeStore = ['PLATFORM_OWNER', 'MASTER', 'REFEREE', 'BROADCASTER'].includes(currentRole);
   
   const isAthlete = currentRole === 'PLAYER';
   const isCoach = ['HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'].includes(currentRole);
 
   const getRoleLabel = () => {
-      if(currentRole === 'MASTER') return 'DIRETORIA';
+      if(currentRole === 'PLATFORM_OWNER') return 'CONFEDERAÇÃO';
+      if(currentRole === 'MASTER') return 'DIRETORIA / FEDERAÇÃO';
+      if(currentRole === 'BROADCASTER') return 'TV / BROADCASTER';
+      if(currentRole === 'REFEREE') return 'ARBITRAGEM';
       if(isCoach) return 'STAFF TÉCNICO';
       if(isAthlete) return 'ATLETA';
       return currentRole;
@@ -90,7 +93,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
 
           {!isAthlete && (
             <div className="mt-4 animate-fade-in">
-              <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Comissão Técnica</p>
+              <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Operações</p>
               <NavLink to="/practice" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <PracticeIcon className="w-5 h-5 mr-3 group-hover:text-blue-400" />
                 <span>Scripts de Treino</span>
@@ -114,7 +117,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
              {canSeeStore && (
                 <NavLink to="/digital-store" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                     <WalletIcon className="w-5 h-5 mr-3 group-hover:text-purple-400" />
-                    <span>Loja de Funções</span>
+                    <span>Digital Store</span>
                 </NavLink>
              )}
           </div>
@@ -125,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
         <div className="p-3 bg-black/40 border-t border-white/5">
             <p className="text-[9px] font-black text-highlight uppercase mb-2 text-center tracking-widest">Acesso de Gestor</p>
             <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => setRole('MASTER')} className={`text-[9px] py-1.5 rounded font-bold border transition-all ${currentRole === 'MASTER' ? 'bg-highlight border-highlight text-white' : 'border-white/10 text-text-secondary'}`}>DONO</button>
+                <button onClick={() => setRole('MASTER')} className={`text-[9px] py-1.5 rounded font-bold border transition-all ${currentRole === 'MASTER' ? 'bg-highlight border-highlight text-white' : 'border-white/10 text-text-secondary'}`}>MASTER</button>
                 <button onClick={() => setRole('PLAYER')} className={`text-[9px] py-1.5 rounded font-bold border transition-all ${currentRole === 'PLAYER' ? 'bg-blue-600 border-blue-600 text-white' : 'border-white/10 text-text-secondary'}`}>ATLETA</button>
             </div>
         </div>
