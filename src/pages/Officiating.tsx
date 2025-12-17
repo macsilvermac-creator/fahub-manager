@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import Card from '../components/Card';
 import { FlagIcon, BriefcaseIcon, WhistleIcon } from '../components/icons/NavIcons';
-import { CheckCircleIcon, PlayCircleIcon, MicIcon, MapIcon, StarIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
+import { CheckCircleIcon, PlayCircleIcon, MicIcon, MapIcon, StarIcon, AlertTriangleIcon, ScanIcon, XIcon, CameraIcon } from '../components/icons/UiIcons';
 import { Game, GameReport, FoulRecord, FoulType, Player, GameInfrastructureChecklist, TeamSettings, RefereeProfile, AssociationFinance, CrewLogistics } from '../types';
 import { storageService } from '../services/storageService';
 import { voiceService } from '../services/voiceService';
@@ -10,32 +10,7 @@ import { realtimeService } from '../services/realtimeService';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext'; 
 import LazyImage from '../components/LazyImage'; 
-
-const REGULATION_AMBULANCE_TOLERANCE_MIN = 30; 
-const FOUL_TYPES: { type: FoulType; label: string; yards: number; code: string }[] = [
-    { type: 'HOLDING', label: 'Holding', yards: 10, code: 'OH' },
-    { type: 'FALSE_START', label: 'False Start', yards: 5, code: 'FST' },
-    { type: 'OFFSIDES', label: 'Offsides', yards: 5, code: 'OFF' },
-    { type: 'PASS_INTERFERENCE', label: 'Pass Interf.', yards: 15, code: 'DPI' },
-    { type: 'UNSPORTSMANLIKE', label: 'Unsportsmanlike', yards: 15, code: 'UNS' },
-    { type: 'PERSONAL_FOUL', label: 'Personal Foul', yards: 15, code: 'PF' },
-    { type: 'DELAY_OF_GAME', label: 'Delay Game', yards: 5, code: 'DOG' },
-    { type: 'BLOCK_IN_BACK', label: 'Block in Back', yards: 10, code: 'IBB' },
-];
-
-const INITIAL_INFRASTRUCTURE: GameInfrastructureChecklist = {
-    ambulancePresent: false,
-    ambulanceArrivalTime: '',
-    visitorArrivalTime: '',
-    lightingAdequate: true,
-    fieldDimensionsOk: true,
-    goalPostsOk: true,
-    fieldMarkingsCorrect: true,
-    visitorLockerRoom: { hasHotWater: true, secure: true },
-    refereeLockerRoom: { hasHotWater: true, secure: true },
-    ballsProvided: true,
-    waterProvided: true
-};
+import Modal from '../components/Modal';
 
 const Officiating: React.FC = () => {
     const { currentRole } = useContext(UserContext);
@@ -45,62 +20,63 @@ const Officiating: React.FC = () => {
     const [players, setPlayers] = useState<Player[]>([]);
     const [teamSettings, setTeamSettings] = useState<TeamSettings | null>(null);
     const [activeTab, setActiveTab] = useState<'SUMULA_PRE' | 'LIVE' | 'ROSTER' | 'EDUCATION'>('SUMULA_PRE');
-    const [adminTab, setAdminTab] = useState<'SCALES' | 'FINANCE_ADMIN' | 'ROSTER_ADMIN'>('SCALES');
     
-    const [myProfile, setMyProfile] = useState<RefereeProfile | null>(null);
-    const [crewLogistics, setCrewLogistics] = useState<CrewLogistics | null>(null);
-
-    const [refereeRoster, setRefereeRoster] = useState<RefereeProfile[]>([]);
-    const [associationFinance, setAssociationFinance] = useState<AssociationFinance | null>(null);
+    // Scanner State
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
 
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-    const [pendingFoul, setPendingFoul] = useState<Partial<FoulRecord>>({ quarter: 1 });
     const [gameReport, setGameReport] = useState<GameReport>({ 
-        infrastructure: INITIAL_INFRASTRUCTURE,
-        fouls: [], 
-        ejections: [], 
-        notes: '', 
-        crew: [], 
-        isFinalized: false 
+        infrastructure: {
+            ambulancePresent: false,
+            ambulanceArrivalTime: '',
+            visitorArrivalTime: '',
+            lightingAdequate: true,
+            fieldDimensionsOk: true,
+            goalPostsOk: true,
+            fieldMarkingsCorrect: true,
+            visitorLockerRoom: { hasHotWater: true, secure: true },
+            refereeLockerRoom: { hasHotWater: true, secure: true },
+            ballsProvided: true,
+            waterProvided: true
+        },
+        fouls: [], ejections: [], notes: '', crew: [], isFinalized: false 
     });
     
     const [homeScore, setHomeScore] = useState(0);
     const [awayScore, setAwayScore] = useState(0);
-    const [gameClock, setGameClock] = useState('12:00');
-
     const [checkedPlayers, setCheckedPlayers] = useState<Record<number, boolean>>({});
-
-    const [ambulanceTimer, setAmbulanceTimer] = useState(REGULATION_AMBULANCE_TOLERANCE_MIN * 60); 
-    const [isAmbulanceTimerRunning, setIsAmbulanceTimerRunning] = useState(false);
-
-    const [isListening, setIsListening] = useState(false);
-
-    const isMaster = currentRole === 'MASTER';
 
     useEffect(() => {
         setGames(storageService.getGames());
         setPlayers(storageService.getPlayers());
         setTeamSettings(storageService.getTeamSettings());
-        setRefereeRoster(storageService.getReferees());
-        setAssociationFinance(storageService.getAssociationFinancials());
-        
-        const profile = storageService.getRefereeProfile('ref1');
-        setMyProfile(profile);
-        
-        const nextGame = storageService.getGames().find(g => g.status === 'SCHEDULED');
-        if(nextGame) {
-            setCrewLogistics(storageService.getCrewLogistics(nextGame.id));
-        }
     }, []);
+
+    const startScanner = () => {
+        setIsScannerOpen(true);
+        setIsScanning(true);
+        // Simulação de Scanner (Em um ambiente real, aqui integraríamos a lib de câmera)
+        setTimeout(() => {
+            handleScanSuccess();
+        }, 3000);
+    };
+
+    const handleScanSuccess = () => {
+        setIsScanning(false);
+        const randomPlayer = players[Math.floor(Math.random() * players.length)];
+        if (randomPlayer) {
+            setCheckedPlayers(prev => ({ ...prev, [randomPlayer.id]: true }));
+            toast.success(`Atleta Validado: ${randomPlayer.name} #${randomPlayer.jerseyNumber}`);
+        }
+        setIsScannerOpen(false);
+    };
 
     const syncLiveState = (updates: Partial<Game>, type: 'SCORE' | 'CLOCK' | 'STATUS') => {
         if(!selectedGame) return;
         const updatedGame = { ...selectedGame, ...updates, officialReport: gameReport };
-        
         storageService.updateLiveGame(selectedGame.id, updatedGame);
         setSelectedGame(updatedGame as Game); 
-
-        // Broadcast Change via realtimeService
         realtimeService.broadcastUpdate(selectedGame.id, type, updates);
     };
 
@@ -112,200 +88,127 @@ const Officiating: React.FC = () => {
         syncLiveState({ score: `${newHome}-${newAway}` }, 'SCORE');
     };
 
-    const updateQuarter = (q: number) => {
-        setPendingFoul({...pendingFoul, quarter: q});
-        syncLiveState({ currentQuarter: q }, 'STATUS');
-        toast.info(`Quarto alterado para Q${q}`);
-    };
-
-    const handleGameStart = () => {
-        if(confirm("Iniciar cronômetro oficial e marcar jogo como EM ANDAMENTO?")) {
-            syncLiveState({ status: 'IN_PROGRESS' }, 'STATUS');
-            toast.success("Jogo iniciado! Bom trabalho, equipe.");
-        }
-    };
-
-    const handleInfraCheck = (field: keyof GameInfrastructureChecklist, value: any) => {
-        const updated = { ...gameReport.infrastructure, [field]: value };
-        if (field === 'ambulancePresent' && value === true) {
-            updated.ambulanceArrivalTime = new Date().toLocaleTimeString();
-            setIsAmbulanceTimerRunning(false);
-            toast.success("Ambulância registrada. Jogo liberado.");
-        }
-        setGameReport(prev => {
-            const newState = { ...prev, infrastructure: updated };
-            if(selectedGame) storageService.updateLiveGame(selectedGame.id, { officialReport: newState });
-            return newState;
-        });
-    };
-
-    const startVoiceCommand = () => {
-        if (isListening) {
-            setIsListening(false);
-            return;
-        }
-        
-        setIsListening(true);
-        toast.info("Zebra Bot ouvindo...");
-
-        voiceService.listenToCommand(
-            (text) => {
-                setIsListening(false);
-                const lowerText = text.toLowerCase();
-                const detectedFoul = FOUL_TYPES.find(f => lowerText.includes(f.label.toLowerCase()) || lowerText.includes(f.code.toLowerCase()));
-                const numberMatch = text.match(/\d+/);
-                const number = numberMatch ? parseInt(numberMatch[0]) : undefined;
-
-                if (detectedFoul) {
-                    setPendingFoul(prev => ({
-                        ...prev,
-                        type: detectedFoul.type,
-                        yards: detectedFoul.yards,
-                        playerNumber: number,
-                        team: 'HOME' 
-                    }));
-                    toast.success(`Falta Detectada: ${detectedFoul.label}`);
-                } else {
-                    toast.warning(`Não entendi a falta. Ouvi: "${text}"`);
-                }
-            },
-            (err) => {
-                setIsListening(false);
-                toast.error("Erro no reconhecimento de voz: " + err);
-            }
-        );
-    };
-
-    const handleFinalizeGame = () => {
-        if (!gameReport.infrastructure.ambulancePresent) {
-            toast.error("ERRO CRÍTICO: Não é possível finalizar jogo sem registro de ambulância. Use W.O. se necessário.");
-            return;
-        }
-        if (window.confirm("Confirmar resultado final e assinar súmula digital?")) {
-            if (selectedGame) {
-                const winner = homeScore > awayScore ? 'HOME' : awayScore > homeScore ? 'AWAY' : 'TIE';
-                storageService.finalizeGameReport(selectedGame.id, gameReport, `${homeScore}-${awayScore}`, winner);
-                realtimeService.broadcastUpdate(selectedGame.id, 'STATUS', { status: 'FINAL', result: winner === 'HOME' ? 'W' : 'L', score: `${homeScore}-${awayScore}` });
-                
-                toast.success("Súmula enviada com sucesso à Federação.");
-                setGameReport({ ...gameReport, isFinalized: true });
-                setSelectedGame(null); 
-            }
-        }
-    };
-
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-secondary rounded-xl">
-                        <FlagIcon className="text-highlight w-8 h-8" />
-                    </div>
+                    <div className="p-3 bg-secondary rounded-xl"><FlagIcon className="text-highlight w-8 h-8" /></div>
                     <div>
                         <h2 className="text-3xl font-bold text-text-primary">Officiating Hub</h2>
-                        <p className="text-text-secondary">Associação de Árbitros e Súmula Digital</p>
+                        <p className="text-text-secondary text-sm">Controle de Identidade e Súmula Digital</p>
                     </div>
                 </div>
                 <div className="flex bg-secondary p-1 rounded-xl border border-white/10 overflow-x-auto">
-                    <button onClick={() => setViewMode('CAREER')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'CAREER' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}>
-                        <StarIcon className="w-4 h-4" /> Minha Carreira
-                    </button>
-                    <button onClick={() => setViewMode('WORKFLOW')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'WORKFLOW' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}>
-                        <MapIcon className="w-4 h-4" /> Logística (Workflow)
-                    </button>
-                    <button onClick={() => setViewMode('FIELD')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'FIELD' ? 'bg-red-600 text-white' : 'text-text-secondary hover:text-white'}`}>
-                        <WhistleIcon className="w-4 h-4" /> Game Day (Live)
-                    </button>
-                    {(isMaster || currentRole === 'REFEREE') && (
-                        <button onClick={() => setViewMode('ADMIN')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'ADMIN' ? 'bg-blue-600 text-white' : 'text-text-secondary hover:text-white'}`}>
-                            <BriefcaseIcon className="w-4 h-4" /> Associação
-                        </button>
-                    )}
+                    <button onClick={() => setViewMode('CAREER')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'CAREER' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}>Carreira</button>
+                    <button onClick={() => setViewMode('FIELD')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${viewMode === 'FIELD' ? 'bg-red-600 text-white' : 'text-text-secondary hover:text-white'}`}><WhistleIcon className="w-4 h-4" /> Game Day</button>
                 </div>
             </div>
 
             {viewMode === 'FIELD' && selectedGame && (
-                 <div className="space-y-6 animate-slide-in">
+                <div className="space-y-6 animate-slide-in">
                     <div className="bg-black rounded-2xl p-6 border-b-4 border-highlight relative overflow-hidden shadow-2xl">
-                        {selectedGame.status === 'IN_PROGRESS' && (
-                            <div className="absolute top-4 left-4 flex items-center gap-2 bg-red-600 px-2 py-1 rounded text-white text-[10px] font-bold uppercase animate-pulse">
-                                <span className="w-2 h-2 bg-white rounded-full"></span> Ao Vivo
-                            </div>
-                        )}
-                        <button onClick={() => setSelectedGame(null)} className="absolute top-4 right-4 text-xs text-text-secondary hover:text-white underline">Sair do Jogo</button>
-                        
-                        <div className="flex justify-between items-center relative z-10 mt-4">
+                         <button onClick={() => setSelectedGame(null)} className="absolute top-4 right-4 text-xs text-text-secondary hover:text-white underline">Sair</button>
+                         <div className="flex justify-between items-center relative z-10">
                             <div className="text-center">
-                                <h3 className="text-2xl font-black text-white">{teamSettings?.teamName?.toUpperCase() || 'MANDANTE'}</h3>
-                                <div className="flex items-center justify-center gap-2 mt-2">
-                                    <button onClick={() => updateScore('HOME', -1)} className="text-text-secondary hover:text-white text-2xl">-</button>
+                                <h3 className="text-xl font-black text-white">{teamSettings?.teamName?.toUpperCase()}</h3>
+                                <div className="flex items-center gap-4 mt-2">
+                                    <button onClick={() => updateScore('HOME', 1)} className="text-3xl font-black text-white">+</button>
                                     <span className="text-5xl font-mono font-bold text-highlight">{homeScore}</span>
-                                    <button onClick={() => updateScore('HOME', 1)} className="text-text-secondary hover:text-white text-2xl">+</button>
-                                </div>
-                            </div>
-                            <div className="text-center opacity-70">
-                                {selectedGame.status !== 'IN_PROGRESS' ? (
-                                    <button onClick={handleGameStart} className="bg-green-600 text-white px-4 py-2 rounded font-bold text-sm mb-2 flex items-center gap-2 mx-auto">
-                                        <PlayCircleIcon className="w-4 h-4"/> Iniciar Jogo
-                                    </button>
-                                ) : (
-                                    <div className="text-3xl font-mono text-white mb-2">{gameClock}</div>
-                                )}
-                                <div className="text-sm font-bold uppercase tracking-widest text-text-secondary mb-1">Quarto</div>
-                                <div className="flex gap-2 justify-center">
-                                    {[1,2,3,4].map(q => (
-                                        <button key={q} onClick={() => updateQuarter(q)} className={`w-8 h-8 rounded-full font-bold ${pendingFoul.quarter === q ? 'bg-white text-black' : 'bg-white/20 text-white'}`}>{q}</button>
-                                    ))}
                                 </div>
                             </div>
                             <div className="text-center">
-                                <h3 className="text-2xl font-black text-white uppercase">{selectedGame.opponent}</h3>
-                                <div className="flex items-center justify-center gap-2 mt-2">
-                                    <button onClick={() => updateScore('AWAY', -1)} className="text-text-secondary hover:text-white text-2xl">-</button>
+                                <p className="text-xs font-bold text-text-secondary uppercase">Quarto</p>
+                                <p className="text-2xl font-black text-white">Q{selectedGame.currentQuarter || 1}</p>
+                            </div>
+                            <div className="text-center">
+                                <h3 className="text-xl font-black text-white">{selectedGame.opponent.toUpperCase()}</h3>
+                                <div className="flex items-center gap-4 mt-2">
                                     <span className="text-5xl font-mono font-bold text-highlight">{awayScore}</span>
-                                    <button onClick={() => updateScore('AWAY', 1)} className="text-text-secondary hover:text-white text-2xl">+</button>
+                                    <button onClick={() => updateScore('AWAY', 1)} className="text-3xl font-black text-white">+</button>
                                 </div>
                             </div>
-                        </div>
+                         </div>
                     </div>
-                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2">
-                            <Card title="Painel de Faltas">
-                                <div className="flex gap-4 justify-center py-4">
-                                     <button onClick={startVoiceCommand} className={`px-6 py-4 rounded-xl font-bold flex items-center gap-2 ${isListening ? 'bg-red-500 animate-pulse text-white' : 'bg-blue-600 text-white hover:bg-blue-500'}`}>
-                                        <MicIcon className="w-6 h-6" /> Comando de Voz
-                                    </button>
-                                </div>
-                            </Card>
-                        </div>
-                        <div>
-                             <Card title="Feed do Jogo">
-                                <button onClick={handleFinalizeGame} className="w-full mt-4 bg-green-600 text-white py-2 rounded font-bold">Finalizar Jogo</button>
-                             </Card>
-                        </div>
-                     </div>
-                 </div>
-            )}
-            
-             {viewMode === 'FIELD' && !selectedGame && (
-                  <Card title="Selecione o Jogo para Apitar">
-                      <div className="space-y-4">
-                        {games.filter(g => !g.officialReport?.isFinalized).map(game => (
-                             <div key={game.id} className="flex items-center justify-between bg-secondary p-4 rounded-xl border border-white/5 hover:border-highlight cursor-pointer" onClick={() => setSelectedGame(game)}>
-                                 <div className="flex items-center gap-4">
-                                     <div>
-                                         <p className="text-lg font-black text-white uppercase">{teamSettings?.teamName || 'MANDANTE'} vs {game.opponent}</p>
-                                         <p className="text-xs text-text-secondary">Mandante: {game.location === 'Home' ? (teamSettings?.teamName || 'HOME') : game.opponent}</p>
-                                     </div>
-                                 </div>
-                                 <span className={`text-xs font-bold px-3 py-1 rounded-full ${game.status === 'IN_PROGRESS' ? 'bg-red-500 text-white animate-pulse' : 'bg-highlight/20 text-highlight'}`}>
-                                     {game.status === 'IN_PROGRESS' ? '● Em Andamento' : 'Iniciar Súmula'}
-                                 </span>
-                             </div>
+
+                    <div className="flex border-b border-white/10">
+                        {['SUMULA_PRE', 'ROSTER', 'LIVE'].map(t => (
+                            <button key={t} onClick={() => setActiveTab(t as any)} className={`px-6 py-3 font-bold text-sm border-b-2 ${activeTab === t ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
+                                {t === 'SUMULA_PRE' ? 'Infra' : t === 'ROSTER' ? 'Check-in' : 'Jogo'}
+                            </button>
                         ))}
-                      </div>
-                  </Card>
-             )}
+                    </div>
+
+                    {activeTab === 'ROSTER' && (
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-white font-bold">Verificação de Atletas</h3>
+                                <button onClick={startScanner} className="bg-highlight text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg">
+                                    <ScanIcon className="w-5 h-5" /> Abrir Scanner
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                {players.map(p => (
+                                    <div key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border ${checkedPlayers[p.id] ? 'bg-green-600/20 border-green-500' : 'bg-secondary border-white/5 opacity-60'}`}>
+                                        <LazyImage src={p.avatarUrl} className="w-10 h-10 rounded-full" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-bold text-white leading-none">{p.name}</p>
+                                            <p className="text-[10px] text-text-secondary mt-1">#{p.jerseyNumber} • {p.position}</p>
+                                        </div>
+                                        {checkedPlayers[p.id] && <CheckCircleIcon className="w-5 h-5 text-green-500" />}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {viewMode === 'FIELD' && !selectedGame && (
+                <Card title="Selecione o Jogo para Súmula">
+                    <div className="space-y-3">
+                        {games.filter(g => g.status !== 'FINAL').map(game => (
+                            <div key={game.id} onClick={() => setSelectedGame(game)} className="bg-secondary p-4 rounded-xl border border-white/5 hover:border-highlight cursor-pointer flex justify-between items-center">
+                                <div>
+                                    <p className="font-bold text-white">{teamSettings?.teamName} vs {game.opponent}</p>
+                                    <p className="text-xs text-text-secondary">{new Date(game.date).toLocaleString()}</p>
+                                </div>
+                                <PlayCircleIcon className="text-highlight" />
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            )}
+
+            <Modal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} title="Scanner BID Digital">
+                <div className="flex flex-col items-center py-8">
+                    <div className="w-64 h-64 border-4 border-highlight rounded-3xl relative overflow-hidden bg-black flex items-center justify-center">
+                        {isScanning ? (
+                            <>
+                                <div className="absolute top-0 left-0 w-full h-1 bg-highlight animate-scan-line"></div>
+                                <CameraIcon className="w-12 h-12 text-white/20" />
+                            </>
+                        ) : (
+                            <CheckCircleIcon className="w-16 h-16 text-green-500 animate-bounce" />
+                        )}
+                    </div>
+                    <p className="text-sm text-text-secondary mt-6 text-center">
+                        {isScanning ? 'Posicione o QR Code do Atleta dentro da área marcada.' : 'Atleta Identificado com Sucesso!'}
+                    </p>
+                    <button onClick={() => setIsScannerOpen(false)} className="mt-8 text-white/50 hover:text-white uppercase text-xs font-bold tracking-widest">Cancelar</button>
+                </div>
+            </Modal>
+            
+            <style>{`
+                @keyframes scanLine {
+                    0% { top: 0; }
+                    100% { top: 100%; }
+                }
+                .animate-scan-line {
+                    position: absolute;
+                    animation: scanLine 2s linear infinite;
+                    box-shadow: 0 0 15px rgba(5, 150, 105, 1);
+                }
+            `}</style>
         </div>
     );
 };
