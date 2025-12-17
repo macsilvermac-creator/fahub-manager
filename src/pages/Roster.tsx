@@ -61,7 +61,9 @@ const Roster: React.FC = () => {
                 rating: 70, 
                 status: 'ACTIVE',
                 rosterCategory: 'ACTIVE',
+                // Fix: Correct property names matching the interface
                 rosterHistory: [{ id: `h-${Date.now()}`, date: new Date(), type: 'RECRUITMENT', description: 'Adicionado ao Roster via Cadastro' }],
+                depthChartOrder: 3,
                 ...newPlayerData
             };
             
