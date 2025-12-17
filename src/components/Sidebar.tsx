@@ -23,12 +23,13 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
   
-  // Atalhos de Permissão para Visibilidade de Menu
+  // Filtros de Visibilidade Baseados na Persona Ativa
   const isMaster = currentRole === 'MASTER';
   const isCoach = currentRole === 'HEAD_COACH' || isMaster;
   const isPlayer = currentRole === 'PLAYER' || isMaster;
   const isRef = currentRole === 'REFEREE' || isMaster;
-  const isStaff = currentRole === 'SPORTS_DIRECTOR' || isMaster;
+  const isFinance = currentRole === 'FINANCIAL_MANAGER' || isMaster;
+  const isDirector = currentRole === 'SPORTS_DIRECTOR' || isMaster;
 
   const navLinkClasses = "flex items-center px-4 py-2 text-text-secondary rounded-lg hover:bg-white/5 hover:text-white transition-all text-xs font-bold mb-0.5 group";
   const activeNavLinkClasses = "bg-highlight/10 text-highlight border-l-4 border-highlight font-black shadow-[0_0_15px_rgba(0,168,107,0.1)]";
@@ -55,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 </div>
                 <div>
                     <span className="text-sm font-black text-white block leading-none tracking-tighter italic">FAHUB <span className="text-highlight">PRO</span></span>
-                    <span className="text-[8px] text-text-secondary uppercase tracking-widest font-bold">V6.5 EXPERIENCE</span>
+                    <span className="text-[8px] text-text-secondary uppercase tracking-widest font-bold">God Mode Enabled</span>
                 </div>
             </div>
       </div>
@@ -65,10 +66,10 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
           
           <NavLink to="/dashboard" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
             <DashboardIcon className="w-4 h-4 mr-3" />
-            <span>Dashboard {currentRole === 'MASTER' ? '(CEO)' : `(${currentRole})`}</span>
+            <span>Dashboard {isMaster ? '(CEO)' : currentRole.replace('_', ' ')}</span>
           </NavLink>
 
-          {/* SESSÃO: ESTRATÉGIA (MASTER ONLY) */}
+          {/* SESSÃO ESTRATÉGICA (Dono/Master) */}
           {isMaster && (
             <>
               <SectionLabel>Estratégia & Metas</SectionLabel>
@@ -78,42 +79,68 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
               </NavLink>
               <NavLink to="/tasks" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <KanbanIcon className="w-4 h-4 mr-3 text-blue-400" />
-                <span>Fluxo Kanban</span>
+                <span>Workflow Kanban</span>
               </NavLink>
             </>
           )}
 
-          {/* SESSÃO: CAMPO & TÁTICA (COACH & MASTER) */}
+          {/* TÉCNICO (Coach) */}
           {isCoach && (
             <>
               <SectionLabel>Departamento Técnico</SectionLabel>
-              <NavLink to="/roster" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <RosterIcon className="w-4 h-4 mr-3 text-blue-500" />
-                <span>Gestão de Roster</span>
-              </NavLink>
               <NavLink to="/practice" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <PracticeIcon className="w-4 h-4 mr-3 text-green-500" />
+                <WhistleIcon className="w-4 h-4 mr-3 text-green-500" />
                 <span>Scripts de Treino</span>
-              </NavLink>
-              <NavLink to="/tactical-lab" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <WhistleIcon className="w-4 h-4 mr-3 text-orange-500" />
-                <span>Tactical Lab</span>
               </NavLink>
               <NavLink to="/gemini-playbook" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <AiPlaybookIcon className="w-4 h-4 mr-3 text-purple-500" />
                 <span>Playbook IA</span>
               </NavLink>
-              <NavLink to="/video" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <VideoIcon className="w-4 h-4 mr-3 text-cyan-500" />
-                <span>Vision (Vídeo/Scout)</span>
+              <NavLink to="/tactical-lab" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <SettingsNavIcon className="w-4 h-4 mr-3 text-orange-400" />
+                <span>Tactical Lab</span>
               </NavLink>
             </>
           )}
 
-          {/* SESSÃO: ARBITRAGEM (REF & MASTER) */}
+          {/* FINANCEIRO (CFO) */}
+          {isFinance && (
+            <>
+              <SectionLabel>Receita & Caixa</SectionLabel>
+              <NavLink to="/finance" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <FinanceIcon className="w-4 h-4 mr-3 text-green-400" />
+                <span>CFO Panel</span>
+              </NavLink>
+              <NavLink to="/marketplace" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <ShopIcon className="w-4 h-4 mr-3 text-yellow-400" />
+                <span>Marketplace Admin</span>
+              </NavLink>
+            </>
+          )}
+
+          {/* OPERACIONAL (Diretor) */}
+          {isDirector && (
+            <>
+              <SectionLabel>Operações & Logística</SectionLabel>
+              <NavLink to="/roster" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <RosterIcon className="w-4 h-4 mr-3 text-blue-500" />
+                <span>Gestão de Roster</span>
+              </NavLink>
+              <NavLink to="/logistics" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <BusIcon className="w-4 h-4 mr-3 text-cyan-400" />
+                <span>Viagens & Hotel</span>
+              </NavLink>
+              <NavLink to="/inventory" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <ClipboardIcon className="w-4 h-4 mr-3 text-orange-500" />
+                <span>Almoxarifado</span>
+              </NavLink>
+            </>
+          )}
+
+          {/* ARBITRAGEM (Juiz) */}
           {isRef && (
             <>
-              <SectionLabel>Oficiais & Súmula</SectionLabel>
+              <SectionLabel>Oficiais</SectionLabel>
               <NavLink to="/officiating" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <FlagIcon className="w-4 h-4 mr-3 text-yellow-500" />
                 <span>Súmula Digital (Live)</span>
@@ -121,88 +148,79 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
             </>
           )}
 
-          {/* SESSÃO: OPERAÇÕES (STAFF & MASTER) */}
-          {isStaff && (
-            <>
-              <SectionLabel>Operações & Receita</SectionLabel>
-              <NavLink to="/finance" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <FinanceIcon className="w-4 h-4 mr-3 text-green-400" />
-                <span>Financeiro (CFO)</span>
-              </NavLink>
-              <NavLink to="/event-desk" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <TicketIcon className="w-4 h-4 mr-3 text-orange-400" />
-                <span>Event Desk (PDV)</span>
-              </NavLink>
-              <NavLink to="/inventory" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <ClipboardIcon className="w-4 h-4 mr-3 text-yellow-400" />
-                <span>Almoxarifado</span>
-              </NavLink>
-            </>
-          )}
-
-          {/* SESSÃO: ATLETA (PLAYER & MASTER) */}
+          {/* ATLETA */}
           {isPlayer && (
             <>
-              <SectionLabel>Área do Atleta</SectionLabel>
+              <SectionLabel>Atleta</SectionLabel>
               <NavLink to="/profile" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <UsersIcon className="w-4 h-4 mr-3" />
-                <span>Meu Perfil (Panini)</span>
-              </NavLink>
-              <NavLink to="/schedule" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <ScheduleIcon className="w-4 h-4 mr-3" />
-                <span>Agenda de Jogos</span>
+                <UsersIcon className="w-4 h-4 mr-3 text-blue-300" />
+                <span>Meu Card (Stats)</span>
               </NavLink>
               <NavLink to="/academy" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <AcademyIcon className="w-4 h-4 mr-3" />
-                <span>Iron Lab (Treinos)</span>
-              </NavLink>
-              <NavLink to="/locker-room" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <HeartIcon className="w-4 h-4 mr-3 text-pink-500" />
-                <span>Vestiário Social</span>
+                <AcademyIcon className="w-4 h-4 mr-3 text-orange-400" />
+                <span>Iron Lab (Treino)</span>
               </NavLink>
             </>
           )}
         </nav>
       </div>
 
-      {/* FOOTER: ROLE SELECTOR MATRIX */}
-      <div className="p-3 bg-black/40 border-t border-white/5 shrink-0">
-          <p className="text-[9px] font-black text-highlight uppercase mb-2 text-center tracking-widest">Feedback de Visão (Roles)</p>
-          <div className="grid grid-cols-4 gap-1">
+      {/* MODAL DE TROCA RÁPIDA (GOD MODE MATRIX) */}
+      <div className="p-3 bg-black/50 border-t border-white/10 shrink-0">
+          <p className="text-[8px] font-black text-highlight uppercase mb-2 text-center tracking-[0.2em] opacity-80">Matrix de Visão (God Mode)</p>
+          <div className="grid grid-cols-3 gap-1.5">
+              {/* CEO */}
               <button 
                 onClick={() => { setRole('MASTER'); navigate('/dashboard'); }} 
-                title="Visão Dono do Time"
-                className={`flex flex-col items-center justify-center py-2 rounded border transition-all ${currentRole === 'MASTER' ? 'bg-highlight border-highlight text-white' : 'border-white/10 text-text-secondary hover:text-white hover:bg-white/5'}`}
+                className={`flex flex-col items-center justify-center py-2 rounded-lg border transition-all ${currentRole === 'MASTER' ? 'bg-highlight border-highlight text-white shadow-glow' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}
               >
-                <ShieldCheckIcon className="w-3 h-3 mb-1" />
+                <ShieldCheckIcon className="w-3.5 h-3.5 mb-1" />
                 <span className="text-[7px] font-black uppercase">CEO</span>
               </button>
 
+              {/* COACH */}
               <button 
                 onClick={() => { setRole('HEAD_COACH'); navigate('/dashboard'); }} 
-                title="Visão Treinador"
-                className={`flex flex-col items-center justify-center py-2 rounded border transition-all ${currentRole === 'HEAD_COACH' ? 'bg-blue-600 border-blue-600 text-white' : 'border-white/10 text-text-secondary hover:text-white hover:bg-white/5'}`}
+                className={`flex flex-col items-center justify-center py-2 rounded-lg border transition-all ${currentRole === 'HEAD_COACH' ? 'bg-blue-600 border-blue-600 text-white shadow-glow' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}
               >
-                <WhistleIcon className="w-3 h-3 mb-1" />
+                <WhistleIcon className="w-3.5 h-3.5 mb-1" />
                 <span className="text-[7px] font-black uppercase">Coach</span>
               </button>
 
+              {/* ATLETA */}
               <button 
                 onClick={() => { setRole('PLAYER'); navigate('/dashboard'); }} 
-                title="Visão Atleta"
-                className={`flex flex-col items-center justify-center py-2 rounded border transition-all ${currentRole === 'PLAYER' ? 'bg-orange-600 border-orange-600 text-white' : 'border-white/10 text-text-secondary hover:text-white hover:bg-white/5'}`}
+                className={`flex flex-col items-center justify-center py-2 rounded-lg border transition-all ${currentRole === 'PLAYER' ? 'bg-orange-600 border-orange-600 text-white shadow-glow' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}
               >
-                <UsersIcon className="w-3 h-3 mb-1" />
+                <UsersIcon className="w-3.5 h-3.5 mb-1" />
                 <span className="text-[7px] font-black uppercase">Atleta</span>
               </button>
 
+              {/* JUIZ */}
               <button 
                 onClick={() => { setRole('REFEREE'); navigate('/officiating'); }} 
-                title="Visão Árbitro"
-                className={`flex flex-col items-center justify-center py-2 rounded border transition-all ${currentRole === 'REFEREE' ? 'bg-yellow-500 border-yellow-500 text-black' : 'border-white/10 text-text-secondary hover:text-white hover:bg-white/5'}`}
+                className={`flex flex-col items-center justify-center py-2 rounded-lg border transition-all ${currentRole === 'REFEREE' ? 'bg-yellow-500 border-yellow-500 text-black shadow-glow' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}
               >
-                <FlagIcon className="w-3 h-3 mb-1" />
+                <FlagIcon className="w-3.5 h-3.5 mb-1" />
                 <span className="text-[7px] font-black uppercase">Juiz</span>
+              </button>
+
+              {/* CFO */}
+              <button 
+                onClick={() => { setRole('FINANCIAL_MANAGER'); navigate('/finance'); }} 
+                className={`flex flex-col items-center justify-center py-2 rounded-lg border transition-all ${currentRole === 'FINANCIAL_MANAGER' ? 'bg-emerald-600 border-emerald-600 text-white shadow-glow' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}
+              >
+                <WalletIcon className="w-3.5 h-3.5 mb-1" />
+                <span className="text-[7px] font-black uppercase">CFO</span>
+              </button>
+
+              {/* DIRETOR */}
+              <button 
+                onClick={() => { setRole('SPORTS_DIRECTOR'); navigate('/roster'); }} 
+                className={`flex flex-col items-center justify-center py-2 rounded-lg border transition-all ${currentRole === 'SPORTS_DIRECTOR' ? 'bg-indigo-600 border-indigo-600 text-white shadow-glow' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}
+              >
+                <BriefcaseIcon className="w-3.5 h-3.5 mb-1" />
+                <span className="text-[7px] font-black uppercase">Dir</span>
               </button>
           </div>
       </div>
