@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import Card from '../components/Card';
 import { FlagIcon, BriefcaseIcon, WhistleIcon } from '../components/icons/NavIcons';
-import { CheckCircleIcon, PlayCircleIcon, MicIcon, MapIcon, StarIcon, AlertTriangleIcon, ScanIcon, XIcon, CameraIcon } from '../components/icons/UiIcons';
+import { CheckCircleIcon, PlayCircleIcon, MicIcon, MapIcon, StarIcon, AlertTriangleIcon, ScanIcon, XIcon, CameraIcon, LockIcon } from '../components/icons/UiIcons';
 import { Game, GameReport, FoulRecord, FoulType, Player, GameInfrastructureChecklist, TeamSettings, RefereeProfile, AssociationFinance, CrewLogistics } from '../types';
 import { storageService } from '../services/storageService';
 import { voiceService } from '../services/voiceService';
@@ -56,7 +56,7 @@ const Officiating: React.FC = () => {
     const startScanner = () => {
         setIsScannerOpen(true);
         setIsScanning(true);
-        // Simulação de Scanner (Em um ambiente real, aqui integraríamos a lib de câmera)
+        // Simulação de Scanner
         setTimeout(() => {
             handleScanSuccess();
         }, 3000);
@@ -65,9 +65,18 @@ const Officiating: React.FC = () => {
     const handleScanSuccess = () => {
         setIsScanning(false);
         const randomPlayer = players[Math.floor(Math.random() * players.length)];
+        
         if (randomPlayer) {
-            setCheckedPlayers(prev => ({ ...prev, [randomPlayer.id]: true }));
-            toast.success(`Atleta Validado: ${randomPlayer.name} #${randomPlayer.jerseyNumber}`);
+            // TRAVA DE SAÚDE: Checa expiração do atestado médico
+            const isMedicalExpired = randomPlayer.medicalExamExpiry ? new Date(randomPlayer.medicalExamExpiry) < new Date() : true;
+            
+            if (isMedicalExpired) {
+                toast.error(`BLOQUEADO: Atleta ${randomPlayer.name} está com Atestado Médico vencido ou ausente!`);
+                setCheckedPlayers(prev => ({ ...prev, [randomPlayer.id]: false }));
+            } else {
+                setCheckedPlayers(prev => ({ ...prev, [randomPlayer.id]: true }));
+                toast.success(`Atleta Validado: ${randomPlayer.name} #${randomPlayer.jerseyNumber}`);
+            }
         }
         setIsScannerOpen(false);
     };
@@ -141,22 +150,33 @@ const Officiating: React.FC = () => {
                     {activeTab === 'ROSTER' && (
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                                <h3 className="text-white font-bold">Verificação de Atletas</h3>
-                                <button onClick={startScanner} className="bg-highlight text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg">
-                                    <ScanIcon className="w-5 h-5" /> Abrir Scanner
+                                <h3 className="text-white font-bold uppercase italic tracking-tighter">Check-in Automático (Scanner)</h3>
+                                <button onClick={startScanner} className="bg-highlight text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform">
+                                    <ScanIcon className="w-5 h-5" /> Abrir Scanner BID
                                 </button>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                {players.map(p => (
-                                    <div key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border ${checkedPlayers[p.id] ? 'bg-green-600/20 border-green-500' : 'bg-secondary border-white/5 opacity-60'}`}>
-                                        <LazyImage src={p.avatarUrl} className="w-10 h-10 rounded-full" />
-                                        <div className="flex-1">
-                                            <p className="text-sm font-bold text-white leading-none">{p.name}</p>
-                                            <p className="text-[10px] text-text-secondary mt-1">#{p.jerseyNumber} • {p.position}</p>
+                                {players.map(p => {
+                                    const isMedicalExpired = p.medicalExamExpiry ? new Date(p.medicalExamExpiry) < new Date() : true;
+                                    return (
+                                        <div key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border relative ${checkedPlayers[p.id] ? 'bg-green-600/20 border-green-500' : 'bg-secondary border-white/5 opacity-60'}`}>
+                                            <LazyImage src={p.avatarUrl} className="w-10 h-10 rounded-full" />
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-white leading-none">{p.name}</p>
+                                                <p className="text-[10px] text-text-secondary mt-1">#{p.jerseyNumber} • {p.position}</p>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-1">
+                                                {checkedPlayers[p.id] && <CheckCircleIcon className="w-5 h-5 text-green-500" />}
+                                                {isMedicalExpired && <span className="text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded font-black">SEM ATESTADO</span>}
+                                            </div>
+                                            {isMedicalExpired && (
+                                                <div className="absolute inset-0 bg-red-900/10 flex items-center justify-center rounded-xl pointer-events-none">
+                                                    <LockIcon className="w-4 h-4 text-red-500/50" />
+                                                </div>
+                                            )}
                                         </div>
-                                        {checkedPlayers[p.id] && <CheckCircleIcon className="w-5 h-5 text-green-500" />}
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

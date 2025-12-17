@@ -15,6 +15,67 @@ export interface WorkoutProof {
     timestamp: Date;
 }
 
+export interface FlagStats {
+    flagPulls: number;
+    targets: number;
+    drops: number;
+    interceptions?: number;
+    deflections?: number;
+}
+
+export interface EquipmentLiability {
+    itemId: string;
+    itemName: string;
+    signedAt?: Date;
+    status: 'PENDING_SIGNATURE' | 'SIGNED' | 'RETURNED';
+}
+
+// Added missing properties: nationality, rosterHistory, commitmentLevel
+export interface Player {
+    id: number;
+    name: string;
+    position: string;
+    jerseyNumber: number;
+    height: string;
+    weight: number;
+    class: string;
+    avatarUrl: string;
+    level: number;
+    xp: number;
+    badges?: string[];
+    rating: number;
+    status: 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'IR' | 'QUESTIONABLE' | 'DOUBTFUL';
+    rosterCategory: RosterCategory;
+    depthChartOrder: number;
+    combineStats?: CombineStats;
+    flagStats?: FlagStats; // Novo: Métricas específicas de Flag
+    bioVerified?: boolean; 
+    lastWeighIn?: Date;
+    
+    // Saúde & Segurança
+    medicalExamExpiry?: Date; // Novo: Passaporte de Saúde
+    medicalExamUrl?: string;
+    helmetExpiryDate?: Date; // Novo: Segurança Tackle
+    
+    // Governança
+    assignedEquipment?: EquipmentLiability[]; // Novo: Termo de Responsabilidade
+    contractExpiry?: Date;
+    
+    workoutProofs?: WorkoutProof[];
+    wellnessHistory?: WellnessEntry[];
+    savedWorkouts?: SavedWorkout[];
+    developmentPlans?: DevelopmentPlan[];
+    medicalReports?: MedicalReport[];
+    program?: ProgramType;
+    teamId?: string;
+    cpf?: string;
+    birthDate?: Date;
+    verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+    nationality?: 'BRA' | 'USA' | 'MEX' | 'EUR' | 'JPN' | 'OTHER';
+    rosterHistory?: any[];
+    commitmentLevel?: number;
+}
+
 export interface CombineStats {
     fortyYards?: number;
     benchPress?: number;
@@ -58,40 +119,6 @@ export interface MedicalReport {
     date: Date;
     content: string;
     author: string;
-}
-
-export interface Player {
-    id: number;
-    name: string;
-    position: string;
-    jerseyNumber: number;
-    height: string;
-    weight: number;
-    class: string;
-    avatarUrl: string;
-    level: number;
-    xp: number;
-    badges?: string[];
-    rating: number;
-    status: 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'IR' | 'QUESTIONABLE' | 'DOUBTFUL';
-    rosterCategory: RosterCategory;
-    depthChartOrder: number;
-    combineStats?: CombineStats;
-    bioVerified?: boolean; 
-    lastWeighIn?: Date;
-    workoutProofs?: WorkoutProof[];
-    wellnessHistory?: WellnessEntry[];
-    savedWorkouts?: SavedWorkout[];
-    developmentPlans?: DevelopmentPlan[];
-    medicalReports?: MedicalReport[];
-    program?: ProgramType;
-    teamId?: string;
-    cpf?: string;
-    birthDate?: Date;
-    verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
-    commitmentLevel?: number;
-    rosterHistory?: any[];
-    nationality?: string;
 }
 
 export interface PracticeScriptItem {
@@ -490,22 +517,6 @@ export interface StaffMember {
     coachProfile?: any;
 }
 
-export interface YouthStudent {
-    id: string;
-    isSocialProject: boolean;
-    name: string;
-}
-
-export interface YouthClass {
-    id: string;
-    name: string;
-    ageGroup: string;
-    schedule: string;
-    coachId: string;
-    students: YouthStudent[];
-    maxCapacity: number;
-}
-
 export interface RecruitmentCandidate {
     id: string;
     name: string;
@@ -762,4 +773,22 @@ export interface InstallMatrixItem {
     category: 'RUN' | 'PASS' | 'DEFENSE' | 'SITUATION';
     concept: string;
     notes?: string;
+}
+
+// Added missing Youth interfaces
+export interface YouthStudent {
+    id: string;
+    isSocialProject: boolean;
+    name?: string;
+    age?: number;
+}
+
+export interface YouthClass {
+    id: string;
+    name: string;
+    ageGroup: string;
+    schedule: string;
+    coachId: string;
+    students: YouthStudent[];
+    maxCapacity: number;
 }
