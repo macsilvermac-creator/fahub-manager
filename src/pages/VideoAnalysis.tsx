@@ -1,53 +1,41 @@
 
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import Card from '../components/Card';
-import { VideoClip, VideoTag, VideoPlaylist, VideoPermissionGroup, UserRole, Player } from '../types';
+import { VideoClip, VideoTag, VideoPlaylist, Player, Game } from '../types';
 import { storageService } from '../services/storageService';
 import { predictPlayCall } from '../services/geminiService';
 import { VideoIcon } from '../components/icons/NavIcons';
-import { ScissorsIcon, FilterIcon, PlayCircleIcon, SettingsIcon, CheckCircleIcon, TrashIcon, SparklesIcon, AlertCircleIcon, LocationIcon, PenIcon, EraserIcon, BrainIcon, EyeIcon, TrendingUpIcon, SearchIcon, ScanIcon, XIcon } from '../components/icons/UiIcons';
+import { ScissorsIcon, FilterIcon, PlayCircleIcon, CheckCircleIcon, TrashIcon, SparklesIcon, PenIcon, EraserIcon, BrainIcon, EyeIcon, TrendingUpIcon, SearchIcon, XIcon, LinkIcon, ShareIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
-import Modal from '../components/Modal';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
-import LazyImage from '../components/LazyImage';
+import { useToast } from '../contexts/ToastContext';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
-interface VideoSource {
-    id: string;
-    title: string;
-    url: string;
-    type: 'YOUTUBE' | 'LOCAL' | 'VIMEO' | 'DRIVE';
-}
+// --- YOUTUBE HELPER ---
+const getYouTubeID = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+};
 
 const VideoAnalysis: React.FC = () => {
     const { currentRole } = useContext(UserContext);
-    const [activeTab, setActiveTab] = useState<'CUTTER' | 'LIBRARY' | 'PLAYLISTS' | 'REPORTS'>('CUTTER');
+    const toast = useToast();
     
-    // Refs for Local Player & Canvas
-    const localVideoRef = useRef<HTMLVideoElement>(null);
+    // --- STATE ---
+    const [activeTab, setActiveTab] = useState<'BROADCAST' | 'LIVE_TAG' | 'FILM_ROOM'>('FILM_ROOM');
+    const [games, setGames] = useState<Game[]>([]);
+    const [selectedGameId, setSelectedGameId] = useState<string>('');
+    const [youtubeUrl, setYoutubeUrl] = useState('');
+    
+    // Video Player & Telestration
+    const [videoId, setVideoId] = useState<string | null>(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [drawColor, setDrawColor] = useState('#FFFF00'); // Amarelo Padrão NFL
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    
-    const [taggingMode, setTaggingMode] = useState<'FULLPADS' | 'FLAG'>('FULLPADS');
-    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isDrawingActive, setIsDrawingActive] = useState(false);
 
-    // Video Sources
-    const [videoSources, setVideoSources] = useState<VideoSource[]>([
-        { id: 'g1', title: 'Gladiators Highlight (Demo)', url: 'https://www.youtube.com/watch?v=2vjPBrBU-TM', type: 'YOUTUBE' }, 
-    ]);
-    const [selectedGame, setSelectedGame] = useState(videoSources[0].id);
-    
-    // Data State
+    // Tagging Data
     const [clips, setClips] = useState<VideoClip[]>([]);
-    const [playlists, setPlaylists] = useState<VideoPlaylist[]>([]);
-    const [players, setPlayers] = useState<Player[]>([]);
-    
-    // Cutter State
-    const [startCut, setStartCut] = useState(0);
-    const [endCut, setEndCut] = useState(0);
-    
-    // Tagging Form
+    const [currentTimestamp, setCurrentTimestamp] = useState(0); // Manual sync for now
     const [tagData, setTagData] = useState<VideoTag>({
         down: 1, distance: 10, yardLine: 20, hash: 'MIDDLE',
         offensiveFormation: '', defensiveFormation: '',
@@ -57,346 +45,385 @@ const VideoAnalysis: React.FC = () => {
     });
     const [clipTitle, setClipTitle] = useState('');
 
-    // AI Prediction State
-    const [prediction, setPrediction] = useState<{prediction: string, confidence: string, reason: string} | null>(null);
-    const [isPredicting, setIsPredicting] = useState(false);
-
-    // Smart Filter
-    const [naturalSearch, setNaturalSearch] = useState('');
-    const [filteredClips, setFilteredClips] = useState<VideoClip[]>([]);
-
-    // Telestration
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [drawColor, setDrawColor] = useState('#ffff00');
-    const [drawingActive, setDrawingActive] = useState(false);
-
-    const isPlayer = currentRole === 'PLAYER';
-
     useEffect(() => {
+        setGames(storageService.getGames());
         setClips(storageService.getClips());
-        setPlaylists(storageService.getPlaylists());
-        setPlayers(storageService.getPlayers());
-        const teamSettings = storageService.getTeamSettings();
-        if(teamSettings.sportType) setTaggingMode(teamSettings.sportType);
+        
+        // Auto-load last game if available
+        const lastGame = storageService.getGames().find(g => g.status !== 'SCHEDULED');
+        if (lastGame) setSelectedGameId(String(lastGame.id));
     }, []);
 
-    // Smart Filtering Logic (Natural Language Approximation)
-    useEffect(() => {
-        if (!naturalSearch) {
-            setFilteredClips(clips);
-            return;
-        }
-        const query = naturalSearch.toLowerCase();
-        const res = clips.filter(c => 
-            c.title.toLowerCase().includes(query) || 
-            c.tags.offensivePlayCall.toLowerCase().includes(query) ||
-            c.tags.result.toLowerCase().includes(query) ||
-            (query.includes('passe') && c.tags.offensivePlayCall.toLowerCase().includes('pass')) ||
-            (query.includes('corrida') && c.tags.offensivePlayCall.toLowerCase().includes('run')) ||
-            (query.includes('touchdown') && c.tags.result === 'TOUCHDOWN')
-        );
-        setFilteredClips(res);
-    }, [naturalSearch, clips]);
+    // --- HANDLERS ---
 
-    // AI Prediction Handler
-    const handlePredictPlay = async () => {
-        setIsPredicting(true);
-        const result = await predictPlayCall(clips, tagData.down, tagData.distance);
-        setPrediction(result);
-        setIsPredicting(false);
+    const handleLoadVideo = () => {
+        const id = getYouTubeID(youtubeUrl);
+        if (id) {
+            setVideoId(id);
+            toast.success("Vídeo carregado no Film Room.");
+        } else {
+            toast.error("URL do YouTube inválida.");
+        }
     };
 
-    // --- TELESTRATION ---
+    const handleCopyOverlayLink = () => {
+        if (!selectedGameId) {
+            toast.warning("Selecione um jogo primeiro.");
+            return;
+        }
+        const url = `${window.location.origin}/#/broadcast/${selectedGameId}`;
+        navigator.clipboard.writeText(url);
+        toast.success("Link do Overlay copiado! Envie para a transmissão.");
+    };
+
+    const handleSaveClip = () => {
+        if (!selectedGameId || !clipTitle) {
+            toast.warning("Selecione um jogo e dê um nome à jogada.");
+            return;
+        }
+
+        const newClip: VideoClip = {
+            id: `clip-${Date.now()}`,
+            gameId: selectedGameId,
+            title: clipTitle,
+            videoUrl: videoId ? `https://www.youtube.com/watch?v=${videoId}&t=${currentTimestamp}s` : '',
+            startTime: currentTimestamp,
+            endTime: currentTimestamp + 10, // Default 10s clip
+            tags: { ...tagData }
+        };
+
+        const updatedClips = [...clips, newClip];
+        setClips(updatedClips);
+        storageService.saveClips(updatedClips);
+        toast.success("Jogada tagueada e salva na biblioteca.");
+        setClipTitle('');
+    };
+
+    // --- TELESTRATION LOGIC ---
     const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (!isDrawing) return;
-        setDrawingActive(true);
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!canvas || !ctx) return;
-        const rect = canvas.getBoundingClientRect();
-        
-        // Adjust for scaling
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-
-        ctx.beginPath();
-        ctx.moveTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
-        ctx.strokeStyle = drawColor;
-        ctx.lineWidth = 4;
-        ctx.lineCap = 'round';
+        setIsDrawingActive(true);
+        const ctx = canvasRef.current?.getContext('2d');
+        if (ctx) {
+            const rect = canvasRef.current!.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.strokeStyle = drawColor;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+        }
     };
 
     const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!drawingActive || !isDrawing) return;
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!canvas || !ctx) return;
-        const rect = canvas.getBoundingClientRect();
-        
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-
-        ctx.lineTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY);
-        ctx.stroke();
-    };
-
-    const stopDrawing = () => setDrawingActive(false);
-    const clearCanvas = () => {
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        ctx?.clearRect(0, 0, canvas?.width || 0, canvas?.height || 0);
-    };
-
-    const toggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            containerRef.current?.requestFullscreen().catch(err => {
-                console.error(`Error attempting to enable fullscreen: ${err.message}`);
-            });
-            setIsFullscreen(true);
-        } else {
-            document.exitFullscreen();
-            setIsFullscreen(false);
+        if (!isDrawingActive || !isDrawing) return;
+        const ctx = canvasRef.current?.getContext('2d');
+        if (ctx) {
+            const rect = canvasRef.current!.getBoundingClientRect();
+            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+            ctx.stroke();
         }
     };
 
-    // --- HELPERS ---
-    const getEmbedUrl = (url: string) => {
-        if (!url) return '';
-        const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-        if (ytMatch && ytMatch[1]) return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
-        return url;
-    };
-
-    const activeVideo = videoSources.find(v => v.id === selectedGame);
-
-    const handleSaveClip = () => {
-        if (!clipTitle) { alert("Dê um nome ao clip."); return; }
-        const newClip: VideoClip = {
-            id: `clip-${Date.now()}`,
-            gameId: selectedGame,
-            title: clipTitle,
-            videoUrl: activeVideo?.url || '',
-            startTime: startCut,
-            endTime: endCut || startCut + 10,
-            tags: { ...tagData }
-        };
-        const updated = [...clips, newClip];
-        setClips(updated);
-        storageService.saveClips(updated);
-        setClipTitle('');
-        alert("Clip salvo!");
+    const stopDrawing = () => setIsDrawingActive(false);
+    
+    const clearCanvas = () => {
+        const ctx = canvasRef.current?.getContext('2d');
+        if (ctx && canvasRef.current) {
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        }
     };
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
-             {/* Header */}
-             <div className="flex justify-between items-center">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-secondary rounded-xl shadow-glow">
                         <EyeIcon className="text-highlight w-8 h-8" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-bold text-text-primary">Vision Core</h2>
-                        <p className="text-text-secondary">Análise de Vídeo Preditiva & Inteligência Tática.</p>
+                        <h2 className="text-3xl font-bold text-text-primary">Game Day Hub</h2>
+                        <p className="text-text-secondary">Conexão Transmissão, Análise Ao Vivo e Film Room.</p>
                     </div>
+                </div>
+                
+                <div className="flex gap-2">
+                    <select 
+                        className="bg-secondary border border-white/10 rounded-lg p-2 text-white text-sm focus:outline-none"
+                        value={selectedGameId}
+                        onChange={(e) => setSelectedGameId(e.target.value)}
+                    >
+                        <option value="">Selecione o Jogo...</option>
+                        {games.map(g => (
+                            <option key={g.id} value={g.id}>vs {g.opponent} ({new Date(g.date).toLocaleDateString()})</option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
             {/* Navigation Tabs */}
             <div className="flex border-b border-white/10 overflow-x-auto">
-                <button onClick={() => setActiveTab('CUTTER')} className={`px-6 py-3 font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'CUTTER' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
-                    <ScissorsIcon className="w-4 h-4"/> Editor (Cutter)
+                <button onClick={() => setActiveTab('BROADCAST')} className={`px-6 py-3 font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'BROADCAST' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
+                    <ShareIcon className="w-4 h-4"/> 1. Transmissão (OBS)
                 </button>
-                <button onClick={() => setActiveTab('LIBRARY')} className={`px-6 py-3 font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'LIBRARY' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
-                    <FilterIcon className="w-4 h-4"/> Biblioteca Inteligente
+                <button onClick={() => setActiveTab('LIVE_TAG')} className={`px-6 py-3 font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'LIVE_TAG' ? 'border-red-500 text-red-400' : 'border-transparent text-text-secondary'}`}>
+                    <TrendingUpIcon className="w-4 h-4"/> 2. Análise em Blocos (Live)
                 </button>
-                <button onClick={() => setActiveTab('REPORTS')} className={`px-6 py-3 font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'REPORTS' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
-                    <TrendingUpIcon className="w-4 h-4"/> Stats
+                <button onClick={() => setActiveTab('FILM_ROOM')} className={`px-6 py-3 font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'FILM_ROOM' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary'}`}>
+                    <PlayCircleIcon className="w-4 h-4"/> 3. Film Room (Pós-Jogo)
                 </button>
             </div>
 
-            {/* --- CUTTER MODE --- */}
-            {activeTab === 'CUTTER' && (
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    {/* Left: Video Player Container */}
-                    <div ref={containerRef} className={`xl:col-span-2 flex flex-col gap-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-black p-4 h-screen w-screen' : ''}`}>
-                        <div className="relative flex-1 bg-black rounded-xl overflow-hidden shadow-2xl border border-white/10 group flex items-center justify-center min-h-[400px]">
-                            <canvas 
-                                ref={canvasRef}
-                                width={1280} height={720}
-                                className={`absolute inset-0 z-20 w-full h-full object-contain ${isDrawing ? 'cursor-crosshair pointer-events-auto' : 'pointer-events-none'}`}
-                                onMouseDown={startDrawing} onMouseMove={draw} onMouseUp={stopDrawing} onMouseLeave={stopDrawing}
-                            />
-                            {activeVideo?.type === 'LOCAL' ? (
-                                <video ref={localVideoRef} src={activeVideo.url} controls={!isDrawing} className="w-full h-full object-contain" />
-                            ) : (
-                                <iframe className={`w-full h-full ${isDrawing ? 'pointer-events-none' : ''}`} src={getEmbedUrl(activeVideo?.url || '')} title="Player" frameBorder="0" allowFullScreen></iframe>
-                            )}
+            {/* === TAB 1: BROADCAST SUPPORT === */}
+            {activeTab === 'BROADCAST' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-in">
+                    <Card title="Integração com Transmissão (YouTube)">
+                        <div className="space-y-6">
+                            <p className="text-sm text-text-secondary">
+                                O FAHUB gera um painel gráfico (Overlay) transparente para ser usado no OBS Studio ou vMix pela equipe de filmagem.
+                                Os dados (Placar, Tempo, Descida) são alimentados automaticamente pelo módulo de Arbitragem ou pelo Coach na sideline.
+                            </p>
                             
-                            {/* Fullscreen Controls Overlay */}
-                            <div className="absolute top-4 right-4 z-30 flex gap-2">
-                                <button onClick={() => setIsDrawing(!isDrawing)} className={`p-2 rounded-full backdrop-blur-md border border-white/20 ${isDrawing ? 'bg-highlight text-white' : 'bg-black/50 text-white hover:bg-white/20'}`} title="Desenhar">
-                                    <PenIcon className="w-5 h-5"/>
-                                </button>
-                                {isDrawing && (
-                                    <button onClick={clearCanvas} className="p-2 rounded-full bg-red-600/80 text-white backdrop-blur-md border border-white/20 hover:bg-red-600" title="Limpar Desenho">
-                                        <EraserIcon className="w-5 h-5"/>
+                            <div className="bg-black/30 p-4 rounded-lg border border-white/10 flex flex-col gap-2">
+                                <label className="text-xs font-bold text-text-secondary uppercase">URL do Overlay (Browser Source)</label>
+                                <div className="flex gap-2">
+                                    <input 
+                                        readOnly 
+                                        className="flex-1 bg-black/50 border border-white/10 rounded px-3 text-xs text-green-400 font-mono"
+                                        value={selectedGameId ? `${window.location.origin}/#/broadcast/${selectedGameId}` : 'Selecione um jogo acima'}
+                                    />
+                                    <button onClick={handleCopyOverlayLink} className="bg-highlight hover:bg-highlight-hover text-white px-4 py-2 rounded text-xs font-bold">
+                                        Copiar
                                     </button>
-                                )}
-                                <button onClick={toggleFullscreen} className="p-2 rounded-full bg-black/50 text-white backdrop-blur-md border border-white/20 hover:bg-white/20" title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia"}>
-                                    {isFullscreen ? <XIcon className="w-5 h-5"/> : <ScanIcon className="w-5 h-5"/>}
-                                </button>
+                                </div>
+                            </div>
+
+                            <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-500/20">
+                                <h4 className="text-sm font-bold text-blue-300 mb-2">Instruções para a Equipe de Filmagem:</h4>
+                                <ul className="text-xs text-text-secondary list-disc pl-4 space-y-1">
+                                    <li>Adicione uma nova fonte "Navegador" (Browser Source) no OBS.</li>
+                                    <li>Cole a URL acima. Defina tamanho 1920x1080.</li>
+                                    <li>Ajuste o CSS personalizado para remover o fundo se necessário (o app já tem fundo transparente).</li>
+                                </ul>
                             </div>
                         </div>
-
-                        {/* Interactive Timeline (Visible only in non-fullscreen or bottom overlay) */}
-                        {!isFullscreen && (
-                            <div className="bg-secondary/50 h-16 rounded-lg border border-white/10 flex items-center px-4 relative overflow-hidden">
-                                <div className="absolute inset-y-0 left-0 w-full flex items-center">
-                                    <div className="h-1 bg-white/20 w-full relative">
-                                        {clips.filter(c => c.gameId === selectedGame).map(clip => (
-                                            <div 
-                                                key={clip.id}
-                                                className={`absolute h-3 w-3 rounded-full top-1/2 transform -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform ${clip.tags.result === 'TOUCHDOWN' ? 'bg-green-500' : clip.tags.result === 'TURNOVER' ? 'bg-red-500' : 'bg-blue-500'}`}
-                                                style={{ left: `${Math.min(clip.startTime / 60, 100)}%` }} 
-                                                title={`${clip.title} (${clip.tags.result})`}
-                                            ></div>
-                                        ))}
+                    </Card>
+                    
+                    <Card title="Preview do Overlay">
+                        <div className="aspect-video bg-[url('https://source.unsplash.com/random/800x450/?football,stadium')] bg-cover bg-center rounded-xl relative overflow-hidden border-2 border-white/10">
+                            <div className="absolute inset-0 bg-black/20"></div>
+                            {/* Mock Overlay Preview */}
+                            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                                <div className="flex bg-gray-900 border border-white/20 rounded-lg overflow-hidden shadow-2xl">
+                                    <div className="bg-black px-4 py-2 text-center border-r border-white/10">
+                                        <span className="text-2xl font-black text-white">24</span>
+                                        <span className="block text-[8px] text-gray-400 uppercase">HOME</span>
+                                    </div>
+                                    <div className="bg-gray-800 px-3 py-2 flex flex-col justify-center items-center min-w-[80px]">
+                                        <span className="text-yellow-400 font-mono font-bold">12:00</span>
+                                        <span className="text-[8px] text-gray-400">Q2</span>
+                                    </div>
+                                    <div className="bg-black px-4 py-2 text-center border-l border-white/10">
+                                        <span className="text-2xl font-black text-white">17</span>
+                                        <span className="block text-[8px] text-gray-400 uppercase">VISIT</span>
                                     </div>
                                 </div>
-                                <span className="text-xs text-text-secondary absolute bottom-1 right-2">Timeline de Eventos</span>
-                            </div>
-                        )}
-
-                        {!isFullscreen && (
-                            <div className="flex justify-between items-center bg-secondary/50 p-2 rounded-lg border border-white/5">
-                                <div className="flex gap-2 items-center">
-                                    <span className="text-xs text-text-secondary uppercase">Recorte (Seg):</span>
-                                    <input type="number" className="w-16 bg-black/20 border border-white/10 rounded p-1 text-white text-xs" value={startCut} onChange={e => setStartCut(Number(e.target.value))} placeholder="Início" />
-                                    <span className="text-white">-</span>
-                                    <input type="number" className="w-16 bg-black/20 border border-white/10 rounded p-1 text-white text-xs" value={endCut} onChange={e => setEndCut(Number(e.target.value))} placeholder="Fim" />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Right: Tagging & AI */}
-                    <div className="bg-secondary rounded-xl border border-white/5 p-5 flex flex-col h-full overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-white flex items-center gap-2"><BrainIcon className="w-5 h-5 text-highlight"/> AI Logger</h3>
-                            <button onClick={handleSaveClip} className="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-lg">Salvar Clip</button>
-                        </div>
-
-                        {/* Prediction Widget */}
-                        <div className="bg-gradient-to-br from-indigo-900/40 to-black p-4 rounded-xl border border-indigo-500/30 mb-4 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-2 opacity-20"><SparklesIcon className="w-12 h-12 text-indigo-400"/></div>
-                            <h4 className="text-xs font-bold text-indigo-300 uppercase mb-2">Previsão Tática</h4>
-                            <div className="flex gap-2 mb-2">
-                                <input className="w-16 bg-black/40 border border-indigo-500/30 rounded p-1 text-white text-xs text-center" value={tagData.down} onChange={e => setTagData({...tagData, down: Number(e.target.value) as any})} placeholder="Down" />
-                                <span className="text-white text-xs flex items-center">&</span>
-                                <input className="w-16 bg-black/40 border border-indigo-500/30 rounded p-1 text-white text-xs text-center" value={tagData.distance} onChange={e => setTagData({...tagData, distance: Number(e.target.value)})} placeholder="Dist" />
-                                <button onClick={handlePredictPlay} className="ml-auto bg-indigo-600 hover:bg-indigo-500 text-white p-1.5 rounded text-xs">
-                                    {isPredicting ? '...' : 'Prever'}
-                                </button>
-                            </div>
-                            {prediction && (
-                                <div className="text-xs animate-fade-in">
-                                    <p className="text-white font-bold">{prediction.prediction} <span className="text-green-400">({prediction.confidence})</span></p>
-                                    <p className="text-text-secondary mt-1 leading-tight">{prediction.reason}</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Standard Fields */}
-                        <div className="space-y-3 flex-1">
-                            <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-sm" placeholder="Nome do Clip (Ex: TD Pass)" value={clipTitle} onChange={e => setClipTitle(e.target.value)} />
-                            
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className="text-[10px] text-text-secondary uppercase">Formação</label>
-                                    <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" value={tagData.offensiveFormation} onChange={e => setTagData({...tagData, offensiveFormation: e.target.value})} placeholder="Ex: Trips Right" />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] text-text-secondary uppercase">Jogada</label>
-                                    <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" value={tagData.offensivePlayCall} onChange={e => setTagData({...tagData, offensivePlayCall: e.target.value})} placeholder="Ex: Mesh" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-[10px] text-text-secondary uppercase block mb-1">Resultado</label>
-                                <div className="flex gap-1 flex-wrap">
-                                    {['GAIN','LOSS','TOUCHDOWN','TURNOVER'].map(r => (
-                                        <button key={r} onClick={() => setTagData({...tagData, result: r as any})} className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${tagData.result === r ? 'bg-white text-black border-white' : 'bg-transparent text-text-secondary border-white/10'}`}>{r}</button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Mini Field for Spot */}
-                            <div className="border border-white/10 rounded h-32 bg-green-900/50 relative cursor-crosshair" onClick={(e) => {
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                setTagData({...tagData, startX: ((e.clientX - rect.left)/rect.width)*100, startY: ((e.clientY - rect.top)/rect.height)*100});
-                            }}>
-                                {/* Yard lines simulation */}
-                                <div className="absolute top-0 bottom-0 left-[10%] w-px bg-white/10"></div>
-                                <div className="absolute top-0 bottom-0 left-[20%] w-px bg-white/10"></div>
-                                <div className="absolute top-0 bottom-0 left-[30%] w-px bg-white/10"></div>
-                                <div className="absolute top-0 bottom-0 left-[40%] w-px bg-white/10"></div>
-                                <div className="absolute top-0 bottom-0 left-[50%] w-px bg-white/30"></div>
-                                <div className="absolute top-0 bottom-0 left-[60%] w-px bg-white/10"></div>
-                                <div className="absolute top-0 bottom-0 left-[70%] w-px bg-white/10"></div>
-                                <div className="absolute top-0 bottom-0 left-[80%] w-px bg-white/10"></div>
-                                <div className="absolute top-0 bottom-0 left-[90%] w-px bg-white/10"></div>
-                                
-                                {tagData.startX && <div className="absolute w-3 h-3 bg-red-500 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow border border-white" style={{left: `${tagData.startX}%`, top: `${tagData.startY}%`}}></div>}
-                                <span className="absolute bottom-1 right-1 text-[9px] text-white/50">Clique para marcar ponto da bola</span>
                             </div>
                         </div>
-                    </div>
+                        <p className="text-xs text-center text-text-secondary mt-2">Simulação de como aparecerá na transmissão.</p>
+                    </Card>
                 </div>
             )}
 
-            {/* --- LIBRARY MODE --- */}
-            {activeTab === 'LIBRARY' && (
-                <div className="space-y-6">
-                    <Card title="Biblioteca Inteligente">
-                        <div className="relative mb-6">
-                            <SearchIcon className="absolute left-4 top-3.5 w-5 h-5 text-text-secondary" />
-                            <input 
-                                className="w-full bg-black/30 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-highlight focus:outline-none"
-                                placeholder="Busca Natural: 'Mostre todos os passes completos na Redzone'..."
-                                value={naturalSearch}
-                                onChange={e => setNaturalSearch(e.target.value)}
-                            />
+            {/* === TAB 2: LIVE TAGGING === */}
+            {activeTab === 'LIVE_TAG' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-in">
+                    <Card title="Análise em Blocos (Sideline)">
+                        <p className="text-sm text-text-secondary mb-4">
+                            Registre eventos chave durante as paradas (Timeout, Intervalo, Fim de Quarto) para gerar estatísticas rápidas.
+                        </p>
+                        
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                            <button className="p-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white text-sm shadow-lg">
+                                + Touchdown (Nós)
+                            </button>
+                            <button className="p-4 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-white text-sm shadow-lg">
+                                + Touchdown (Eles)
+                            </button>
+                            <button className="p-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white text-sm">
+                                Turnover Forçado
+                            </button>
+                            <button className="p-4 bg-yellow-600 hover:bg-yellow-500 rounded-xl font-bold text-black text-sm">
+                                Sack / TFL
+                            </button>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left text-text-secondary">
-                                <thead className="bg-black/20 uppercase text-xs font-bold">
-                                    <tr>
-                                        <th className="px-4 py-3">Jogada</th>
-                                        <th className="px-4 py-3">Descida</th>
-                                        <th className="px-4 py-3">Formação</th>
-                                        <th className="px-4 py-3">Chamada</th>
-                                        <th className="px-4 py-3">Resultado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredClips.map(clip => (
-                                        <tr key={clip.id} className="border-b border-white/5 hover:bg-white/5 group cursor-pointer">
-                                            <td className="px-4 py-3 font-bold text-white group-hover:text-highlight flex items-center gap-2">
-                                                <PlayCircleIcon className="w-4 h-4" /> {clip.title}
-                                            </td>
-                                            <td className="px-4 py-3">{clip.tags.down}ª & {clip.tags.distance}</td>
-                                            <td className="px-4 py-3 font-mono text-xs">{clip.tags.offensiveFormation || '-'}</td>
-                                            <td className="px-4 py-3">{clip.tags.offensivePlayCall || '-'}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${clip.tags.result === 'TOUCHDOWN' ? 'bg-green-500 text-black' : 'bg-white/10 text-white'}`}>{clip.tags.result}</span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        
+                        <div className="bg-black/20 p-3 rounded-lg border border-white/5">
+                            <h4 className="text-xs font-bold text-text-secondary uppercase mb-2">Notas Rápidas</h4>
+                            <textarea className="w-full bg-transparent text-white text-sm focus:outline-none h-20 resize-none" placeholder="Ex: A defesa deles está jogando Cover 3 em descidas longas..."></textarea>
                         </div>
                     </Card>
+
+                    <Card title="Resumo do Jogo (Blocos)">
+                         <div className="space-y-2">
+                             <div className="bg-secondary p-3 rounded border border-white/5 flex justify-between">
+                                 <span className="text-white font-bold">1º Quarto</span>
+                                 <span className="text-text-secondary text-xs">Finalizado</span>
+                             </div>
+                             <div className="bg-secondary p-3 rounded border border-white/5 flex justify-between">
+                                 <span className="text-white font-bold">2º Quarto</span>
+                                 <span className="text-green-400 text-xs font-bold">Em Andamento</span>
+                             </div>
+                             <div className="mt-4 p-4 bg-black/40 rounded-xl text-center">
+                                 <p className="text-xs text-text-secondary uppercase">Estatística Chave (Estimada)</p>
+                                 <p className="text-2xl font-bold text-white">150 Jardas Totais</p>
+                             </div>
+                         </div>
+                    </Card>
+                </div>
+            )}
+
+            {/* === TAB 3: FILM ROOM (POST-GAME) === */}
+            {activeTab === 'FILM_ROOM' && (
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-slide-in">
+                    <div className="xl:col-span-2 space-y-4">
+                        {/* URL INPUT */}
+                        <div className="flex gap-2">
+                            <input 
+                                className="flex-1 bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-highlight focus:outline-none"
+                                placeholder="Cole a URL do YouTube do jogo completo..."
+                                value={youtubeUrl}
+                                onChange={(e) => setYoutubeUrl(e.target.value)}
+                            />
+                            <button onClick={handleLoadVideo} className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-lg font-bold">
+                                Carregar
+                            </button>
+                        </div>
+
+                        {/* PLAYER & TELESTRATION */}
+                        <div className="relative aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-white/10 group">
+                            {/* DRAWING CANVAS LAYER */}
+                            <canvas 
+                                ref={canvasRef}
+                                width={1280} 
+                                height={720}
+                                className={`absolute inset-0 z-20 w-full h-full object-contain ${isDrawing ? 'cursor-crosshair pointer-events-auto bg-transparent' : 'pointer-events-none'}`}
+                                onMouseDown={startDrawing} 
+                                onMouseMove={draw} 
+                                onMouseUp={stopDrawing} 
+                                onMouseLeave={stopDrawing}
+                            />
+                            
+                            {/* YOUTUBE IFRAME LAYER */}
+                            {videoId ? (
+                                <iframe 
+                                    width="100%" 
+                                    height="100%" 
+                                    src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&modestbranding=1`} 
+                                    title="YouTube Player" 
+                                    frameBorder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowFullScreen
+                                    className="absolute inset-0 z-10 w-full h-full"
+                                ></iframe>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-text-secondary">
+                                    <VideoIcon className="w-16 h-16 opacity-20 mb-4" />
+                                    <p>Cole o link do YouTube acima para iniciar a análise.</p>
+                                </div>
+                            )}
+
+                            {/* TELESTRATION CONTROLS */}
+                            <div className="absolute top-4 right-4 z-30 flex gap-2">
+                                <button 
+                                    onClick={() => setIsDrawing(!isDrawing)} 
+                                    className={`p-2 rounded-full backdrop-blur-md border border-white/20 transition-all ${isDrawing ? 'bg-yellow-500 text-black shadow-glow' : 'bg-black/50 text-white hover:bg-white/20'}`} 
+                                    title={isDrawing ? "Modo Desenho Ativo" : "Ativar Caneta (Telestration)"}
+                                >
+                                    <PenIcon className="w-5 h-5"/>
+                                </button>
+                                {isDrawing && (
+                                    <>
+                                        <button onClick={() => setDrawColor('#FFFF00')} className={`w-8 h-8 rounded-full border-2 ${drawColor === '#FFFF00' ? 'border-white' : 'border-transparent'} bg-yellow-500`}></button>
+                                        <button onClick={() => setDrawColor('#FF0000')} className={`w-8 h-8 rounded-full border-2 ${drawColor === '#FF0000' ? 'border-white' : 'border-transparent'} bg-red-600`}></button>
+                                        <button onClick={clearCanvas} className="p-2 rounded-full bg-red-600/80 text-white backdrop-blur-md border border-white/20 hover:bg-red-600" title="Limpar Tela">
+                                            <EraserIcon className="w-5 h-5"/>
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* SYNC TOOL */}
+                        <div className="bg-secondary/50 p-3 rounded-xl border border-white/5 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <span className="text-xs text-text-secondary font-bold uppercase">Sincronia Manual</span>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => setCurrentTimestamp(Math.max(0, currentTimestamp - 5))} className="p-1 hover:bg-white/10 rounded text-white text-xs">-5s</button>
+                                    <input 
+                                        type="number" 
+                                        className="w-16 bg-black/40 border border-white/10 rounded p-1 text-center text-white font-mono" 
+                                        value={currentTimestamp}
+                                        onChange={(e) => setCurrentTimestamp(Number(e.target.value))}
+                                    />
+                                    <button onClick={() => setCurrentTimestamp(currentTimestamp + 5)} className="p-1 hover:bg-white/10 rounded text-white text-xs">+5s</button>
+                                </div>
+                                <p className="text-[10px] text-text-secondary ml-2">Use o tempo do vídeo para marcar o início da jogada.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* RIGHT: TAGGING PANEL */}
+                    <div className="bg-secondary rounded-xl border border-white/5 p-5 flex flex-col h-full overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-white flex items-center gap-2"><BrainIcon className="w-5 h-5 text-highlight"/> Taguear Jogada</h3>
+                            <button onClick={handleSaveClip} className="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-lg">Salvar Clip</button>
+                        </div>
+
+                        <div className="space-y-4 flex-1">
+                            <input className="w-full bg-black/20 border border-white/10 rounded p-3 text-white text-sm focus:border-highlight focus:outline-none" placeholder="Nome do Clip (Ex: TD Pass Q1)" value={clipTitle} onChange={e => setClipTitle(e.target.value)} />
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[10px] text-text-secondary uppercase font-bold mb-1 block">Situação</label>
+                                    <div className="flex gap-2">
+                                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-center text-xs" placeholder="Down" value={tagData.down} onChange={e => setTagData({...tagData, down: Number(e.target.value) as any})} />
+                                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-center text-xs" placeholder="Yds" value={tagData.distance} onChange={e => setTagData({...tagData, distance: Number(e.target.value)})} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-text-secondary uppercase font-bold mb-1 block">Resultado</label>
+                                    <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" value={tagData.result} onChange={e => setTagData({...tagData, result: e.target.value as any})}>
+                                        <option value="GAIN">Ganho</option>
+                                        <option value="LOSS">Perda</option>
+                                        <option value="TOUCHDOWN">Touchdown</option>
+                                        <option value="TURNOVER">Turnover</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label className="text-[10px] text-text-secondary uppercase font-bold mb-1 block">Conceito Ofensivo</label>
+                                <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white text-xs" placeholder="Ex: Mesh, Outside Zone..." value={tagData.offensivePlayCall} onChange={e => setTagData({...tagData, offensivePlayCall: e.target.value})} />
+                            </div>
+                            
+                            <div className="pt-4 border-t border-white/5">
+                                <h4 className="text-xs font-bold text-white mb-2">Clips Salvos neste Jogo</h4>
+                                <div className="space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar">
+                                    {clips.filter(c => c.gameId === selectedGameId).map(clip => (
+                                        <div key={clip.id} className="bg-black/30 p-2 rounded flex justify-between items-center group hover:bg-white/5 cursor-pointer">
+                                            <div className="flex items-center gap-2">
+                                                <PlayCircleIcon className="w-3 h-3 text-highlight" />
+                                                <span className="text-xs text-white truncate max-w-[150px]">{clip.title}</span>
+                                            </div>
+                                            <span className="text-[10px] text-text-secondary font-mono">{new Date(clip.startTime * 1000).toISOString().substr(14, 5)}</span>
+                                        </div>
+                                    ))}
+                                    {clips.filter(c => c.gameId === selectedGameId).length === 0 && <p className="text-xs text-text-secondary italic">Nenhum clip salvo ainda.</p>}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
