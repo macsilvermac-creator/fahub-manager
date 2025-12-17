@@ -10,7 +10,7 @@ import {
 } from './icons/NavIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
-import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, LockIcon, WalletIcon, DumbbellIcon, ActivityIcon, UserPlusIcon, HeartIcon } from './icons/UiIcons';
+import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, LockIcon, WalletIcon, DumbbellIcon, ActivityIcon, UserPlusIcon, HeartIcon, MicIcon, BuildingIcon, MapIcon } from './icons/UiIcons';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -50,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 </div>
                 <div>
                     <span className="text-sm font-black text-white block leading-none tracking-tighter italic">FAHUB <span className="text-highlight">PRO</span></span>
-                    <span className="text-[8px] text-text-secondary uppercase tracking-widest font-bold">Manager v5.0</span>
+                    <span className="text-[8px] text-text-secondary uppercase tracking-widest font-bold">Manager v5.5</span>
                 </div>
             </div>
       </div>
@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
             <span>Dashboard</span>
           </NavLink>
 
-          {/* VISÃO GOD / MASTER COMPLETA - TODAS AS ENTIDADES */}
+          {/* VISÃO GOD / MASTER COMPLETA */}
           {isMaster && (
             <>
               <SectionLabel>Estratégia & Core</SectionLabel>
@@ -123,7 +123,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 <TicketIcon className="w-4 h-4 mr-3 text-orange-400" />
                 <span>Eventos & Bilheteria</span>
               </NavLink>
-              <NavLink to="/marketplace" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+              <NavLink to="/digital-store" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <ShopIcon className="w-4 h-4 mr-3 text-cyan-400" />
                 <span>Loja Digital</span>
               </NavLink>
@@ -149,6 +149,10 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 <UsersIcon className="w-4 h-4 mr-3 text-pink-500" />
                 <span>Vestiário Social</span>
               </NavLink>
+              <NavLink to="/resources" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <FolderIcon className="w-4 h-4 mr-3 text-gray-400" />
+                <span>Arquivos / Docs</span>
+              </NavLink>
 
               <SectionLabel>Governança Macro</SectionLabel>
               <NavLink to="/officiating" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
@@ -163,6 +167,10 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 <GlobeIcon className="w-4 h-4 mr-3 text-green-600" />
                 <span>Confederação</span>
               </NavLink>
+              <NavLink to="/broadcast-booth" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <MicIcon className="w-4 h-4 mr-3 text-red-500" />
+                <span>Broadcaster Booth</span>
+              </NavLink>
 
               <SectionLabel>Configuração</SectionLabel>
               <NavLink to="/admin" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
@@ -173,10 +181,18 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 <SettingsNavIcon className="w-4 h-4 mr-3" />
                 <span>Ajustes Time</span>
               </NavLink>
+              <NavLink to="/platform-hq" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <BuildingIcon className="w-4 h-4 mr-3" />
+                <span>Platform HQ</span>
+              </NavLink>
+              <NavLink to="/roadmap" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <MapIcon className="w-4 h-4 mr-3" />
+                <span>Roadmap</span>
+              </NavLink>
             </>
           )}
 
-          {/* VISÃO ATLETA (Otimizada para foco no campo) */}
+          {/* VISÃO ATLETA (Otimizada) */}
           {!isMaster && currentRole === 'PLAYER' && (
              <>
                 <SectionLabel>Minha Área</SectionLabel>
@@ -201,7 +217,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
         </nav>
       </div>
 
-      {/* GOD MODE SWITCHER (PERSISTENTE) */}
+      {/* GOD MODE SWITCHER */}
       {isGodUser && (
         <div className="p-3 bg-black/40 border-t border-white/5 shrink-0">
             <p className="text-[9px] font-black text-highlight uppercase mb-2 text-center tracking-widest">God Mode (Context Switch)</p>

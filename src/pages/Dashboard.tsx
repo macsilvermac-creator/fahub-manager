@@ -69,11 +69,9 @@ const Dashboard: React.FC = () => {
         return players.filter(p => ['INJURED', 'IR', 'QUESTIONABLE', 'DOUBTFUL'].includes(p.status));
     }, [players]);
 
-    // VIEW: ATLETA (Refinada v5.0)
     if (currentRole === 'PLAYER' && me) {
         return (
             <div className="space-y-6 animate-fade-in pb-20">
-                {/* Hero Profile Premium */}
                 <div className="relative bg-gradient-to-br from-[#0F172A] to-black rounded-3xl p-6 border border-white/10 overflow-hidden shadow-2xl">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-highlight/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
@@ -107,7 +105,6 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Patrimônio & Governança (Disponível desde o dia 1) */}
                     <Card title="Governança de Equipamento" className="lg:col-span-1">
                         <div className="space-y-4">
                             <div className="bg-black/20 p-3 rounded-xl border border-white/5 flex items-center justify-between">
@@ -142,7 +139,6 @@ const Dashboard: React.FC = () => {
                         </div>
                     </Card>
 
-                    {/* Skill Radar Chart */}
                     <Card title="Radar de Habilidades" className="lg:col-span-1">
                         <div className="h-64 w-full">
                             <ResponsiveContainer width="100%" height="100%">
@@ -162,7 +158,6 @@ const Dashboard: React.FC = () => {
                         </div>
                     </Card>
 
-                    {/* AI Coach Insights (PDI) */}
                     <Card title="PDI (Coach AI)" className="lg:col-span-1 border-l-4 border-l-purple-500">
                         <div className="space-y-4">
                             {loadingAi ? (
@@ -187,7 +182,6 @@ const Dashboard: React.FC = () => {
                     </Card>
                 </div>
 
-                {/* Health Passport & Quick Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card className="bg-green-900/10 border-green-500/20">
                         <p className="text-[10px] text-green-400 font-bold uppercase mb-1">Atestado Médico (Passport)</p>
@@ -213,7 +207,6 @@ const Dashboard: React.FC = () => {
         );
     }
 
-    // VIEW: MASTER/COACH (Resumo Operacional)
     return (
         <div className="space-y-6 animate-fade-in pb-20">
              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
