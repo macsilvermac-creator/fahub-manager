@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Player } from '../types';
-import { TrashIcon, ShareIcon, StarIcon } from './icons/UiIcons';
+import { TrashIcon, ShareIcon } from './icons/UiIcons';
 import LazyImage from './LazyImage';
 
 interface AthleteCardProps {
@@ -41,14 +41,17 @@ const AthleteCard: React.FC<AthleteCardProps> = ({ player, onClick, onDelete }) 
     >
       <div 
         onClick={() => onClick(player)}
-        style={{ transform: `rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)` }}
-        className="relative bg-secondary rounded-2xl overflow-hidden border border-white/10 shadow-2xl transition-transform duration-200 cursor-pointer w-full"
+        style={{ 
+          transform: `rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)`,
+          transition: 'transform 0.1s ease-out'
+        }}
+        className="relative bg-secondary rounded-2xl overflow-hidden border border-white/10 shadow-2xl cursor-pointer w-full"
       >
-        {/* Holographic Overly */}
-        <div className="absolute inset-0 z-10 opacity-0 group-hover:opacity-30 pointer-events-none bg-gradient-to-tr from-white/20 via-transparent to-white/20 animate-shimmer"></div>
+        {/* Camada Holográfica */}
+        <div className="absolute inset-0 z-10 opacity-0 group-hover:opacity-20 pointer-events-none bg-gradient-to-tr from-white/40 via-transparent to-white/40 animate-pulse"></div>
 
         <div className={`h-24 bg-gradient-to-r ${getPositionColor(player.position)} relative`}>
-            <div className="absolute top-2 right-2 bg-black/40 text-white text-[10px] font-black px-2 py-1 rounded backdrop-blur-md">
+            <div className="absolute top-2 right-2 bg-black/40 text-white text-[10px] font-black px-2 py-1 rounded backdrop-blur-md border border-white/10">
                 OVR {player.rating}
             </div>
             <button 
@@ -66,7 +69,7 @@ const AthleteCard: React.FC<AthleteCardProps> = ({ player, onClick, onDelete }) 
                     className="w-24 h-24 rounded-full border-4 border-secondary shadow-xl object-cover bg-primary" 
                     fallbackText={player.name}
                 />
-                <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-black w-8 h-8 flex items-center justify-center rounded-full font-black text-xs border-2 border-secondary">
+                <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-black w-8 h-8 flex items-center justify-center rounded-full font-black text-xs border-2 border-secondary shadow-lg">
                     {player.level}
                 </div>
             </div>
@@ -74,17 +77,17 @@ const AthleteCard: React.FC<AthleteCardProps> = ({ player, onClick, onDelete }) 
             <h3 className="text-lg font-black text-white italic tracking-tighter uppercase">{player.name}</h3>
             <div className="flex gap-2 mt-1">
                 <span className="text-[10px] font-bold bg-white/10 text-white px-2 py-0.5 rounded">{player.position}</span>
-                <span className="text-[10px] text-text-secondary">#{player.jerseyNumber}</span>
+                <span className="text-[10px] text-text-secondary font-mono">#{player.jerseyNumber}</span>
             </div>
 
-            {/* Commitment Bar */}
+            {/* Barra de Comprometimento (UX Refinada) */}
             <div className="w-full mt-4 space-y-1">
                 <div className="flex justify-between text-[8px] font-black text-text-secondary uppercase">
                     <span>Comprometimento</span>
-                    <span>90%</span>
+                    <span className="text-highlight">{(player.commitmentLevel || 90)}%</span>
                 </div>
                 <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
-                    <div className="h-full bg-highlight w-[90%]"></div>
+                    <div className="h-full bg-highlight transition-all duration-1000" style={{ width: `${player.commitmentLevel || 90}%` }}></div>
                 </div>
             </div>
 

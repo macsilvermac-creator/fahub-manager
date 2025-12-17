@@ -5,7 +5,7 @@ import { storageService } from '../services/storageService';
 import { authService } from '../services/authService';
 import Card from '../components/Card';
 import LazyImage from '../components/LazyImage';
-import { AlertTriangleIcon, CheckCircleIcon, FireIcon, ActivityIcon, DumbbellIcon, LockIcon, PlayCircleIcon } from '../components/icons/UiIcons';
+import { AlertTriangleIcon, CheckCircleIcon, DumbbellIcon, UsersIcon, PlayCircleIcon } from '../components/icons/UiIcons';
 import { TrophyIcon } from '../components/icons/NavIcons';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
@@ -27,14 +27,15 @@ const Dashboard: React.FC = () => {
         setMe(myData || allPlayers[0]);
     }, []);
 
+    // Alertas Médicos Automáticos
     const medicalAlerts = useMemo(() => {
         return players.filter(p => {
             const lastWellness = p.wellnessHistory?.[p.wellnessHistory.length - 1];
-            return lastWellness && (lastWellness.soreness > 7 || lastWellness.fatigue > 7);
+            return lastWellness && (lastWellness.soreness > 7 || lastWellness.fatigue > 8);
         });
     }, [players]);
 
-    // VIEW: PLAYER
+    // VIEW: ATLETA
     if (currentRole === 'PLAYER' && me) {
         return (
             <div className="space-y-6 animate-fade-in pb-20">
@@ -55,16 +56,16 @@ const Dashboard: React.FC = () => {
                             
                             <div className="bg-white/5 rounded-xl p-3 border border-white/5 mb-3">
                                 <div className="flex justify-between text-xs font-bold text-text-secondary uppercase mb-1">
-                                    <span>Nível de Comprometimento</span>
-                                    <span className="text-highlight">95%</span>
+                                    <span>Nível de Comprometimento (Assiduidade)</span>
+                                    <span className="text-highlight">{me.commitmentLevel || 95}%</span>
                                 </div>
                                 <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden">
-                                    <div className="h-full bg-highlight" style={{ width: '95%' }}></div>
+                                    <div className="h-full bg-highlight shadow-glow" style={{ width: `${me.commitmentLevel || 95}%` }}></div>
                                 </div>
                                 <p className="text-[9px] text-text-secondary mt-1 italic">Mantenha acima de 90% para bônus de XP no fim da temporada.</p>
                             </div>
                         </div>
-                        <div className="flex flex-col items-center justify-center bg-white/5 p-4 rounded-xl border border-white/10 min-w-[80px]">
+                        <div className="flex flex-col items-center justify-center bg-white/5 p-4 rounded-xl border border-white/10 min-w-[80px] shadow-inner">
                             <span className="text-xs text-text-secondary font-bold uppercase">OVR</span>
                             <span className="text-4xl font-black text-white">{me.rating}</span>
                         </div>
@@ -72,23 +73,23 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card title="Próxima Missão">
+                    <Card title="Próxima Chamada (RSVP)">
                         {stats?.nextGame ? (
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h4 className="text-xl font-black text-white uppercase">VS {stats.nextGame.opponent}</h4>
-                                    <p className="text-sm text-text-secondary">{new Date(stats.nextGame.date).toLocaleDateString()}</p>
+                                    <p className="text-sm text-text-secondary">{new Date(stats.nextGame.date).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
                                 </div>
-                                <button onClick={() => navigate('/schedule')} className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-xl font-black uppercase tracking-wider shadow-lg">Confirmar</button>
+                                <button onClick={() => navigate('/schedule')} className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-xl font-black uppercase tracking-wider shadow-lg transform active:scale-95 transition-all">Confirmar Presença</button>
                             </div>
-                        ) : <p className="text-text-secondary italic">Sem missões agendadas.</p>}
+                        ) : <p className="text-text-secondary italic">Sem missões agendadas no momento.</p>}
                     </Card>
                     <div className="grid grid-cols-2 gap-4">
-                        <button onClick={() => navigate('/academy')} className="bg-blue-900/40 border border-blue-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
+                        <button onClick={() => navigate('/academy')} className="bg-blue-900/40 border border-blue-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-blue-900/60 transition-all">
                             <DumbbellIcon className="w-8 h-8 text-blue-400" />
                             <span className="font-bold text-white text-sm">Iron Lab</span>
                         </button>
-                        <button onClick={() => navigate('/locker-room')} className="bg-pink-900/40 border border-pink-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
+                        <button onClick={() => navigate('/locker-room')} className="bg-pink-900/40 border border-pink-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-pink-900/60 transition-all">
                             <UsersIcon className="w-8 h-8 text-pink-400" />
                             <span className="font-bold text-white text-sm">Vestiário</span>
                         </button>
@@ -98,7 +99,7 @@ const Dashboard: React.FC = () => {
         );
     }
 
-    // VIEW: MASTER/COACH (Medical Alerts focused)
+    // VIEW: MASTER/COACH (Alerta de Saúde)
     return (
         <div className="space-y-6 animate-fade-in pb-20">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -115,7 +116,7 @@ const Dashboard: React.FC = () => {
                     <p className="text-3xl font-black text-blue-500">45</p>
                 </Card>
                 <Card className="bg-secondary/80 border-red-500/30">
-                    <p className="text-xs text-red-400 uppercase font-bold">Lesionados / Alertas</p>
+                    <p className="text-xs text-red-400 uppercase font-bold">Alertas de Saúde</p>
                     <p className="text-3xl font-black text-red-500">{medicalAlerts.length}</p>
                 </Card>
             </div>
@@ -123,7 +124,7 @@ const Dashboard: React.FC = () => {
             {medicalAlerts.length > 0 && (
                 <div className="bg-red-900/20 border-2 border-red-500/30 rounded-2xl p-6 animate-pulse">
                     <h3 className="text-red-400 font-bold flex items-center gap-2 uppercase mb-4">
-                        <AlertTriangleIcon className="w-6 h-6" /> Alertas de Risco de Lesão (Wellness)
+                        <AlertTriangleIcon className="w-6 h-6" /> Alerta de Risco de Lesão (Wellness)
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {medicalAlerts.map(p => (
@@ -131,7 +132,7 @@ const Dashboard: React.FC = () => {
                                 <img src={p.avatarUrl} className="w-10 h-10 rounded-full border border-red-500" />
                                 <div>
                                     <p className="text-white font-bold text-sm">{p.name}</p>
-                                    <p className="text-[10px] text-red-300">Soreness: {p.wellnessHistory?.[p.wellnessHistory.length-1].soreness}/10</p>
+                                    <p className="text-[10px] text-red-300 uppercase font-bold">Dor Muscular Crítica</p>
                                 </div>
                             </div>
                         ))}
@@ -140,16 +141,17 @@ const Dashboard: React.FC = () => {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card title="Próximas Atividades">
-                     <button onClick={() => navigate('/practice')} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl text-xl mb-4 shadow-lg flex items-center justify-center gap-3">
+                <Card title="Operações Rápidas">
+                     <button onClick={() => navigate('/practice')} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl text-xl mb-4 shadow-lg flex items-center justify-center gap-3 transition-transform active:scale-95">
                          <PlayCircleIcon className="w-8 h-8" /> DIA DE TREINO
                      </button>
-                     <button onClick={() => navigate('/schedule')} className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl text-xl shadow-lg flex items-center justify-center gap-3">
+                     <button onClick={() => navigate('/schedule')} className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl text-xl shadow-lg flex items-center justify-center gap-3 transition-transform active:scale-95">
                          <TrophyIcon className="w-8 h-8" /> DIA DE JOGO
                      </button>
                 </Card>
                 <Card title="Últimas do Vestiário">
-                    <p className="text-text-secondary italic">Acompanhe as postagens do seu time...</p>
+                    <p className="text-text-secondary italic text-sm">Visualize as atualizações da comunidade do seu time...</p>
+                    <button onClick={() => navigate('/locker-room')} className="mt-4 text-highlight font-bold text-xs uppercase hover:underline">Ver Feed Completo →</button>
                 </Card>
             </div>
         </div>

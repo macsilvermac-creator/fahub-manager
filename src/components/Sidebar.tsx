@@ -1,124 +1,141 @@
 
-import React, { useState, useEffect, useContext } from 'react';
-import { UserContext } from '../components/Layout';
-import { storageService } from '../services/storageService';
-import { SocialFeedPost, User } from '../types';
+import React, { memo } from 'react';
+// @ts-ignore
+import { NavLink, useNavigate } from 'react-router-dom';
+import { 
+  DashboardIcon, RosterIcon, ScheduleIcon, FinanceIcon, 
+  AiPlaybookIcon, PracticeIcon, FlagIcon, TrophyIcon, 
+  MegaphoneIcon, ShopIcon, BriefcaseIcon, AcademyIcon, VideoIcon,
+  WhistleIcon, TicketIcon, GlobeIcon
+} from './icons/NavIcons';
+import { UserRole } from '../types';
 import { authService } from '../services/authService';
-import { HeartIcon, MessageIcon, ShareIcon, ImageIcon, LinkIcon, SparklesIcon, CheckCircleIcon, FireIcon } from '../components/icons/UiIcons';
-import LazyImage from '@/components/LazyImage';
+// Fix: Imported DumbbellIcon from UiIcons
+import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, LockIcon, WalletIcon, DumbbellIcon } from './icons/UiIcons';
 
-const LockerRoom: React.FC = () => {
-    const { currentRole } = useContext(UserContext);
-    const [feed, setFeed] = useState<SocialFeedPost[]>([]);
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [content, setContent] = useState('');
-    const [isOfficialPost, setIsOfficialPost] = useState(false);
+interface SidebarProps {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  currentRole: UserRole;
+  setRole: (role: UserRole) => void;
+}
 
-    useEffect(() => {
-        setFeed(storageService.getSocialFeed());
-        setCurrentUser(authService.getCurrentUser());
-    }, []);
+const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, setRole }) => {
+  const navigate = useNavigate();
+  const user = authService.getCurrentUser();
 
-    const pinnedPost = feed.find(p => p.isPinned);
+  const navLinkClasses = "flex items-center px-4 py-2.5 text-text-secondary rounded-lg hover:bg-white/5 hover:text-white transition-all text-sm font-medium mb-1 group";
+  const activeNavLinkClasses = "bg-highlight/10 text-highlight border-l-4 border-highlight font-bold shadow-[0_0_15px_rgba(0,168,107,0.1)]";
 
-    const handlePost = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!currentUser || !content.trim()) return;
+  const handleLinkClick = () => {
+    if (window.innerWidth < 1024) setIsOpen(false);
+  };
 
-        const newPost: SocialFeedPost = {
-            id: `post-${Date.now()}`,
-            authorName: isOfficialPost ? 'DIRETORIA' : currentUser.name,
-            authorAvatar: isOfficialPost ? storageService.getTeamSettings().logoUrl : currentUser.avatarUrl,
-            authorRole: currentUser.role,
-            isOfficialTeamPost: isOfficialPost,
-            isPinned: isOfficialPost, // Master post is auto-pinned for 24h
-            content: content,
-            likes: 0,
-            comments: [],
-            timestamp: new Date()
-        };
+  const handleLogout = () => {
+      authService.logout();
+      navigate('/login');
+  };
 
-        storageService.saveSocialFeedPost(newPost);
-        setFeed(storageService.getSocialFeed()); 
-        setContent('');
-        setIsOfficialPost(false);
-    };
+  // REGRAS DE ACESSO LOJA (Refinamento Item 11)
+  const canSeeStore = ['PLATFORM_OWNER', 'MASTER', 'REFEREE', 'BROADCASTER'].includes(currentRole);
+  
+  const isAthlete = currentRole === 'PLAYER';
+  const isCoach = ['HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'].includes(currentRole);
 
-    return (
-        <div className="max-w-2xl mx-auto space-y-6 pb-20 animate-fade-in">
-            <div className="text-center py-4">
-                <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-2 italic">🏟️ VESTIÁRIO DIGITAL</h2>
-                <p className="text-text-secondary text-sm">Onde o hype acontece.</p>
-            </div>
+  const getRoleLabel = () => {
+      if(currentRole === 'MASTER') return 'DIRETORIA';
+      if(isCoach) return 'STAFF TÉCNICO';
+      if(isAthlete) return 'ATLETA';
+      return currentRole;
+  };
 
-            {/* Pinned Section */}
-            {pinnedPost && (
-                <div className="bg-highlight/10 border-2 border-highlight/30 rounded-2xl p-4 flex gap-4 items-center">
-                    <div className="p-3 bg-highlight/20 rounded-full animate-bounce">
-                        <FireIcon className="w-6 h-6 text-highlight" />
-                    </div>
-                    <div>
-                        <span className="text-[10px] font-black text-highlight uppercase tracking-widest">Fixado pelo Coach</span>
-                        <p className="text-white text-sm font-bold">"{pinnedPost.content}"</p>
-                    </div>
+  return (
+    <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0F172A] transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 ease-linear lg:relative lg:translate-x-0 lg:flex lg:flex-shrink-0 flex flex-col h-full border-r border-white/5 shadow-2xl`}>
+      <div className="h-20 flex items-center px-6 border-b border-white/5 bg-[#0B1120]">
+            <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg border border-white/10 ${isAthlete ? 'bg-blue-600' : currentRole === 'MASTER' ? 'bg-highlight' : 'bg-slate-700'}`}>
+                    <span className="text-white font-black text-lg tracking-tighter">{isAthlete ? 'PL' : 'CO'}</span>
                 </div>
-            )}
-
-            <div className={`bg-secondary rounded-xl p-4 border ${isOfficialPost ? 'border-highlight shadow-glow' : 'border-white/10'}`}>
-                <div className="flex gap-3">
-                    <LazyImage src={currentUser?.avatarUrl || ''} className="w-10 h-10 rounded-full object-cover" />
-                    <form onSubmit={handlePost} className="flex-1">
-                        <textarea 
-                            className="w-full bg-transparent text-white placeholder-gray-500 focus:outline-none resize-none min-h-[80px]"
-                            placeholder="Mande o hype... (+10 XP)"
-                            value={content}
-                            onChange={e => setContent(e.target.value)}
-                        />
-                        <div className="flex justify-between items-center pt-2 border-t border-white/5">
-                            <div className="flex gap-2 text-text-secondary">
-                                <FireIcon className="w-5 h-5 cursor-pointer hover:text-orange-500" />
-                                <TrophyIcon className="w-5 h-5 cursor-pointer hover:text-yellow-500" />
-                            </div>
-                            <div className="flex items-center gap-3">
-                                {['MASTER', 'HEAD_COACH'].includes(currentRole) && (
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={isOfficialPost} onChange={e => setIsOfficialPost(e.target.checked)} className="accent-highlight" />
-                                        <span className="text-[10px] font-black text-white uppercase">Oficial</span>
-                                    </label>
-                                )}
-                                <button type="submit" disabled={!content.trim()} className="bg-highlight text-white px-6 py-1.5 rounded-lg text-xs font-bold uppercase">Postar</button>
-                            </div>
-                        </div>
-                    </form>
+                <div>
+                    <span className="text-lg font-bold text-white block leading-none tracking-tighter">FAHUB</span>
+                    <span className="text-[8px] text-text-secondary uppercase tracking-widest font-black">{getRoleLabel()}</span>
                 </div>
             </div>
+      </div>
+      
+      <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar py-4 px-3">
+        <nav className="flex-1 space-y-1">
+          <NavLink to="/dashboard" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <DashboardIcon className="w-5 h-5 mr-3 group-hover:text-highlight transition-colors" />
+            <span>Painel Principal</span>
+          </NavLink>
 
-            <div className="space-y-4">
-                {feed.filter(p => !p.isPinned || p === pinnedPost).map(post => (
-                    <div key={post.id} className="bg-secondary rounded-xl p-4 border border-white/5">
-                        <div className="flex items-center gap-3 mb-3">
-                            <img src={post.authorAvatar} className="w-10 h-10 rounded-full" />
-                            <div>
-                                <h4 className="font-bold text-white text-sm">{post.authorName}</h4>
-                                <span className="text-[10px] text-text-secondary">{new Date(post.timestamp).toLocaleString()}</span>
-                            </div>
-                        </div>
-                        <p className="text-white text-sm leading-relaxed mb-4">{post.content}</p>
-                        <div className="flex gap-6 border-t border-white/5 pt-3">
-                            <button className="flex items-center gap-2 text-text-secondary hover:text-orange-500 transition-colors">
-                                <FireIcon className="w-5 h-5" />
-                                <span className="text-xs font-bold">{post.likes}</span>
-                            </button>
-                            <button className="flex items-center gap-2 text-text-secondary hover:text-highlight transition-colors">
-                                <MessageIcon className="w-5 h-5" />
-                                <span className="text-xs font-bold">{post.comments.length}</span>
-                            </button>
-                        </div>
-                    </div>
-                ))}
+          {isAthlete && (
+             <div className="mt-4 animate-fade-in">
+                <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Minha Carreira</p>
+                <NavLink to="/profile" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                  <UsersIcon className="w-5 h-5 mr-3 group-hover:text-blue-400" />
+                  <span>Perfil & Auditoria</span>
+                </NavLink>
+                <NavLink to="/academy" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                  <AcademyIcon className="w-5 h-5 mr-3 group-hover:text-yellow-400" />
+                  <span>Iron Lab (Treinos)</span>
+                </NavLink>
+                <NavLink to="/gemini-playbook" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                  <AiPlaybookIcon className="w-5 h-5 mr-3 group-hover:text-purple-400" />
+                  <span>Estudo IA</span>
+                </NavLink>
+             </div>
+          )}
+
+          {!isAthlete && (
+            <div className="mt-4 animate-fade-in">
+              <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Comissão Técnica</p>
+              <NavLink to="/practice" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <PracticeIcon className="w-5 h-5 mr-3 group-hover:text-blue-400" />
+                <span>Scripts de Treino</span>
+              </NavLink>
+              <NavLink to="/academy" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <DumbbellIcon className="w-5 h-5 mr-3 group-hover:text-red-400" />
+                <span>Validar Academia</span>
+              </NavLink>
+            </div>
+          )}
+
+          <div className="mt-4 pt-4 border-t border-white/5">
+            <NavLink to="/locker-room" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <UsersIcon className="w-5 h-5 mr-3 group-hover:text-pink-400" />
+                <span>Vestiário Social</span>
+            </NavLink>
+            <NavLink to="/marketplace" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <ShopIcon className="w-5 h-5 mr-3 group-hover:text-yellow-400" />
+                <span>Marketplace</span>
+            </NavLink>
+             {canSeeStore && (
+                <NavLink to="/digital-store" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                    <WalletIcon className="w-5 h-5 mr-3 group-hover:text-purple-400" />
+                    <span>Loja de Funções</span>
+                </NavLink>
+             )}
+          </div>
+        </nav>
+      </div>
+
+      {user?.role === 'MASTER' && (
+        <div className="p-3 bg-black/40 border-t border-white/5">
+            <p className="text-[9px] font-black text-highlight uppercase mb-2 text-center tracking-widest">Acesso de Gestor</p>
+            <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => setRole('MASTER')} className={`text-[9px] py-1.5 rounded font-bold border transition-all ${currentRole === 'MASTER' ? 'bg-highlight border-highlight text-white' : 'border-white/10 text-text-secondary'}`}>DONO</button>
+                <button onClick={() => setRole('PLAYER')} className={`text-[9px] py-1.5 rounded font-bold border transition-all ${currentRole === 'PLAYER' ? 'bg-blue-600 border-blue-600 text-white' : 'border-white/10 text-text-secondary'}`}>ATLETA</button>
             </div>
         </div>
-    );
-};
+      )}
 
-export default LockerRoom;
+      <div className="p-3 bg-[#0B1120] border-t border-white/5">
+        <button onClick={handleLogout} className="w-full text-xs font-bold text-red-400 hover:text-white flex items-center justify-center gap-2 py-2 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 rounded-lg transition-all">Sair</button>
+      </div>
+    </aside>
+  );
+});
+
+export default Sidebar;
