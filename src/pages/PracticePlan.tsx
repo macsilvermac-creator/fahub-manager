@@ -192,7 +192,8 @@ const PracticePlan: React.FC = () => {
         // Atualiza estado local e persistência
         const updatedSession = { ...selectedPractice, checkedInAttendees: checkedInIds };
         setSelectedPractice(updatedSession);
-        storageService.savePracticeCheckIn(updatedSession.id, checkedInIds);
+        // Cast to string to avoid type error
+        storageService.savePracticeCheckIn(String(updatedSession.id), checkedInIds);
         
         // Atualiza lista principal
         setPractices(prev => prev.map(p => p.id === updatedSession.id ? updatedSession : p));

@@ -1,6 +1,5 @@
 
 import { User, UserRole, ProgramType } from '../types';
-import { storageService } from './storageService';
 
 const CURRENT_USER_KEY = 'gridiron_current_user';
 const USERS_LIST_KEY = 'gridiron_users_list';
@@ -14,12 +13,9 @@ export const authService = {
   register: async (name: string, email: string, role: UserRole, password: string, cpf: string): Promise<User> => {
       const users = authService.getUsers();
       
-      // Validação de Duplicidade
       if (users.some(u => u.email === email)) throw new Error('Email já cadastrado.');
       if (users.some(u => u.cpf === cpf)) throw new Error('CPF já cadastrado no sistema.');
 
-      // Regra de Negócio: Se for o PRIMEIRO usuário do sistema, ele é MASTER automaticamente.
-      // Caso contrário, é CANDIDATE e PENDING.
       const isFirstUser = users.length === 0;
       const initialRole = isFirstUser ? 'MASTER' : 'CANDIDATE';
       const initialStatus = isFirstUser ? 'APPROVED' : 'PENDING';
@@ -33,14 +29,13 @@ export const authService = {
         cpf: cpf,
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         status: initialStatus,
-        program: initialProgram, // Master gets BOTH by default
-        isProfileComplete: isFirstUser // Master starts complete, others pending
+        program: initialProgram,
+        isProfileComplete: isFirstUser
       };
       
       const updatedUsers = [...users, newUser];
       localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updatedUsers));
       
-      // Se for o master, já loga direto
       if(isFirstUser) {
           localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
       }
@@ -49,16 +44,15 @@ export const authService = {
   },
 
   login: async (email: string, password: string): Promise<User> => {
-        // Simulação de delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-
+        // Simulação de delay de rede
+        await new Promise(resolve => setTimeout(resolve, 500));
         const users = authService.getUsers();
         const user = users.find(u => u.email === email);
 
-        // Fallback para usuário de demonstração se a lista estiver vazia (apenas para testes)
+        // Auto-login para o admin se a base estiver vazia (desenvolvimento)
         if (!user && users.length === 0 && email.includes('@')) {
              const mockUser: User = {
-                 id: 'user-' + Math.random().toString(36).substr(2, 9),
+                 id: 'user-admin',
                  email: email,
                  name: email.split('@')[0].toUpperCase(),
                  role: 'MASTER',
@@ -73,28 +67,10 @@ export const authService = {
         }
 
         if (!user) throw new Error('Usuário não encontrado.');
-        
-        // Bloqueio de Acesso
         if (user.status === 'PENDING') throw new Error('Cadastro em análise pela diretoria.');
         if (user.status === 'REJECTED') throw new Error('Acesso negado.');
 
         localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-        
-        // --- SEGURANÇA DE CONTEXTO (ROOT LEVEL) ---
-        // Se o usuário tem um programa definido (ex: FLAG), forçamos o sistema
-        // a usar esse contexto imediatamente.
-        if (user.program && user.program !== 'BOTH') {
-            storageService.setActiveProgram(user.program);
-            console.log(`🔒 Contexto travado na raiz: ${user.program}`);
-        }
-
-        // CRITICAL PERFORMANCE: Pre-warm the cache based on role
-        setTimeout(() => {
-            console.log("🔥 Pre-warming cache for role:", user.role);
-            storageService.initializeRAM();
-            storageService.syncFromCloud();
-        }, 100);
-
         return user;
   },
 
@@ -118,7 +94,6 @@ export const authService = {
                 status, 
                 role: newRole || u.role,
                 program: newProgram || u.program,
-                // O perfil continua incompleto até o usuário preencher o Onboarding
                 isProfileComplete: u.isProfileComplete || false 
             };
         }

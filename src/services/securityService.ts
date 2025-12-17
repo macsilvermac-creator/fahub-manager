@@ -1,16 +1,15 @@
 
-import { UserRole } from '../types';
-import { authService } from './authService';
+import { UserRole, User } from '../types';
 
 export type Permission = 
-    | 'MANAGE_ROSTER'       // Criar/Editar/Deletar Jogadores
-    | 'MANAGE_FINANCE'      // Criar/Editar Transações
-    | 'VIEW_FINANCE'        // Ver saldo e relatórios
-    | 'MANAGE_TACTICS'      // Criar Plays, Treinos
-    | 'MANAGE_STAFF'        // Contratar/Demitir
-    | 'EDIT_SETTINGS'       // Configurações do Time
-    | 'VIEW_SENSITIVE_DOCS' // Contratos, Laudos Médicos
-    | 'OFFICIATE_GAME';     // Juiz
+    | 'MANAGE_ROSTER'       
+    | 'MANAGE_FINANCE'      
+    | 'VIEW_FINANCE'        
+    | 'MANAGE_TACTICS'      
+    | 'MANAGE_STAFF'        
+    | 'EDIT_SETTINGS'       
+    | 'VIEW_SENSITIVE_DOCS' 
+    | 'OFFICIATE_GAME';     
 
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'PLATFORM_OWNER': ['MANAGE_ROSTER', 'MANAGE_FINANCE', 'VIEW_FINANCE', 'MANAGE_TACTICS', 'MANAGE_STAFF', 'EDIT_SETTINGS', 'VIEW_SENSITIVE_DOCS', 'OFFICIATE_GAME'],
@@ -19,34 +18,32 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'OFFENSIVE_COORD': ['MANAGE_TACTICS'],
     'DEFENSIVE_COORD': ['MANAGE_TACTICS'],
     'FINANCIAL_MANAGER': ['MANAGE_FINANCE', 'VIEW_FINANCE', 'VIEW_SENSITIVE_DOCS'],
-    'MARKETING_MANAGER': [], // Apenas acesso a MKT (gerido nas pages)
+    'MARKETING_MANAGER': [], 
     'COMMERCIAL_MANAGER': [],
     'MEDICAL_STAFF': ['VIEW_SENSITIVE_DOCS'],
     'SPORTS_DIRECTOR': ['MANAGE_ROSTER', 'MANAGE_STAFF'],
     'EQUIPMENT_MANAGER': [],
-    'PLAYER': [], // Atletas têm permissões implícitas de leitura própria
+    'PLAYER': [], 
     'REFEREE': ['OFFICIATE_GAME'],
     'CANDIDATE': [],
-    'BROADCASTER': [] // Acesso apenas a BroadcastBooth (gerido via rota e não permissão de recurso)
+    'BROADCASTER': [] 
 };
 
 export const securityService = {
-    /**
-     * Verifica se o usuário atual tem permissão para realizar uma ação.
-     * @param action A ação que se deseja realizar
-     * @returns boolean
-     */
     can: (action: Permission): boolean => {
-        const user = authService.getCurrentUser();
-        if (!user) return false;
-
-        const permissions = ROLE_PERMISSIONS[user.role] || [];
-        return permissions.includes(action);
+        // Acesso direto ao localStorage para evitar dependência circular com authService
+        const stored = localStorage.getItem('gridiron_current_user');
+        if (!stored) return false;
+        
+        try {
+            const user: User = JSON.parse(stored);
+            const permissions = ROLE_PERMISSIONS[user.role] || [];
+            return permissions.includes(action);
+        } catch {
+            return false;
+        }
     },
 
-    /**
-     * Validação estrita que lança erro se não permitido (Para uso no Backend/Storage)
-     */
     enforce: (action: Permission) => {
         if (!securityService.can(action)) {
             console.error(`🚨 SECURITY ALERT: Acesso negado para ação ${action}`);
@@ -54,14 +51,16 @@ export const securityService = {
         }
     },
 
-    /**
-     * Verifica se o usuário é dono do recurso ou tem permissão de Admin
-     */
     isOwnerOrAdmin: (resourceOwnerId: string): boolean => {
-        const user = authService.getCurrentUser();
-        if (!user) return false;
+        const stored = localStorage.getItem('gridiron_current_user');
+        if (!stored) return false;
         
-        if (user.role === 'MASTER' || user.role === 'PLATFORM_OWNER') return true;
-        return user.id === resourceOwnerId;
+        try {
+            const user: User = JSON.parse(stored);
+            if (user.role === 'MASTER' || user.role === 'PLATFORM_OWNER') return true;
+            return user.id === resourceOwnerId;
+        } catch {
+            return false;
+        }
     }
 };

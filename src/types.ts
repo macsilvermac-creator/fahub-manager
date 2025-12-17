@@ -3,6 +3,9 @@ export type UserRole = 'PLATFORM_OWNER' | 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_C
 
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
 export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH';
+export type PracticeCategory = 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
+export type TransactionCategory = 'TRANSPORT' | 'EQUIPMENT' | 'REFEREE' | 'FIELD_RENTAL' | 'EVENT' | 'SPONSORSHIP' | 'TUITION' | 'STORE' | 'OTHER';
+export type FoulType = 'HOLDING' | 'FALSE_START' | 'OFFSIDES' | 'PASS_INTERFERENCE' | 'UNSPORTSMANLIKE' | 'PERSONAL_FOUL' | 'DELAY_OF_GAME' | 'BLOCK_IN_BACK';
 
 export interface WorkoutProof {
     id: string;
@@ -10,6 +13,51 @@ export interface WorkoutProof {
     aiValidation: 'PENDING' | 'VALID' | 'INVALID';
     coachValidation: 'PENDING' | 'APPROVED' | 'REJECTED';
     timestamp: Date;
+}
+
+export interface CombineStats {
+    fortyYards?: number;
+    benchPress?: number;
+    verticalJump?: number;
+    broadJump?: number;
+    shuttle?: number;
+}
+
+export interface WellnessEntry {
+    date: string;
+    sleepQuality: number;
+    fatigue: number;
+    soreness: number;
+    stress: number;
+    rpe: number;
+}
+
+export interface SavedWorkout {
+    id: string;
+    date: Date;
+    title: string;
+    content: string;
+    category: string;
+}
+
+export interface DevelopmentPlan {
+    id: string;
+    playerId: number;
+    title: string;
+    generatedContent: string;
+    createdAt: Date;
+    deadline?: Date;
+    status: 'ACTIVE' | 'COMPLETED';
+    coachFeedback?: string;
+}
+
+export interface MedicalReport {
+    id: string;
+    type: 'PHYSICAL' | 'PSYCHOLOGICAL';
+    title: string;
+    date: Date;
+    content: string;
+    author: string;
 }
 
 export interface Player {
@@ -46,70 +94,39 @@ export interface Player {
     nationality?: string;
 }
 
-export interface WellnessEntry {
-    date: string;
-    sleepQuality: number;
-    fatigue: number;
-    soreness: number;
-    stress: number;
-    rpe: number;
-}
-
-export interface CombineStats {
-    fortyYards?: number;
-    benchPress?: number;
-    verticalJump?: number;
-    broadJump?: number;
-    shuttle?: number;
-}
-
-export interface SavedWorkout {
+export interface PracticeScriptItem {
     id: string;
-    date: Date;
-    title: string;
-    content: string;
-    category: string;
+    startTime: string;
+    durationMinutes: number;
+    type: string;
+    activityName: string;
+    description: string;
 }
 
-export interface DevelopmentPlan {
+export interface Drill {
     id: string;
-    playerId: number;
-    title: string;
-    generatedContent: string;
-    createdAt: Date;
-    deadline?: Date;
-    status: 'ACTIVE' | 'COMPLETED';
-    coachFeedback?: string;
+    name: string;
+    description: string;
+    durationMinutes: number;
+    demoVideoUrl?: string;
+    videoSearchTerm?: string;
 }
 
-export interface MedicalReport {
-    id: string;
-    type: 'PHYSICAL' | 'PSYCHOLOGICAL';
+export interface PracticeSession {
+    id: string | number;
     title: string;
+    focus: string;
     date: Date;
-    content: string;
-    author: string;
-}
-
-export interface Game {
-    id: number;
-    opponent: string;
-    opponentLogoUrl: string;
-    date: Date;
-    location: 'Home' | 'Away';
-    status: 'SCHEDULED' | 'IN_PROGRESS' | 'HALFTIME' | 'FINAL';
-    result?: 'W' | 'L' | 'T';
-    score?: string;
-    clock?: string;
-    currentQuarter?: number;
-    program?: ProgramType;
-    scoutingReport?: GameScoutingReport;
-    playerGrades?: PlayerPerformance[];
-    callSheet?: CallSheetSection[];
-    officialReport?: GameReport;
-    homeTeamName?: string;
-    halftimeStats?: any;
-    sponsors?: any[];
+    category: PracticeCategory;
+    locationType: string;
+    instructor: string;
+    attendees: string[];
+    checkedInAttendees?: string[];
+    notes: string;
+    drills: Drill[];
+    script: PracticeScriptItem[];
+    performances?: any[];
+    deadlineDate?: Date;
 }
 
 export interface GameScoutingReport {
@@ -147,8 +164,6 @@ export interface GameInfrastructureChecklist {
     waterProvided: boolean;
 }
 
-export type FoulType = 'HOLDING' | 'FALSE_START' | 'OFFSIDES' | 'PASS_INTERFERENCE' | 'UNSPORTSMANLIKE' | 'PERSONAL_FOUL' | 'DELAY_OF_GAME' | 'BLOCK_IN_BACK';
-
 export interface FoulRecord {
     type: string;
     label?: string;
@@ -173,6 +188,27 @@ export interface GameReport {
     isFinalized: boolean;
 }
 
+export interface Game {
+    id: number;
+    opponent: string;
+    opponentLogoUrl: string;
+    date: Date;
+    location: 'Home' | 'Away';
+    status: 'SCHEDULED' | 'IN_PROGRESS' | 'HALFTIME' | 'FINAL';
+    result?: 'W' | 'L' | 'T';
+    score?: string;
+    clock?: string;
+    currentQuarter?: number;
+    program?: ProgramType;
+    scoutingReport?: GameScoutingReport;
+    playerGrades?: PlayerPerformance[];
+    callSheet?: CallSheetSection[];
+    officialReport?: GameReport;
+    homeTeamName?: string;
+    halftimeStats?: any;
+    sponsors?: any[];
+}
+
 export interface TeamSettings {
     id: string;
     teamName: string;
@@ -185,9 +221,18 @@ export interface TeamSettings {
     reputation: number;
     badges: string[];
     sportType: 'FULLPADS' | 'FLAG';
-    legalAgreementsSigned?: any[];
     website?: string;
     contactEmail?: string;
+}
+
+export interface KanbanTask {
+    id: string;
+    title: string;
+    description?: string;
+    status: 'TODO' | 'DOING' | 'DONE';
+    assignedToDepartment: 'MARKETING' | 'COMMERCIAL' | 'TECHNICAL' | 'FINANCE' | 'GENERAL';
+    priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    dueDate?: Date;
 }
 
 export interface SocialFeedPost {
@@ -198,27 +243,11 @@ export interface SocialFeedPost {
     isOfficialTeamPost: boolean;
     isPinned?: boolean;
     content: string;
+    mediaType?: 'IMAGE' | 'VIDEO';
+    mediaUrl?: string;
     likes: number;
     comments: any[];
     timestamp: Date;
-    mediaType?: 'IMAGE' | 'VIDEO';
-    mediaUrl?: string;
-}
-
-export type TransactionCategory = 'TRANSPORT' | 'EQUIPMENT' | 'REFEREE' | 'FIELD_RENTAL' | 'EVENT' | 'SPONSORSHIP' | 'TUITION' | 'STORE' | 'OTHER';
-
-export interface Transaction {
-    id: string;
-    title: string;
-    amount: number;
-    type: 'INCOME' | 'EXPENSE';
-    category: string;
-    date: Date;
-    status: 'PAID' | 'PENDING';
-    description?: string;
-    attachments?: any[];
-    aiGenerated?: boolean;
-    verifiedBy?: string;
 }
 
 export interface Invoice {
@@ -229,51 +258,88 @@ export interface Invoice {
     amount: number;
     dueDate: Date;
     status: 'PENDING' | 'PAID' | 'OVERDUE';
-    category?: string;
+    category?: TransactionCategory;
     inventoryItemId?: string;
 }
 
-export type PracticeCategory = 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
-
-export interface PracticeScriptItem {
-    id: string;
-    startTime: string;
-    durationMinutes: number;
-    type: string;
-    activityName: string;
-    description: string;
-}
-
-export interface PracticeSession {
+export interface Transaction {
     id: string;
     title: string;
-    focus: string;
+    description?: string;
+    amount: number;
+    type: 'INCOME' | 'EXPENSE';
+    category: TransactionCategory;
     date: Date;
-    category: PracticeCategory;
-    locationType: string;
-    instructor: string;
-    attendees: string[];
-    checkedInAttendees?: string[];
-    notes: string;
-    drills: any[];
-    script: PracticeScriptItem[];
-    performances?: any[];
-    deadlineDate?: Date;
+    status: 'PAID' | 'PENDING';
+    attachments?: any[];
+    aiGenerated?: boolean;
+    verifiedBy?: string;
 }
 
-export interface StaffMember {
+export interface Subscription {
+    id: string;
+    title: string;
+    amount: number;
+    frequency: 'MONTHLY' | 'YEARLY';
+    active: boolean;
+    nextBillingDate: Date;
+    assignedTo: number[];
+}
+
+export interface Budget {
+    category: TransactionCategory;
+    limit: number;
+    spent: number;
+}
+
+export interface Bill {
+    id: string;
+    title: string;
+    amount: number;
+    dueDate: Date;
+    status: 'PENDING' | 'PAID';
+    category: TransactionCategory;
+}
+
+export interface EquipmentItem {
     id: string;
     name: string;
-    email: string;
-    phone: string;
-    role: string;
-    documentsPending: boolean;
-    contract: {
-        active: boolean;
-        type: 'VOLUNTEER' | 'PAID';
-        value: number;
-        signed: boolean;
-    };
+    category: 'HELMET' | 'PADS' | 'JERSEY' | 'BALL' | 'DRINK' | 'FOOD' | 'MERCH';
+    quantity: number;
+    condition: 'NEW' | 'USED' | 'DAMAGED';
+    forSale: boolean;
+    salePrice?: number;
+    brand?: string;
+    acquisitionDate?: Date;
+    expiryDate?: Date;
+    assignedToPlayerId?: number;
+    cost?: number;
+    size?: string;
+    qrCodeUrl?: string;
+}
+
+export interface PlayElement {
+    id: string;
+    type: 'OFFENSE' | 'DEFENSE';
+    label: string;
+    x: number;
+    y: number;
+}
+
+export interface TacticalFrame {
+    id: number;
+    elements: PlayElement[];
+}
+
+export interface TacticalPlay {
+    id: string;
+    name: string;
+    concept: string;
+    elements: PlayElement[];
+    frames?: TacticalFrame[];
+    routes?: any[];
+    aiAnalysis?: string;
+    createdAt: Date;
     program?: ProgramType;
 }
 
@@ -306,29 +372,18 @@ export interface TeamDocument {
     url: string;
 }
 
-export interface PlayElement {
+export interface CourseLesson {
     id: string;
-    type: 'OFFENSE' | 'DEFENSE';
-    label: string;
-    x: number;
-    y: number;
+    title: string;
+    content: string;
+    videoSearchTerm?: string;
+    completed: boolean;
 }
 
-export interface TacticalFrame {
-    id: number;
-    elements: PlayElement[];
-}
-
-export interface TacticalPlay {
+export interface CourseModule {
     id: string;
-    name: string;
-    concept: string;
-    elements: PlayElement[];
-    frames?: TacticalFrame[];
-    routes?: any[];
-    aiAnalysis?: string;
-    createdAt: Date;
-    program?: ProgramType;
+    title: string;
+    lessons: CourseLesson[];
 }
 
 export interface Course {
@@ -338,149 +393,28 @@ export interface Course {
     level: 'FAN' | 'PLAYER' | 'COACH';
     author: string;
     createdAt: Date;
-    modules: any[];
+    modules: CourseModule[];
     thumbnailUrl: string;
+    isPurchased?: boolean;
+    price?: number;
 }
 
-export interface YouthStudent {
-    id: string;
-    isSocialProject: boolean;
-    name: string;
-}
-
-export interface YouthClass {
-    id: string;
-    name: string;
-    ageGroup: string;
-    schedule: string;
-    coachId: string;
-    students: YouthStudent[];
-    maxCapacity: number;
-}
-
-export interface RecruitmentCandidate {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    position: string;
-    age: number;
-    height: string;
-    weight: number;
-    experience: string;
-    status: 'NEW' | 'TRYOUT' | 'SELECTED' | 'ONBOARDING';
-    createdAt: Date;
-    notes?: string;
-    rating?: number;
-    aiAnalysis?: string;
-    combineStats?: CombineStats;
-    avatarUrl?: string;
-}
-
-export interface KeyResult {
-    id: string;
-    title: string;
-    currentValue: number;
-    targetValue: number;
-    unit: string;
-    lastUpdated: Date;
-}
-
-export interface Objective {
-    id: string;
-    title: string;
-    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING';
-    status: 'ON_TRACK' | 'BEHIND' | 'COMPLETED' | 'AT_RISK';
-    progress: number;
-    deadline: Date;
-    owner: string;
-    keyResults: KeyResult[];
-}
-
-export interface Subscription {
-    id: string;
-    title: string;
-    amount: number;
-    frequency: 'MONTHLY' | 'YEARLY';
-    active: boolean;
-    nextBillingDate: Date;
-    assignedTo: number[];
-}
-
-export interface Budget {
-    category: string;
-    limit: number;
-    spent: number;
-}
-
-export interface Bill {
-    id: string;
-    title: string;
-    amount: number;
-    dueDate: Date;
-    status: 'PENDING' | 'PAID';
-}
-
-export interface KanbanTask {
-    id: string;
-    title: string;
-    description?: string;
-    status: 'TODO' | 'DOING' | 'DONE';
-    assignedToDepartment: 'MARKETING' | 'COMMERCIAL' | 'TECHNICAL' | 'FINANCE' | 'GENERAL';
-    priority: 'LOW' | 'MEDIUM' | 'HIGH';
-    dueDate?: Date;
-}
-
-export interface RefereeCertification {
-    id: string;
-    name: string;
-    issueDate: Date;
-    expiryDate: Date;
-    status: 'ACTIVE' | 'EXPIRED';
-}
-
-export interface RefereeProfile {
-    id: string;
-    name: string;
-    level: string;
-    city: string;
-    availability: 'AVAILABLE' | 'UNAVAILABLE';
-    totalGames: number;
-    balance: number;
-    certifications: RefereeCertification[];
-}
-
-export interface LegalDocument {
-    id: string;
-    title: string;
-    version: string;
-    requiredRole: string[];
-    createdAt: Date;
-    content: string;
-}
-
-export interface Drill {
-    id: string;
-    name: string;
-    description: string;
-    durationMinutes: number;
-    videoSearchTerm?: string;
+export interface LeagueTeam {
+    teamId: string;
+    teamName: string;
+    logoUrl: string;
+    wins: number;
+    losses: number;
+    draws: number;
+    pointsFor: number;
+    pointsAgainst: number;
 }
 
 export interface League {
     id: string;
     name: string;
     season: string;
-    teams: {
-        teamId: string;
-        teamName: string;
-        logoUrl: string;
-        wins: number;
-        losses: number;
-        draws: number;
-        pointsFor: number;
-        pointsAgainst: number;
-    }[];
+    teams: LeagueTeam[];
 }
 
 export interface SponsorDeal {
@@ -499,32 +433,6 @@ export interface SocialPost {
     content: string;
     status: 'SCHEDULED' | 'POSTED';
     scheduledDate: Date;
-}
-
-export interface EquipmentItem {
-    id: string;
-    name: string;
-    category: 'HELMET' | 'PADS' | 'JERSEY' | 'BALL' | 'DRINK' | 'FOOD' | 'MERCH';
-    quantity: number;
-    condition: 'NEW' | 'USED' | 'DAMAGED';
-    forSale: boolean;
-    salePrice?: number;
-    brand?: string;
-    acquisitionDate?: Date;
-    expiryDate?: Date;
-    assignedToPlayerId?: number;
-    cost?: number;
-    size?: string;
-    qrCodeUrl?: string;
-}
-
-export interface EventSale {
-    id: string;
-    type: 'TICKET' | 'BAR';
-    itemName: string;
-    quantity: number;
-    totalAmount: number;
-    timestamp: Date;
 }
 
 export interface VideoTag {
@@ -563,53 +471,78 @@ export interface VideoPlaylist {
     createdBy: string;
 }
 
-export interface CoachGameNote {
-    id: string;
-    gameId: number;
-    quarter: number;
-    content: string;
-    timestamp: Date;
-    category?: 'GENERAL' | 'HALFTIME' | 'POSTGAME';
-    tags?: string[];
+export interface StaffContract {
+    active: boolean;
+    type: 'VOLUNTEER' | 'PAID';
+    value: number;
+    signed: boolean;
 }
 
-export interface CrewLogistics {
-    gameId: number;
-    meetingPoint: string;
-    meetingTime: string;
-    carPools: { driver: string; passengers: string[]; vehicle: string }[];
-    uniformColor: string;
-}
-
-export interface User {
+export interface StaffMember {
     id: string;
-    email: string;
     name: string;
-    role: UserRole;
-    avatarUrl: string;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    cpf: string;
+    email: string;
+    phone: string;
+    role: string;
+    documentsPending: boolean;
+    contract: StaffContract;
     program?: ProgramType;
-    isProfileComplete: boolean;
+    coachProfile?: any;
 }
 
-export interface DigitalProduct {
+export interface YouthStudent {
+    id: string;
+    isSocialProject: boolean;
+    name: string;
+}
+
+export interface YouthClass {
+    id: string;
+    name: string;
+    ageGroup: string;
+    schedule: string;
+    coachId: string;
+    students: YouthStudent[];
+    maxCapacity: number;
+}
+
+export interface RecruitmentCandidate {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    position: string;
+    age: number;
+    height: string;
+    weight: number;
+    experience: string;
+    status: 'NEW' | 'TRYOUT' | 'SELECTED' | 'ONBOARDING';
+    createdAt: Date;
+    notes?: string;
+    avatarUrl?: string;
+    rating?: number;
+    aiAnalysis?: string;
+    combineStats?: CombineStats;
+}
+
+export interface KeyResult {
     id: string;
     title: string;
-    description: string;
-    price: number;
-    type: string;
-    durationHours: number;
-    coverUrl: string;
+    currentValue: number;
+    targetValue: number;
+    unit: string;
+    lastUpdated: Date;
 }
 
-export interface Entitlement {
+export interface Objective {
     id: string;
-    userId: string;
-    productId: string;
-    purchaseDate: Date;
-    expiresAt: Date;
-    status: string;
+    title: string;
+    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING';
+    status: 'ON_TRACK' | 'BEHIND' | 'COMPLETED' | 'AT_RISK';
+    progress: number;
+    deadline: Date;
+    owner: string;
+    keyResults: KeyResult[];
 }
 
 export interface AuditLog {
@@ -623,30 +556,115 @@ export interface AuditLog {
     ipAddress: string;
 }
 
+export interface LegalDocument {
+    id: string;
+    title: string;
+    version: string;
+    requiredRole: UserRole[];
+    createdAt: Date;
+    content: string;
+}
+
+export interface TransferRequest {
+    id: string;
+    playerId: number;
+    playerName: string;
+    originTeamId: string;
+    originTeamName: string;
+    destinationTeamId: string;
+    destinationTeamName: string;
+    fee: number;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+}
+
+export interface RefereeCertification {
+    id: string;
+    name: string;
+    issueDate: Date;
+    expiryDate: Date;
+    status: 'ACTIVE' | 'EXPIRED';
+}
+
+export interface RefereeProfile {
+    id: string;
+    name: string;
+    level: string;
+    city: string;
+    availability: 'AVAILABLE' | 'UNAVAILABLE';
+    totalGames: number;
+    balance: number;
+    certifications: RefereeCertification[];
+}
+
+export interface AssociationFinance {
+    totalReceivableFromLeagues: number;
+    totalPayableToReferees: number;
+    cashBalance: number;
+}
+
+export interface CarPool {
+    driver: string;
+    passengers: string[];
+    vehicle: string;
+}
+
+export interface CrewLogistics {
+    gameId: number;
+    meetingPoint: string;
+    meetingTime: string;
+    carPools: CarPool[];
+    uniformColor: string;
+}
+
+export interface CoachStats {
+    wins: number;
+    losses: number;
+    ties: number;
+}
+
 export interface CoachCareer {
-    careerRecord: { wins: number; losses: number; ties: number };
+    careerRecord: CoachStats;
     philosophy: string;
     achievements: any[];
     specialties: string[];
 }
 
-export interface GymExercise {
-    name: string;
-    sets: string;
-    reps: string;
-    notes: string;
-}
-
-export interface GymDay {
-    title: string; focus: string; exercises: GymExercise[];
-}
-
-export interface InstallMatrixItem {
+export interface CoachGameNote {
     id: string;
-    day: 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT';
-    category: 'RUN' | 'PASS' | 'DEFENSE' | 'SITUATION';
-    concept: string;
-    notes?: string;
+    gameId: number;
+    quarter: number;
+    content: string;
+    timestamp: Date;
+    category?: 'GENERAL' | 'HALFTIME' | 'POSTGAME' | 'OFFENSE' | 'DEFENSE' | 'SPECIAL';
+    tags?: string[];
+}
+
+export interface EventSale {
+    id: string;
+    type: 'TICKET' | 'BAR';
+    itemName: string;
+    quantity: number;
+    totalAmount: number;
+    timestamp: Date;
+}
+
+export interface Entitlement {
+    id: string;
+    userId: string;
+    productId: string;
+    purchaseDate: Date;
+    expiresAt: Date;
+    status: 'ACTIVE' | 'EXPIRED';
+}
+
+export interface DigitalProduct {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    type: 'SCOUT_REPORT' | 'GAME_VIDEO' | 'DOCUMENT' | 'COURSE';
+    durationHours: number;
+    coverUrl: string;
 }
 
 export interface Tenant {
@@ -667,7 +685,7 @@ export interface ServiceTicket {
     serviceName: string;
     status: 'PENDING' | 'IN_PROGRESS' | 'DELIVERED';
     purchasedAt: Date;
-    assignedTo: string;
+    assignedTo?: string;
     deliverableUrl?: string;
 }
 
@@ -676,6 +694,29 @@ export interface PlatformMetric {
     activeTeams: number;
     pendingServices: number;
     churnRate: number;
+}
+
+export interface GymDay {
+    title: string;
+    focus: string;
+    exercises: {
+        name: string;
+        sets: string | number;
+        reps: string | number;
+        notes: string;
+    }[];
+}
+
+export interface User {
+    id: string;
+    email: string;
+    name: string;
+    role: UserRole;
+    avatarUrl: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    cpf: string;
+    program?: ProgramType;
+    isProfileComplete: boolean;
 }
 
 export interface ConfederationStats {
@@ -702,20 +743,23 @@ export interface Affiliate {
     lastAuditDate: Date;
 }
 
-export interface TransferRequest {
+export interface MarketplaceItem {
     id: string;
-    playerId: number;
-    playerName: string;
-    originTeamId: string;
-    originTeamName: string;
-    destinationTeamId: string;
-    destinationTeamName: string;
-    fee: number;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    title: string;
+    description: string;
+    price: number;
+    category: string;
+    sellerType: 'PLAYER' | 'TEAM_STORE';
+    sellerName: string;
+    imageUrl: string;
+    isSold: boolean;
+    qrCodeDelivery?: string;
 }
 
-export interface AssociationFinance {
-    totalReceivableFromLeagues: number;
-    totalPayableToReferees: number;
-    cashBalance: number;
+export interface InstallMatrixItem {
+    id: string;
+    day: 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT';
+    category: 'RUN' | 'PASS' | 'DEFENSE' | 'SITUATION';
+    concept: string;
+    notes?: string;
 }
