@@ -7,14 +7,22 @@ import LazyImage from '@/components/LazyImage';
 
 const PublicLeague: React.FC = () => {
     const [data, setData] = useState<any>(null);
+    const [games, setGames] = useState<any[]>([]);
 
     useEffect(() => {
         setData(storageService.getPublicLeagueStats());
+        setGames(storageService.getGames());
+        
+        const interval = setInterval(() => {
+             setGames(storageService.getGames());
+        }, 30000); // Atualiza a cada 30s para pegar snapshots
+        return () => clearInterval(interval);
     }, []);
 
     if (!data) return <div className="min-h-screen bg-primary flex items-center justify-center text-white">Carregando Portal...</div>;
 
     const { leagueTable, name, season, leaders } = data;
+    const liveOrRecentGames = games.filter(g => g.status !== 'SCHEDULED').slice(0, 3);
 
     return (
         <div className="min-h-screen bg-primary text-white font-sans overflow-x-hidden">
@@ -39,6 +47,46 @@ const PublicLeague: React.FC = () => {
 
             <div className="max-w-7xl mx-auto px-6 -mt-20 relative z-20">
                 
+                {/* GAME SNAPSHOTS HIGHLIGHTS */}
+                {liveOrRecentGames.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                        {liveOrRecentGames.map(game => (
+                            <div key={game.id} className="bg-secondary/90 backdrop-blur rounded-xl border border-white/10 overflow-hidden shadow-lg transform hover:-translate-y-1 transition-all">
+                                <div className="bg-black/50 p-3 flex justify-between items-center border-b border-white/5">
+                                    <span className="text-xs font-bold text-red-400 uppercase animate-pulse">
+                                        {game.status === 'IN_PROGRESS' ? 'AO VIVO' : game.status === 'HALFTIME' ? 'INTERVALO' : 'FINAL'}
+                                    </span>
+                                    <span className="text-xs font-mono text-white">{game.score}</span>
+                                </div>
+                                <div className="p-4">
+                                    <h4 className="font-black text-white uppercase text-sm mb-3">
+                                        {game.homeTeamName || 'MANDANTE'} vs {game.opponent}
+                                    </h4>
+                                    
+                                    {game.halftimeStats ? (
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-xs border-b border-white/5 pb-1">
+                                                <span className="text-text-secondary">Jardas Totais</span>
+                                                <span className="text-white font-bold">{game.halftimeStats.totalYards}</span>
+                                            </div>
+                                            <div className="flex justify-between text-xs border-b border-white/5 pb-1">
+                                                <span className="text-text-secondary">Passe / Corrida</span>
+                                                <span className="text-white">{game.halftimeStats.passYards} / {game.halftimeStats.rushYards}</span>
+                                            </div>
+                                             <div className="flex justify-between text-xs">
+                                                <span className="text-text-secondary">Turnovers</span>
+                                                <span className="text-red-400 font-bold">{game.halftimeStats.turnovers}</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-text-secondary italic text-center py-2">Estatísticas detalhadas em breve.</p>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 <div className="bg-secondary/80 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden mb-12">
                     <div className="p-6 border-b border-white/10 bg-black/40 flex justify-between items-center">
                         <h3 className="text-2xl font-bold flex items-center gap-3">

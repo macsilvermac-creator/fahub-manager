@@ -8,6 +8,7 @@ import { UserPlusIcon, SearchIcon, FilterIcon, CheckCircleIcon, XIcon, ClockIcon
 import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 import { UserContext } from '../components/Layout';
+import LazyImage from '@/components/LazyImage';
 
 const STATUS_COLUMNS = [
     { id: 'NEW', label: 'Inscritos (Novos)', color: 'border-blue-500' },
@@ -20,16 +21,12 @@ const Recruitment: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const toast = useToast();
     const [candidates, setCandidates] = useState<RecruitmentCandidate[]>([]);
-    const [viewMode, setViewMode] = useState<'KANBAN' | 'LIST'>('KANBAN');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [selectedCandidate, setSelectedCandidate] = useState<RecruitmentCandidate | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Permissões
-    // REGRA: Apenas Master cadastra novos candidatos (fluxo administrativo)
+    // Permissões Estritas
     const isMaster = currentRole === 'MASTER';
-    
-    // REGRA: Coaches podem avaliar e mover cards (fluxo técnico)
+    // Coaches podem apenas gerenciar o status dos cards existentes
     const canManagePipeline = isMaster || currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
 
     // Form State
@@ -59,7 +56,10 @@ const Recruitment: React.FC = () => {
             experience: form.experience || 'Rookie',
             status: 'NEW',
             createdAt: new Date(),
-            notes: form.notes || ''
+            notes: form.notes || '',
+            // Generate a random avatar for demo purposes
+            // @ts-ignore
+            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(form.name)}&background=random&color=fff`
         };
 
         const updated = [...candidates, newCandidate];
@@ -101,7 +101,7 @@ const Recruitment: React.FC = () => {
     };
 
     const handleDelete = (id: string) => {
-        if(!isMaster) return; // Apenas Master deleta
+        if(!isMaster) return; 
         if(!confirm("Remover candidato?")) return;
         const updated = candidates.filter(c => c.id !== id);
         setCandidates(updated);
@@ -123,7 +123,7 @@ const Recruitment: React.FC = () => {
                 {/* APENAS MASTER CRIA NOVOS CANDIDATOS MANUALMENTE */}
                 {isMaster && (
                     <button onClick={() => setIsAddModalOpen(true)} className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2">
-                        + Novo Candidato
+                        + Novo Candidato (Admin)
                     </button>
                 )}
             </div>
@@ -139,12 +139,16 @@ const Recruitment: React.FC = () => {
                             {candidates.filter(c => c.status === col.id).map(candidate => (
                                 <div key={candidate.id} className="bg-secondary p-4 rounded-lg border border-white/5 hover:border-white/20 transition-all group relative">
                                     <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <h4 className="font-bold text-white">{candidate.name}</h4>
-                                            <p className="text-xs text-text-secondary">{candidate.position} • {candidate.age} anos</p>
+                                        <div className="flex items-center gap-3">
+                                            {/* @ts-ignore - avatarUrl is dynamically added on save */}
+                                            <LazyImage src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${candidate.name}`} className="w-8 h-8 rounded-full" />
+                                            <div>
+                                                <h4 className="font-bold text-white text-sm">{candidate.name}</h4>
+                                                <p className="text-[10px] text-text-secondary">{candidate.position} • {candidate.age} anos</p>
+                                            </div>
                                         </div>
                                         {candidate.rating && (
-                                            <span className={`text-xs font-bold px-2 py-1 rounded ${candidate.rating >= 80 ? 'bg-green-500 text-black' : 'bg-white/10 text-white'}`}>
+                                            <span className={`text-[10px] font-bold px-2 py-1 rounded ${candidate.rating >= 80 ? 'bg-green-500 text-black' : 'bg-white/10 text-white'}`}>
                                                 {candidate.rating}
                                             </span>
                                         )}
@@ -159,13 +163,13 @@ const Recruitment: React.FC = () => {
 
                                     {canManagePipeline && (
                                         <div className="flex gap-2 mt-2 pt-2 border-t border-white/5">
-                                            {col.id === 'NEW' && <button onClick={() => updateStatus(candidate.id, 'TRYOUT')} className="flex-1 text-xs bg-yellow-600/20 text-yellow-400 py-1 rounded hover:bg-yellow-600 hover:text-white">Agendar Tryout</button>}
+                                            {col.id === 'NEW' && <button onClick={() => updateStatus(candidate.id, 'TRYOUT')} className="flex-1 text-[10px] bg-yellow-600/20 text-yellow-400 py-1 rounded hover:bg-yellow-600 hover:text-white font-bold">Agendar Tryout</button>}
                                             {col.id === 'TRYOUT' && (
                                                 <>
-                                                    <button onClick={() => handleAnalyze(candidate)} className="flex-1 text-xs bg-purple-600/20 text-purple-400 py-1 rounded hover:bg-purple-600 hover:text-white flex justify-center gap-1">
+                                                    <button onClick={() => handleAnalyze(candidate)} className="flex-1 text-[10px] bg-purple-600/20 text-purple-400 py-1 rounded hover:bg-purple-600 hover:text-white flex justify-center gap-1 font-bold">
                                                         {isProcessing ? '...' : <><SparklesIcon className="w-3 h-3"/> IA</>}
                                                     </button>
-                                                    <button onClick={() => updateStatus(candidate.id, 'SELECTED')} className="flex-1 text-xs bg-green-600/20 text-green-400 py-1 rounded hover:bg-green-600 hover:text-white">Aprovar</button>
+                                                    <button onClick={() => updateStatus(candidate.id, 'SELECTED')} className="flex-1 text-[10px] bg-green-600/20 text-green-400 py-1 rounded hover:bg-green-600 hover:text-white font-bold">Aprovar</button>
                                                 </>
                                             )}
                                             {/* Delete: Only Master */}

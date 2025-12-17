@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { BellIcon, ChevronDownIcon, WifiOffIcon, RefreshIcon, CheckCircleIcon, AlertCircleIcon } from './icons/UiIcons';
 import { syncService } from '../services/syncService';
 import { authService } from '../services/authService';
+import LazyImage from './LazyImage';
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -49,7 +50,11 @@ const Header: React.FC<HeaderProps> = ({ children }) => {
 
         <div className="relative">
           <button className="flex items-center space-x-2 p-1 pr-3 rounded-full hover:bg-white/5 transition-colors border border-transparent hover:border-white/10">
-            <img className="h-8 w-8 rounded-full object-cover border border-white/10" src={user?.avatarUrl || "https://ui-avatars.com/api/?name=User"} alt="User avatar" />
+            <LazyImage 
+                className="h-8 w-8 rounded-full object-cover border border-white/10" 
+                src={user?.avatarUrl || "https://ui-avatars.com/api/?name=User"} 
+                alt="User avatar" 
+            />
             <span className="hidden md:block text-white text-sm font-medium">{user?.name?.split(' ')[0] || 'Usuário'}</span>
             <ChevronDownIcon />
           </button>
