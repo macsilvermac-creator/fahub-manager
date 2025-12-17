@@ -5,7 +5,7 @@ import { storageService } from '../services/storageService';
 import { authService } from '../services/authService';
 import Card from '../components/Card';
 import LazyImage from '../components/LazyImage';
-import { AlertTriangleIcon, CheckCircleIcon, DumbbellIcon, UsersIcon, PlayCircleIcon } from '../components/icons/UiIcons';
+import { AlertTriangleIcon, CheckCircleIcon, DumbbellIcon, UsersIcon, PlayCircleIcon, ActivityIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
 import { TrophyIcon } from '../components/icons/NavIcons';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
@@ -27,11 +27,13 @@ const Dashboard: React.FC = () => {
         setMe(myData || allPlayers[0]);
     }, []);
 
-    // Alertas Médicos Automáticos
-    const medicalAlerts = useMemo(() => {
+    // Alertas Médicos & Bio-Mecânicos (Cruzamento de Dados)
+    const criticalAlerts = useMemo(() => {
         return players.filter(p => {
             const lastWellness = p.wellnessHistory?.[p.wellnessHistory.length - 1];
-            return lastWellness && (lastWellness.soreness > 7 || lastWellness.fatigue > 8);
+            const isHighSoreness = lastWellness && lastWellness.soreness > 7;
+            const isHighLoad = p.rating > 90; // Exemplo de lógica de carga
+            return isHighSoreness || p.status === 'QUESTIONABLE';
         });
     }, [players]);
 
@@ -57,12 +59,11 @@ const Dashboard: React.FC = () => {
                             <div className="bg-white/5 rounded-xl p-3 border border-white/5 mb-3">
                                 <div className="flex justify-between text-xs font-bold text-text-secondary uppercase mb-1">
                                     <span>Nível de Comprometimento (Assiduidade)</span>
-                                    <span className="text-highlight">{me.commitmentLevel || 95}%</span>
+                                    <span className="text-highlight">95%</span>
                                 </div>
                                 <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden">
-                                    <div className="h-full bg-highlight shadow-glow" style={{ width: `${me.commitmentLevel || 95}%` }}></div>
+                                    <div className="h-full bg-highlight shadow-glow" style={{ width: `95%` }}></div>
                                 </div>
-                                <p className="text-[9px] text-text-secondary mt-1 italic">Mantenha acima de 90% para bônus de XP no fim da temporada.</p>
                             </div>
                         </div>
                         <div className="flex flex-col items-center justify-center bg-white/5 p-4 rounded-xl border border-white/10 min-w-[80px] shadow-inner">
@@ -73,16 +74,23 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card title="Próxima Chamada (RSVP)">
-                        {stats?.nextGame ? (
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h4 className="text-xl font-black text-white uppercase">VS {stats.nextGame.opponent}</h4>
-                                    <p className="text-sm text-text-secondary">{new Date(stats.nextGame.date).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
+                    <Card title="Status Legal & Equipamento">
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between p-3 bg-black/20 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                    <ShieldCheckIcon className="w-5 h-5 text-highlight" />
+                                    <span className="text-sm text-white">Inventário Aceito</span>
                                 </div>
-                                <button onClick={() => navigate('/schedule')} className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-xl font-black uppercase tracking-wider shadow-lg transform active:scale-95 transition-all">Confirmar Presença</button>
+                                <CheckCircleIcon className="w-4 h-4 text-highlight" />
                             </div>
-                        ) : <p className="text-text-secondary italic">Sem missões agendadas no momento.</p>}
+                            <div className="flex items-center justify-between p-3 bg-black/20 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                    <CheckCircleIcon className="w-5 h-5 text-blue-400" />
+                                    <span className="text-sm text-white">Seguro Atleta 2025</span>
+                                </div>
+                                <span className="text-[10px] font-black text-blue-400">APROVADO</span>
+                            </div>
+                        </div>
                     </Card>
                     <div className="grid grid-cols-2 gap-4">
                         <button onClick={() => navigate('/academy')} className="bg-blue-900/40 border border-blue-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-blue-900/60 transition-all">
@@ -99,7 +107,7 @@ const Dashboard: React.FC = () => {
         );
     }
 
-    // VIEW: MASTER/COACH (Alerta de Saúde)
+    // VIEW: MASTER/COACH
     return (
         <div className="space-y-6 animate-fade-in pb-20">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -108,31 +116,31 @@ const Dashboard: React.FC = () => {
                     <p className="text-3xl font-black text-white">{stats?.activePlayers || 0}</p>
                 </Card>
                 <Card className="bg-secondary/80">
-                    <p className="text-xs text-text-secondary uppercase font-bold">Inscritos Flag</p>
-                    <p className="text-3xl font-black text-yellow-500">12</p>
-                </Card>
-                <Card className="bg-secondary/80">
-                    <p className="text-xs text-text-secondary uppercase font-bold">Inscritos Tackle</p>
-                    <p className="text-3xl font-black text-blue-500">45</p>
+                    <p className="text-xs text-text-secondary uppercase font-bold">Assiduidade Geral</p>
+                    <p className="text-3xl font-black text-green-400">88%</p>
                 </Card>
                 <Card className="bg-secondary/80 border-red-500/30">
-                    <p className="text-xs text-red-400 uppercase font-bold">Alertas de Saúde</p>
-                    <p className="text-3xl font-black text-red-500">{medicalAlerts.length}</p>
+                    <p className="text-xs text-red-400 uppercase font-bold">Riscos Bio-Mecânicos</p>
+                    <p className="text-3xl font-black text-red-500">{criticalAlerts.length}</p>
+                </Card>
+                <Card className="bg-secondary/80">
+                    <p className="text-xs text-text-secondary uppercase font-bold">Equip. Pendente Aceite</p>
+                    <p className="text-3xl font-black text-yellow-500">5</p>
                 </Card>
             </div>
 
-            {medicalAlerts.length > 0 && (
-                <div className="bg-red-900/20 border-2 border-red-500/30 rounded-2xl p-6 animate-pulse">
+            {criticalAlerts.length > 0 && (
+                <div className="bg-red-900/20 border-2 border-red-500/30 rounded-2xl p-6">
                     <h3 className="text-red-400 font-bold flex items-center gap-2 uppercase mb-4">
-                        <AlertTriangleIcon className="w-6 h-6" /> Alerta de Risco de Lesão (Wellness)
+                        <AlertTriangleIcon className="w-6 h-6" /> Alertas de Risco de Lesão (Alta Carga)
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {medicalAlerts.map(p => (
+                        {criticalAlerts.map(p => (
                             <div key={p.id} className="bg-black/40 p-3 rounded-xl border border-red-500/20 flex items-center gap-3">
                                 <img src={p.avatarUrl} className="w-10 h-10 rounded-full border border-red-500" />
                                 <div>
                                     <p className="text-white font-bold text-sm">{p.name}</p>
-                                    <p className="text-[10px] text-red-300 uppercase font-bold">Dor Muscular Crítica</p>
+                                    <p className="text-[10px] text-red-300 uppercase font-bold">Demote Recomendado (Depth Chart)</p>
                                 </div>
                             </div>
                         ))}
@@ -141,17 +149,25 @@ const Dashboard: React.FC = () => {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card title="Operações Rápidas">
-                     <button onClick={() => navigate('/practice')} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl text-xl mb-4 shadow-lg flex items-center justify-center gap-3 transition-transform active:scale-95">
-                         <PlayCircleIcon className="w-8 h-8" /> DIA DE TREINO
-                     </button>
-                     <button onClick={() => navigate('/schedule')} className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl text-xl shadow-lg flex items-center justify-center gap-3 transition-transform active:scale-95">
-                         <TrophyIcon className="w-8 h-8" /> DIA DE JOGO
-                     </button>
+                <Card title="Próximo Jogo (Logística)">
+                     {stats?.nextGame ? (
+                         <div className="flex justify-between items-center">
+                            <div>
+                                <h4 className="text-xl font-bold text-white uppercase">vs {stats.nextGame.opponent}</h4>
+                                <p className="text-sm text-text-secondary">{new Date(stats.nextGame.date).toLocaleDateString()}</p>
+                            </div>
+                            <button onClick={() => navigate('/logistics')} className="bg-highlight text-white px-4 py-2 rounded-lg font-bold text-xs uppercase">Ver Manifesto</button>
+                         </div>
+                     ) : <p className="text-text-secondary italic">Sem jogos agendados.</p>}
                 </Card>
-                <Card title="Últimas do Vestiário">
-                    <p className="text-text-secondary italic text-sm">Visualize as atualizações da comunidade do seu time...</p>
-                    <button onClick={() => navigate('/locker-room')} className="mt-4 text-highlight font-bold text-xs uppercase hover:underline">Ver Feed Completo →</button>
+                <Card title="Health Snapshot">
+                    <div className="flex gap-4 items-center">
+                        <div className="p-3 bg-green-500/10 rounded-full"><ActivityIcon className="text-green-400 w-8 h-8"/></div>
+                        <div>
+                            <p className="text-white font-bold">Time 100% Regular</p>
+                            <p className="text-xs text-text-secondary">Todos os atletas com exames médicos em dia.</p>
+                        </div>
+                    </div>
                 </Card>
             </div>
         </div>

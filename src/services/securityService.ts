@@ -26,12 +26,13 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'PLAYER': [], 
     'REFEREE': ['OFFICIATE_GAME'],
     'CANDIDATE': [],
-    'BROADCASTER': [] 
+    'BROADCASTER': [],
+    // Add SYSTEM role permissions (internal tasks)
+    'SYSTEM': ['MANAGE_ROSTER', 'MANAGE_FINANCE', 'MANAGE_TACTICS', 'MANAGE_STAFF']
 };
 
 export const securityService = {
     can: (action: Permission): boolean => {
-        // Acesso direto ao localStorage para evitar dependência circular com authService
         const stored = localStorage.getItem('gridiron_current_user');
         if (!stored) return false;
         
@@ -48,19 +49,6 @@ export const securityService = {
         if (!securityService.can(action)) {
             console.error(`🚨 SECURITY ALERT: Acesso negado para ação ${action}`);
             throw new Error(`Acesso Negado: Você não tem permissão para [${action}].`);
-        }
-    },
-
-    isOwnerOrAdmin: (resourceOwnerId: string): boolean => {
-        const stored = localStorage.getItem('gridiron_current_user');
-        if (!stored) return false;
-        
-        try {
-            const user: User = JSON.parse(stored);
-            if (user.role === 'MASTER' || user.role === 'PLATFORM_OWNER') return true;
-            return user.id === resourceOwnerId;
-        } catch {
-            return false;
         }
     }
 };
