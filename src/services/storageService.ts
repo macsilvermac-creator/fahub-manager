@@ -50,8 +50,7 @@ const INITIAL_TEAM_SETTINGS: TeamSettings = {
     xp: 2400,
     reputation: 85,
     badges: ['Campeão Estadual', 'Fair Play', 'Elite Training'],
-    sportType: 'FULLPADS',
-    legalAgreementsSigned: []
+    sportType: 'FULLPADS'
 };
 
 // --- IN-MEMORY DATABASE & OBSERVERS ---
@@ -341,12 +340,21 @@ export const storageService = {
     getEventSales: (): EventSale[] => RAM_DB.sales,
     saveEventSales: (s: EventSale[]) => persist(KEYS.SALES, 'sales', s), // Point of Sale allow regular staff
 
-    getSubscriptions: (): Subscription[] => [], 
-    saveSubscriptions: (s: Subscription[]) => {}, 
-    getBudgets: (): Budget[] => [], 
-    saveBudgets: (b: Budget[]) => {}, 
-    getBills: (): Bill[] => [], 
-    saveBills: (b: Bill[]) => {},
+    getSubscriptions: (): Subscription[] => RAM_DB.subscriptions || [], 
+    saveSubscriptions: (s: Subscription[]) => {
+        securityService.enforce('MANAGE_FINANCE');
+        persist(KEYS.TRANSACTIONS, 'subscriptions', s);
+    }, 
+    getBudgets: (): Budget[] => RAM_DB.budgets || [], 
+    saveBudgets: (b: Budget[]) => {
+        securityService.enforce('MANAGE_FINANCE');
+        persist(KEYS.TRANSACTIONS, 'budgets', b);
+    }, 
+    getBills: (): Bill[] => RAM_DB.bills || [], 
+    saveBills: (b: Bill[]) => {
+        securityService.enforce('MANAGE_FINANCE');
+        persist(KEYS.TRANSACTIONS, 'bills', b);
+    },
 
     // --- STAFF ---
     getStaff: (): StaffMember[] => RAM_DB.staff,
