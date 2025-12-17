@@ -62,6 +62,7 @@ export const authService = {
                  email: email,
                  name: email.split('@')[0].toUpperCase(),
                  role: 'MASTER',
+                 cpf: '000.000.000-00',
                  avatarUrl: `https://ui-avatars.com/api/?name=${email[0]}`,
                  status: 'APPROVED',
                  program: 'BOTH',

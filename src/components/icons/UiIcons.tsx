@@ -58,7 +58,7 @@ export const ShareIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...ico
 export const ImageIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...iconProps} {...props} viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>);
 export const LinkIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>);
 export const StarIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...iconProps} {...props} viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>);
-export const MicIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>);
+export const MicIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12.01" y2="19"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>);
 export const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>);
 export const ActivityIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...iconProps} {...props} viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>);
 export const KeyIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>);
@@ -81,4 +81,10 @@ export const RefreshIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...i
 export const CloudIcon = (props: React.SVGProps<SVGSVGElement>) => (<svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>);
 export const SaveIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+);
+export const CameraIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+);
+export const ShoppingBagIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
 );

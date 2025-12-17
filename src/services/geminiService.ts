@@ -1,294 +1,173 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement, CombineStats, QuizQuestion, GymDay, Drill } from "../types";
 
-// @ts-ignore
 const ENV_API_KEY = process.env.API_KEY || "";
-
 let aiClientInstance: GoogleGenAI | null = null;
 
-// --- AI CACHE SYSTEM (MEMOIZATION) ---
-const AI_CACHE: Record<string, { timestamp: number, data: any }> = {};
-const CACHE_TTL = 1000 * 60 * 60; // 1 Hora de Cache
-
-// --- SAFETY TIMEOUTS ---
-const TIMEOUT_MS = 15000; // 15s Hard Limit
-
-const getCacheKey = (model: string, prompt: string): string => {
-    return btoa(encodeURIComponent(`${model}:${prompt.substring(0, 100)}`)); 
-};
-
-const checkCache = (key: string) => {
-    const entry = AI_CACHE[key];
-    if (!entry) return null;
-    
-    if (Date.now() - entry.timestamp > CACHE_TTL) {
-        delete AI_CACHE[key];
-        return null;
-    }
-    console.log("⚡ [AI CACHE] Hit!");
-    return entry.data;
-};
-
-const setCache = (key: string, data: any) => {
-    AI_CACHE[key] = {
-        timestamp: Date.now(),
-        data: data
-    };
-};
-
-// HELPER: Check Key
-export const isAiAvailable = (): boolean => {
-    return !!ENV_API_KEY && ENV_API_KEY.length > 10;
-};
-
 const getClient = (): GoogleGenAI => {
-    if (!isAiAvailable()) {
-        throw new Error("Chave de API (Gemini) não configurada. Verifique o painel do Vercel.");
-    }
-    if (!aiClientInstance) {
+    if (!aiClientInstance && ENV_API_KEY) {
         aiClientInstance = new GoogleGenAI({ apiKey: ENV_API_KEY });
     }
-    return aiClientInstance;
+    return aiClientInstance!;
 };
 
-const cleanJsonString = (input: string): string => {
-    let clean = input.trim();
-    clean = clean.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
-    return clean;
-};
+// --- CORE GENERATION ---
 
-const generateJson = async (prompt: string): Promise<any> => {
-    if (!isAiAvailable()) return null; // Fail fast gracefully
-
-    const model = 'gemini-2.5-flash';
-    const cacheKey = getCacheKey(model, prompt);
-    
-    const cached = checkCache(cacheKey);
-    if (cached) return cached;
-
-    try {
-        const ai = getClient();
-        console.log("🤖 Gemini Request (JSON)...");
-        
-        const apiCall = ai.models.generateContent({
-            model: model,
-            contents: prompt,
-            config: { 
-                responseMimeType: "application/json",
-                temperature: 0.4,
-            }
-        });
-
-        // Timeout Promise Race
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("IA demorou muito para responder (Timeout).")), TIMEOUT_MS)
-        );
-
-        // @ts-ignore
-        const response: any = await Promise.race([apiCall, timeoutPromise]);
-        
-        if (response.text) {
-            try {
-                const parsed = JSON.parse(cleanJsonString(response.text));
-                setCache(cacheKey, parsed);
-                return parsed;
-            } catch (parseError) {
-                console.warn("⚠️ JSON Parse Error, trying regex fix.");
-                const jsonMatch = response.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                if (jsonMatch) {
-                    const corrected = JSON.parse(jsonMatch[0]);
-                    setCache(cacheKey, corrected);
-                    return corrected;
-                }
-                return null;
-            }
+export const generateCoachResponse = async (prompt: string): Promise<string> => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+            systemInstruction: "Você é um Head Coach motivador de Futebol Americano. Use gírias do esporte, seja firme mas encorajador. Sua missão é elevar o QI de futebol americano dos atletas. Responda em PT-BR.",
+            temperature: 0.8
         }
-        return null;
-    } catch (e: any) {
-        console.error("❌ Erro Gemini JSON:", e.message);
-        throw e; // Propagate error for UI handling
-    }
+    });
+    return response.text || "";
 };
 
-const generateText = async (prompt: string): Promise<string> => {
-    if (!isAiAvailable()) return "IA Indisponível (Sem Chave API)";
+// --- IMAGE VALIDATION ---
 
-    const model = 'gemini-2.5-flash';
-    const cacheKey = getCacheKey(model, prompt);
-    const cached = checkCache(cacheKey);
-    if (cached) return cached;
-
-    try {
-        const ai = getClient();
-        
-        const apiCall = ai.models.generateContent({
-            model: model,
-            contents: prompt,
-            config: { temperature: 0.7 }
-        });
-
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("IA demorou muito (Timeout).")), TIMEOUT_MS)
-        );
-
-        // @ts-ignore
-        const response: any = await Promise.race([apiCall, timeoutPromise]);
-        
-        const text = response.text || "";
-        setCache(cacheKey, text);
-        return text;
-    } catch (e: any) {
-        console.error("❌ Erro Gemini Texto:", e.message);
-        throw e;
-    }
-};
-
-// --- EXPORTED FUNCTIONS (AGENTS) ---
-
-export const classifyCoachVoiceNote = async (text: string) => {
-    const prompt = `Analyze football coach note: "${text}". Return JSON: { category: 'OFFENSE'|'DEFENSE'|'SPECIAL'|'GENERAL', tags: string[], sentiment: 'POSITIVE'|'NEGATIVE'|'NEUTRAL', action?: string }`;
-    return (await generateJson(prompt)) || { category: 'GENERAL', tags: [], sentiment: 'NEUTRAL' };
-};
-
-export const generatePracticeScript = async (focus: string, duration: number, intensity: string): Promise<PracticeScriptItem[]> => {
-    const prompt = `Create Football Practice Script JSON. Focus: "${focus}". Duration: ${duration}min. Return Array<{ startTime, durationMinutes, type, activityName, description }>. Start 19:00.`;
-    const res = await generateJson(prompt);
-    return Array.isArray(res) ? res.map((i: any) => ({ ...i, id: `ai-${Date.now()}-${Math.random()}` })) : [];
-};
-
-export const analyzeOpponentTendencies = async (notes: string) => {
-    return (await generateJson(`Analyze opponent notes returning JSON {summary, keysToVictory[], suggestedConcepts[]}: "${notes}"`)) || {};
-};
-
-export const suggestPlayConcepts = async (sit: string) => {
-    return (await generateJson(`Suggest 3 offensive plays for "${sit}". JSON Array<{name, reason}>.`)) || [];
-};
-
-export const predictPlayCall = async (history: VideoClip[], down: number, dist: number) => {
-    const prompt = `Predict next play. Situation: ${down}&${dist}. Return JSON {prediction, confidence, reason}.`;
-    return (await generateJson(prompt)) || { prediction: "N/A", confidence: "0%", reason: "Erro IA" };
-};
-
-export const importPlaybookFromImage = async (base64: string): Promise<PlayElement[]> => {
-    try {
-        const ai = getClient();
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: {
-                parts: [
-                    { text: "Extract players from diagram to JSON Array<{id, type:'OFFENSE'|'DEFENSE', label, x, y}>. 600x400 canvas." },
-                    { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
-                ]
-            },
-            config: { responseMimeType: "application/json" }
-        });
-        return response.text ? JSON.parse(cleanJsonString(response.text)) : [];
-    } catch (e) { return []; }
-};
-
-export const scanFinancialDocument = async (base64: string) => {
-    try {
-        const ai = getClient();
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: {
-                parts: [
-                    { text: "Extract receipt data to JSON: {title, amount, date (YYYY-MM-DD), category, description}." },
-                    { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
-                ]
-            },
-            config: { responseMimeType: "application/json" }
-        });
-        return response.text ? JSON.parse(cleanJsonString(response.text)) : { title: "Erro", amount: 0 };
-    } catch (e) { throw new Error("Falha na leitura ou Timeout."); }
-};
-
-export const analyzeCombineStats = async (stats: CombineStats, pos: string) => {
-    return (await generateJson(`Analyze Combine stats for ${pos}: ${JSON.stringify(stats)}. JSON {rating (0-100), potential, analysis, comparison}`)) || {};
-};
-
-export const generatePracticePlan = (p: string) => generateText(p);
-export const generatePlayerAnalysis = (p: Player, c: string) => generateText(`Analyze player ${p.name} (${p.position}) based on: ${c}. Keep it short.`);
-export const generateMarketingContent = (t: string, p: string) => generateText(`Write a ${p} post about: "${t}". Use emojis. PT-BR.`);
-export const generateSponsorshipProposal = (c: string, v: number) => generateText(`Write sponsorship email for ${c} asking R$${v}.`);
-export const generateCourseCurriculum = (t: string, l: string) => generateText(`Create course JSON for "${t}" level "${l}". {title, description, modules:[{title, lessons:[{title, content, videoSearchTerm}]}]}`);
-export const generateGymPlan = (g: string, e: string, p: string) => generateText(`Create HTML workout plan for: ${g}. Equipment: ${e}.`);
-export const generateInstallSchedule = async (c: string, w: string) => generateJson(`Create install schedule JSON for context: "${c}". Array<{day, category, concept}>.`) || [];
-export const analyzePlayMatchup = (p: string, s: GameScoutingReport, o: string) => generateText(`Simulate play "${p}" vs "${o}". Short result.`);
-export const askRefereeBot = (q: string) => generateText(`Referee Bot: Answer based on IFAF rules: ${q}`);
-export const generateJudicialReport = (i: number, e: any[]) => generateText(`Write judicial report for game ${i}, ejections: ${JSON.stringify(e)}.`);
-
-// NEW:
-export const generateDrillCards = async (focus: string, level: string): Promise<Drill[]> => {
-    const prompt = `Create 3 American Football Drills for focus: "${focus}". Level: ${level}.
-    Return JSON Array: [
-        {
-            "name": "Title of Drill",
-            "description": "Setup and Execution instructions (keep concise)",
-            "durationMinutes": 10,
-            "videoSearchTerm": "Youtube search term for this drill"
-        }
-    ]`;
-    
-    const result = await generateJson(prompt);
-    if (Array.isArray(result)) {
-        return result.map((d: any) => ({ ...d, id: `gen-${Date.now()}-${Math.random()}` }));
-    }
-    return [];
-};
-
-export const generateQuizFromContent = async (topic: string): Promise<QuizQuestion[]> => {
-    const prompt = `Create a quiz for Football players about: "${topic}". Return JSON Array: [{ question: string, options: string[], correctAnswer: number (index 0-3), explanation: string }]. Generate 5 hard questions. Language: PT-BR.`;
-    return (await generateJson(prompt)) || [];
-};
-
-export const generateStructuredGymPlan = async (goal: string, equipment: string): Promise<GymDay[]> => {
-    const prompt = `Create a 3-day Football Gym Plan. Goal: "${goal}". Equipment: "${equipment}". 
-    Return JSON structure: 
-    [
-        {
-            "title": "Day 1: Upper Power",
-            "focus": "Explosive Push",
-            "exercises": [
-                { "name": "Bench Press", "sets": "4", "reps": "5", "notes": "Explosive up" }
+export const validateGymImage = async (base64Data: string): Promise<boolean> => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+            parts: [
+                { text: "Analise esta imagem. Ela contém equipamentos de academia, pesos, esteiras ou ambiente de treino físico? Responda apenas TRUE ou FALSE." },
+                { inlineData: { mimeType: "image/jpeg", data: base64Data.split(',')[1] } }
             ]
         }
-    ]
-    Language: PT-BR.`;
-    
-    return (await generateJson(prompt)) || [];
+    });
+    return response.text?.trim().toUpperCase().includes('TRUE') || false;
 };
 
-export const explainPlayImage = async (base64Image: string, playerQuestion: string): Promise<string> => {
-    try {
-        const ai = getClient();
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: {
-                parts: [
-                    { text: `Coach analysis. Question: "${playerQuestion}". Explain the formation and concept in PT-BR.` },
-                    { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
-                ]
-            }
-        });
-        return response.text || "Não consegui analisar.";
-    } catch (e) {
-        return "Erro na visão computacional.";
-    }
+// --- TACTICAL & SCOUTING ---
+
+export const analyzeCombineStats = async (stats: any, pos: string) => {
+    const prompt = `Analyze Combine stats for ${pos}: ${JSON.stringify(stats)}. Return JSON with properties: rating (0-100), potential (string), analysis (string), comparison (string).`;
+    const ai = getClient();
+    const res = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(res.text || "{}");
 };
 
-// --- BROADCASTER AGENT ---
-export const generateColorCommentary = async (homeTeam: string, awayTeam: string, context: string): Promise<any> => {
-    const prompt = `Atue como um comentarista especialista de Futebol Americano (NFL/BFA style). 
-    Analise o jogo entre ${homeTeam} e ${awayTeam}. Contexto: ${context}.
-    Retorne um JSON com:
-    {
-        "intro": "Uma frase de impacto para abertura da transmissão.",
-        "keyMatchups": ["Matchup 1", "Matchup 2"],
-        "boldPrediction": "Uma previsão ousada",
-        "homePlayerToWatch": "Nome e motivo",
-        "awayPlayerToWatch": "Nome e motivo"
-    }`;
-    return (await generateJson(prompt)) || { intro: "Bem vindos ao jogo!", keyMatchups: [], boldPrediction: "", homePlayerToWatch: "", awayPlayerToWatch: "" };
+export const generatePracticeScript = async (focus: string, duration: number, intensity: string) => {
+    const prompt = `Create Football Practice Script JSON. Focus: "${focus}". Duration: ${duration}min. Return Array of objects with properties: startTime, durationMinutes, type, activityName, description. Start 19:00.`;
+    const ai = getClient();
+    const res = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(res.text || "[]");
+};
+
+export const classifyCoachVoiceNote = async (text: string) => {
+    const prompt = `Analyze football coach note: "${text}". Return JSON with properties: category ('OFFENSE'|'DEFENSE'|'SPECIAL'|'GENERAL'), tags (string[]), sentiment ('POSITIVE'|'NEGATIVE'|'NEUTRAL'), action (string, optional).`;
+    const ai = getClient();
+    const res = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(res.text || "{}");
+};
+
+export const analyzePlayMatchup = async (play: string, scout: any, opponent: string) => {
+    const prompt = `Simulate play "${play}" vs "${opponent}" defense based on scout: ${JSON.stringify(scout)}. Provide a short result summary.`;
+    return await generateCoachResponse(prompt);
+};
+
+export const generateInstallSchedule = async (context: string, week: string) => {
+    const prompt = `Create install schedule JSON for context: "${context}". Week: "${week}". Return Array of objects with properties: id, day, category, concept.`;
+    const ai = getClient();
+    const res = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(res.text || "[]");
+};
+
+export const importPlaybookFromImage = async (base64: string) => {
+    const prompt = "Extract players from diagram to JSON Array of objects with properties: id, type ('OFFENSE'|'DEFENSE'), label, x, y. 600x400 canvas.";
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: {
+            parts: [
+                { text: prompt },
+                { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
+            ]
+        },
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(response.text || "[]");
+};
+
+export const explainPlayImage = async (base64: string, question: string) => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: {
+            parts: [
+                { text: `Analyze this tactical diagram: ${question}` },
+                { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
+            ]
+        }
+    });
+    return response.text || "";
+};
+
+export const generateColorCommentary = async (home: string, away: string, context: string) => {
+    const prompt = `Generate color commentary notes for ${home} vs ${away}. Context: ${context}. Return JSON with properties: intro (string), homePlayerToWatch (string), awayPlayerToWatch (string), keyMatchups (string[]).`;
+    const ai = getClient();
+    const res = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(res.text || "{}");
+};
+
+export const predictPlayCall = async (history: any[], down: number, dist: number) => {
+    const prompt = `Predict next play based on situation ${down}&${dist}. History: ${JSON.stringify(history)}. Return JSON with properties: prediction (string), confidence (string), reason (string).`;
+    const ai = getClient();
+    const res = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(res.text || "{}");
+};
+
+// --- LEGACY HELPERS ---
+
+export const generatePracticePlan = (p: string) => generateCoachResponse(p);
+export const generatePlayerAnalysis = (p: any, c: string) => generateCoachResponse(`Analise o atleta ${p.name}: ${c}`);
+export const generateMarketingContent = (t: string, p: string) => generateCoachResponse(`Crie um post para ${p} sobre: ${t}`);
+export const generateStructuredGymPlan = async (g: string, e: string) => {
+    const prompt = `Crie um plano de treino para: ${g}. Equipamentos: ${e}. Retorne apenas um JSON Array de objetos GymDay.`;
+    const ai = getClient();
+    const res = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(res.text || "[]");
+};
+export const generateSponsorshipProposal = (company: string, value: number) => generateCoachResponse(`Escreva um email de prospecção para a empresa ${company} solicitando patrocínio de R$ ${value}.`);
+export const scanFinancialDocument = async (base64: string) => {
+    const prompt = "Extraia título, valor e data deste recibo em JSON.";
+    const ai = getClient();
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: { parts: [{ text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }] },
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(res.text || "{}");
 };

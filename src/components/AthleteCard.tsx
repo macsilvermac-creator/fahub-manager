@@ -1,222 +1,100 @@
 
-import React, { useEffect, useState } from 'react';
-import { storageService } from '../services/storageService';
-import { TrophyIcon, GlobeIcon } from '../components/icons/NavIcons';
-import { UsersIcon, StarIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
-import LazyImage from '@/components/LazyImage';
+import React, { useState } from 'react';
+import { Player } from '../types';
+import { TrashIcon, ShareIcon, StarIcon } from './icons/UiIcons';
+import LazyImage from './LazyImage';
 
-const PublicLeague: React.FC = () => {
-    const [data, setData] = useState<any>(null);
-    const [games, setGames] = useState<any[]>([]);
+interface AthleteCardProps {
+  player: Player;
+  onClick: (player: Player) => void;
+  onDelete: (player: Player) => void;
+}
 
-    useEffect(() => {
-        setData(storageService.getPublicLeagueStats());
-        setGames(storageService.getGames());
-        
-        const interval = setInterval(() => {
-             setGames(storageService.getGames());
-        }, 30000); // Atualiza a cada 30s para pegar snapshots
-        return () => clearInterval(interval);
-    }, []);
+const AthleteCard: React.FC<AthleteCardProps> = ({ player, onClick, onDelete }) => {
+  const [rotate, setRotate] = useState({ x: 0, y: 0 });
 
-    if (!data) return <div className="min-h-screen bg-primary flex items-center justify-center text-white">Carregando Portal...</div>;
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = (y - centerY) / 10;
+    const rotateY = (centerX - x) / 10;
+    setRotate({ x: rotateX, y: rotateY });
+  };
 
-    const { leagueTable, name, season, leaders } = data;
-    const liveOrRecentGames = games.filter(g => g.status !== 'SCHEDULED').slice(0, 3);
+  const handleMouseLeave = () => setRotate({ x: 0, y: 0 });
 
-    return (
-        <div className="min-h-screen bg-primary text-white font-sans overflow-x-hidden">
-            <div className="relative h-[400px] flex items-center justify-center bg-gradient-to-b from-gray-900 to-primary border-b border-highlight/20 overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
-                <div className="absolute top-0 left-1/4 w-96 h-96 bg-highlight/20 rounded-full blur-[100px]"></div>
-                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-[100px]"></div>
+  const getPositionColor = (pos: string) => {
+    if (['QB', 'WR', 'RB', 'TE'].includes(pos)) return 'from-blue-600 to-indigo-400';
+    if (['OL', 'DL'].includes(pos)) return 'from-orange-600 to-yellow-500';
+    return 'from-red-600 to-pink-500';
+  };
 
-                <div className="relative z-10 text-center animate-fade-in">
-                    <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-1 rounded-full mb-4 border border-white/10">
-                        <GlobeIcon className="w-4 h-4 text-highlight" />
-                        <span className="text-xs font-bold uppercase tracking-widest text-highlight">Portal Oficial do Fã</span>
-                    </div>
-                    <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-2 italic">
-                        {name} <span className="text-transparent bg-clip-text bg-gradient-to-r from-highlight to-yellow-400">{season}</span>
-                    </h1>
-                    <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-                        A casa do Futebol Americano no Estado. Estatísticas, Classificação e Destaques em Tempo Real.
-                    </p>
-                </div>
+  return (
+    <div 
+      className="perspective-1000 group"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div 
+        onClick={() => onClick(player)}
+        style={{ transform: `rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)` }}
+        className="relative bg-secondary rounded-2xl overflow-hidden border border-white/10 shadow-2xl transition-transform duration-200 cursor-pointer w-full"
+      >
+        {/* Holographic Overly */}
+        <div className="absolute inset-0 z-10 opacity-0 group-hover:opacity-30 pointer-events-none bg-gradient-to-tr from-white/20 via-transparent to-white/20 animate-shimmer"></div>
+
+        <div className={`h-24 bg-gradient-to-r ${getPositionColor(player.position)} relative`}>
+            <div className="absolute top-2 right-2 bg-black/40 text-white text-[10px] font-black px-2 py-1 rounded backdrop-blur-md">
+                OVR {player.rating}
             </div>
-
-            <div className="max-w-7xl mx-auto px-6 -mt-20 relative z-20">
-                
-                {/* GAME SNAPSHOTS HIGHLIGHTS */}
-                {liveOrRecentGames.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                        {liveOrRecentGames.map(game => (
-                            <div key={game.id} className="bg-secondary/90 backdrop-blur rounded-xl border border-white/10 overflow-hidden shadow-lg transform hover:-translate-y-1 transition-all">
-                                <div className="bg-black/50 p-3 flex justify-between items-center border-b border-white/5">
-                                    <span className="text-xs font-bold text-red-400 uppercase animate-pulse">
-                                        {game.status === 'IN_PROGRESS' ? 'AO VIVO' : game.status === 'HALFTIME' ? 'INTERVALO' : 'FINAL'}
-                                    </span>
-                                    <span className="text-xs font-mono text-white">{game.score}</span>
-                                </div>
-                                <div className="p-4">
-                                    <h4 className="font-black text-white uppercase text-sm mb-3">
-                                        {game.homeTeamName || 'MANDANTE'} vs {game.opponent}
-                                    </h4>
-                                    
-                                    {game.halftimeStats ? (
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between text-xs border-b border-white/5 pb-1">
-                                                <span className="text-text-secondary">Jardas Totais</span>
-                                                <span className="text-white font-bold">{game.halftimeStats.totalYards}</span>
-                                            </div>
-                                            <div className="flex justify-between text-xs border-b border-white/5 pb-1">
-                                                <span className="text-text-secondary">Passe / Corrida</span>
-                                                <span className="text-white">{game.halftimeStats.passYards} / {game.halftimeStats.rushYards}</span>
-                                            </div>
-                                             <div className="flex justify-between text-xs">
-                                                <span className="text-text-secondary">Turnovers</span>
-                                                <span className="text-red-400 font-bold">{game.halftimeStats.turnovers}</span>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <p className="text-xs text-text-secondary italic text-center py-2">Estatísticas detalhadas em breve.</p>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                <div className="bg-secondary/80 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden mb-12">
-                    <div className="p-6 border-b border-white/10 bg-black/40 flex justify-between items-center">
-                        <h3 className="text-2xl font-bold flex items-center gap-3">
-                            <TrophyIcon className="w-8 h-8 text-yellow-500" /> Classificação Geral
-                        </h3>
-                        <span className="text-xs font-bold bg-green-600 text-white px-3 py-1 rounded animate-pulse">● Atualizado Agora</span>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-white/5 text-gray-400 uppercase text-xs font-bold">
-                                <tr>
-                                    <th className="p-4 w-16">Pos</th>
-                                    <th className="p-4">Time</th>
-                                    <th className="p-4 text-center">V</th>
-                                    <th className="p-4 text-center">D</th>
-                                    <th className="p-4 text-center">E</th>
-                                    <th className="p-4 text-center">PF</th>
-                                    <th className="p-4 text-center">PC</th>
-                                    <th className="p-4 text-center">Saldo</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-sm font-medium">
-                                {leagueTable.map((team: any, idx: number) => (
-                                    <tr key={team.teamId} className={`border-b border-white/5 hover:bg-white/5 transition-colors ${idx < 4 ? 'bg-highlight/5' : ''}`}>
-                                        <td className="p-4 font-black text-lg text-gray-500">{idx + 1}</td>
-                                        <td className="p-4 flex items-center gap-4">
-                                            <div className="w-10 h-10 flex-shrink-0">
-                                                <LazyImage src={team.logoUrl} className="w-full h-full rounded-full shadow-md" />
-                                            </div>
-                                            <span className="text-lg font-bold">{team.teamName}</span>
-                                            {idx < 4 && <span className="text-[10px] bg-highlight text-white px-2 py-0.5 rounded font-bold uppercase ml-2">Playoffs</span>}
-                                        </td>
-                                        <td className="p-4 text-center font-bold text-green-400 text-lg">{team.wins}</td>
-                                        <td className="p-4 text-center text-red-400">{team.losses}</td>
-                                        <td className="p-4 text-center text-gray-400">{team.draws}</td>
-                                        <td className="p-4 text-center">{team.pointsFor}</td>
-                                        <td className="p-4 text-center">{team.pointsAgainst}</td>
-                                        <td className="p-4 text-center font-bold">{team.pointsFor - team.pointsAgainst}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <h3 className="text-3xl font-black text-white mb-8 flex items-center gap-3">
-                    <StarIcon className="w-8 h-8 text-yellow-400" /> Líderes da Temporada
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-                    <div className="bg-secondary rounded-xl border border-white/10 overflow-hidden group hover:border-blue-500 transition-all">
-                        <div className="p-4 bg-gradient-to-r from-blue-900 to-secondary border-b border-white/10">
-                            <h4 className="font-bold text-blue-400 uppercase tracking-wider text-sm">Passando (Jardas)</h4>
-                        </div>
-                        <div className="p-4 space-y-4">
-                            {leaders.passing.map((p: any, idx: number) => (
-                                <div key={p.id} className="flex items-center gap-4">
-                                    <span className={`w-6 text-center font-bold ${idx === 0 ? 'text-yellow-400 text-xl' : 'text-gray-500'}`}>{idx + 1}</span>
-                                    <div className="w-12 h-12 flex-shrink-0">
-                                        <LazyImage src={p.avatarUrl} className="w-full h-full rounded-full border-2 border-secondary" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-white leading-tight">{p.name}</p>
-                                        <p className="text-xs text-gray-400">QB • {p.jerseyNumber}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xl font-black text-white">{p.statValue}</p>
-                                        <p className="text-[10px] text-gray-500 uppercase">Yds</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="bg-secondary rounded-xl border border-white/10 overflow-hidden group hover:border-green-500 transition-all">
-                        <div className="p-4 bg-gradient-to-r from-green-900 to-secondary border-b border-white/10">
-                            <h4 className="font-bold text-green-400 uppercase tracking-wider text-sm">Correndo (Jardas)</h4>
-                        </div>
-                        <div className="p-4 space-y-4">
-                            {leaders.rushing.map((p: any, idx: number) => (
-                                <div key={p.id} className="flex items-center gap-4">
-                                    <span className={`w-6 text-center font-bold ${idx === 0 ? 'text-yellow-400 text-xl' : 'text-gray-500'}`}>{idx + 1}</span>
-                                    <div className="w-12 h-12 flex-shrink-0">
-                                        <LazyImage src={p.avatarUrl} className="w-full h-full rounded-full border-2 border-secondary" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-white leading-tight">{p.name}</p>
-                                        <p className="text-xs text-gray-400">RB • {p.jerseyNumber}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xl font-black text-white">{p.statValue}</p>
-                                        <p className="text-[10px] text-gray-500 uppercase">Yds</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="bg-secondary rounded-xl border border-white/10 overflow-hidden group hover:border-red-500 transition-all">
-                        <div className="p-4 bg-gradient-to-r from-red-900 to-secondary border-b border-white/10">
-                            <h4 className="font-bold text-red-400 uppercase tracking-wider text-sm">Defesa (Tackles)</h4>
-                        </div>
-                        <div className="p-4 space-y-4">
-                            {leaders.defense.map((p: any, idx: number) => (
-                                <div key={p.id} className="flex items-center gap-4">
-                                    <span className={`w-6 text-center font-bold ${idx === 0 ? 'text-yellow-400 text-xl' : 'text-gray-500'}`}>{idx + 1}</span>
-                                    <div className="w-12 h-12 flex-shrink-0">
-                                        <LazyImage src={p.avatarUrl} className="w-full h-full rounded-full border-2 border-secondary" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-bold text-white leading-tight">{p.name}</p>
-                                        <p className="text-xs text-gray-400">{p.position} • {p.jerseyNumber}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xl font-black text-white">{p.statValue}</p>
-                                        <p className="text-[10px] text-gray-500 uppercase">Tkls</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="text-center pb-12 text-gray-500 text-sm">
-                    <p>Desenvolvido por FAHUB MANAGER © 2025. Todos os direitos reservados.</p>
-                    <p className="mt-2 text-xs">Dados atualizados em tempo real via Súmula Digital.</p>
-                </div>
-            </div>
+            <button 
+                className="absolute top-2 left-2 p-1.5 text-white/50 hover:text-white bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                onClick={(e) => { e.stopPropagation(); onDelete(player); }}
+            >
+                <TrashIcon className="w-4 h-4" />
+            </button>
         </div>
-    );
+
+        <div className="px-4 pb-6 relative flex flex-col items-center">
+            <div className="relative -mt-12 mb-3">
+                <LazyImage 
+                    src={player.avatarUrl} 
+                    className="w-24 h-24 rounded-full border-4 border-secondary shadow-xl object-cover bg-primary" 
+                    fallbackText={player.name}
+                />
+                <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-black w-8 h-8 flex items-center justify-center rounded-full font-black text-xs border-2 border-secondary">
+                    {player.level}
+                </div>
+            </div>
+
+            <h3 className="text-lg font-black text-white italic tracking-tighter uppercase">{player.name}</h3>
+            <div className="flex gap-2 mt-1">
+                <span className="text-[10px] font-bold bg-white/10 text-white px-2 py-0.5 rounded">{player.position}</span>
+                <span className="text-[10px] text-text-secondary">#{player.jerseyNumber}</span>
+            </div>
+
+            {/* Commitment Bar */}
+            <div className="w-full mt-4 space-y-1">
+                <div className="flex justify-between text-[8px] font-black text-text-secondary uppercase">
+                    <span>Comprometimento</span>
+                    <span>90%</span>
+                </div>
+                <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
+                    <div className="h-full bg-highlight w-[90%]"></div>
+                </div>
+            </div>
+
+            <button className="mt-4 w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white py-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-2 transition-all">
+                <ShareIcon className="w-3 h-3" /> Hype no Instagram
+            </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
-export default PublicLeague;
+export default AthleteCard;
