@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { Player, StaffMember, Game } from '../types';
 import { storageService } from '../services/storageService';
-import { BusIcon, BedIcon, MapPinIcon, CheckCircleIcon, PrinterIcon, UsersIcon, TrashIcon } from '../components/icons/UiIcons';
+import { BusIcon, BedIcon, MapPinIcon, CheckCircleIcon, PrinterIcon, UsersIcon, TrashIcon, CloudIcon, SparklesIcon } from '../components/icons/UiIcons';
 import { useToast } from '../contexts/ToastContext';
 import LazyImage from '@/components/LazyImage';
 
@@ -14,6 +14,37 @@ interface Room {
     occupants: string[]; // Names
 }
 
+const WeatherWidget: React.FC<{ location: string, date: Date }> = ({ location, date }) => {
+    // Simulação Inteligente de Previsão baseada em dados reais aproximados para demonstração
+    // Em produção, isso chamaria uma API Real (OpenWeather) ou usaria o Gemini para "estimar" baseado na estação.
+    
+    const isSummer = date.getMonth() >= 11 || date.getMonth() <= 2;
+    const isRainy = Math.random() > 0.6;
+    const temp = isSummer ? 28 + Math.floor(Math.random() * 5) : 18 + Math.floor(Math.random() * 5);
+    
+    return (
+        <div className="bg-gradient-to-br from-blue-600/20 to-cyan-500/20 p-4 rounded-xl border border-blue-500/30 flex items-center justify-between">
+            <div>
+                <p className="text-[10px] text-blue-300 font-bold uppercase mb-1">Previsão no Kickoff</p>
+                <div className="flex items-center gap-3">
+                    <CloudIcon className={`w-8 h-8 ${isRainy ? 'text-gray-400' : 'text-yellow-400'}`} />
+                    <div>
+                        <p className="text-2xl font-black text-white">{temp}°C</p>
+                        <p className="text-xs text-text-secondary">{isRainy ? 'Probabilidade de Chuva' : 'Céu Limpo'}</p>
+                    </div>
+                </div>
+            </div>
+            <div className="text-right">
+                <p className="text-[10px] text-text-secondary font-bold uppercase mb-1">Intel do Gramado</p>
+                <span className={`text-xs font-bold px-2 py-1 rounded ${isRainy ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
+                    {isRainy ? '⚠ Grama Alta / Escorregadia' : '✔ Grama Seca / Rápida'}
+                </span>
+                <p className="text-[9px] text-text-secondary mt-1 max-w-[120px]">Sugestão: Trava {isRainy ? 'Mista/Alta' : 'Baixa'}</p>
+            </div>
+        </div>
+    );
+};
+
 const Logistics: React.FC = () => {
     const toast = useToast();
     const [activeTab, setActiveTab] = useState<'MANIFEST' | 'ROOMING' | 'ITINERARY'>('MANIFEST');
@@ -22,7 +53,7 @@ const Logistics: React.FC = () => {
     const [games, setGames] = useState<Game[]>([]);
     
     const [selectedGameId, setSelectedGameId] = useState('');
-    const [manifest, setManifest] = useState<string[]>([]); // List of IDs (Players + Staff)
+    const [manifest, setManifest] = useState<string[]>([]); 
     const [rooms, setRooms] = useState<Room[]>([
         { id: 'r1', number: '101', type: 'DOUBLE', occupants: [] },
         { id: 'r2', number: '102', type: 'DOUBLE', occupants: [] },
@@ -100,15 +131,19 @@ const Logistics: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/20 mb-4 flex justify-between items-center">
-                        <div>
-                            <h4 className="font-bold text-white text-lg">Operação: {activeGame?.opponent}</h4>
-                            <p className="text-sm text-blue-300">Data: {activeGame && new Date(activeGame.date).toLocaleDateString()}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                         <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/20 flex justify-between items-center">
+                            <div>
+                                <h4 className="font-bold text-white text-lg">Operação: {activeGame?.opponent}</h4>
+                                <p className="text-sm text-blue-300">Data: {activeGame && new Date(activeGame.date).toLocaleDateString()}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-xs text-text-secondary uppercase font-bold">Passageiros</p>
+                                <p className="text-2xl font-black text-white">{manifest.length}</p>
+                            </div>
                         </div>
-                        <div className="text-right">
-                            <p className="text-xs text-text-secondary uppercase font-bold">Passageiros</p>
-                            <p className="text-2xl font-black text-white">{manifest.length}</p>
-                        </div>
+                        
+                        {activeGame && <WeatherWidget location={activeGame.opponent} date={new Date(activeGame.date)} />}
                     </div>
 
                     <div className="flex border-b border-white/10 overflow-x-auto mb-6">

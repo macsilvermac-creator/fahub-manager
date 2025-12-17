@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Game, PracticeSession } from '../types';
-import { TrashIcon, CheckCircleIcon, DumbbellIcon, XIcon, ClockIcon } from '../components/icons/UiIcons';
+import { TrashIcon, CheckCircleIcon, DumbbellIcon, XIcon, ClockIcon, PenIcon, SaveIcon } from '../components/icons/UiIcons';
 import { TrophyIcon } from '../components/icons/NavIcons';
 import ConfirmationModal from '../components/ConfirmationModal';
 import GameManagementModal from '../components/GameManagementModal';
@@ -22,6 +22,102 @@ interface ScheduleItem {
     details: any; 
 }
 
+const GameCard: React.FC<{ 
+    game: Game; 
+    isPlayer: boolean; 
+    onDelete: (game: Game) => void; 
+    onClick: (game: Game) => void;
+    onUpdateScore: (game: Game, newScore: string) => void;
+}> = ({ game, isPlayer, onDelete, onClick, onUpdateScore }) => {
+    const [isEditingScore, setIsEditingScore] = useState(false);
+    const [scoreInput, setScoreInput] = useState(game.score || '0-0');
+    
+    const isPast = new Date(game.date) < new Date();
+    const resultColor = game.result === 'W' ? 'text-green-400' : game.result === 'L' ? 'text-red-400' : 'text-gray-400';
+    const locationText = game.location === 'Home' ? 'Casa' : 'Fora';
+    
+    // Simulação de estado de RSVP
+    const [confirmed, setConfirmed] = useState(false);
+
+    const handleSaveScore = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onUpdateScore(game, scoreInput);
+        setIsEditingScore(false);
+    };
+
+    return (
+        <div 
+            onClick={() => !isEditingScore && onClick(game)}
+            className="bg-secondary rounded-lg p-4 flex flex-col md:flex-row items-center justify-between shadow-md hover:bg-accent transition-colors group cursor-pointer border border-transparent hover:border-highlight/30 gap-4"
+        >
+            <div className="flex items-center w-full md:w-auto">
+                <LazyImage src={game.opponentLogoUrl} alt={game.opponent} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+                <div className="ml-4">
+                    <p className="font-bold text-text-primary group-hover:text-highlight transition-colors flex items-center gap-2">
+                        {game.opponent}
+                        {game.status === 'FINAL' && <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${game.result === 'W' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{game.result}</span>}
+                    </p>
+                    <p className="text-sm text-text-secondary">Jogo em {locationText}</p>
+                </div>
+            </div>
+
+            <div className="flex items-center space-x-6 w-full md:w-auto justify-between md:justify-end">
+                <div className="text-right" onClick={e => e.stopPropagation()}>
+                    {isPast || game.status === 'FINAL' ? (
+                        isEditingScore ? (
+                            <div className="flex items-center gap-2">
+                                <input 
+                                    className="w-20 bg-black/40 border border-highlight rounded px-2 py-1 text-center font-bold text-white focus:outline-none"
+                                    value={scoreInput}
+                                    onChange={e => setScoreInput(e.target.value)}
+                                    placeholder="00-00"
+                                    autoFocus
+                                />
+                                <button onClick={handleSaveScore} className="text-green-400 hover:text-white"><SaveIcon className="w-5 h-5"/></button>
+                            </div>
+                        ) : (
+                            <div className="group/score flex items-center gap-2 justify-end">
+                                <div>
+                                    <p className={`text-2xl font-bold ${resultColor}`}>{game.score || '0-0'}</p>
+                                    <p className="text-[10px] text-text-secondary uppercase">Placar Final</p>
+                                </div>
+                                {!isPlayer && (
+                                    <button onClick={() => setIsEditingScore(true)} className="text-text-secondary hover:text-highlight opacity-0 group-hover/score:opacity-100 transition-opacity">
+                                        <PenIcon className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
+                        )
+                    ) : (
+                        <div>
+                            <p className="font-semibold text-text-primary">{new Date(game.date).toLocaleDateString('pt-BR', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                            <p className="text-sm text-text-secondary">{new Date(game.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                        </div>
+                    )}
+                </div>
+                
+                {isPlayer && !isPast ? (
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setConfirmed(!confirmed); }}
+                        className={`px-3 py-1 rounded text-xs font-bold flex items-center gap-1 ${confirmed ? 'bg-green-600 text-white' : 'bg-red-600/20 text-red-400 border border-red-500/30'}`}
+                    >
+                        {confirmed ? <><CheckCircleIcon className="w-3 h-3"/> Confirmado</> : 'Confirmar Presença'}
+                    </button>
+                ) : !isPlayer && (
+                    <button 
+                        className="p-2 text-text-secondary hover:text-red-400 rounded-full hover:bg-secondary opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => { e.stopPropagation(); onDelete(game); }}
+                        title="Excluir Jogo"
+                    >
+                        <TrashIcon />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
 const Schedule: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const toast = useToast();
@@ -39,11 +135,8 @@ const Schedule: React.FC = () => {
 
     useEffect(() => {
         loadSchedule();
-
-        // Get Current User ID for RSVP logic
         const user = authService.getCurrentUser();
         if (user) {
-            // Also try to find the player ID corresponding to this user
             const p = storageService.getPlayers().find(player => player.name === user.name);
             if(p) setPlayerId(p.id);
         }
@@ -76,28 +169,14 @@ const Schedule: React.FC = () => {
 
     const handleRSVP = (item: ScheduleItem) => {
         if (item.type !== 'PRACTICE' || !playerId) return;
-        
         const practice = item.details as PracticeSession;
-        
-        // Deadline Logic Check
-        if (practice.deadlineDate) {
-            const deadline = new Date(practice.deadlineDate);
-            if (new Date() > deadline) {
-                toast.error("Prazo de confirmação encerrado!");
-                return;
-            }
+        if (practice.deadlineDate && new Date() > new Date(practice.deadlineDate)) {
+            toast.error("Prazo de confirmação encerrado!");
+            return;
         }
-
-        // Toggle Logic
         storageService.togglePracticeAttendance(String(practice.id), String(playerId));
-        
-        // Refresh local view
         loadSchedule();
-        
-        // Optimistic Feedback
-        const isNowConfirmed = !practice.attendees?.includes(String(playerId));
-        if (isNowConfirmed) toast.success("Presença confirmada!");
-        else toast.info("Presença cancelada.");
+        toast.success("Presença atualizada!");
     };
 
     const handleDeleteGame = (game: Game) => {
@@ -111,6 +190,7 @@ const Schedule: React.FC = () => {
             storageService.saveGames(updated);
             loadSchedule();
             setGameToDelete(null);
+            toast.success("Jogo removido do calendário.");
         }
     };
 
@@ -120,6 +200,24 @@ const Schedule: React.FC = () => {
         storageService.saveGames(updatedList);
         setSelectedGame(null);
         loadSchedule();
+    };
+
+    const handleQuickScoreUpdate = (game: Game, newScore: string) => {
+        const [home, away] = newScore.split('-').map(s => Number(s.trim()));
+        const result: 'W' | 'L' | 'T' = home > away ? 'W' : home < away ? 'L' : 'T';
+        
+        const updatedGame: Game = { 
+            ...game, 
+            score: newScore, 
+            result, 
+            status: 'FINAL'
+        };
+        const currentGames = storageService.getGames();
+        const updatedList = currentGames.map(g => g.id === game.id ? updatedGame : g);
+        
+        storageService.saveGames(updatedList);
+        loadSchedule();
+        toast.success("Placar atualizado!");
     };
 
     const handleCreateGame = (e: React.FormEvent) => {
@@ -141,6 +239,7 @@ const Schedule: React.FC = () => {
         setNewOpponent('');
         setNewDate('');
         loadSchedule();
+        toast.success("Novo jogo agendado!");
     };
 
     return (
@@ -163,40 +262,42 @@ const Schedule: React.FC = () => {
                     {schedule.map(item => {
                         const isPast = item.date < new Date();
                         const isGame = item.type === 'GAME';
-                        const practice = !isGame ? (item.details as PracticeSession) : null;
                         
-                        // RSVP Logic
-                        const isConfirmed = practice && playerId ? (practice.attendees || []).includes(String(playerId)) : false;
-                        const isCheckedIn = practice && playerId ? (practice.checkedInAttendees || []).includes(String(playerId)) : false;
+                        if (isGame) {
+                            return (
+                                <GameCard 
+                                    key={`game-${item.id}`}
+                                    game={item.details}
+                                    isPlayer={isPlayer}
+                                    onDelete={handleDeleteGame}
+                                    onClick={setSelectedGame}
+                                    onUpdateScore={handleQuickScoreUpdate}
+                                />
+                            );
+                        }
                         
-                        // Deadline Logic
-                        const deadline = practice?.deadlineDate ? new Date(practice.deadlineDate) : null;
+                        const practice = item.details as PracticeSession;
+                        const isConfirmed = playerId && (practice.attendees || []).includes(String(playerId));
+                        const deadline = practice.deadlineDate ? new Date(practice.deadlineDate) : null;
                         const isDeadlinePassed = deadline ? new Date() > deadline : false;
-                        
+
                         return (
                             <div 
-                                key={`${item.type}-${item.id}`} 
-                                onClick={() => isGame ? setSelectedGame(item.details) : null}
-                                className={`rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between shadow-md transition-colors border cursor-pointer group gap-4 ${isGame ? 'bg-secondary hover:bg-accent border-white/5 hover:border-highlight/30' : 'bg-blue-900/10 hover:bg-blue-900/20 border-blue-500/20 hover:border-blue-500/50'}`}
+                                key={`prac-${item.id}`} 
+                                className="rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between shadow-md transition-colors border bg-blue-900/10 hover:bg-blue-900/20 border-blue-500/20 hover:border-blue-500/50"
                             >
                                 <div className="flex items-center w-full md:w-auto">
-                                    <div className={`p-3 rounded-xl mr-4 flex-shrink-0 ${isGame ? 'bg-secondary border border-white/10' : 'bg-blue-600/20 border border-blue-500/30'}`}>
-                                        {isGame ? (
-                                            item.details.opponentLogoUrl ? <LazyImage src={item.details.opponentLogoUrl} className="w-8 h-8 rounded-full" /> : <TrophyIcon className="w-8 h-8 text-highlight" />
-                                        ) : (
-                                            <DumbbellIcon className="w-8 h-8 text-blue-400" />
-                                        )}
+                                    <div className="p-3 rounded-xl mr-4 flex-shrink-0 bg-blue-600/20 border border-blue-500/30">
+                                        <DumbbellIcon className="w-8 h-8 text-blue-400" />
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            {isGame && <span className="text-[10px] bg-red-600 text-white px-2 rounded font-bold">GAME</span>}
-                                            {!isGame && <span className="text-[10px] bg-blue-600 text-white px-2 rounded font-bold">TREINO</span>}
+                                            <span className="text-[10px] bg-blue-600 text-white px-2 rounded font-bold">TREINO</span>
                                             <p className="font-bold text-text-primary text-lg">{item.title}</p>
                                         </div>
                                         <p className="text-sm text-text-secondary">{item.description}</p>
                                         
-                                        {/* Visual Feedback for Deadline */}
-                                        {!isGame && deadline && !isPast && (
+                                        {deadline && !isPast && (
                                             <div className="flex items-center gap-1 mt-1">
                                                 <ClockIcon className={`w-3 h-3 ${isDeadlinePassed ? 'text-red-400' : 'text-yellow-400'}`} />
                                                 <span className={`text-[10px] ${isDeadlinePassed ? 'text-red-400 font-bold' : 'text-yellow-400'}`}>
@@ -207,49 +308,25 @@ const Schedule: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between w-full md:w-auto md:justify-end gap-6">
+                                <div className="flex items-center justify-between w-full md:w-auto md:justify-end gap-6 mt-4 md:mt-0">
                                     <div className="text-left md:text-right">
                                         <p className={`font-semibold capitalize ${isPast ? 'text-text-secondary' : 'text-white'}`}>{item.date.toLocaleDateString('pt-BR', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
                                         <p className="text-sm text-text-secondary">{item.date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                                     </div>
                                     
-                                    {/* Botão de RSVP (Atleta) - Smart Button Logic */}
-                                    {isPlayer && !isGame && !isPast && (
+                                    {isPlayer && !isPast && (
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); handleRSVP(item); }}
-                                            disabled={isDeadlinePassed && !isConfirmed} // Allow removing confirmed even if deadline passed? Usually NO.
+                                            disabled={isDeadlinePassed && !isConfirmed}
                                             className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-md 
                                                 ${isConfirmed 
-                                                    ? 'bg-green-600 text-white hover:bg-green-500 ring-2 ring-green-400/50' 
+                                                    ? 'bg-green-600 text-white hover:bg-green-500' 
                                                     : isDeadlinePassed 
-                                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed border border-gray-600'
+                                                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                                                         : 'bg-white/10 border border-white/20 text-white hover:bg-white/20'
                                                 }`}
                                         >
-                                            {isConfirmed ? (
-                                                <><CheckCircleIcon className="w-4 h-4"/> Eu Vou</>
-                                            ) : isDeadlinePassed ? (
-                                                <><XIcon className="w-4 h-4"/> Fechado</>
-                                            ) : (
-                                                'Confirmar?'
-                                            )}
-                                        </button>
-                                    )}
-                                    
-                                    {/* Visual Indicator for Past Presence */}
-                                    {isPlayer && !isGame && isPast && (
-                                        <div className={`px-3 py-1 rounded text-[10px] font-bold border ${isCheckedIn ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-red-400 border-red-500/30 bg-red-500/10'}`}>
-                                            {isCheckedIn ? 'PRESENÇA CONFIRMADA (+50 XP)' : 'FALTA'}
-                                        </div>
-                                    )}
-                                    
-                                    {/* Admin Delete */}
-                                    {!isPlayer && isGame && (
-                                        <button 
-                                            className="p-2 text-text-secondary hover:text-red-400 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={(e) => { e.stopPropagation(); handleDeleteGame(item.details); }}
-                                        >
-                                            <TrashIcon />
+                                            {isConfirmed ? <><CheckCircleIcon className="w-4 h-4"/> Vou</> : isDeadlinePassed ? <XIcon className="w-4 h-4"/> : 'Confirmar'}
                                         </button>
                                     )}
                                 </div>
