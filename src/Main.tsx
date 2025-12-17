@@ -47,6 +47,7 @@ const HelpCenter = React.lazy(() => import('./pages/HelpCenter'));
 const Roadmap = React.lazy(() => import('./pages/Roadmap'));
 const Onboarding = React.lazy(() => import('./pages/Onboarding'));
 const BroadcastOverlay = React.lazy(() => import('./pages/BroadcastOverlay'));
+const BroadcastBooth = React.lazy(() => import('./pages/BroadcastBooth')); // NEW
 const Logistics = React.lazy(() => import('./pages/Logistics'));
 const Recruitment = React.lazy(() => import('./pages/Recruitment'));
 const Goals = React.lazy(() => import('./pages/Goals'));
@@ -61,7 +62,8 @@ const ROLES = {
   PLAYER_VIEW: ['MASTER', 'HEAD_COACH', 'PLAYER', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'] as UserRole[],
   COMMERCIAL: ['MASTER', 'COMMERCIAL_MANAGER'] as UserRole[],
   MARKETING: ['MASTER', 'MARKETING_MANAGER'] as UserRole[],
-  PLATFORM: ['PLATFORM_OWNER', 'MASTER'] as UserRole[] 
+  PLATFORM: ['PLATFORM_OWNER', 'MASTER'] as UserRole[],
+  BROADCASTER: ['MASTER', 'BROADCASTER'] as UserRole[] // NEW
 };
 
 // Componente de Checagem de Onboarding e Integridade
@@ -175,6 +177,7 @@ const Main: React.FC = () => {
                                 <Route path="/goals" element={<ProtectedRoute allowedRoles={ROLES.STAFF}><Goals /></ProtectedRoute>} />
                                 <Route path="/settings" element={<ProtectedRoute allowedRoles={ROLES.MASTER}><TeamSettingsPage /></ProtectedRoute>} />
                                 <Route path="/admin" element={<ProtectedRoute allowedRoles={ROLES.MASTER}><AdminPanel /></ProtectedRoute>} />
+                                <Route path="/broadcast-booth" element={<ProtectedRoute allowedRoles={ROLES.BROADCASTER}><BroadcastBooth /></ProtectedRoute>} /> {/* NEW */}
                                 
                                 <Route path="/officiating" element={<Officiating />} />
                                 <Route path="/league" element={<LeagueManager />} />

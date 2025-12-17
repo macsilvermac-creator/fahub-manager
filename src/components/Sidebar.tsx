@@ -10,7 +10,7 @@ import {
 } from './icons/NavIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
-import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, UserPlusIcon, LockIcon, EyeIcon, WalletIcon } from './icons/UiIcons';
+import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, UserPlusIcon, LockIcon, EyeIcon, WalletIcon, MicIcon } from './icons/UiIcons';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -44,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
   const isAthlete = ['PLAYER'].includes(currentRole);
   const isBackoffice = ['MASTER', 'FINANCIAL_MANAGER', 'MARKETING_MANAGER', 'COMMERCIAL_MANAGER'].includes(currentRole);
   const isOfficial = ['MASTER', 'REFEREE'].includes(currentRole);
+  const isBroadcaster = ['MASTER', 'BROADCASTER'].includes(currentRole);
 
   const getRoleBadge = () => {
       if(currentRole === 'MASTER') return { label: 'GOD MODE', color: 'bg-red-600' };
@@ -51,6 +52,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
       if(isAthlete) return { label: 'ATLETA', color: 'bg-green-600' };
       if(currentRole === 'FINANCIAL_MANAGER') return { label: 'CFO / FINANÇAS', color: 'bg-yellow-600' };
       if(currentRole === 'REFEREE') return { label: 'ÁRBITRO', color: 'bg-yellow-500' };
+      if(currentRole === 'BROADCASTER') return { label: 'IMPRENSA / TV', color: 'bg-purple-500' };
       return { label: 'STAFF', color: 'bg-gray-600' };
   };
 
@@ -140,6 +142,16 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                 <span>Calendário</span>
               </NavLink>
             </div>
+          )}
+          
+          {isBroadcaster && (
+             <div className="mt-6 animate-fade-in">
+               <p className="px-4 text-[10px] font-black text-text-secondary/40 uppercase tracking-widest mb-2">Transmissão</p>
+               <NavLink to="/broadcast-booth" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                 <MicIcon className="w-5 h-5 mr-3 group-hover:text-purple-400 transition-colors" />
+                 <span>Cabine do Narrador</span>
+               </NavLink>
+             </div>
           )}
 
           {isAthlete && (
@@ -278,7 +290,7 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
                <div className="grid grid-cols-4 gap-1">
                     <button onClick={() => { setRole('MASTER'); navigate('/dashboard'); }} className={`text-[8px] font-bold border rounded py-1.5 transition-colors ${currentRole === 'MASTER' ? 'bg-red-600 text-white border-red-500 shadow-glow' : 'text-text-secondary border-white/10 hover:text-white hover:bg-white/5'}`} title="Visão Dono">MST</button>
                     <button onClick={() => { setRole('HEAD_COACH'); navigate('/dashboard'); }} className={`text-[8px] font-bold border rounded py-1.5 transition-colors ${currentRole === 'HEAD_COACH' ? 'bg-blue-600 text-white border-blue-500' : 'text-text-secondary border-white/10 hover:text-white hover:bg-white/5'}`} title="Visão Técnico">HC</button>
-                    <button onClick={() => { setRole('PLAYER'); navigate('/profile'); }} className={`text-[8px] font-bold border rounded py-1.5 transition-colors ${currentRole === 'PLAYER' ? 'bg-green-600 text-white border-green-500' : 'text-text-secondary border-white/10 hover:text-white hover:bg-white/5'}`} title="Visão Atleta">PL</button>
+                    <button onClick={() => { setRole('BROADCASTER'); navigate('/broadcast-booth'); }} className={`text-[8px] font-bold border rounded py-1.5 transition-colors ${currentRole === 'BROADCASTER' ? 'bg-purple-600 text-white border-purple-500' : 'text-text-secondary border-white/10 hover:text-white hover:bg-white/5'}`} title="Visão Narrador">TV</button>
                     <button onClick={() => { setRole('REFEREE'); navigate('/officiating'); }} className={`text-[8px] font-bold border rounded py-1.5 transition-colors ${currentRole === 'REFEREE' ? 'bg-yellow-500 text-black border-yellow-400' : 'text-text-secondary border-white/10 hover:text-white hover:bg-white/5'}`} title="Visão Árbitro">REF</button>
                </div>
           </div>

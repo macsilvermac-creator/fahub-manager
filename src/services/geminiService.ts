@@ -277,3 +277,18 @@ export const explainPlayImage = async (base64Image: string, playerQuestion: stri
         return "Erro na visão computacional.";
     }
 };
+
+// --- BROADCASTER AGENT ---
+export const generateColorCommentary = async (homeTeam: string, awayTeam: string, context: string): Promise<any> => {
+    const prompt = `Atue como um comentarista especialista de Futebol Americano (NFL/BFA style). 
+    Analise o jogo entre ${homeTeam} e ${awayTeam}. Contexto: ${context}.
+    Retorne um JSON com:
+    {
+        "intro": "Uma frase de impacto para abertura da transmissão.",
+        "keyMatchups": ["Matchup 1", "Matchup 2"],
+        "boldPrediction": "Uma previsão ousada",
+        "homePlayerToWatch": "Nome e motivo",
+        "awayPlayerToWatch": "Nome e motivo"
+    }`;
+    return (await generateJson(prompt)) || { intro: "Bem vindos ao jogo!", keyMatchups: [], boldPrediction: "", homePlayerToWatch: "", awayPlayerToWatch: "" };
+};

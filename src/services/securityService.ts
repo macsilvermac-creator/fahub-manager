@@ -26,7 +26,8 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'EQUIPMENT_MANAGER': [],
     'PLAYER': [], // Atletas têm permissões implícitas de leitura própria
     'REFEREE': ['OFFICIATE_GAME'],
-    'CANDIDATE': []
+    'CANDIDATE': [],
+    'BROADCASTER': [] // Acesso apenas a BroadcastBooth
 };
 
 export const securityService = {
