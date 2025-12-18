@@ -108,7 +108,6 @@ export interface Player {
     depthChartOrder: number;
     verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
     badges?: string[];
-    // Fix: Added missing properties requested by services and errors
     nationality?: string;
     birthDate?: Date;
 }
@@ -334,7 +333,6 @@ export interface Announcement {
     readBy?: string[];
 }
 
-// Fix: Added missing interfaces
 export interface KanbanTask {
     id: string;
     title: string;
@@ -726,12 +724,28 @@ export interface YouthStudent {
     isSocialProject: boolean;
 }
 
-// Fix: Added missing interfaces requested by services and errors
 export interface AffiliateEarnings {
     id: string;
     amount: number;
     date: Date;
     status: 'PAID' | 'PENDING';
+}
+
+export interface TeamDocument {
+    id: string;
+    title: string;
+    type: string;
+    category: string;
+    uploadDate: Date;
+    size: string;
+    url: string;
+}
+
+export interface FinancialAttachment {
+    id: string;
+    name: string;
+    url: string;
+    type: string;
 }
 
 export interface VideoTag {
