@@ -20,7 +20,6 @@ const Roster: React.FC = () => {
     
     // --- REATIVIDADE ---
     const players = useAppStore('players', storageService.getPlayers);
-    // @ts-ignore
     const activeProgram = useAppStore('activeProgram', storageService.getActiveProgram);
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -57,11 +56,11 @@ const Roster: React.FC = () => {
                 id: newId,
                 level: 1,
                 xp: 0,
-                badges: ['Novato'],
                 rating: 70, 
                 status: 'ACTIVE',
                 rosterCategory: 'ACTIVE',
-                // Fix: Correct property names matching the interface
+                badges: ['Novato'],
+                // Correct property name and initialization for rosterHistory
                 rosterHistory: [{ id: `h-${Date.now()}`, date: new Date(), type: 'RECRUITMENT', description: 'Adicionado ao Roster via Cadastro' }],
                 depthChartOrder: 3,
                 ...newPlayerData
@@ -264,7 +263,7 @@ const Roster: React.FC = () => {
 
                     {!isPlayer && (
                         <div className="bg-secondary p-1 rounded-lg flex border border-white/10">
-                            <button onClick={() => setViewMode('CARDS')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${viewMode === 'CARDS' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}>Cards</button>
+                            <button onClick={() => setViewMode('CARDS')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${viewMode === 'CARDS' ? 'bg-highlight text-white shadow-sm' : 'text-text-secondary hover:text-white'}`}>Cards</button>
                             <button onClick={() => setViewMode('DEPTH_CHART')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${viewMode === 'DEPTH_CHART' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}>Tática</button>
                         </div>
                     )}

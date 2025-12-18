@@ -27,8 +27,8 @@ const Register: React.FC = () => {
     setLoading(true);
     
     try {
-      // O role 'CANDIDATE' é passado, mas o authService decide se vira MASTER (1º user) ou CANDIDATE
-      await authService.register(formData.name, formData.email, 'CANDIDATE', formData.password, formData.cpf);
+      // Fixed: Cast 'CANDIDATE' to UserRole to satisfy type checker
+      await authService.register(formData.name, formData.email, 'CANDIDATE' as UserRole, formData.password, formData.cpf);
       setSuccess(true);
     } catch (err: any) {
       console.error(err);

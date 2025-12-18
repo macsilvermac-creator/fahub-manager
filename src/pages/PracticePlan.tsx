@@ -106,7 +106,7 @@ const PracticePlan: React.FC = () => {
             locationType: 'FIELD',
             instructor: '',
             attendees: [],
-            checkedInAttendees: [], // Inicializa vazio
+            checkedInAttendees: [], 
             notes: '',
             drills: [],
             script: generatedScript.length > 0 ? generatedScript : [], 
@@ -189,13 +189,10 @@ const PracticePlan: React.FC = () => {
     const handleCheckInSave = (checkedInIds: string[]) => {
         if (!selectedPractice) return;
         
-        // Atualiza estado local e persistência
         const updatedSession = { ...selectedPractice, checkedInAttendees: checkedInIds };
         setSelectedPractice(updatedSession);
-        // Cast to string to avoid type error
         storageService.savePracticeCheckIn(String(updatedSession.id), checkedInIds);
         
-        // Atualiza lista principal
         setPractices(prev => prev.map(p => p.id === updatedSession.id ? updatedSession : p));
         
         toast.success(`Check-in realizado! ${checkedInIds.length} atletas presentes.`);
@@ -229,13 +226,10 @@ const PracticePlan: React.FC = () => {
     const playersToEvaluate = players.filter(p => {
         if (p.status !== 'ACTIVE') return false;
         
-        // LAZY FILTER: Se houve check-in, mostra SÓ quem estava lá.
-        // Se NÃO houve check-in (ainda), mostra quem deu RSVP.
         const hasCheckIn = selectedPractice?.checkedInAttendees && selectedPractice.checkedInAttendees.length > 0;
         if (hasCheckIn) {
              if (!selectedPractice?.checkedInAttendees?.includes(String(p.id))) return false;
         } else {
-             // Fallback: RSVP
              if (!selectedPractice?.attendees?.includes(String(p.id))) return false;
         }
 
@@ -245,7 +239,6 @@ const PracticePlan: React.FC = () => {
     });
 
     const printAttendanceSheet = () => {
-        // Simple trigger for print style
         window.print();
     };
 

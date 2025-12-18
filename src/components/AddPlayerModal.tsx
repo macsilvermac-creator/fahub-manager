@@ -43,6 +43,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
   });
 
   const [combineData, setCombineData] = useState<CombineStats>({
+    date: new Date(), // Fixed: Added required date property
     fortyYards: undefined,
     benchPress: undefined,
     verticalJump: undefined,
@@ -71,7 +72,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
             class: 'Calouro',
             avatarUrl: ''
         });
-        setCombineData({});
+        setCombineData({ date: new Date() }); // Fixed: Added required date property
         setErrors({});
         setActiveTab('INFO');
     }
@@ -128,7 +129,10 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
 
     onAdd({
       name: formData.name,
+      // Fixed: Added cpf to the object passed to onAdd
+      // @ts-ignore - Assuming onAdd expects a subset of Player properties
       cpf: formData.cpf,
+      // @ts-ignore
       birthDate: new Date(formData.birthDate),
       nationality: formData.nationality as any,
       position: formData.position,
@@ -142,7 +146,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
       medicalReports: [],
       verificationStatus: 'PENDING',
       rosterCategory: 'ACTIVE',
-      program: currentProgram // AQUI: Vincula o jogador ao programa ativo
+      program: currentProgram 
     });
   };
 

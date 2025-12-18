@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 const iconProps = {
@@ -63,7 +64,6 @@ export const WifiIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
 );
 
-// Fix: Removed duplicate definition of WifiOffIcon at the end of the file
 export const WifiOffIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...iconProps} {...props} viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path></svg>
 );
@@ -266,7 +266,7 @@ export const CloudIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export const MicIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line></svg>
+  <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12.01" y2="19"></line></svg>
 );
 
 export const StopIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -327,4 +327,12 @@ export const KeyIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export const BankIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M3 21h18"></path><path d="M3 10h18"></path><path d="m5 6 7-3 7 3"></path><path d="M4 10v11"></path><path d="M20 10v11"></path><path d="M8 14v3"></path><path d="M12 14v3"></path><path d="M16 14v3"></path></svg>
+);
+
+export const TrophyIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24">
+    <path d="M8 21h8m-4-9v9m-8-3h16M6 4a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V4z"></path>
+    <path d="M6 4H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2"></path>
+    <path d="M18 4h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2"></path>
+  </svg>
 );

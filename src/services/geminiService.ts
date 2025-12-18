@@ -176,7 +176,12 @@ export const generatePracticeScript = async (focus: string, duration: number, in
     return JSON.parse(response.text || "[]");
 };
 
-// FIX: Added missing analyzePlayMatchup
+/**
+ * Simulates a tactical play matchup against an opponent's defense based on scouting reports.
+ * @param play The play concept string.
+ * @param scouting The scouting report data.
+ * @param opponent The name of the opponent team.
+ */
 export const analyzePlayMatchup = async (play: string, scouting: any, opponent: string) => {
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',

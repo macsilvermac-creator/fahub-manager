@@ -1,299 +1,346 @@
 
-import { Player, Game, PracticeSession, TeamSettings, StaffMember, Transaction, Invoice, SocialFeedPost, Announcement, ChatMessage, TeamDocument, TacticalPlay, Course, AuditLog, MarketplaceItem, YouthClass, YouthStudent, RecruitmentCandidate, Objective, Subscription, Budget, Bill, KanbanTask, RefereeProfile, LegalDocument, ProgramType, Drill, Entitlement, DigitalProduct, League, SponsorDeal, SocialPost, EquipmentItem, EventSale, GameReport, VideoClip, VideoPlaylist, CoachGameNote, CoachCareer, CrewLogistics, NationalTeamCandidate, Affiliate, TransferRequest } from '../types';
-import { firebaseDataService } from './firebaseDataService';
-import { syncService } from './syncService';
-import { securityService } from './securityService'; 
-import { get, set } from 'idb-keyval';
+import { Player, Game, PracticeSession, Course, TeamSettings, RecruitmentCandidate, SocialPost, Announcement, Transaction, Invoice, Subscription, Budget, Bill, EquipmentItem, Objective, StaffMember, TacticalPlay, VideoClip, Entitlement, League, SponsorDeal, CrewLogistics, RefereeProfile, AssociationFinance, SocialFeedPost, CoachCareer, ProgramType } from '../types';
 
-const KEYS = {
-    PLAYERS: 'gridiron_players',
-    GAMES: 'gridiron_games',
-    SETTINGS: 'gridiron_settings',
-    PRACTICE: 'gridiron_practice',
-    TRANSACTIONS: 'gridiron_transactions',
-    INVOICES: 'gridiron_invoices',
-    STAFF: 'gridiron_staff',
-    TASKS: 'gridiron_tasks',
-    ANNOUNCEMENTS: 'gridiron_announcements',
-    CHAT: 'gridiron_chat',
-    DOCUMENTS: 'gridiron_documents',
-    INVENTORY: 'gridiron_inventory',
-    SPONSORS: 'gridiron_sponsors',
-    SOCIAL_POSTS: 'gridiron_social_posts',
-    MARKETPLACE: 'gridiron_marketplace',
-    SALES: 'gridiron_sales',
-    COURSES: 'gridiron_courses',
-    PLAYS: 'gridiron_tactical_plays',
-    CLIPS: 'gridiron_clips',
-    PLAYLISTS: 'gridiron_playlists',
-    YOUTH_CLASSES: 'gridiron_youth_classes',
-    COACH_NOTES: 'gridiron_coach_notes',
-    COACH_PROFILES: 'gridiron_coach_profiles',
-    FEED: 'gridiron_social_feed',
-    LOGS: 'gridiron_audit_logs',
-    ACTIVE_PROGRAM: 'gridiron_active_program',
-    CANDIDATES: 'gridiron_candidates',
-    OBJECTIVES: 'gridiron_objectives',
-    ENTITLEMENTS: 'gridiron_entitlements',
-    DRILLS: 'gridiron_drill_library',
-    SUBSCRIPTIONS: 'gridiron_subscriptions',
-    BUDGETS: 'gridiron_budgets',
-    BILLS: 'gridiron_bills'
+// Helper for dates
+const dateReviver = (key: string, value: any) => {
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value)) {
+        return new Date(value);
+    }
+    return value;
 };
+
+// Generic Helper for Disk I/O
+const getListFromDisk = <T>(key: string): T[] => {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored, dateReviver) : [];
+};
+
+const saveListToDisk = <T>(key: string, list: T[]) => {
+    localStorage.setItem(key, JSON.stringify(list));
+};
+
+const PLAYERS_KEY = 'gridiron_players';
+const GAMES_KEY = 'gridiron_games';
+const TEAM_SETTINGS_KEY = 'gridiron_settings';
+const PRACTICE_KEY = 'gridiron_practice';
+const TRANSACTIONS_KEY = 'gridiron_transactions';
+const INVOICES_KEY = 'gridiron_invoices';
+const STAFF_KEY = 'gridiron_staff';
+const ANNOUNCEMENTS_KEY = 'gridiron_announcements';
+const CLIPS_KEY = 'gridiron_clips';
+const CANDIDATES_KEY = 'gridiron_candidates';
+const SOCIAL_POSTS_KEY = 'gridiron_social_posts';
+const SUBSCRIPTIONS_KEY = 'gridiron_subscriptions';
+const BUDGETS_KEY = 'gridiron_budgets';
+const BILLS_KEY = 'gridiron_bills';
+const INVENTORY_KEY = 'gridiron_inventory';
+const OBJECTIVES_KEY = 'gridiron_objectives';
+const TACTICAL_PLAYS_KEY = 'gridiron_tactical_plays';
+const ENTITLEMENTS_KEY = 'gridiron_entitlements';
+const SPONSORS_KEY = 'gridiron_sponsors';
+const SOCIAL_FEED_KEY = 'gridiron_social_feed';
+const COACH_PROFILES_KEY = 'gridiron_coach_profiles';
+const COACH_NOTES_KEY = 'gridiron_coach_notes';
+const SALES_KEY = 'gridiron_event_sales';
+
+let players: Player[] = getListFromDisk(PLAYERS_KEY);
+let games: Game[] = getListFromDisk(GAMES_KEY);
+let practices: PracticeSession[] = getListFromDisk(PRACTICE_KEY);
+let activeProgram: ProgramType = (localStorage.getItem('gridiron_active_program') as ProgramType) || 'TACKLE';
 
 const INITIAL_TEAM_SETTINGS: TeamSettings = {
     id: 'ts-1',
     teamName: 'FAHUB Stars',
     logoUrl: 'https://ui-avatars.com/api/?name=FS&background=00A86B&color=fff&size=200', 
     address: 'Arena Principal, Centro Esportivo',
-    primaryColor: '#00A86B',
-    secondaryColor: '#EAB308',
-    level: 5,
-    xp: 2400,
-    reputation: 85,
-    badges: ['Campeão Estadual', 'Fair Play', 'Elite Training'],
-    sportType: 'FULLPADS'
+    primaryColor: '#00A86B'
 };
 
-const RAM_DB: Record<string, any> = {
-    players: [],
-    games: [],
-    settings: INITIAL_TEAM_SETTINGS,
-    practice: [],
-    transactions: [],
-    invoices: [],
-    staff: [],
-    tasks: [],
-    announcements: [],
-    chat: [],
-    documents: [],
-    inventory: [],
-    sponsors: [],
-    socialPosts: [],
-    marketplace: [],
-    sales: [],
-    courses: [],
-    plays: [],
-    clips: [],
-    playlists: [],
-    youthClasses: [],
-    coachNotes: [],
-    coachProfiles: {},
-    feed: [],
-    logs: [],
-    candidates: [],
-    objectives: [],
-    entitlements: [],
-    drills: [],
-    activeProgram: 'TACKLE',
-    subscriptions: [],
-    budgets: [],
-    bills: []
-};
-
-const LISTENERS: Record<string, Function[]> = {};
-
-const persist = (dbKey: string, ramKey: string, data: any, syncEntity?: string) => {
-    RAM_DB[ramKey] = data;
-    if (LISTENERS[ramKey]) {
-        LISTENERS[ramKey].forEach(cb => cb(data));
-    }
-    set(dbKey, data).catch(err => console.error(`Erro ao salvar ${dbKey}:`, err));
-
-    if (syncEntity && syncService.getConnectionStatus()) {
-        syncService.triggerSync(syncEntity, data);
-    }
-};
+const subscribers: Record<string, (() => void)[]> = {};
 
 export const storageService = {
     initializeRAM: async () => {
-        try {
-            const keys = Object.values(KEYS);
-            const values = await Promise.all(keys.map(key => get(key)));
-            
-            const keyMap: Record<string, string> = {
-                [KEYS.PLAYERS]: 'players', [KEYS.GAMES]: 'games', [KEYS.SETTINGS]: 'settings',
-                [KEYS.TRANSACTIONS]: 'transactions', [KEYS.PRACTICE]: 'practice', [KEYS.INVOICES]: 'invoices',
-                [KEYS.STAFF]: 'staff', [KEYS.TASKS]: 'tasks', [KEYS.ANNOUNCEMENTS]: 'announcements',
-                [KEYS.CHAT]: 'chat', [KEYS.DOCUMENTS]: 'documents', [KEYS.INVENTORY]: 'inventory',
-                [KEYS.SPONSORS]: 'sponsors', [KEYS.SOCIAL_POSTS]: 'socialPosts', [KEYS.MARKETPLACE]: 'marketplace',
-                [KEYS.SALES]: 'sales', [KEYS.COURSES]: 'courses', [KEYS.PLAYS]: 'plays',
-                [KEYS.CLIPS]: 'clips', [KEYS.PLAYLISTS]: 'playlists', [KEYS.YOUTH_CLASSES]: 'youthClasses',
-                [KEYS.COACH_NOTES]: 'coachNotes', [KEYS.COACH_PROFILES]: 'coachProfiles', [KEYS.FEED]: 'feed',
-                [KEYS.LOGS]: 'logs', [KEYS.ACTIVE_PROGRAM]: 'activeProgram', [KEYS.CANDIDATES]: 'candidates',
-                [KEYS.OBJECTIVES]: 'objectives', [KEYS.ENTITLEMENTS]: 'entitlements', [KEYS.DRILLS]: 'drills',
-                [KEYS.SUBSCRIPTIONS]: 'subscriptions', [KEYS.BUDGETS]: 'budgets', [KEYS.BILLS]: 'bills'
-            };
+        players = getListFromDisk(PLAYERS_KEY);
+        games = getListFromDisk(GAMES_KEY);
+        practices = getListFromDisk(PRACTICE_KEY);
+        activeProgram = (localStorage.getItem('gridiron_active_program') as ProgramType) || 'TACKLE';
+    },
 
-            keys.forEach((key, index) => {
-                const val = values[index];
-                if (val !== undefined && val !== null) {
-                    const ramKey = keyMap[key];
-                    if (ramKey) RAM_DB[ramKey] = val;
-                }
-            });
-        } catch (e) {
-            console.error("Critical DB Error:", e);
+    subscribe: (key: string, callback: () => void) => {
+        if (!subscribers[key]) subscribers[key] = [];
+        subscribers[key].push(callback);
+        return () => {
+            subscribers[key] = subscribers[key].filter(cb => cb !== callback);
+        };
+    },
+
+    notify: (key: string) => {
+        if (subscribers[key]) {
+            subscribers[key].forEach(cb => cb());
         }
     },
 
-    subscribe: (key: string, callback: Function) => {
-        if (!LISTENERS[key]) LISTENERS[key] = [];
-        LISTENERS[key].push(callback);
-        return () => {
-            LISTENERS[key] = LISTENERS[key].filter(cb => cb !== callback);
-        };
+    getPlayers: () => players,
+    savePlayers: (updated: Player[]) => {
+        players = updated;
+        saveListToDisk(PLAYERS_KEY, updated);
+        storageService.notify('players');
+    },
+    registerAthlete: (player: Player) => {
+        const updated = [...players, player];
+        storageService.savePlayers(updated);
+    },
+    addPlayerXP: (playerId: number, amount: number, reason: string) => {
+        const updated = players.map(p => {
+            if (p.id === playerId) {
+                const newXp = p.xp + amount;
+                const newLevel = Math.floor(newXp / 100) + 1;
+                return { ...p, xp: newXp, level: newLevel };
+            }
+            return p;
+        });
+        storageService.savePlayers(updated);
     },
 
-    getPlayers: (): Player[] => RAM_DB.players,
-    savePlayers: (players: Player[]) => {
-        securityService.enforce('MANAGE_ROSTER');
-        persist(KEYS.PLAYERS, 'players', players, 'players');
+    getGames: () => games,
+    saveGames: (updated: Game[]) => {
+        games = updated;
+        saveListToDisk(GAMES_KEY, updated);
+        storageService.notify('games');
     },
-
-    getGames: (): Game[] => RAM_DB.games,
-    saveGames: (games: Game[]) => {
-        securityService.enforce('MANAGE_TACTICS');
-        persist(KEYS.GAMES, 'games', games, 'games');
-    },
-
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
-        const updated = RAM_DB.games.map((g: Game) => g.id === gameId ? { ...g, ...updates } : g);
-        persist(KEYS.GAMES, 'games', updated, 'games'); 
+        const updated = games.map(g => g.id === gameId ? { ...g, ...updates } : g);
+        storageService.saveGames(updated);
     },
-
     finalizeGameReport: (gameId: number, report: GameReport, score: string, winner: string) => {
-        securityService.enforce('OFFICIATE_GAME');
-        const updated = RAM_DB.games.map((g: Game) => g.id === gameId ? {
+        const updated = games.map(g => g.id === gameId ? {
             ...g,
-            officialReport: report, score,
+            officialReport: report,
+            score,
             result: (winner === 'HOME' ? 'W' : winner === 'AWAY' ? 'L' : 'T') as any,
             status: 'FINAL' as const
         } : g);
-        persist(KEYS.GAMES, 'games', updated, 'games');
+        storageService.saveGames(updated);
     },
 
-    getPracticeSessions: (): PracticeSession[] => RAM_DB.practice,
-    savePracticeSessions: (p: PracticeSession[]) => {
-        securityService.enforce('MANAGE_TACTICS');
-        persist(KEYS.PRACTICE, 'practice', p);
+    getPracticeSessions: () => practices,
+    savePracticeSessions: (updated: PracticeSession[]) => {
+        practices = updated;
+        saveListToDisk(PRACTICE_KEY, updated);
+        storageService.notify('practice');
+    },
+    savePracticeCheckIn: (sessionId: string, checkedInIds: string[]) => {
+        const updated = practices.map(p => String(p.id) === sessionId ? { ...p, checkedInAttendees: checkedInIds } : p);
+        storageService.savePracticeSessions(updated);
+    },
+    togglePracticeAttendance: (sessionId: string, playerId: string) => {
+        const updated = practices.map(p => {
+            if (String(p.id) === sessionId) {
+                const attendees = p.attendees || [];
+                const newAttendees = attendees.includes(playerId) 
+                    ? attendees.filter(id => id !== playerId)
+                    : [...attendees, playerId];
+                return { ...p, attendees: newAttendees };
+            }
+            return p;
+        });
+        storageService.savePracticeSessions(updated);
     },
 
-    getTeamSettings: (): TeamSettings => RAM_DB.settings,
-    saveTeamSettings: (s: TeamSettings) => {
-        securityService.enforce('EDIT_SETTINGS');
-        persist(KEYS.SETTINGS, 'settings', s, 'settings');
+    getTeamSettings: (): TeamSettings => {
+        const stored = localStorage.getItem(TEAM_SETTINGS_KEY);
+        return stored ? JSON.parse(stored, dateReviver) : INITIAL_TEAM_SETTINGS;
+    },
+    saveTeamSettings: (settings: TeamSettings) => {
+        localStorage.setItem(TEAM_SETTINGS_KEY, JSON.stringify(settings));
+        storageService.notify('settings');
     },
 
-    getActiveProgram: (): ProgramType => RAM_DB.activeProgram || 'TACKLE',
-    setActiveProgram: (p: ProgramType) => persist(KEYS.ACTIVE_PROGRAM, 'activeProgram', p),
-
-    getTransactions: (): Transaction[] => RAM_DB.transactions,
-    saveTransactions: (t: Transaction[]) => {
-        securityService.enforce('MANAGE_FINANCE');
-        persist(KEYS.TRANSACTIONS, 'transactions', t, 'transactions');
+    getActiveProgram: () => activeProgram,
+    setActiveProgram: (prog: ProgramType) => {
+        activeProgram = prog;
+        localStorage.setItem('gridiron_active_program', prog);
+        storageService.notify('activeProgram');
     },
 
-    getInvoices: (): Invoice[] => RAM_DB.invoices,
-    saveInvoices: (i: Invoice[]) => {
-        securityService.enforce('MANAGE_FINANCE');
-        persist(KEYS.INVOICES, 'invoices', i);
+    getCandidates: (): RecruitmentCandidate[] => getListFromDisk(CANDIDATES_KEY),
+    saveCandidates: (updated: RecruitmentCandidate[]) => saveListToDisk(CANDIDATES_KEY, updated),
+
+    getSocialPosts: (): SocialPost[] => getListFromDisk(SOCIAL_POSTS_KEY),
+    saveSocialPosts: (updated: SocialPost[]) => saveListToDisk(SOCIAL_POSTS_KEY, updated),
+
+    getAnnouncements: (): Announcement[] => getListFromDisk(ANNOUNCEMENTS_KEY),
+    saveAnnouncements: (updated: Announcement[]) => saveListToDisk(ANNOUNCEMENTS_KEY, updated),
+
+    getTransactions: (): Transaction[] => getListFromDisk(TRANSACTIONS_KEY),
+    saveTransactions: (updated: Transaction[]) => saveListToDisk(TRANSACTIONS_KEY, updated),
+
+    getInvoices: (): Invoice[] => getListFromDisk(INVOICES_KEY),
+    saveInvoices: (updated: Invoice[]) => saveListToDisk(INVOICES_KEY, updated),
+
+    getSubscriptions: (): Subscription[] => getListFromDisk(SUBSCRIPTIONS_KEY),
+    saveSubscriptions: (updated: Subscription[]) => saveListToDisk(SUBSCRIPTIONS_KEY, updated),
+
+    getBudgets: (): Budget[] => getListFromDisk(BUDGETS_KEY),
+    saveBudgets: (updated: Budget[]) => saveListToDisk(BUDGETS_KEY, updated),
+
+    getBills: (): Bill[] => getListFromDisk(BILLS_KEY),
+    saveBills: (updated: Bill[]) => saveListToDisk(BILLS_KEY, updated),
+
+    generateMonthlyInvoices: () => {
+        const subs = storageService.getSubscriptions();
+        const allPlayers = storageService.getPlayers();
+        const invoices = storageService.getInvoices();
+        const newInvoices: Invoice[] = [];
+        
+        subs.filter(s => s.active).forEach(s => {
+            s.assignedTo.forEach(pid => {
+                const player = allPlayers.find(p => p.id === pid);
+                newInvoices.push({
+                    id: `inv-sub-${s.id}-${pid}-${Date.now()}`,
+                    playerId: pid,
+                    playerName: player?.name || 'Atleta',
+                    title: s.title,
+                    amount: s.amount,
+                    dueDate: new Date(new Date().setDate(new Date().getDate() + 5)),
+                    status: 'PENDING',
+                    category: 'TUITION'
+                });
+            });
+        });
+        storageService.saveInvoices([...invoices, ...newInvoices]);
     },
 
-    getStaff: (): StaffMember[] => RAM_DB.staff,
-    saveStaff: (s: StaffMember[]) => {
-        securityService.enforce('MANAGE_STAFF');
-        persist(KEYS.STAFF, 'staff', s);
-    },
+    getInventory: (): EquipmentItem[] => getListFromDisk(INVENTORY_KEY),
+    saveInventory: (updated: EquipmentItem[]) => saveListToDisk(INVENTORY_KEY, updated),
 
-    getInventory: (): EquipmentItem[] => RAM_DB.inventory,
-    saveInventory: (i: EquipmentItem[]) => persist(KEYS.INVENTORY, 'inventory', i),
+    getObjectives: (): Objective[] => getListFromDisk(OBJECTIVES_KEY),
+    saveObjectives: (updated: Objective[]) => saveListToDisk(OBJECTIVES_KEY, updated),
 
-    getSponsors: (): SponsorDeal[] => RAM_DB.sponsors,
-    saveSponsors: (s: SponsorDeal[]) => persist(KEYS.SPONSORS, 'sponsors', s),
+    getStaff: (): StaffMember[] => getListFromDisk(STAFF_KEY),
+    saveStaff: (updated: StaffMember[]) => saveListToDisk(STAFF_KEY, updated),
 
-    getSocialPosts: (): SocialPost[] => RAM_DB.socialPosts,
-    saveSocialPosts: (p: SocialPost[]) => persist(KEYS.SOCIAL_POSTS, 'socialPosts', p),
+    getTacticalPlays: (): TacticalPlay[] => getListFromDisk(TACTICAL_PLAYS_KEY),
+    saveTacticalPlays: (updated: TacticalPlay[]) => saveListToDisk(TACTICAL_PLAYS_KEY, updated),
 
-    getMarketplaceItems: (): MarketplaceItem[] => RAM_DB.marketplace,
-    saveMarketplaceItems: (i: MarketplaceItem[]) => persist(KEYS.MARKETPLACE, 'marketplace', i),
+    getClips: (): VideoClip[] => getListFromDisk(CLIPS_KEY),
+    saveClips: (updated: VideoClip[]) => saveListToDisk(CLIPS_KEY, updated),
 
-    getCourses: (): Course[] => RAM_DB.courses,
-    saveCourses: (c: Course[]) => persist(KEYS.COURSES, 'courses', c),
-
-    getTacticalPlays: (): TacticalPlay[] => RAM_DB.plays,
-    saveTacticalPlays: (t: TacticalPlay[]) => {
-        securityService.enforce('MANAGE_TACTICS');
-        persist(KEYS.PLAYS, 'plays', t);
-    },
-
-    getClips: (): VideoClip[] => RAM_DB.clips,
-    saveClips: (c: VideoClip[]) => persist(KEYS.CLIPS, 'clips', c),
-    
-    getPlaylists: (): VideoPlaylist[] => RAM_DB.playlists,
-    savePlaylists: (p: VideoPlaylist[]) => persist(KEYS.PLAYLISTS, 'playlists', p),
-
-    getAuditLogs: (): AuditLog[] => RAM_DB.logs,
-    logAuditAction: (action: string, detail: string) => {
-        const newLog: AuditLog = {
-            id: `log-${Date.now()}`, action, details: detail,
-            timestamp: new Date(), userId: 'sys', userName: 'System',
-            role: 'SYSTEM', ipAddress: '127.0.0.1'
+    getEntitlements: (): Entitlement[] => getListFromDisk(ENTITLEMENTS_KEY),
+    purchaseDigitalProduct: (userId: string, product: any) => {
+        const ents = storageService.getEntitlements();
+        const newEnt: Entitlement = {
+            id: `ent-${Date.now()}`,
+            userId,
+            productId: product.id,
+            purchasedAt: new Date(),
+            expiresAt: new Date(Date.now() + (product.durationHours || 720) * 3600000)
         };
-        const updated = [newLog, ...RAM_DB.logs];
-        persist(KEYS.LOGS, 'logs', updated);
+        saveListToDisk(ENTITLEMENTS_KEY, [...ents, newEnt]);
     },
 
-    getCoachDashboardStats: () => {
-        const activePlayers = RAM_DB.players.filter((p: Player) => p.status === 'ACTIVE').length;
-        const injuredPlayers = RAM_DB.players.filter((p: Player) => p.status === 'INJURED' || p.status === 'IR').length;
-        const nextGame = RAM_DB.games
-            .filter((g: Game) => new Date(g.date) > new Date() && g.status === 'SCHEDULED')
-            .sort((a: Game, b: Game) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
-        return { activePlayers, injuredPlayers, nextGame: nextGame || null };
+    getSponsors: (): SponsorDeal[] => getListFromDisk(SPONSORS_KEY),
+    saveSponsors: (updated: SponsorDeal[]) => saveListToDisk(SPONSORS_KEY, updated),
+
+    getSocialFeed: (): SocialFeedPost[] => getListFromDisk(SOCIAL_FEED_KEY),
+    saveSocialFeedPost: (post: SocialFeedPost) => {
+        const current = storageService.getSocialFeed();
+        saveListToDisk(SOCIAL_FEED_KEY, [post, ...current]);
+    },
+    toggleLikePost: (postId: string) => {
+        const current = storageService.getSocialFeed();
+        const updated = current.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
+        saveListToDisk(SOCIAL_FEED_KEY, updated);
     },
 
-    getPublicGameData: (id: string) => RAM_DB.games.find((g: Game) => String(g.id) === id),
-    getPublicLeagueStats: () => ({ name: 'Liga Nacional BFA', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
-    getRefereeProfile: (id: string) => ({ id: id || 'ref-1', name: 'Árbitro Principal', level: 'Senior', city: 'São Paulo', availability: 'AVAILABLE', totalGames: 42, balance: 450.00, certifications: [] } as RefereeProfile),
-    getCrewLogistics: (gameId: number) => ({ gameId, meetingPoint: 'Hotel Plaza', meetingTime: '13:00', carPools: [], uniformColor: 'Tradicional' } as CrewLogistics),
-    getAssociationFinancials: () => ({ totalReceivableFromLeagues: 0, totalPayableToReferees: 0, cashBalance: 0 }),
-    getReferees: () => [], getCandidates: () => RAM_DB.candidates || [], saveCandidates: (c: any) => persist(KEYS.CANDIDATES, 'candidates', c),
-    getObjectives: () => RAM_DB.objectives || [], saveObjectives: (o: any) => persist(KEYS.OBJECTIVES, 'objectives', o),
-    getTasks: () => RAM_DB.tasks || [], saveTasks: (t: any) => persist(KEYS.TASKS, 'tasks', t),
-    getAnnouncements: () => RAM_DB.announcements || [], saveAnnouncements: (a: any) => persist(KEYS.ANNOUNCEMENTS, 'announcements', a),
-    getChatMessages: () => RAM_DB.chat || [], saveChatMessages: (m: any) => persist(KEYS.CHAT, 'chat', m),
-    getSocialFeed: () => RAM_DB.feed || [], saveSocialFeedPost: (p: any) => persist(KEYS.FEED, 'feed', [p, ...RAM_DB.feed]),
-    toggleLikePost: (id: string) => persist(KEYS.FEED, 'feed', RAM_DB.feed.map((p: any) => p.id === id ? { ...p, likes: p.likes + 1 } : p)),
-    getDocuments: () => RAM_DB.documents || [], saveDocuments: (d: any) => persist(KEYS.DOCUMENTS, 'documents', d),
-    getEventSales: () => RAM_DB.sales || [], saveEventSales: (s: any) => persist(KEYS.SALES, 'sales', s),
-    getEntitlements: () => RAM_DB.entitlements || [], purchaseDigitalProduct: (u: string, p: any) => persist(KEYS.ENTITLEMENTS, 'entitlements', [...RAM_DB.entitlements, { id: Date.now().toString(), userId: u, productId: p.id, purchaseDate: new Date(), expiresAt: new Date(Date.now() + 30 * 24 * 3600000), status: 'ACTIVE' }]),
-    getDrillLibrary: () => RAM_DB.drills || [], getYouthClasses: () => RAM_DB.youthClasses || [], saveYouthClasses: (c: any) => persist(KEYS.YOUTH_CLASSES, 'youthClasses', c),
-    getYouthStudents: () => { let s: any[] = []; RAM_DB.youthClasses.forEach((c: any) => s = [...s, ...c.students]); return s; },
-    getCoachGameNotes: () => RAM_DB.coachNotes || [], saveCoachGameNotes: (n: any) => persist(KEYS.COACH_NOTES, 'coachNotes', n),
-    getCoachProfile: (id: string) => RAM_DB.coachProfiles[id] || null, saveCoachProfile: (id: string, p: any) => persist(KEYS.COACH_PROFILES, 'coachProfiles', { ...RAM_DB.coachProfiles, [id]: p }),
-    togglePracticeAttendance: (pid: string, uid: string) => persist(KEYS.PRACTICE, 'practice', RAM_DB.practice.map((p: any) => String(p.id) === pid ? { ...p, attendees: p.attendees.includes(uid) ? p.attendees.filter((id: string) => id !== uid) : [...p.attendees, uid] } : p)),
-    savePracticeCheckIn: (pid: string, ids: string[]) => persist(KEYS.PRACTICE, 'practice', RAM_DB.practice.map((p: any) => String(p.id) === pid ? { ...p, checkedInAttendees: ids } : p)),
-    generateMonthlyInvoices: () => {}, 
-    getSubscriptions: () => RAM_DB.subscriptions || [], 
-    saveSubscriptions: (data: any) => persist(KEYS.SUBSCRIPTIONS, 'subscriptions', data), 
-    getBudgets: () => RAM_DB.budgets || [], 
-    saveBudgets: (data: any) => persist(KEYS.BUDGETS, 'budgets', data), 
-    getBills: () => RAM_DB.bills || [], 
-    saveBills: (data: any) => persist(KEYS.BILLS, 'bills', data),
-    addPlayerXP: (id: number, amt: number, r: string) => persist(KEYS.PLAYERS, 'players', RAM_DB.players.map((p: any) => p.id === id ? { ...p, xp: (p.xp || 0) + amt, level: Math.floor(((p.xp || 0) + amt) / 100) + 1 } : p)),
-    registerAthlete: (p: any) => persist(KEYS.PLAYERS, 'players', [...RAM_DB.players, p]),
-    seedDatabaseToCloud: async () => {}, syncFromCloud: async () => true, getLeague: () => ({ id: 'l1', name: 'Liga BFA', season: '2025', teams: [] } as any),
-    exportFullDatabase: async () => { const blob = new Blob([JSON.stringify(RAM_DB)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'backup.json'; a.click(); },
-    uploadFile: async (f: File) => "https://via.placeholder.com/150", checkDocumentSigned: () => true,
-    getConfederationStats: () => ({ totalAthletes: 1200, totalTeams: 15, totalGamesThisYear: 45, activeAffiliates: 4, growthRate: 10 }),
+    saveCoachProfile: (userId: string, profile: CoachCareer) => {
+        const profiles = getListFromDisk<any>(COACH_PROFILES_KEY);
+        saveListToDisk(COACH_PROFILES_KEY, { ...profiles, [userId]: profile });
+    },
+    getCoachProfile: (userId: string): CoachCareer | null => {
+        const profiles = getListFromDisk<any>(COACH_PROFILES_KEY);
+        return profiles[userId] || null;
+    },
+
+    getAthleteMissions: (playerId: number) => {
+        const now = new Date();
+        const nextGames = games
+            .filter(g => new Date(g.date) > now && g.status === 'SCHEDULED')
+            .map(g => ({ ...g, missionType: 'GAME' as const }));
+        const nextPractices = practices
+            .filter(p => new Date(p.date) > now)
+            .map(p => ({ ...p, missionType: 'PRACTICE' as const }));
+        return [...nextGames, ...nextPractices].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    },
+
+    getAthleteStatsHistory: (playerId: number) => {
+        const player = players.find(p => p.id === playerId);
+        return player?.combineHistory || [];
+    },
+
+    getCourses: (): Course[] => [
+        { 
+            id: 'c1', title: 'Fundamentos de Cover 3', 
+            description: 'Leitura obrigatória para a secundária.', 
+            thumbnailUrl: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=400',
+            priority: true,
+            modules: []
+        }
+    ],
+
+    getPublicGameData: (gameId: string) => {
+        return games.find(g => String(g.id) === gameId) || null;
+    },
+
+    getPublicLeagueStats: () => {
+        return {
+            name: 'BFA', season: '2025',
+            leagueTable: [
+                { teamId: 't1', teamName: 'Stars', wins: 8, losses: 0, draws: 0, pointsFor: 240, pointsAgainst: 42, logoUrl: INITIAL_TEAM_SETTINGS.logoUrl }
+            ],
+            leaders: {
+                passing: [], rushing: [], defense: []
+            }
+        };
+    },
+
+    getConfederationStats: (): ConfederationStats => ({
+        totalAthletes: 1245, totalTeams: 42, totalGamesThisYear: 156, activeAffiliates: 18, growthRate: 15
+    }),
     getNationalTeamScouting: (): NationalTeamCandidate[] => [],
     getAffiliatesStatus: (): Affiliate[] => [],
     getTransferRequests: (): TransferRequest[] => [],
-    processTransfer: (id: string, decision: string, by: string) => {
-        storageService.logAuditAction('TRANSFER', `Transferência ${id} ${decision} por ${by}`);
+    getAuditLogs: (): AuditLog[] => getListFromDisk('gridiron_audit_logs'),
+    logAuditAction: (action: string, details: string) => {
+        const logs = storageService.getAuditLogs();
+        const newLog: AuditLog = {
+            id: `log-${Date.now()}`, action, details, timestamp: new Date(),
+            userId: 'admin', userName: 'Admin', role: 'MASTER', ipAddress: '127.0.0.1'
+        };
+        saveListToDisk('gridiron_audit_logs', [newLog, ...logs]);
     },
+    processTransfer: (id: string, decision: string, by: string) => {},
+    getEventSales: (): EventSale[] => getListFromDisk(SALES_KEY),
+    saveEventSales: (updated: EventSale[]) => saveListToDisk(SALES_KEY, updated),
+    getDrillLibrary: (): Drill[] => getListFromDisk('gridiron_drill_library'),
+    exportFullDatabase: () => {
+        const data = JSON.stringify(localStorage);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_${new Date().toISOString()}.json`;
+        a.click();
+    },
+    seedDatabaseToCloud: async () => {},
+    getLeague: (): League => ({
+        id: 'l1', name: 'BFA', season: '2025',
+        teams: [{ teamId: 't1', teamName: 'Stars', wins: 8, losses: 0, draws: 0, pointsFor: 240, pointsAgainst: 42, logoUrl: INITIAL_TEAM_SETTINGS.logoUrl }]
+    }),
+    getRefereeProfile: (id: string): RefereeProfile | null => null,
+    getAssociationFinancials: (): AssociationFinance | null => null,
+    getCrewLogistics: (gameId: number): CrewLogistics | null => null,
+    getReferees: (): RefereeProfile[] => []
 };
 
-// FIX: Added missing LEGAL_DOCUMENTS export
-export const LEGAL_DOCUMENTS: LegalDocument[] = [];
+export const LEGAL_DOCUMENTS: any[] = [];

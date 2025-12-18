@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Card from '../components/Card';
 import { Tenant, ServiceTicket, PlatformMetric } from '../types';
 import { BuildingIcon, WalletIcon, ClipboardIcon, CheckCircleIcon, SparklesIcon, AlertTriangleIcon } from '../components/icons/UiIcons';
-import { TrophyIcon, GlobeIcon } from '../components/icons/NavIcons'; // Fixed Import
+import { TrophyIcon, GlobeIcon } from '../components/icons/NavIcons'; 
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 // MOCK DATA PARA DEMONSTRAÇÃO
@@ -229,7 +229,7 @@ const PlatformHQ: React.FC = () => {
                     <div className="bg-white/5 rounded-xl p-4 border border-white/10 min-h-[500px]">
                         <h3 className="font-bold text-white mb-4 flex justify-between">
                             Entregue 
-                            <span className="bg-green-500/20 text-green-500 px-2 rounded text-xs">{tickets.filter(t => t.status === 'DELIVERED').length}</span>
+                            <span className="bg-green-500/20 text-green-400 px-2 rounded text-xs">{tickets.filter(t => t.status === 'DELIVERED').length}</span>
                         </h3>
                         <div className="space-y-3 opacity-60 hover:opacity-100 transition-opacity">
                             {tickets.filter(t => t.status === 'DELIVERED').map(ticket => (
