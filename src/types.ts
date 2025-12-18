@@ -334,6 +334,34 @@ export interface Announcement {
     readBy?: string[];
 }
 
+// Fix: Added missing interfaces
+export interface KanbanTask {
+    id: string;
+    title: string;
+    description?: string;
+    status: 'TODO' | 'DOING' | 'DONE';
+    assignedToDepartment: 'MARKETING' | 'COMMERCIAL' | 'TECHNICAL' | 'FINANCE' | 'GENERAL';
+    priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    dueDate: Date;
+}
+
+export interface CoachGameNote {
+    id: string;
+    gameId: number;
+    quarter: number;
+    content: string;
+    timestamp: Date;
+    category: 'OFFENSE' | 'DEFENSE' | 'SPECIAL' | 'GENERAL';
+    tags?: string[];
+}
+
+export interface Championship {
+    id: string;
+    name: string;
+    year: number;
+    division: string;
+}
+
 export interface Transaction {
     id: string;
     title: string;
@@ -721,6 +749,17 @@ export interface VideoTag {
     involvedPlayerIds: number[];
     startX: number;
     startY: number;
+}
+
+export interface VideoPlaylist {
+    id: string;
+    title: string;
+    clipIds: string[];
+}
+
+export interface VideoPermissionGroup {
+    id: string;
+    name: string;
 }
 
 export type PaymentMethod = 'PIX' | 'CREDIT_CARD';

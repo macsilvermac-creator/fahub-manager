@@ -160,7 +160,8 @@ const TacticalLab: React.FC = () => {
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(fieldWidth, i); ctx.stroke();
         }
         ctx.strokeStyle = '#3b82f6'; // LOS
-        ctx.beginPath(); KV.moveTo(0, 200); ctx.lineTo(fieldWidth, 200); ctx.stroke();
+        // Fix: Corrected KV to ctx on line 163
+        ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(fieldWidth, 200); ctx.stroke();
 
         // 4. Players
         elements.forEach(el => {
