@@ -1,12 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
 import { TeamSettings, Player, Game, SponsorDeal } from '../types';
-import LazyImage from '@/components/LazyImage';
+import LazyImage from '../components/LazyImage';
 import { CalendarIcon, MapPinIcon, UsersIcon } from '../components/icons/UiIcons';
-import { GlobeIcon, TrophyIcon } from '../components/icons/NavIcons';
+import { GlobeIcon } from '../components/icons/NavIcons';
 
-// --- COUNTDOWN COMPONENT ---
 const Countdown: React.FC<{ targetDate: Date }> = ({ targetDate }) => {
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
@@ -80,7 +78,6 @@ const PublicTeam: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#0B1120] text-white font-sans overflow-x-hidden">
-            {/* HERO HEADER */}
             <div className="relative bg-gradient-to-b from-gray-900 to-[#0B1120] pb-12 pt-20 px-6 border-b border-white/10">
                 <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
                 <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
@@ -94,7 +91,6 @@ const PublicTeam: React.FC = () => {
                         <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-2">{settings.teamName}</h1>
                         <p className="text-xl text-gray-400 max-w-2xl mx-auto md:mx-0">{settings.address} • Futebol Americano</p>
                         
-                        {/* NEXT GAME CARD & COUNTDOWN */}
                         {nextGame ? (
                              <div className="mt-8 bg-gradient-to-r from-blue-900/60 to-blue-800/40 p-6 rounded-2xl border border-blue-500/30 w-full max-w-2xl mx-auto md:mx-0">
                                 <div className="flex flex-col md:flex-row justify-between items-center gap-6">
@@ -121,7 +117,6 @@ const PublicTeam: React.FC = () => {
                 </div>
             </div>
 
-            {/* CONTENT */}
             <div className="max-w-6xl mx-auto px-6 py-12">
                 <div className="flex justify-center mb-10">
                     <div className="bg-white/5 p-1 rounded-xl flex">
@@ -191,7 +186,6 @@ const PublicTeam: React.FC = () => {
                 )}
             </div>
 
-            {/* SPONSORS FOOTER */}
             {sponsors.length > 0 && (
                 <div className="border-t border-white/10 bg-black/40 py-12 mt-20">
                     <div className="max-w-6xl mx-auto px-6 text-center">
