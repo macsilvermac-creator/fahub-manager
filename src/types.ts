@@ -5,7 +5,7 @@ export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
 export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH';
 
 export interface CombineStats {
-    date?: Date;
+    date: Date;
     fortyYards?: number;
     benchPress?: number;
     verticalJump?: number;
@@ -105,8 +105,9 @@ export interface Player {
     medicalExamExpiry?: Date;
     cpf?: string;
     teamId?: string;
-    depthChartOrder?: number;
+    depthChartOrder: number;
     verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+    badges?: string[];
 }
 
 export type PracticeCategory = 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
@@ -153,6 +154,7 @@ export interface GameScoutingReport {
     lastUpdate: Date;
     summary?: string;
     keysToVictory?: string[];
+    suggestedConcepts?: string[];
 }
 
 export interface PlayerPerformance {
@@ -329,6 +331,25 @@ export interface Announcement {
     readBy?: string[];
 }
 
+export interface ChatMessage {
+    id: string;
+    senderName: string;
+    senderRole: UserRole;
+    content: string;
+    timestamp: Date;
+    channel: 'GENERAL' | 'OFFENSE' | 'DEFENSE';
+}
+
+export interface TeamDocument {
+    id: string;
+    title: string;
+    type: 'PDF' | 'DOC' | 'FILE';
+    category: 'PLAYBOOK' | 'CONTRACTS' | 'MEDICAL' | 'SCOUT' | 'ADMIN';
+    uploadDate: Date;
+    size: string;
+    url: string;
+}
+
 export interface Transaction {
     id: string;
     title: string;
@@ -338,9 +359,16 @@ export interface Transaction {
     category: TransactionCategory;
     date: Date;
     status: 'PAID' | 'PENDING';
-    attachments?: any[];
+    attachments?: FinancialAttachment[];
     aiGenerated?: boolean;
     verifiedBy?: string;
+}
+
+export interface FinancialAttachment {
+    id: string;
+    name: string;
+    url: string;
+    type: string;
 }
 
 export type TransactionCategory = 'TRANSPORT' | 'EQUIPMENT' | 'REFEREE' | 'FIELD_RENTAL' | 'EVENT' | 'SPONSORSHIP' | 'TUITION' | 'STORE' | 'OTHER';
@@ -667,4 +695,55 @@ export interface AssociationFinance {
     totalReceivableFromLeagues: number;
     totalPayableToReferees: number;
     cashBalance: number;
+}
+
+export interface LegalDocument {
+    id: string;
+    title: string;
+    content: string;
+    version: string;
+}
+
+export interface KanbanTask {
+    id: string;
+    title: string;
+    description: string;
+    status: 'TODO' | 'DOING' | 'DONE';
+    assignedToDepartment: 'MARKETING' | 'COMMERCIAL' | 'TECHNICAL' | 'FINANCE' | 'GENERAL';
+    priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    dueDate: Date;
+}
+
+export interface Championship {
+    id: string;
+    name: string;
+    year: number;
+    division: string;
+}
+
+export interface CoachGameNote {
+    id: string;
+    gameId: number;
+    quarter: number;
+    content: string;
+    timestamp: Date;
+    category: string;
+    tags: string[];
+}
+
+export interface YouthClass {
+    id: string;
+    name: string;
+    ageGroup: string;
+    schedule: string;
+    coachId: string;
+    students: string[];
+    maxCapacity: number;
+}
+
+export interface YouthStudent {
+    id: string;
+    name: string;
+    age: number;
+    isSocialProject: boolean;
 }

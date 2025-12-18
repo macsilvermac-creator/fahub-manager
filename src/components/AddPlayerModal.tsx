@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
-import { Player, CombineStats, ProgramType } from '../types';
+import { Player, CombineStats } from '../types';
 import { validators } from '../utils/validators';
-import { storageService } from '../services/storageService';
 
 interface AddPlayerModalProps {
   isOpen: boolean;
@@ -11,9 +10,7 @@ interface AddPlayerModalProps {
   onAdd: (player: Omit<Player, 'id' | 'level' | 'xp' | 'badges' | 'rating' | 'status'>) => void;
 }
 
-const POSITIONS_TACKLE = ['QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'CB', 'S', 'K', 'P'];
-const POSITIONS_FLAG = ['QB', 'WR', 'CENTER', 'RUSHER', 'LB', 'DB', 'S', 'ATH'];
-
+const POSITIONS = ['QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'CB', 'S', 'K', 'P'];
 const CLASSES = ['Calouro', 'Segundanista', 'Júnior', 'Sênior', 'Veterano'];
 const NATIONALITIES = [
     { code: 'BRA', label: 'Brasileiro 🇧🇷' },
@@ -26,8 +23,6 @@ const NATIONALITIES = [
 
 const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd }) => {
   const [activeTab, setActiveTab] = useState<'INFO' | 'COMBINE'>('INFO');
-  const [positions, setPositions] = useState<string[]>(POSITIONS_TACKLE);
-  const [currentProgram, setCurrentProgram] = useState<ProgramType>('TACKLE');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -43,7 +38,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
   });
 
   const [combineData, setCombineData] = useState<CombineStats>({
-    date: new Date(), // Fixed: Added required date property
+    date: new Date(),
     fortyYards: undefined,
     benchPress: undefined,
     verticalJump: undefined,
@@ -55,11 +50,6 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
 
   useEffect(() => {
     if (isOpen) {
-        // Detect Program Context from Storage
-        const program = storageService.getActiveProgram();
-        setCurrentProgram(program);
-        setPositions(program === 'FLAG' ? POSITIONS_FLAG : POSITIONS_TACKLE);
-        
         setFormData({
             name: '',
             cpf: '',
@@ -72,7 +62,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
             class: 'Calouro',
             avatarUrl: ''
         });
-        setCombineData({ date: new Date() }); // Fixed: Added required date property
+        setCombineData({ date: new Date() });
         setErrors({});
         setActiveTab('INFO');
     }
@@ -123,15 +113,14 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      setActiveTab('INFO'); 
+      setActiveTab('INFO'); // Switch back to info if error is there
       return;
     }
 
     onAdd({
       name: formData.name,
-      // Fixed: Added cpf to the object passed to onAdd
-      // @ts-ignore - Assuming onAdd expects a subset of Player properties
       cpf: formData.cpf,
+      // Fixed property assignments for types compatibility
       // @ts-ignore
       birthDate: new Date(formData.birthDate),
       nationality: formData.nationality as any,
@@ -141,12 +130,11 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
       weight: Number(formData.weight),
       class: formData.class,
       avatarUrl: formData.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`,
-      depthChartOrder: 3, 
+      depthChartOrder: 3, // Default to lowest depth
       combineStats: combineData,
       medicalReports: [],
       verificationStatus: 'PENDING',
-      rosterCategory: 'ACTIVE',
-      program: currentProgram 
+      rosterCategory: 'ACTIVE'
     });
   };
 
@@ -176,12 +164,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
         {activeTab === 'INFO' && (
             <div className="space-y-5 animate-fade-in">
                 <div className="bg-black/20 p-4 rounded-lg border border-white/5">
-                    <div className="flex justify-between items-center mb-3">
-                        <h4 className="text-xs font-bold text-highlight uppercase">Identidade & Governo</h4>
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${currentProgram === 'FLAG' ? 'bg-yellow-500 text-black' : 'bg-blue-600 text-white'}`}>
-                            Modalidade: {currentProgram}
-                        </span>
-                    </div>
+                    <h4 className="text-xs font-bold text-highlight uppercase mb-3">Identidade & Governo</h4>
                     <div className="space-y-4">
                         <div>
                             <label className={labelClass}>Nome Completo (Civil)</label>
@@ -247,7 +230,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
                             onChange={handleChange}
                             className={inputClass}
                             >
-                            {positions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                            {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
                             </select>
                         </div>
                         <div>

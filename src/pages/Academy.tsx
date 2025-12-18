@@ -1,229 +1,227 @@
 
 import React, { useState, useEffect, useContext, useRef } from 'react';
+import { UserContext, UserContextType } from '../components/Layout';
+import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
-import { Course, WorkoutProof, Player, GymDay } from '../types';
 import { storageService } from '../services/storageService';
-import { generateStructuredGymPlan, validateGymImage } from '../services/geminiService';
-import { AcademyIcon } from '../components/icons/NavIcons';
-import { SparklesIcon, DumbbellIcon, CameraIcon, CheckCircleIcon, XIcon, ClockIcon } from '../components/icons/UiIcons';
-import { UserContext } from '../components/Layout';
-import { authService } from '../services/authService';
-import LazyImage from '@/components/LazyImage';
+import { 
+    SparklesIcon, DumbbellIcon, CameraIcon, 
+    CheckCircleIcon, AlertTriangleIcon, RefreshIcon 
+} from '../components/icons/UiIcons';
 import { useToast } from '../contexts/ToastContext';
+import { generateGymPlan } from '../services/geminiService';
+import LazyImage from '../components/LazyImage';
 
 const Academy: React.FC = () => {
-    const { currentRole } = useContext(UserContext);
+    const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
     const cameraRef = useRef<HTMLInputElement>(null);
-    const [viewMode, setViewMode] = useState<'CATALOG' | 'GYM' | 'PENDING'>('CATALOG');
+    const [view, setView] = useState<'COURSES' | 'IRON_LAB'>('COURSES');
     
-    // Gym State
-    const [gymGoal, setGymGoal] = useState('');
-    const [gymEquipment, setGymEquipment] = useState('ACADEMIA');
-    const [structuredWorkout, setStructuredWorkout] = useState<GymDay[] | null>(null);
-    const [isGeneratingWorkout, setIsGeneratingWorkout] = useState(false);
-    
-    // Validation State
-    const [isValidating, setIsValidating] = useState(false);
-    const [coachQueue, setCoachQueue] = useState<any[]>([]);
+    // Iron Lab Wizard State
+    const [location, setLocation] = useState<'GYM' | 'HOME' | 'CALISTHENICS'>('GYM');
+    const [valence, setValence] = useState('EXPLOSION');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [workout, setWorkout] = useState<any>(null);
+    const [photoCaptured, setPhotoCaptured] = useState(false);
 
-    const isPlayer = currentRole === 'PLAYER';
+    const courses = storageService.getCourses();
+    const priorityCourses = courses.filter(c => c.priority);
+    const program = storageService.getActiveProgram();
 
-    useEffect(() => {
-        loadValidationQueue();
-    }, [currentRole]);
+    // Valências Específicas baseadas no Estudo Flag vs Tackle
+    const valences = program === 'TACKLE' ? [
+        { id: 'EXPLOSION', label: 'Explosão (Power)', icon: '⚡' },
+        { id: 'MAX_STRENGTH', label: 'Força Máxima', icon: '🏋️' },
+        { id: 'REACTION', label: 'Velocidade Reação', icon: '⏱️' }
+    ] : [
+        { id: 'AGILITY', label: 'Agilidade Lateral', icon: '↔️' },
+        { id: 'ACCELERATION', label: 'Burst / Aceleração', icon: '🚀' },
+        { id: 'COORDINATION', label: 'Mãos / Catch', icon: '🏈' }
+    ];
 
-    const loadValidationQueue = () => {
-        if (currentRole !== 'PLAYER') {
-            const players = storageService.getPlayers();
-            const queue: any[] = [];
-            players.forEach(p => {
-                p.workoutProofs?.filter(pr => pr.coachValidation === 'PENDING').forEach(pr => {
-                    queue.push({ player: p, proof: pr });
-                });
-            });
-            setCoachQueue(queue);
-        }
-    };
-
-    const handleGenerateWorkout = async () => {
-        if (!gymGoal) return;
-        setIsGeneratingWorkout(true);
+    const handleGenerate = async () => {
+        setIsGenerating(true);
+        setWorkout(null);
+        setPhotoCaptured(false);
         try {
-            const plan = await generateStructuredGymPlan(gymGoal, gymEquipment);
-            setStructuredWorkout(plan);
-            toast.success("Treino gerado com sucesso!");
+            const goalText = `Treino focado em ${valence} para atleta de ${program} em ambiente ${location}`;
+            const planHtml = await generateGymPlan(goalText, 'Equipamento disponível no local', program);
+            setWorkout(planHtml);
+            toast.success("IA gerou seu plano técnico!");
         } catch (e) {
-            toast.error("Erro ao gerar treino.");
+            toast.error("Erro ao processar com a IA.");
         } finally {
-            setIsGeneratingWorkout(false);
+            setIsGenerating(false);
         }
     };
 
-    const handleCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setIsValidating(true);
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                const base64 = reader.result as string;
-                
-                toast.info("A IA está analisando os pixels do seu ambiente...");
-                const isValidByAI = await validateGymImage(base64);
-                
-                const user = authService.getCurrentUser();
-                const players = storageService.getPlayers();
-                const player = players.find(p => p.name === user?.name);
-                
-                if (player) {
-                    const newProof: WorkoutProof = {
-                        id: `proof-${Date.now()}`,
-                        imageUrl: base64,
-                        aiValidation: isValidByAI ? 'VALID' : 'INVALID',
-                        coachValidation: 'PENDING',
-                        timestamp: new Date()
-                    };
-                    
-                    const updatedPlayer: Player = {
-                        ...player,
-                        workoutProofs: [newProof, ...(player.workoutProofs || [])]
-                    };
-                    
-                    storageService.savePlayers(players.map(p => p.id === player.id ? updatedPlayer : p));
-                    
-                    if (isValidByAI) {
-                        toast.success("IA confirmou o ambiente de treino! Enviado para validação final do Staff.");
-                    } else {
-                        toast.warning("A IA não reconheceu o ambiente, mas enviamos para revisão manual do Coach.");
-                    }
-                }
-                setIsValidating(false);
-            };
+            setPhotoCaptured(true);
+            toast.success("Treino comprovado com sucesso!");
         }
-    };
-
-    const handleCoachAction = (playerId: number, proofId: string, approve: boolean) => {
-        const players = storageService.getPlayers();
-        const updated = players.map(p => {
-            if (p.id === playerId) {
-                const updatedProofs = p.workoutProofs?.map(pr => 
-                    pr.id === proofId ? { ...pr, coachValidation: approve ? 'APPROVED' : 'REJECTED' as any } : pr
-                );
-                if (approve) p.xp += 50; 
-                return { ...p, workoutProofs: updatedProofs };
-            }
-            return p;
-        });
-        storageService.savePlayers(updated);
-        loadValidationQueue();
-        toast.success(approve ? "Treino validado! XP creditado." : "Treino rejeitado.");
     };
 
     return (
-        <div className="space-y-6 pb-12 animate-fade-in">
-            <div className="flex justify-between items-center bg-secondary p-4 rounded-2xl border border-white/5">
-                <div className="flex items-center gap-3">
-                    <AcademyIcon className="text-highlight w-8 h-8" />
-                    <h2 className="text-2xl font-bold text-white uppercase italic">Iron Lab (Academy)</h2>
-                </div>
-                <div className="flex bg-black/40 p-1 rounded-xl">
-                    <button onClick={() => setViewMode('CATALOG')} className={`px-4 py-2 rounded-lg text-xs font-bold ${viewMode === 'CATALOG' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>Cursos</button>
-                    <button onClick={() => setViewMode('GYM')} className={`px-4 py-2 rounded-lg text-xs font-bold ${viewMode === 'GYM' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>Treino</button>
-                    {!isPlayer && (
-                        <button onClick={() => setViewMode('PENDING')} className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 ${viewMode === 'PENDING' ? 'bg-red-600 text-white' : 'text-red-400'}`}>
-                            Validar Treinos {coachQueue.length > 0 && <span className="bg-white text-red-600 w-4 h-4 rounded-full flex items-center justify-center text-[10px]">{coachQueue.length}</span>}
-                        </button>
-                    )}
-                </div>
+        <div className="space-y-6 animate-fade-in pb-20">
+            <PageHeader title="Academy & Lab" subtitle="Onde o atleta de elite é forjado." />
+
+            <div className="flex bg-secondary p-1 rounded-2xl border border-white/5 w-fit shadow-xl">
+                <button onClick={() => setView('COURSES')} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${view === 'COURSES' ? 'bg-highlight text-white shadow-glow' : 'text-text-secondary hover:text-white'}`}>Cursos & Loja</button>
+                <button onClick={() => setView('IRON_LAB')} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${view === 'IRON_LAB' ? 'bg-orange-600 text-white shadow-glow' : 'text-text-secondary hover:text-white'}`}>Iron Lab (Treino)</button>
             </div>
 
-            {viewMode === 'GYM' && (
+            {view === 'COURSES' ? (
+                <div className="space-y-10 animate-slide-in">
+                    {/* PRIORIDADES DO COACH */}
+                    {priorityCourses.length > 0 && (
+                        <div>
+                            <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                <AlertTriangleIcon className="w-4 h-4 animate-pulse" /> Urgent: Prioridade do Coach
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {priorityCourses.map(course => (
+                                    <div key={course.id} className="relative group bg-gradient-to-br from-red-950/40 to-secondary rounded-3xl border-2 border-red-500/20 overflow-hidden hover:border-red-500/50 transition-all flex h-44 shadow-2xl">
+                                        <div className="w-1/3 relative h-full">
+                                            <LazyImage src={course.thumbnailUrl} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-secondary"></div>
+                                        </div>
+                                        <div className="flex-1 p-6 flex flex-col justify-center">
+                                            <div className="flex gap-2 mb-2">
+                                                <span className="bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase">Urgente</span>
+                                                <span className="bg-white/10 text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">Futebol {program}</span>
+                                            </div>
+                                            <h4 className="text-white font-black uppercase italic text-xl leading-tight">{course.title}</h4>
+                                            <p className="text-text-secondary text-[10px] mt-2 line-clamp-2 leading-relaxed">{course.description}</p>
+                                            <button className="mt-4 bg-red-500 hover:bg-red-600 text-white font-black text-[10px] uppercase px-6 py-2.5 rounded-xl w-fit transition-all shadow-lg active:scale-95">Iniciar Estudo</button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CATÁLOGO GERAL */}
+                    <div>
+                        <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-4">Loja da Entidade (Cursos)</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {courses.filter(c => !c.priority).map(course => (
+                                <div key={course.id} className="bg-secondary/40 p-4 rounded-2xl border border-white/5 group hover:border-highlight transition-all cursor-pointer shadow-lg">
+                                    <div className="aspect-video rounded-xl overflow-hidden mb-3 bg-black/40 relative">
+                                        <LazyImage src={course.thumbnailUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <span className="bg-white text-black text-[10px] font-black px-3 py-1 rounded-lg shadow-xl uppercase">Ver Detalhes</span>
+                                        </div>
+                                    </div>
+                                    <h4 className="text-white font-bold text-xs uppercase leading-tight line-clamp-2">{course.title}</h4>
+                                    <div className="flex justify-between items-center mt-3">
+                                        <p className="text-highlight font-black text-[10px] uppercase tracking-tighter">Adquirido</p>
+                                        <span className="text-[9px] text-text-secondary">8 Módulos</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                /* IRON LAB WIZARD */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-in">
                     <div className="lg:col-span-1 space-y-6">
-                        <Card title="Montar Ficha IA">
-                            <div className="space-y-4">
-                                <textarea 
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white text-sm focus:border-highlight outline-none"
-                                    placeholder="Ex: Treino focado em explosão para LB..."
-                                    value={gymGoal}
-                                    onChange={e => setGymGoal(e.target.value)}
-                                />
-                                <button onClick={handleGenerateWorkout} disabled={isGeneratingWorkout} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2">
-                                    {isGeneratingWorkout ? 'Gerando...' : <><SparklesIcon className="w-4 h-4"/> Criar Plano</>}
-                                </button>
-                                
-                                {isPlayer && (
-                                    <div className="pt-4 border-t border-white/5">
-                                        <h4 className="text-xs font-bold text-text-secondary uppercase mb-3">Check-in (Câmera Obrigatória)</h4>
-                                        <input type="file" accept="image/*" capture="environment" className="hidden" ref={cameraRef} onChange={handleCapture} />
-                                        <button 
-                                            onClick={() => cameraRef.current?.click()}
-                                            disabled={isValidating}
-                                            className={`w-full h-32 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-2 transition-all ${isValidating ? 'border-highlight animate-pulse' : 'border-white/10 hover:border-highlight/50 hover:bg-white/5'}`}
-                                        >
-                                            <CameraIcon className="w-8 h-8 text-text-secondary" />
-                                            <span className="text-[10px] font-bold text-text-secondary uppercase">{isValidating ? 'IA Analisando...' : 'Tirar Foto do Treino'}</span>
-                                        </button>
-                                        <p className="text-[9px] text-text-secondary mt-2 text-center italic">⚠ Galeria desativada. Apenas fotos em tempo real são aceitas.</p>
+                        <Card title="Wizard de Treino">
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.1em] mb-3 block">1. Onde você vai treinar?</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                            {id: 'GYM', label: 'ACADEMIA', icon: '🏋️'},
+                                            {id: 'HOME', label: 'CASA', icon: '🏠'},
+                                            {id: 'CALISTHENICS', label: 'RUA/CORPO', icon: '🌳'}
+                                        ].map(loc => (
+                                            <button 
+                                                key={loc.id}
+                                                onClick={() => setLocation(loc.id as any)} 
+                                                className={`p-3 rounded-2xl border flex flex-col items-center gap-1 transition-all ${location === loc.id ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-text-secondary'}`}
+                                            >
+                                                <span className="text-xl">{loc.icon}</span>
+                                                <span className="text-[8px] font-black">{loc.label}</span>
+                                            </button>
+                                        ))}
                                     </div>
-                                )}
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.1em] mb-3 block">2. Qual a valência necessária?</label>
+                                    <div className="space-y-2">
+                                        {valences.map(v => (
+                                            <button 
+                                                key={v.id} 
+                                                onClick={() => setValence(v.id)}
+                                                className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all active:scale-95 ${valence === v.id ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-text-secondary hover:bg-white/5'}`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <span className="text-xl">{v.icon}</span>
+                                                    <span className="text-xs font-black uppercase italic">{v.label}</span>
+                                                </div>
+                                                {valence === v.id && <CheckCircleIcon className="w-4 h-4" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button 
+                                    onClick={handleGenerate}
+                                    disabled={isGenerating}
+                                    className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase shadow-glow hover:scale-[1.02] transition-all flex items-center justify-center gap-2 group"
+                                >
+                                    {isGenerating ? <RefreshIcon className="w-5 h-5 animate-spin" /> : <><SparklesIcon className="w-4 h-4 text-orange-600 group-hover:scale-125 transition-transform" /> Gerar Plano Técnico</>}
+                                </button>
                             </div>
                         </Card>
                     </div>
 
-                    <div className="lg:col-span-2">
-                        {structuredWorkout ? (
-                            <div className="space-y-4">
-                                {structuredWorkout.map((day, idx) => (
-                                    <Card key={idx} title={day.title}>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {day.exercises.map((ex, i) => (
-                                                <div key={i} className="bg-black/20 p-3 rounded-xl border border-white/5 flex justify-between items-center">
-                                                    <div>
-                                                        <p className="text-white font-bold text-sm">{ex.name}</p>
-                                                        <p className="text-[10px] text-text-secondary">{ex.notes}</p>
-                                                    </div>
-                                                    <span className="text-highlight font-mono font-bold">{ex.sets}x{ex.reps}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </Card>
-                                ))}
+                    <div className="lg:col-span-2 space-y-6">
+                        {workout ? (
+                            <div className="space-y-4 animate-fade-in">
+                                <div className="flex justify-between items-center bg-black/60 p-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-white italic uppercase leading-none tracking-tighter">Sessão Gerada</h3>
+                                        <p className="text-xs text-orange-400 font-bold mt-2 uppercase tracking-widest flex items-center gap-2">
+                                            {location} • {valence} <span className="w-1 h-1 rounded-full bg-orange-400"></span> PROGRAMA {program}
+                                        </p>
+                                    </div>
+                                    
+                                    {/* BOTÃO SNAP DE COMPROVAÇÃO - MELHORADO */}
+                                    <div className="flex flex-col items-center gap-2 bg-black/40 p-4 rounded-2xl border border-white/5">
+                                        <input type="file" accept="image/*" capture="environment" className="hidden" ref={cameraRef} onChange={handleCapture} />
+                                        <button 
+                                            onClick={() => cameraRef.current?.click()}
+                                            className={`w-14 h-14 rounded-full border-4 flex items-center justify-center transition-all transform active:scale-90 ${photoCaptured ? 'bg-green-500 border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)]' : 'bg-red-600 border-red-500 animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.3)]'}`}
+                                        >
+                                            {photoCaptured ? <CheckCircleIcon className="text-white w-7 h-7" /> : <CameraIcon className="text-white w-7 h-7" />}
+                                        </button>
+                                        <span className={`text-[8px] font-black uppercase tracking-widest ${photoCaptured ? 'text-green-400' : 'text-red-400'}`}>
+                                            {photoCaptured ? 'TREINO OK' : 'COMPROVAR'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 bg-secondary/60 rounded-3xl border border-white/5 shadow-lg prose prose-invert max-w-none">
+                                    <div dangerouslySetInnerHTML={{ __html: workout }} />
+                                </div>
+                                
+                                <div className="p-4 bg-highlight/5 border border-highlight/20 rounded-2xl text-center">
+                                    <p className="text-xs text-highlight font-bold uppercase tracking-widest">Finalize todos os exercícios e registre a foto para ganhar +25 XP</p>
+                                </div>
                             </div>
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center bg-secondary/30 rounded-3xl border border-dashed border-white/5 p-12 opacity-50">
-                                <DumbbellIcon className="w-16 h-16 mb-4" />
-                                <p className="text-sm">Gere sua ficha acima e confirme com foto para ganhar XP.</p>
+                            <div className="h-full flex flex-col items-center justify-center opacity-30 py-20 border-2 border-dashed border-white/10 rounded-3xl bg-secondary/20">
+                                <DumbbellIcon className="w-20 h-20 mb-4 text-text-secondary" />
+                                <p className="font-black uppercase tracking-[0.2em] text-sm">Prancheta de Treino Vazia</p>
+                                <p className="text-[10px] mt-2">Utilize o Wizard ao lado para iniciar sua evolução física.</p>
                             </div>
                         )}
-                    </div>
-                </div>
-            )}
-
-            {viewMode === 'PENDING' && (
-                <div className="space-y-4 animate-slide-in">
-                    <h3 className="text-xl font-bold text-white">Treinos Aguardando Validação Humana</h3>
-                    {coachQueue.length === 0 && <p className="text-text-secondary italic">Tudo em dia! Nenhum treino pendente.</p>}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {coachQueue.map((item, idx) => (
-                            <div key={idx} className="bg-secondary rounded-2xl overflow-hidden border border-white/10 flex flex-col shadow-lg">
-                                <div className="h-64 bg-black relative">
-                                    <img src={item.proof.imageUrl} className="w-full h-full object-cover" />
-                                    <div className={`absolute top-2 right-2 px-2 py-1 rounded text-[8px] font-black uppercase ${item.proof.aiValidation === 'VALID' ? 'bg-green-500 text-black' : 'bg-red-500 text-white'}`}>
-                                        IA: {item.proof.aiValidation}
-                                    </div>
-                                </div>
-                                <div className="p-4 flex-1">
-                                    <p className="text-white font-bold">{item.player.name}</p>
-                                    <p className="text-xs text-text-secondary mb-4">{new Date(item.proof.timestamp).toLocaleString()}</p>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => handleCoachAction(item.player.id, item.proof.id, true)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-lg text-xs">APROVAR (+50 XP)</button>
-                                        <button onClick={() => handleCoachAction(item.player.id, item.proof.id, false)} className="flex-1 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white font-bold py-2 rounded-lg text-xs">REJEITAR</button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
                     </div>
                 </div>
             )}

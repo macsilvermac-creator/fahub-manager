@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -6,7 +7,6 @@ import { UserRole } from '../types';
 import { authService } from '../services/authService';
 import { storageService } from '../services/storageService';
 import { syncService } from '../services/syncService';
-import LoadingScreen from './LoadingScreen';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -22,47 +22,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [currentRole, setRole] = useState<UserRole>('HEAD_COACH');
   const [user, setUser] = useState(authService.getCurrentUser());
-  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-      const initSystem = async () => {
-          console.log("⚙️ System Booting...");
-          
-          // 1. User Setup & Context Enforcement
-          const u = authService.getCurrentUser();
-          if(u) {
-              setUser(u);
-              setRole(u.role);
-              
-              // REFORÇO DE CONTEXTO: Se der F5, garante que o programa esteja correto
-              if (u.program && u.program !== 'BOTH') {
-                   const currentProgram = storageService.getActiveProgram();
-                   if (currentProgram !== u.program) {
-                       storageService.setActiveProgram(u.program);
-                   }
-              }
-          }
+      // 1. Inicializa RAM
+      storageService.initializeRAM();
 
-          // 2. Inicializa RAM (Síncrono)
-          storageService.initializeRAM();
-          
-          // 3. Inicializa Sync (Async Background)
-          syncService.init();
+      // 2. INJEÇÃO DE DEPENDÊNCIA
+      syncService.registerProcessor(async () => {
+          return await storageService.syncFromCloud();
+      });
+      syncService.init();
 
-          // 4. Marca como pronto (Evita Race Condition nas pages filhas)
-          setIsReady(true);
-      };
-
-      initSystem();
+      const u = authService.getCurrentUser();
+      if(u) {
+          setUser(u);
+          setRole(u.role);
+      }
   }, []);
-
-  if (!isReady) {
-      return (
-          <div className="h-screen w-screen bg-primary flex items-center justify-center">
-              <LoadingScreen />
-          </div>
-      );
-  }
 
   return (
     <UserContext.Provider value={{ currentRole }}>
