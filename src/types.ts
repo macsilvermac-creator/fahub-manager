@@ -5,7 +5,7 @@ export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
 export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH';
 
 export interface CombineStats {
-    date?: Date;
+    date: Date;
     fortyYards?: number;
     benchPress?: number;
     verticalJump?: number;
@@ -75,7 +75,6 @@ export interface PlayerAchievement {
     type: string;
 }
 
-/* Added badges, nationality, and birthDate to Player interface to resolve property errors */
 export interface Player {
     id: number;
     name: string;
@@ -106,9 +105,10 @@ export interface Player {
     medicalExamExpiry?: Date;
     cpf?: string;
     teamId?: string;
-    depthChartOrder?: number;
+    depthChartOrder: number;
     verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
     badges?: string[];
+    // Fix: Added missing properties requested by services and errors
     nationality?: string;
     birthDate?: Date;
 }
@@ -157,6 +157,7 @@ export interface GameScoutingReport {
     lastUpdate: Date;
     summary?: string;
     keysToVictory?: string[];
+    suggestedConcepts?: string[];
 }
 
 export interface PlayerPerformance {
@@ -201,7 +202,6 @@ export interface OfficialAssignment {
     role: string;
 }
 
-/* Added missing GameReport and related types */
 export interface GameReport {
     infrastructure: GameInfrastructureChecklist;
     fouls: FoulRecord[];
@@ -424,7 +424,6 @@ export interface KeyResult {
     lastUpdated: Date;
 }
 
-/* Added missing ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest, AuditLog, EventSale types */
 export interface ConfederationStats {
     totalAthletes: number;
     totalTeams: number;
@@ -675,63 +674,6 @@ export interface AssociationFinance {
     cashBalance: number;
 }
 
-/* Added missing AffiliateEarnings, VideoTag, VideoPlaylist, VideoPermissionGroup, PaymentTransaction, PaymentMethod, CrewExpense types to resolve errors */
-export interface AffiliateEarnings {
-    id: string;
-    affiliateId: string;
-    amount: number;
-    date: Date;
-}
-
-export interface VideoTag {
-    down: 1 | 2 | 3 | 4;
-    distance: number;
-    yardLine: number;
-    hash: 'LEFT' | 'MIDDLE' | 'RIGHT';
-    offensiveFormation: string;
-    defensiveFormation: string;
-    offensivePlayCall: string;
-    defensivePlayCall: string;
-    personnel: string;
-    result: 'GAIN' | 'LOSS' | 'TOUCHDOWN' | 'TURNOVER';
-    gain: number;
-    involvedPlayerIds: number[];
-    startX?: number;
-    startY?: number;
-}
-
-export interface VideoPlaylist {
-    id: string;
-    title: string;
-    clipIds: string[];
-    createdAt: Date;
-}
-
-export interface VideoPermissionGroup {
-    id: string;
-    name: string;
-    roleIds: UserRole[];
-}
-
-export type PaymentMethod = 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CASH';
-
-export interface PaymentTransaction {
-    id: string;
-    amount: number;
-    method: PaymentMethod;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    createdAt: Date;
-    platformFee?: number;
-    netAmount?: number;
-}
-
-export interface CrewExpense {
-    id: string;
-    amount: number;
-    description: string;
-    date: Date;
-}
-
 export interface LegalDocument {
     id: string;
     title: string;
@@ -754,4 +696,47 @@ export interface YouthStudent {
     name: string;
     age: number;
     isSocialProject: boolean;
+}
+
+// Fix: Added missing interfaces requested by services and errors
+export interface AffiliateEarnings {
+    id: string;
+    amount: number;
+    date: Date;
+    status: 'PAID' | 'PENDING';
+}
+
+export interface VideoTag {
+    down: 1 | 2 | 3 | 4;
+    distance: number;
+    yardLine: number;
+    hash: 'LEFT' | 'MIDDLE' | 'RIGHT';
+    offensiveFormation: string;
+    defensiveFormation: string;
+    offensivePlayCall: string;
+    defensivePlayCall: string;
+    personnel: string;
+    result: 'GAIN' | 'LOSS' | 'TOUCHDOWN' | 'TURNOVER';
+    gain: number;
+    involvedPlayerIds: number[];
+    startX: number;
+    startY: number;
+}
+
+export type PaymentMethod = 'PIX' | 'CREDIT_CARD';
+
+export interface PaymentTransaction {
+    id: string;
+    amount: number;
+    method: PaymentMethod;
+    status: 'APPROVED' | 'PENDING' | 'REJECTED';
+    createdAt: Date;
+    platformFee: number;
+    netAmount: number;
+}
+
+export interface CrewExpense {
+    id: string;
+    title: string;
+    amount: number;
 }

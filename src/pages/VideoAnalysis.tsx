@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import Card from '../components/Card';
 import { VideoClip, Player, Game } from '../types';
 import { storageService } from '../services/storageService';
-// Fix: Added ClockIcon to imports
+// Fix: Added missing icon imports
 import { ScissorsIcon, PlayCircleIcon, BrainIcon, EyeIcon, SearchIcon, SwapIcon, SparklesIcon, TrashIcon, ClockIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext';
@@ -17,13 +17,14 @@ const VideoAnalysis: React.FC = () => {
     const [selectedClip, setSelectedClip] = useState<VideoClip | null>(null);
     const [comparisonClip, setComparisonClip] = useState<VideoClip | null>(null);
 
-    /* Fixed taggingMode state action type mismatch to resolve compilation errors */
+    // Fix: Corrected state type to resolve compilation error
     const [taggingMode, setTaggingMode] = useState<'FLAG' | 'FULLPADS'>('FULLPADS');
 
     useEffect(() => {
         setClips(storageService.getClips());
         const settings = storageService.getTeamSettings();
         if (settings.sportType) {
+            // Fix: Mapping TACKLE/BOTH to FULLPADS to resolve type errors
             const mode = settings.sportType === 'FLAG' ? 'FLAG' : 'FULLPADS';
             setTaggingMode(mode);
         }

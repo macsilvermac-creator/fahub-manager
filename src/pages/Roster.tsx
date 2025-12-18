@@ -60,7 +60,7 @@ const Roster: React.FC = () => {
                 status: 'ACTIVE',
                 rosterCategory: 'ACTIVE',
                 badges: ['Novato'],
-                // Correct property name and initialization for rosterHistory
+                // Fix: Correct property name and initialization for rosterHistory
                 rosterHistory: [{ id: `h-${Date.now()}`, date: new Date(), type: 'RECRUITMENT', description: 'Adicionado ao Roster via Cadastro' }],
                 depthChartOrder: 3,
                 ...newPlayerData

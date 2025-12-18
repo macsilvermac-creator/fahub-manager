@@ -4,11 +4,14 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/Card';
 import { storageService } from '../services/storageService';
-import { TeamSettings, Player } from '../types';
+import { TeamSettings, Player, ProgramType } from '../types';
 import { CheckCircleIcon, SparklesIcon, UsersIcon, ClipboardIcon } from '../components/icons/UiIcons';
 import { TrophyIcon, WhistleIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 import { authService } from '../services/authService';
+
+const POSITIONS_TACKLE = ['QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'CB', 'S', 'K', 'P'];
+const POSITIONS_FLAG = ['QB', 'WR', 'CENTER', 'RUSHER', 'LB', 'DB', 'S', 'ATH'];
 
 const Onboarding: React.FC = () => {
     const navigate = useNavigate();
@@ -18,13 +21,18 @@ const Onboarding: React.FC = () => {
     const user = authService.getCurrentUser();
     const teamSettings = storageService.getTeamSettings();
 
+    // Contexto do Programa (Definido pelo Admin ou Padrão Tackle)
+    // Fix: Explicitly defining type and mapping correctly
+    const assignedProgram = (user?.program === 'FLAG' ? 'FLAG' : 'TACKLE') as ProgramType;
+    const availablePositions = assignedProgram === 'FLAG' ? POSITIONS_FLAG : POSITIONS_TACKLE;
+
     // --- FORM STATES ---
     // Master Only
     const [teamName, setTeamName] = useState(teamSettings.teamName || '');
     const [primaryColor, setPrimaryColor] = useState(teamSettings.primaryColor || '#00A86B');
 
     // Player Only
-    const [position, setPosition] = useState('WR');
+    const [position, setPosition] = useState(availablePositions[0]);
     const [jersey, setJersey] = useState('');
     const [weight, setWeight] = useState('');
     const [height, setHeight] = useState('');
@@ -37,9 +45,6 @@ const Onboarding: React.FC = () => {
     const isPlayer = currentRole === 'PLAYER';
     const isCoach = currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
     
-    // Auto-detect program from user profile
-    const programContext = user?.program || 'TACKLE';
-
     const handleFinish = async () => {
         setIsSaving(true);
         
@@ -72,13 +77,12 @@ const Onboarding: React.FC = () => {
                 nationality: 'BRA',
                 depthChartOrder: 4,
                 cpf: user.cpf, // Linkando pelo CPF
-                program: programContext === 'BOTH' ? 'TACKLE' : programContext // Default to Tackle if both, user can change later
+                program: assignedProgram // Corrected mapping
             };
             storageService.registerAthlete(newPlayer);
         }
 
         if (isCoach && user) {
-            // Mock Coach Profile creation logic
              storageService.saveCoachProfile(user.id, {
                 careerRecord: { wins: 0, losses: 0, ties: 0 },
                 philosophy: philosophy,
@@ -116,8 +120,8 @@ const Onboarding: React.FC = () => {
                         Você agora faz parte do <strong className="text-highlight">{teamSettings.teamName}</strong>.
                     </p>
                     {user?.program && user.program !== 'BOTH' && (
-                        <p className="text-xs bg-white/10 text-white px-3 py-1 rounded-full inline-block mt-2 font-bold uppercase">
-                            Módulo: {user.program}
+                        <p className="text-xs bg-white/10 text-white px-3 py-1 rounded-full inline-block mt-2 font-bold uppercase border border-white/20">
+                            Modalidade Definida: {user.program}
                         </p>
                     )}
                 </div>
@@ -137,7 +141,7 @@ const Onboarding: React.FC = () => {
                                     Sua função foi definida: <span className="text-white uppercase underline decoration-highlight">{isPlayer ? 'ATLETA' : isCoach ? 'TÉCNICO' : isMaster ? 'PRESIDENTE' : 'STAFF'}</span>
                                 </p>
                                 <p className="text-sm text-text-secondary">
-                                    O administrador já configurou suas permissões. Complete seu perfil para acessar o QG.
+                                    O administrador já configurou suas permissões e a modalidade ({assignedProgram}). Complete seu perfil para acessar o QG.
                                 </p>
                             </div>
                             <button onClick={() => setStep(2)} className="w-full bg-highlight hover:bg-highlight-hover text-white font-bold py-4 rounded-xl transition-all shadow-lg transform hover:-translate-y-1">
@@ -175,7 +179,7 @@ const Onboarding: React.FC = () => {
                             {/* FORMULÁRIO DO ATLETA */}
                             {isPlayer && (
                                 <>
-                                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><UsersIcon className="w-6 h-6 text-blue-400"/> Ficha do Atleta</h3>
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><UsersIcon className="w-6 h-6 text-blue-400"/> Ficha do Atleta ({assignedProgram})</h3>
                                     <div className="grid grid-cols-2 gap-6">
                                         <div>
                                             <label className="text-xs font-bold text-text-secondary uppercase mb-1 block">Posição</label>
@@ -184,16 +188,9 @@ const Onboarding: React.FC = () => {
                                                 value={position}
                                                 onChange={e => setPosition(e.target.value)}
                                             >
-                                                {/* Filter positions based on Program context if possible, for now show all common ones */}
-                                                <option value="QB">Quarterback</option>
-                                                <option value="WR">Receiver</option>
-                                                <option value="RB">Running Back</option>
-                                                <option value="OL">Linha Ofensiva</option>
-                                                <option value="DL">Linha Defensiva</option>
-                                                <option value="LB">Linebacker</option>
-                                                <option value="DB">Defensive Back</option>
-                                                <option value="RUSHER">Rusher (Flag)</option>
-                                                <option value="CENTER">Center (Flag)</option>
+                                                {availablePositions.map(pos => (
+                                                    <option key={pos} value={pos}>{pos}</option>
+                                                ))}
                                             </select>
                                         </div>
                                         <div>

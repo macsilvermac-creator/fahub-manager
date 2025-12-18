@@ -29,7 +29,7 @@ const TacticalLab: React.FC = () => {
     const [selectedGameId, setSelectedGameId] = useState<string>('');
     const [playName, setPlayName] = useState('');
     const [conceptDescription, setConceptDescription] = useState('');
-    /* Fixed: Defaulting sportMode properly to resolve type errors */
+    // Fix: Explicitly defining type to resolve mapping error
     const [sportMode, setSportMode] = useState<'FULLPADS' | 'FLAG'>('FULLPADS');
     const [elements, setElements] = useState<PlayElement[]>([]);
     const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -60,7 +60,7 @@ const TacticalLab: React.FC = () => {
         
         // Auto-detect mode from Global Program Context
         const activeProgram = storageService.getActiveProgram();
-        /* Fixed: mapping TACKLE/BOTH to FULLPADS to resolve type errors */
+        // Fix: Mapping TACKLE/BOTH to FULLPADS to resolve type errors
         const initialMode: 'FLAG' | 'FULLPADS' = activeProgram === 'FLAG' ? 'FLAG' : 'FULLPADS';
         setSportMode(initialMode);
         resetTokens(initialMode);
@@ -160,7 +160,7 @@ const TacticalLab: React.FC = () => {
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(fieldWidth, i); ctx.stroke();
         }
         ctx.strokeStyle = '#3b82f6'; // LOS
-        ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(fieldWidth, 200); ctx.stroke();
+        ctx.beginPath(); KV.moveTo(0, 200); ctx.lineTo(fieldWidth, 200); ctx.stroke();
 
         // 4. Players
         elements.forEach(el => {
