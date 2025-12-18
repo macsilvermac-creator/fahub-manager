@@ -1,4 +1,3 @@
-
 import { Player, Game, PracticeSession, Course, TeamSettings, RecruitmentCandidate, SocialPost, Announcement, Transaction, Invoice, Subscription, Budget, Bill, EquipmentItem, Objective, StaffMember, TacticalPlay, VideoClip, Entitlement, League, SponsorDeal, CrewLogistics, RefereeProfile, AssociationFinance, SocialFeedPost, CoachCareer, ProgramType, TeamDocument, ChatMessage, KanbanTask, EventSale, CoachGameNote, YouthClass, YouthStudent, AuditLog, TransferRequest, ConfederationStats, GameReport, MarketplaceItem, Drill, LegalDocument } from '../types';
 
 // Helper for dates
@@ -50,7 +49,26 @@ let players: Player[] = getListFromDisk(PLAYERS_KEY);
 let games: Game[] = getListFromDisk(GAMES_KEY);
 let practices: PracticeSession[] = getListFromDisk(PRACTICE_KEY);
 
+// Fix: Added reactivity system
+const subscribers: Record<string, (() => void)[]> = {};
+
 export const storageService = {
+    // Fix: Added subscribe method for reactivity
+    subscribe: (key: string, callback: () => void) => {
+        if (!subscribers[key]) subscribers[key] = [];
+        subscribers[key].push(callback);
+        return () => {
+            subscribers[key] = subscribers[key].filter(cb => cb !== callback);
+        };
+    },
+
+    // Fix: Added notify method for reactivity
+    notify: (key: string) => {
+        if (subscribers[key]) {
+            subscribers[key].forEach(cb => cb());
+        }
+    },
+
     initializeRAM: async () => {
         players = getListFromDisk(PLAYERS_KEY);
         games = getListFromDisk(GAMES_KEY);
@@ -67,6 +85,8 @@ export const storageService = {
     savePlayers: (updated: Player[]) => {
         players = updated;
         saveListToDisk(PLAYERS_KEY, updated);
+        // Fix: Notify subscribers of data change
+        storageService.notify('players');
     },
     registerAthlete: (player: Player) => {
         players.push(player);
@@ -88,6 +108,8 @@ export const storageService = {
     saveGames: (updated: Game[]) => {
         games = updated;
         saveListToDisk(GAMES_KEY, updated);
+        // Fix: Notify subscribers
+        storageService.notify('games');
     },
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const updated = games.map(g => g.id === gameId ? { ...g, ...updates } : g);
@@ -108,6 +130,8 @@ export const storageService = {
     savePracticeSessions: (updated: PracticeSession[]) => {
         practices = updated;
         saveListToDisk(PRACTICE_KEY, updated);
+        // Fix: Notify subscribers
+        storageService.notify('practice');
     },
     togglePracticeAttendance: (sessionId: string, playerId: string) => {
         const updated = practices.map(p => {
@@ -129,6 +153,8 @@ export const storageService = {
     },
     saveTeamSettings: (settings: TeamSettings) => {
         localStorage.setItem(TEAM_SETTINGS_KEY, JSON.stringify(settings));
+        // Fix: Notify subscribers
+        storageService.notify('settings');
     },
 
     getAnnouncements: (): Announcement[] => getListFromDisk(ANNOUNCEMENTS_KEY),
@@ -240,6 +266,12 @@ export const storageService = {
 
     getActiveProgram: () => (localStorage.getItem('gridiron_active_program') || 'TACKLE') as ProgramType,
 
+    // Fix: Added setActiveProgram for reactivity
+    setActiveProgram: (prog: ProgramType) => {
+        localStorage.setItem('gridiron_active_program', prog);
+        storageService.notify('activeProgram');
+    },
+
     getPublicGameData: (gameId: string) => {
         return games.find(g => String(g.id) === gameId) || null;
     },
@@ -284,6 +316,37 @@ export const storageService = {
         const transfers = getListFromDisk<TransferRequest>('gridiron_transfers');
         const updated = transfers.map(t => t.id === id ? { ...t, status: (decision === 'APPROVE' ? 'APPROVED' : 'REJECTED') as any } : t);
         saveListToDisk('gridiron_transfers', updated);
+    },
+
+    // Fix: Added missing methods needed by components
+    saveCoachProfile: (userId: string, profile: any) => {
+        const profiles = getListFromDisk<any>(COACH_PROFILES_KEY);
+        profiles.push({ userId, ...profile });
+        saveListToDisk(COACH_PROFILES_KEY, profiles);
+    },
+    purchaseDigitalProduct: (userId: string, product: any) => {
+        const entitlements = getListFromDisk<Entitlement>(ENTITLEMENTS_KEY);
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + product.durationHours);
+        entitlements.push({
+            id: `ent-${Date.now()}`,
+            userId,
+            productId: product.id,
+            purchasedAt: new Date(),
+            expiresAt
+        });
+        saveListToDisk(ENTITLEMENTS_KEY, entitlements);
+    },
+    getEntitlements: (): Entitlement[] => getListFromDisk(ENTITLEMENTS_KEY),
+    getObjectives: (): Objective[] => getListFromDisk(OBJECTIVES_KEY),
+    saveObjectives: (updated: Objective[]) => {
+        saveListToDisk(OBJECTIVES_KEY, updated);
+        storageService.notify('objectives');
+    },
+    savePracticeCheckIn: (sessionId: string, checkedInIds: string[]) => {
+        const sessions = storageService.getPracticeSessions();
+        const updated = sessions.map(s => String(s.id) === sessionId ? { ...s, checkedInAttendees: checkedInIds } : s);
+        storageService.savePracticeSessions(updated);
     }
 };
 
@@ -292,4 +355,3 @@ const YOUTH_STUDENTS_KEY = 'gridiron_youth_students';
 
 export const LEGAL_DOCUMENTS: LegalDocument[] = [
     { id: 'compliance-1', title: 'Termos de Compliance', content: 'Termos de uso...', version: '1.0' }
-];
