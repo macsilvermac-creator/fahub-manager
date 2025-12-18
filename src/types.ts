@@ -1,4 +1,3 @@
-
 export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER' | 'CANDIDATE' | 'PLATFORM_OWNER' | 'BROADCASTER' | 'SYSTEM';
 
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
@@ -739,6 +738,16 @@ export interface TeamDocument {
     uploadDate: Date;
     size: string;
     url: string;
+}
+
+// Fix: Added missing ChatMessage interface
+export interface ChatMessage {
+    id: string;
+    senderName: string;
+    senderRole: UserRole;
+    content: string;
+    timestamp: Date;
+    channel: 'GENERAL' | 'OFFENSE' | 'DEFENSE';
 }
 
 export interface FinancialAttachment {
