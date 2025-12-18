@@ -1,20 +1,20 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement, CombineStats } from "../types";
 
-// @ts-ignore
-const ENV_API_KEY = process.env.API_KEY || "";
-
-let aiClientInstance: GoogleGenAI | null = null;
-
+// Guideline: Create a new GoogleGenAI instance right before making an API call to ensure it uses the up-to-date key.
 const getClient = (): GoogleGenAI => {
-    if (!aiClientInstance && ENV_API_KEY) {
-        aiClientInstance = new GoogleGenAI({ apiKey: ENV_API_KEY });
-    }
-    if (!aiClientInstance) {
+    // Guideline: Use process.env.API_KEY directly.
+    if (!process.env.API_KEY) {
         throw new Error("Chave de API ausente.");
     }
-    return aiClientInstance;
+    return new GoogleGenAI({ apiKey: process.env.API_KEY });
+};
+
+// Helper for cleaning JSON output from potential Markdown code blocks
+const cleanJsonString = (input: string): string => {
+    let clean = input.trim();
+    clean = clean.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
+    return clean;
 };
 
 const generateCoachResponse = async (prompt: string): Promise<string> => {
@@ -27,6 +27,7 @@ const generateCoachResponse = async (prompt: string): Promise<string> => {
             temperature: 0.8
         }
     });
+    // Guideline: Access generated text via the .text property.
     return response.text || "";
 };
 
@@ -51,7 +52,7 @@ export const generateStructuredGymPlan = async (goal: string, equipment: string)
         contents: `Plano de academia: ${goal}. Equipamentos: ${equipment}. Retorne JSON array de GymDay.`,
         config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "[]");
+    return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
 export const analyzeOpponentTendencies = async (notes: string) => {
@@ -61,7 +62,7 @@ export const analyzeOpponentTendencies = async (notes: string) => {
         contents: `Analise scout: ${notes}. Retorne JSON com summary, keysToVictory e suggestedConcepts.`,
         config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "{}");
+    return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
 export const suggestPlayConcepts = async (situation: string) => {
@@ -71,7 +72,7 @@ export const suggestPlayConcepts = async (situation: string) => {
         contents: `Sugira jogadas para: ${situation}. Retorne JSON array de {name, reason}.`,
         config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "[]");
+    return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
 export const analyzeCombineStats = async (stats: any, pos: string) => {
@@ -81,7 +82,7 @@ export const analyzeCombineStats = async (stats: any, pos: string) => {
         contents: `Analise combine ${pos}: ${JSON.stringify(stats)}. Retorne JSON com rating, potential, analysis e comparison.`,
         config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "{}");
+    return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
 export const generatePlayerAnalysis = async (player: any, context: string): Promise<string> => {
@@ -118,7 +119,7 @@ export const classifyCoachVoiceNote = async (text: string) => {
         contents: `Classifique nota técnica: ${text}. Retorne JSON {category, tags, action}`,
         config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "{}");
+    return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
 export const explainPlayImage = async (base64Image: string, question: string): Promise<string> => {
@@ -145,9 +146,10 @@ export const scanFinancialDocument = async (base64: string) => {
                 { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
             ],
         },
-        config: { responseMimeType: "application/json" }
+        // Guideline: DO NOT set responseMimeType for nano banana models (gemini-2.5-flash-image).
+        config: { }
     });
-    return JSON.parse(response.text || "{}");
+    return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
 export const predictPlayCall = async (history: any[], down: number, distance: number) => {
@@ -157,7 +159,7 @@ export const predictPlayCall = async (history: any[], down: number, distance: nu
         contents: `Preveja jogada ${down}&${distance} baseado em: ${JSON.stringify(history)}. Retorne JSON {prediction, confidence, reason}.`,
         config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "{}");
+    return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
 export const generateInstallSchedule = async (context: string, week: string) => {
@@ -167,7 +169,7 @@ export const generateInstallSchedule = async (context: string, week: string) => 
         contents: `Instalação semanal: ${context}. Semana: ${week}. Retorne JSON Array de InstallMatrixItem.`,
         config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "[]");
+    return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
 export const importPlaybookFromImage = async (base64: string) => {
@@ -180,9 +182,10 @@ export const importPlaybookFromImage = async (base64: string) => {
                 { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
             ],
         },
-        config: { responseMimeType: "application/json" }
+        // Guideline: DO NOT set responseMimeType for nano banana models.
+        config: { }
     });
-    return JSON.parse(response.text || "[]");
+    return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
 export const generateColorCommentary = async (home: string, away: string, context: string) => {
@@ -192,7 +195,7 @@ export const generateColorCommentary = async (home: string, away: string, contex
         contents: `Narração ${home} vs ${away}: ${context}. Retorne JSON {intro, homePlayerToWatch, awayPlayerToWatch, keyMatchups}.`,
         config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "{}");
+    return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
 export const generatePracticePlan = (p: string) => generateCoachResponse(p);
@@ -204,14 +207,11 @@ export const generatePracticeScript = async (focus: string, duration: number, in
         contents: `Roteiro treino ${duration}min: ${focus}. Retorne JSON array de PracticeScriptItem.`,
         config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(response.text || "[]");
+    return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
 /**
  * Simulates a tactical play matchup against an opponent's defense based on scouting reports.
- * @param play The play concept string.
- * @param scouting The scouting report data.
- * @param opponent The name of the opponent team.
  */
 export const analyzePlayMatchup = async (play: string, scouting: any, opponent: string) => {
     const ai = getClient();
@@ -222,7 +222,6 @@ export const analyzePlayMatchup = async (play: string, scouting: any, opponent: 
     return response.text || "";
 };
 
-/* Added generateGymPlan export to resolve Academy.tsx compilation error */
 export const generateGymPlan = async (goal: string, equipment: string, program: string): Promise<string> => {
     return await generateCoachResponse(`Gere um plano de treino para: ${goal}. Equipamentos: ${equipment}. Programa: ${program}. Use HTML tags.`);
-};
+}
