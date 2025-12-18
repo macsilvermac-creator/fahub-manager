@@ -35,3 +35,10 @@ export const TicketIcon = (props: any) => <svg {...iconProps} {...props} viewBox
 export const TrophyIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M8 21h8m-4-9v9m-8-3h16M6 4a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V4z"></path><path d="M6 4H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2"></path><path d="M18 4h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2"></path></svg>;
 export const VideoIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>;
 export const WhistleIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path></svg>;
+
+/* Added StarIcon to resolve compilation errors in MyProfile.tsx */
+export const StarIcon = (props: any) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+  </svg>
+);

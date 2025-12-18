@@ -1,130 +1,269 @@
 
-import React, { useContext, useEffect, useState } from 'react';
-import { UserContext, UserContextType } from '../components/Layout';
-import { storageService } from '../services/storageService';
-import { authService } from '../services/authService';
-import LazyImage from '../components/LazyImage';
-import Card from '../components/Card';
-import { 
-    ActivityIcon, ClipboardIcon, DumbbellIcon, 
-    UsersIcon, CheckCircleIcon, ClockIcon 
-} from '../components/icons/UiIcons';
-import { TrophyIcon, WhistleIcon } from '../components/icons/NavIcons';
+import React, { useState, useContext, useEffect } from 'react';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
+import Card from '../components/Card';
+import { storageService } from '../services/storageService';
+import { TeamSettings, Player, ProgramType } from '../types';
+import { CheckCircleIcon, SparklesIcon, UsersIcon, ClipboardIcon } from '../components/icons/UiIcons';
+import { TrophyIcon, WhistleIcon } from '../components/icons/NavIcons';
+import { UserContext } from '../components/Layout';
+import { authService } from '../services/authService';
 
-const Dashboard: React.FC = () => {
-    const { currentRole } = useContext(UserContext) as UserContextType;
+const POSITIONS_TACKLE = ['QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'CB', 'S', 'K', 'P'];
+const POSITIONS_FLAG = ['QB', 'WR', 'CENTER', 'RUSHER', 'LB', 'DB', 'S', 'ATH'];
+
+const Onboarding: React.FC = () => {
     const navigate = useNavigate();
+    const { currentRole } = useContext(UserContext);
+    const [step, setStep] = useState(1);
+    const [isSaving, setIsSaving] = useState(false);
+    const user = authService.getCurrentUser();
+    const teamSettings = storageService.getTeamSettings();
+
+    // Contexto do Programa (Definido pelo Admin ou Padrão Tackle)
+    /* Fixed: Cast assignedProgram to resolve ProgramType mismatch errors */
+    const assignedProgram = (user?.program === 'FLAG' ? 'FLAG' : 'TACKLE') as ProgramType;
+    const availablePositions = assignedProgram === 'FLAG' ? POSITIONS_FLAG : POSITIONS_TACKLE;
+
+    // --- FORM STATES ---
+    // Master Only
+    const [teamName, setTeamName] = useState(teamSettings.teamName || '');
+    const [primaryColor, setPrimaryColor] = useState(teamSettings.primaryColor || '#00A86B');
+
+    // Player Only
+    const [position, setPosition] = useState(availablePositions[0]);
+    const [jersey, setJersey] = useState('');
+    const [weight, setWeight] = useState('');
+    const [height, setHeight] = useState('');
+
+    // Coach Only
+    const [specialty, setSpecialty] = useState('Ataque');
+    const [philosophy, setPhilosophy] = useState('');
+
+    const isMaster = currentRole === 'MASTER';
+    const isPlayer = currentRole === 'PLAYER';
+    const isCoach = currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
     
-    const [me, setMe] = useState<any>(null);
-    const [missions, setMissions] = useState<any[]>([]);
+    const handleFinish = async () => {
+        setIsSaving(true);
+        
+        if (isMaster) {
+            const newSettings: TeamSettings = {
+                ...teamSettings,
+                teamName: teamName || 'Novo Time',
+                primaryColor,
+                logoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(teamName || 'FA')}&background=${primaryColor.replace('#', '')}&color=fff&size=200`
+            };
+            storageService.saveTeamSettings(newSettings);
+        } 
+        
+        if (isPlayer && user) {
+            const newPlayer: Player = {
+                id: Date.now(),
+                name: user.name,
+                position: position,
+                jerseyNumber: Number(jersey) || 0,
+                height: height,
+                weight: Number(weight),
+                class: 'Rookie',
+                avatarUrl: user.avatarUrl,
+                level: 1,
+                xp: 0,
+                rating: 70,
+                status: 'ACTIVE',
+                rosterCategory: 'ACTIVE',
+                badges: ['Novato'],
+                nationality: 'BRA',
+                depthChartOrder: 4,
+                cpf: user.cpf, // Linkando pelo CPF
+                program: user.program || 'TACKLE' 
+            };
+            storageService.registerAthlete(newPlayer);
+        }
 
-    useEffect(() => {
-        const user = authService.getCurrentUser();
-        const all = storageService.getPlayers();
-        const myData = all.find(p => p.name === user?.name) || all[0];
-        setMe(myData);
-        if (myData) setMissions(storageService.getAthleteMissions(myData.id));
-    }, [currentRole]);
+        if (isCoach && user) {
+             storageService.saveCoachProfile(user.id, {
+                careerRecord: { wins: 0, losses: 0, ties: 0 },
+                philosophy: philosophy,
+                achievements: [],
+                specialties: [specialty]
+            });
+        }
 
-    const renderPlayerDashboard = () => (
-        <div className="space-y-6 animate-fade-in pb-20">
-            {/* HERO SECTION COMPACTA */}
-            <div className="bg-[#1e293b]/60 backdrop-blur-xl rounded-3xl p-6 border border-white/5 flex flex-col md:flex-row items-center gap-6 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-highlight/20"></div>
+        // CRITICAL: Mark profile as complete to unlock Dashboard
+        if (user) {
+            await authService.completeUserProfile(user.id);
+        }
+
+        setTimeout(() => {
+            setIsSaving(false);
+            navigate('/dashboard');
+            window.location.reload(); 
+        }, 1500);
+    };
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-primary p-4">
+            <div className="max-w-2xl w-full">
                 
-                <div className="relative shrink-0">
-                    <div className="w-24 h-24 rounded-2xl p-[2px] bg-gradient-to-br from-highlight to-cyan-500 shadow-glow relative">
-                        <LazyImage src={me?.avatarUrl} className="w-full h-full rounded-2xl object-cover border-2 border-[#0f172a]" />
-                        <div className="absolute -bottom-2 -right-2 bg-highlight text-white text-[10px] font-black px-2 py-0.5 rounded-lg border-2 border-[#0f172a]">
-                            LVL {me?.level}
-                        </div>
+                {/* SAUDAÇÃO PERSONALIZADA */}
+                <div className="text-center mb-8 animate-fade-in">
+                    <div className="w-20 h-20 bg-highlight rounded-2xl mx-auto flex items-center justify-center shadow-glow mb-4 transform -skew-x-6">
+                        <span className="text-white font-black text-4xl transform skew-x-6">FH</span>
                     </div>
-                    {/* XP BAR COMPACTA ABAIXO DA FOTO */}
-                    <div className="mt-4 w-full px-1">
-                        <div className="flex justify-between text-[8px] font-black text-text-secondary uppercase mb-1">
-                            <span>Progresso</span>
-                            <span>{me?.xp % 100}%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
-                            <div className="h-full bg-gradient-to-r from-highlight to-cyan-400" style={{ width: `${me?.xp % 100}%` }}></div>
-                        </div>
-                    </div>
+                    <h1 className="text-3xl font-black text-white uppercase tracking-tight">
+                        Olá Sr(a) {user?.name.split(' ')[0]}, <br/>
+                        Seja bem-vindo ao FAHUB!
+                    </h1>
+                    <p className="text-lg text-text-secondary mt-2 font-medium">
+                        Você agora faz parte do <strong className="text-highlight">{teamSettings.teamName}</strong>.
+                    </p>
+                    {user?.program && user.program !== 'BOTH' && (
+                        <p className="text-xs bg-white/10 text-white px-3 py-1 rounded-full inline-block mt-2 font-bold uppercase border border-white/20">
+                            Modalidade Definida: {user.program}
+                        </p>
+                    )}
                 </div>
 
-                <div className="flex-1 text-center md:text-left">
-                    <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none">{me?.name}</h1>
-                    <p className="text-highlight font-black text-[10px] uppercase tracking-widest mt-1">{me?.position} • FAHUB STARS</p>
-                    
-                    <div className="flex gap-2 mt-4 justify-center md:justify-start">
-                        <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/5 text-center min-w-[80px]">
-                            <p className="text-[8px] text-text-secondary font-bold uppercase mb-0.5">Rating</p>
-                            <p className="text-lg font-black text-white leading-none">{me?.rating}</p>
-                        </div>
-                        <div className="bg-white/5 px-4 py-2 rounded-xl border border-white/5 text-center min-w-[80px]">
-                            <p className="text-[8px] text-text-secondary font-bold uppercase mb-0.5">Rank Pos</p>
-                            <p className="text-lg font-black text-white leading-none">#4</p>
-                        </div>
+                <Card className="border-t-4 border-t-highlight">
+                    {/* Progress Bar */}
+                    <div className="flex gap-2 mb-8">
+                        <div className={`h-1 flex-1 rounded-full ${step >= 1 ? 'bg-highlight' : 'bg-white/10'}`}></div>
+                        <div className={`h-1 flex-1 rounded-full ${step >= 2 ? 'bg-highlight' : 'bg-white/10'}`}></div>
                     </div>
-                </div>
 
-                <div className="flex flex-col gap-2 shrink-0">
-                    <button onClick={() => navigate('/profile')} className="bg-white text-black font-black text-[10px] px-8 py-2.5 rounded-xl uppercase hover:scale-105 transition-all shadow-lg">Ver Meus Stats</button>
-                    <button onClick={() => navigate('/academy')} className="bg-white/5 text-white border border-white/10 font-black text-[10px] px-8 py-2.5 rounded-xl uppercase hover:bg-white/10 transition-all">Minha Ficha</button>
-                </div>
-            </div>
+                    {/* STEP 1: WELCOME MESSAGE & CONTEXT */}
+                    {step === 1 && (
+                        <div className="space-y-6 animate-fade-in text-center">
+                            <div className="bg-blue-900/20 border border-blue-500/20 p-6 rounded-xl">
+                                <p className="text-blue-200 text-lg font-bold mb-2">
+                                    Sua função foi definida: <span className="text-white uppercase underline decoration-highlight">{isPlayer ? 'ATLETA' : isCoach ? 'TÉCNICO' : isMaster ? 'PRESIDENTE' : 'STAFF'}</span>
+                                </p>
+                                <p className="text-sm text-text-secondary">
+                                    O administrador já configurou suas permissões e a modalidade ({assignedProgram}). Complete seu perfil para acessar o QG.
+                                </p>
+                            </div>
+                            <button onClick={() => setStep(2)} className="w-full bg-highlight hover:bg-highlight-hover text-white font-bold py-4 rounded-xl transition-all shadow-lg transform hover:-translate-y-1">
+                                Completar Cadastro Agora
+                            </button>
+                        </div>
+                    )}
 
-            {/* PRÓXIMAS MISSÕES (UNIFICADO) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card title="Próximas Missões">
-                    <div className="space-y-3">
-                        {missions.length > 0 ? missions.slice(0, 3).map((m: any, i: number) => (
-                            <div key={i} className="bg-black/20 p-4 rounded-2xl border border-white/5 flex items-center justify-between group hover:border-highlight/50 transition-all cursor-pointer">
-                                <div className="flex items-center gap-4">
-                                    <div className={`p-3 rounded-xl ${m.missionType === 'GAME' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-400'}`}>
-                                        {m.missionType === 'GAME' ? <TrophyIcon className="w-5 h-5" /> : <WhistleIcon className="w-5 h-5" />}
+                    {/* STEP 2: ROLE SPECIFIC DATA */}
+                    {step === 2 && (
+                        <div className="space-y-6 animate-fade-in">
+                            
+                            {/* FORMULÁRIO DO MASTER */}
+                            {isMaster && (
+                                <>
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><TrophyIcon className="w-6 h-6 text-yellow-400"/> Identidade da Equipe</h3>
+                                    <div>
+                                        <label className="text-xs font-bold text-text-secondary uppercase mb-1 block">Nome do Time</label>
+                                        <input 
+                                            className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white text-lg focus:border-highlight focus:outline-none"
+                                            value={teamName}
+                                            onChange={e => setTeamName(e.target.value)}
+                                        />
                                     </div>
                                     <div>
-                                        <p className="text-[9px] font-black uppercase opacity-50 tracking-widest">{m.missionType === 'GAME' ? 'Jogo Oficial' : 'Treino Tático'}</p>
-                                        <p className="text-white font-black uppercase italic tracking-tighter text-lg leading-tight">
-                                            {m.missionType === 'GAME' ? `vs ${m.opponent}` : m.title}
-                                        </p>
-                                        <p className="text-[10px] text-text-secondary mt-0.5 font-bold">{new Date(m.date).toLocaleDateString()} • {new Date(m.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                        <label className="text-xs font-bold text-text-secondary uppercase mb-1 block">Cor Principal</label>
+                                        <div className="flex gap-2 items-center bg-black/20 p-2 rounded-lg border border-white/10">
+                                            <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="w-8 h-8 rounded bg-transparent cursor-pointer" />
+                                            <span className="text-white font-mono text-sm">{primaryColor}</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <button className="bg-highlight/10 text-highlight text-[10px] font-black px-4 py-1.5 rounded-lg transition-all uppercase border border-highlight/20 group-hover:bg-highlight group-hover:text-white">Confirmar</button>
-                            </div>
-                        )) : <p className="text-center text-text-secondary italic text-sm py-8 opacity-50">Sem missões agendadas para esta semana.</p>}
-                    </div>
+                                </>
+                            )}
+
+                            {/* FORMULÁRIO DO ATLETA */}
+                            {isPlayer && (
+                                <>
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><UsersIcon className="w-6 h-6 text-blue-400"/> Ficha do Atleta ({assignedProgram})</h3>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="text-xs font-bold text-text-secondary uppercase mb-1 block">Posição</label>
+                                            <select 
+                                                className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-highlight"
+                                                value={position}
+                                                onChange={e => setPosition(e.target.value)}
+                                            >
+                                                {availablePositions.map(pos => (
+                                                    <option key={pos} value={pos}>{pos}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-text-secondary uppercase mb-1 block">Número (#)</label>
+                                            <input 
+                                                type="number"
+                                                className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-highlight focus:outline-none"
+                                                placeholder="Ex: 12"
+                                                value={jersey}
+                                                onChange={e => setJersey(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-text-secondary uppercase mb-1 block">Altura (m)</label>
+                                            <input 
+                                                className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-highlight focus:outline-none"
+                                                placeholder="Ex: 1.85"
+                                                value={height}
+                                                onChange={e => setHeight(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-text-secondary uppercase mb-1 block">Peso (kg)</label>
+                                            <input 
+                                                type="number"
+                                                className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-highlight focus:outline-none"
+                                                placeholder="Ex: 90"
+                                                value={weight}
+                                                onChange={e => setWeight(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {/* FORMULÁRIO DO COACH */}
+                            {isCoach && (
+                                <>
+                                    <h3 className="text-xl font-bold text-white flex items-center gap-2"><WhistleIcon className="w-6 h-6 text-purple-400"/> Perfil Técnico</h3>
+                                    <div>
+                                        <label className="text-xs font-bold text-text-secondary uppercase mb-1 block">Especialidade</label>
+                                        <select 
+                                            className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-highlight"
+                                            value={specialty}
+                                            onChange={e => setSpecialty(e.target.value)}
+                                        >
+                                            <option value="Ataque">Coordenador Ofensivo (OC)</option>
+                                            <option value="Defesa">Coordenador Defensivo (DC)</option>
+                                            <option value="ST">Special Teams</option>
+                                            <option value="Posicao">Coach de Posição</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-text-secondary uppercase mb-1 block">Filosofia de Trabalho (Resumo)</label>
+                                        <textarea 
+                                            className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-white focus:border-highlight h-24"
+                                            placeholder="Ex: Disciplina, execução rápida, foco nos fundamentos..."
+                                            value={philosophy}
+                                            onChange={e => setPhilosophy(e.target.value)}
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            
+                            <button onClick={handleFinish} disabled={isSaving} className="w-full bg-gradient-to-r from-highlight to-cyan-500 text-white font-bold py-4 rounded-xl shadow-glow hover:scale-[1.02] transition-transform">
+                                {isSaving ? 'Salvando Perfil...' : 'Confirmar & Entrar no QG'}
+                            </button>
+                        </div>
+                    )}
                 </Card>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => navigate('/academy')} className="bg-secondary/40 border border-white/5 p-6 rounded-3xl flex flex-col items-center justify-center gap-3 hover:border-orange-500 transition-all group shadow-xl">
-                        <DumbbellIcon className="w-10 h-10 text-orange-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-black text-white uppercase italic">Iron Lab</span>
-                    </button>
-                    <button onClick={() => navigate('/gemini-playbook')} className="bg-secondary/40 border border-white/5 p-6 rounded-3xl flex flex-col items-center justify-center gap-3 hover:border-purple-500 transition-all group shadow-xl">
-                        <ActivityIcon className="w-10 h-10 text-purple-400 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs font-black text-white uppercase italic">Playbook</span>
-                    </button>
-                    <button onClick={() => navigate('/schedule')} className="col-span-2 bg-secondary/40 border border-white/5 p-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-white/5 transition-all">
-                        <ClockIcon className="w-4 h-4 text-text-secondary" />
-                        <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Ver Agenda Completa</span>
-                    </button>
-                </div>
             </div>
-        </div>
-    );
-
-    if (currentRole === 'PLAYER') return renderPlayerDashboard();
-    
-    return (
-        <div className="space-y-6 animate-fade-in pb-20">
-             <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">Portal da Gestão</h2>
-             <p className="text-text-secondary italic">Utilize a Matrix lateral para alternar entre as visões operacionais.</p>
         </div>
     );
 };
 
-export default Dashboard;
+export default Onboarding;

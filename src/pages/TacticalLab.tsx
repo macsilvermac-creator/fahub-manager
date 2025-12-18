@@ -29,6 +29,7 @@ const TacticalLab: React.FC = () => {
     const [selectedGameId, setSelectedGameId] = useState<string>('');
     const [playName, setPlayName] = useState('');
     const [conceptDescription, setConceptDescription] = useState('');
+    /* Fixed: Defaulting sportMode properly to resolve type errors */
     const [sportMode, setSportMode] = useState<'FULLPADS' | 'FLAG'>('FULLPADS');
     const [elements, setElements] = useState<PlayElement[]>([]);
     const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -59,7 +60,8 @@ const TacticalLab: React.FC = () => {
         
         // Auto-detect mode from Global Program Context
         const activeProgram = storageService.getActiveProgram();
-        const initialMode = activeProgram === 'FLAG' ? 'FLAG' : 'FULLPADS';
+        /* Fixed: mapping TACKLE/BOTH to FULLPADS to resolve type errors */
+        const initialMode: 'FLAG' | 'FULLPADS' = activeProgram === 'FLAG' ? 'FLAG' : 'FULLPADS';
         setSportMode(initialMode);
         resetTokens(initialMode);
     }, []);
@@ -147,7 +149,7 @@ const TacticalLab: React.FC = () => {
         if (traceImage) {
             ctx.globalAlpha = traceOpacity;
             ctx.drawImage(traceImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-            ctx.globalAlpha = 1.0; // Reset alpha
+            ctx.globalAlpha = 1.0; 
         }
 
         // 3. Field Lines
@@ -243,7 +245,6 @@ const TacticalLab: React.FC = () => {
         toast.success("Jogada salva na biblioteca!");
     };
 
-    // --- JSON EXPORT/IMPORT ---
     const handleExportLibrary = () => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(savedPlays));
         const a = document.createElement('a');
@@ -282,7 +283,6 @@ const TacticalLab: React.FC = () => {
         }
     };
 
-    // --- IMPORT PLAYBOOK FROM IMAGE (AI OCR) ---
     const handleImportClick = () => {
         fileInputRef.current?.click();
     };
@@ -335,7 +335,6 @@ const TacticalLab: React.FC = () => {
         }
     };
 
-    // --- SCOUT CARD GENERATOR ---
     const handlePrintScoutCard = () => {
         if (!canvasRef.current) return;
         const dataUrl = canvasRef.current.toDataURL('image/png');

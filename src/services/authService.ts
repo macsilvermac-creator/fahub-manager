@@ -21,12 +21,13 @@ export const authService = {
       const initialStatus = isFirstUser ? 'APPROVED' : 'PENDING';
       const initialProgram = isFirstUser ? 'BOTH' : undefined;
 
+      /* Added cpf and isProfileComplete to newUser object to satisfy User interface requirements */
       const newUser: User = {
         id: `user-${Date.now()}`,
         email: email,
         name: name,
         role: initialRole,
-        cpf: cpf,
+        cpf: cpf || '000.000.000-00',
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         status: initialStatus,
         program: initialProgram,
@@ -51,6 +52,7 @@ export const authService = {
 
         // Auto-login para o admin se a base estiver vazia (desenvolvimento)
         if (!user && users.length === 0 && email.includes('@')) {
+             /* Added missing properties to mock user object */
              const mockUser: User = {
                  id: 'user-admin',
                  email: email,

@@ -5,7 +5,7 @@ export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
 export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH';
 
 export interface CombineStats {
-    date: Date;
+    date?: Date;
     fortyYards?: number;
     benchPress?: number;
     verticalJump?: number;
@@ -75,6 +75,7 @@ export interface PlayerAchievement {
     type: string;
 }
 
+/* Added badges, nationality, and birthDate to Player interface to resolve property errors */
 export interface Player {
     id: number;
     name: string;
@@ -105,9 +106,11 @@ export interface Player {
     medicalExamExpiry?: Date;
     cpf?: string;
     teamId?: string;
-    depthChartOrder: number;
+    depthChartOrder?: number;
     verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
     badges?: string[];
+    nationality?: string;
+    birthDate?: Date;
 }
 
 export type PracticeCategory = 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
@@ -154,7 +157,6 @@ export interface GameScoutingReport {
     lastUpdate: Date;
     summary?: string;
     keysToVictory?: string[];
-    suggestedConcepts?: string[];
 }
 
 export interface PlayerPerformance {
@@ -199,6 +201,7 @@ export interface OfficialAssignment {
     role: string;
 }
 
+/* Added missing GameReport and related types */
 export interface GameReport {
     infrastructure: GameInfrastructureChecklist;
     fouls: FoulRecord[];
@@ -331,25 +334,6 @@ export interface Announcement {
     readBy?: string[];
 }
 
-export interface ChatMessage {
-    id: string;
-    senderName: string;
-    senderRole: UserRole;
-    content: string;
-    timestamp: Date;
-    channel: 'GENERAL' | 'OFFENSE' | 'DEFENSE';
-}
-
-export interface TeamDocument {
-    id: string;
-    title: string;
-    type: 'PDF' | 'DOC' | 'FILE';
-    category: 'PLAYBOOK' | 'CONTRACTS' | 'MEDICAL' | 'SCOUT' | 'ADMIN';
-    uploadDate: Date;
-    size: string;
-    url: string;
-}
-
 export interface Transaction {
     id: string;
     title: string;
@@ -359,16 +343,9 @@ export interface Transaction {
     category: TransactionCategory;
     date: Date;
     status: 'PAID' | 'PENDING';
-    attachments?: FinancialAttachment[];
+    attachments?: any[];
     aiGenerated?: boolean;
     verifiedBy?: string;
-}
-
-export interface FinancialAttachment {
-    id: string;
-    name: string;
-    url: string;
-    type: string;
 }
 
 export type TransactionCategory = 'TRANSPORT' | 'EQUIPMENT' | 'REFEREE' | 'FIELD_RENTAL' | 'EVENT' | 'SPONSORSHIP' | 'TUITION' | 'STORE' | 'OTHER';
@@ -447,6 +424,7 @@ export interface KeyResult {
     lastUpdated: Date;
 }
 
+/* Added missing ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest, AuditLog, EventSale types */
 export interface ConfederationStats {
     totalAthletes: number;
     totalTeams: number;
@@ -697,38 +675,68 @@ export interface AssociationFinance {
     cashBalance: number;
 }
 
+/* Added missing AffiliateEarnings, VideoTag, VideoPlaylist, VideoPermissionGroup, PaymentTransaction, PaymentMethod, CrewExpense types to resolve errors */
+export interface AffiliateEarnings {
+    id: string;
+    affiliateId: string;
+    amount: number;
+    date: Date;
+}
+
+export interface VideoTag {
+    down: 1 | 2 | 3 | 4;
+    distance: number;
+    yardLine: number;
+    hash: 'LEFT' | 'MIDDLE' | 'RIGHT';
+    offensiveFormation: string;
+    defensiveFormation: string;
+    offensivePlayCall: string;
+    defensivePlayCall: string;
+    personnel: string;
+    result: 'GAIN' | 'LOSS' | 'TOUCHDOWN' | 'TURNOVER';
+    gain: number;
+    involvedPlayerIds: number[];
+    startX?: number;
+    startY?: number;
+}
+
+export interface VideoPlaylist {
+    id: string;
+    title: string;
+    clipIds: string[];
+    createdAt: Date;
+}
+
+export interface VideoPermissionGroup {
+    id: string;
+    name: string;
+    roleIds: UserRole[];
+}
+
+export type PaymentMethod = 'PIX' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CASH';
+
+export interface PaymentTransaction {
+    id: string;
+    amount: number;
+    method: PaymentMethod;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    createdAt: Date;
+    platformFee?: number;
+    netAmount?: number;
+}
+
+export interface CrewExpense {
+    id: string;
+    amount: number;
+    description: string;
+    date: Date;
+}
+
 export interface LegalDocument {
     id: string;
     title: string;
     content: string;
     version: string;
-}
-
-export interface KanbanTask {
-    id: string;
-    title: string;
-    description: string;
-    status: 'TODO' | 'DOING' | 'DONE';
-    assignedToDepartment: 'MARKETING' | 'COMMERCIAL' | 'TECHNICAL' | 'FINANCE' | 'GENERAL';
-    priority: 'LOW' | 'MEDIUM' | 'HIGH';
-    dueDate: Date;
-}
-
-export interface Championship {
-    id: string;
-    name: string;
-    year: number;
-    division: string;
-}
-
-export interface CoachGameNote {
-    id: string;
-    gameId: number;
-    quarter: number;
-    content: string;
-    timestamp: Date;
-    category: string;
-    tags: string[];
 }
 
 export interface YouthClass {

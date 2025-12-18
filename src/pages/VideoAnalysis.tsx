@@ -17,8 +17,16 @@ const VideoAnalysis: React.FC = () => {
     const [selectedClip, setSelectedClip] = useState<VideoClip | null>(null);
     const [comparisonClip, setComparisonClip] = useState<VideoClip | null>(null);
 
+    /* Fixed taggingMode state action type mismatch to resolve compilation errors */
+    const [taggingMode, setTaggingMode] = useState<'FLAG' | 'FULLPADS'>('FULLPADS');
+
     useEffect(() => {
         setClips(storageService.getClips());
+        const settings = storageService.getTeamSettings();
+        if (settings.sportType) {
+            const mode = settings.sportType === 'FLAG' ? 'FLAG' : 'FULLPADS';
+            setTaggingMode(mode);
+        }
     }, []);
 
     const handleCompare = (clip: VideoClip) => {

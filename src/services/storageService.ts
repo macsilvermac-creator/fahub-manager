@@ -1,5 +1,5 @@
 
-import { Player, Game, PracticeSession, Course, TeamSettings, SocialPost, Announcement, Transaction, Invoice, Subscription, Budget, Bill, EquipmentItem, Objective, StaffMember, TacticalPlay, VideoClip, Entitlement, League, SponsorDeal, CrewLogistics, RefereeProfile, AssociationFinance, SocialFeedPost, CoachCareer, ProgramType, TeamDocument, ChatMessage, KanbanTask, EventSale, CoachGameNote, YouthClass, YouthStudent, AuditLog, TransferRequest, ConfederationStats, GameReport } from '../types';
+import { Player, Game, PracticeSession, Course, TeamSettings, RecruitmentCandidate, SocialPost, Announcement, Transaction, Invoice, Subscription, Budget, Bill, EquipmentItem, Objective, StaffMember, TacticalPlay, VideoClip, Entitlement, League, SponsorDeal, CrewLogistics, RefereeProfile, AssociationFinance, SocialFeedPost, CoachCareer, ProgramType, GameReport, ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest, AuditLog, EventSale, Drill, YouthClass, YouthStudent } from '../types';
 
 // Helper for dates
 const dateReviver = (key: string, value: any) => {
@@ -42,35 +42,56 @@ const SOCIAL_FEED_KEY = 'gridiron_social_feed';
 const COACH_PROFILES_KEY = 'gridiron_coach_profiles';
 const COACH_NOTES_KEY = 'gridiron_coach_notes';
 const SALES_KEY = 'gridiron_event_sales';
-const DOCUMENTS_KEY = 'gridiron_documents';
-const CHAT_MESSAGES_KEY = 'gridiron_chat_messages';
-const TASKS_KEY = 'gridiron_tasks';
+const MARKETPLACE_KEY = 'gridiron_marketplace';
+const YOUTH_CLASSES_KEY = 'gridiron_youth_classes';
+const YOUTH_STUDENTS_KEY = 'gridiron_youth_students';
 
 let players: Player[] = getListFromDisk(PLAYERS_KEY);
 let games: Game[] = getListFromDisk(GAMES_KEY);
 let practices: PracticeSession[] = getListFromDisk(PRACTICE_KEY);
+let activeProgram: ProgramType = (localStorage.getItem('gridiron_active_program') as ProgramType) || 'TACKLE';
+
+const INITIAL_TEAM_SETTINGS: TeamSettings = {
+    id: 'ts-1',
+    teamName: 'FAHUB Stars',
+    logoUrl: 'https://ui-avatars.com/api/?name=FS&background=00A86B&color=fff&size=200', 
+    address: 'Arena Principal, Centro Esportivo',
+    primaryColor: '#00A86B'
+};
+
+const subscribers: Record<string, (() => void)[]> = {};
 
 export const storageService = {
     initializeRAM: async () => {
         players = getListFromDisk(PLAYERS_KEY);
         games = getListFromDisk(GAMES_KEY);
         practices = getListFromDisk(PRACTICE_KEY);
+        activeProgram = (localStorage.getItem('gridiron_active_program') as ProgramType) || 'TACKLE';
     },
 
-    syncFromCloud: async () => {
-        // Implementation for Cloud Syncing logic (simulated)
-        console.log("Syncing from cloud...");
-        return true;
+    subscribe: (key: string, callback: () => void) => {
+        if (!subscribers[key]) subscribers[key] = [];
+        subscribers[key].push(callback);
+        return () => {
+            subscribers[key] = subscribers[key].filter(cb => cb !== callback);
+        };
+    },
+
+    notify: (key: string) => {
+        if (subscribers[key]) {
+            subscribers[key].forEach(cb => cb());
+        }
     },
 
     getPlayers: () => players,
     savePlayers: (updated: Player[]) => {
         players = updated;
         saveListToDisk(PLAYERS_KEY, updated);
+        storageService.notify('players');
     },
     registerAthlete: (player: Player) => {
-        players.push(player);
-        storageService.savePlayers(players);
+        const updated = [...players, player];
+        storageService.savePlayers(updated);
     },
     addPlayerXP: (playerId: number, amount: number, reason: string) => {
         const updated = players.map(p => {
@@ -88,6 +109,7 @@ export const storageService = {
     saveGames: (updated: Game[]) => {
         games = updated;
         saveListToDisk(GAMES_KEY, updated);
+        storageService.notify('games');
     },
     updateLiveGame: (gameId: number, updates: Partial<Game>) => {
         const updated = games.map(g => g.id === gameId ? { ...g, ...updates } : g);
@@ -108,6 +130,11 @@ export const storageService = {
     savePracticeSessions: (updated: PracticeSession[]) => {
         practices = updated;
         saveListToDisk(PRACTICE_KEY, updated);
+        storageService.notify('practice');
+    },
+    savePracticeCheckIn: (sessionId: string, checkedInIds: string[]) => {
+        const updated = practices.map(p => String(p.id) === sessionId ? { ...p, checkedInAttendees: checkedInIds } : p);
+        storageService.savePracticeSessions(updated);
     },
     togglePracticeAttendance: (sessionId: string, playerId: string) => {
         const updated = practices.map(p => {
@@ -125,17 +152,28 @@ export const storageService = {
 
     getTeamSettings: (): TeamSettings => {
         const stored = localStorage.getItem(TEAM_SETTINGS_KEY);
-        return stored ? JSON.parse(stored, dateReviver) : { id: 'ts-1', teamName: 'FAHUB Stars', logoUrl: '', address: '', primaryColor: '#00A86B' };
+        return stored ? JSON.parse(stored, dateReviver) : INITIAL_TEAM_SETTINGS;
     },
     saveTeamSettings: (settings: TeamSettings) => {
         localStorage.setItem(TEAM_SETTINGS_KEY, JSON.stringify(settings));
+        storageService.notify('settings');
     },
+
+    getActiveProgram: () => activeProgram,
+    setActiveProgram: (prog: ProgramType) => {
+        activeProgram = prog;
+        localStorage.setItem('gridiron_active_program', prog);
+        storageService.notify('activeProgram');
+    },
+
+    getCandidates: (): RecruitmentCandidate[] => getListFromDisk(CANDIDATES_KEY),
+    saveCandidates: (updated: RecruitmentCandidate[]) => saveListToDisk(CANDIDATES_KEY, updated),
+
+    getSocialPosts: (): SocialPost[] => getListFromDisk(SOCIAL_POSTS_KEY),
+    saveSocialPosts: (updated: SocialPost[]) => saveListToDisk(SOCIAL_POSTS_KEY, updated),
 
     getAnnouncements: (): Announcement[] => getListFromDisk(ANNOUNCEMENTS_KEY),
     saveAnnouncements: (updated: Announcement[]) => saveListToDisk(ANNOUNCEMENTS_KEY, updated),
-
-    getChatMessages: (): ChatMessage[] => getListFromDisk(CHAT_MESSAGES_KEY),
-    saveChatMessages: (updated: ChatMessage[]) => saveListToDisk(CHAT_MESSAGES_KEY, updated),
 
     getTransactions: (): Transaction[] => getListFromDisk(TRANSACTIONS_KEY),
     saveTransactions: (updated: Transaction[]) => saveListToDisk(TRANSACTIONS_KEY, updated),
@@ -143,17 +181,66 @@ export const storageService = {
     getInvoices: (): Invoice[] => getListFromDisk(INVOICES_KEY),
     saveInvoices: (updated: Invoice[]) => saveListToDisk(INVOICES_KEY, updated),
 
+    getSubscriptions: (): Subscription[] => getListFromDisk(SUBSCRIPTIONS_KEY),
+    saveSubscriptions: (updated: Subscription[]) => saveListToDisk(SUBSCRIPTIONS_KEY, updated),
+
+    getBudgets: (): Budget[] => getListFromDisk(BUDGETS_KEY),
+    saveBudgets: (updated: Budget[]) => saveListToDisk(BUDGETS_KEY, updated),
+
+    getBills: (): Bill[] => getListFromDisk(BILLS_KEY),
+    saveBills: (updated: Bill[]) => saveListToDisk(BILLS_KEY, updated),
+
+    generateMonthlyInvoices: () => {
+        const subs = storageService.getSubscriptions();
+        const allPlayers = storageService.getPlayers();
+        const invoices = storageService.getInvoices();
+        const newInvoices: Invoice[] = [];
+        
+        subs.filter(s => s.active).forEach(s => {
+            s.assignedTo.forEach(pid => {
+                const player = allPlayers.find(p => p.id === pid);
+                newInvoices.push({
+                    id: `inv-sub-${s.id}-${pid}-${Date.now()}`,
+                    playerId: pid,
+                    playerName: player?.name || 'Atleta',
+                    title: s.title,
+                    amount: s.amount,
+                    dueDate: new Date(new Date().setDate(new Date().getDate() + 5)),
+                    status: 'PENDING',
+                    category: 'TUITION'
+                });
+            });
+        });
+        storageService.saveInvoices([...invoices, ...newInvoices]);
+    },
+
     getInventory: (): EquipmentItem[] => getListFromDisk(INVENTORY_KEY),
     saveInventory: (updated: EquipmentItem[]) => saveListToDisk(INVENTORY_KEY, updated),
 
-    getDocuments: (): TeamDocument[] => getListFromDisk(DOCUMENTS_KEY),
-    saveDocuments: (updated: TeamDocument[]) => saveListToDisk(DOCUMENTS_KEY, updated),
+    getObjectives: (): Objective[] => getListFromDisk(OBJECTIVES_KEY),
+    saveObjectives: (updated: Objective[]) => saveListToDisk(OBJECTIVES_KEY, updated),
 
-    getTasks: (): KanbanTask[] => getListFromDisk(TASKS_KEY),
-    saveTasks: (updated: KanbanTask[]) => saveListToDisk(TASKS_KEY, updated),
+    getStaff: (): StaffMember[] => getListFromDisk(STAFF_KEY),
+    saveStaff: (updated: StaffMember[]) => saveListToDisk(STAFF_KEY, updated),
 
-    getSocialPosts: (): SocialPost[] => getListFromDisk(SOCIAL_POSTS_KEY),
-    saveSocialPosts: (updated: SocialPost[]) => saveListToDisk(SOCIAL_POSTS_KEY, updated),
+    getTacticalPlays: (): TacticalPlay[] => getListFromDisk(TACTICAL_PLAYS_KEY),
+    saveTacticalPlays: (updated: TacticalPlay[]) => saveListToDisk(TACTICAL_PLAYS_KEY, updated),
+
+    getClips: (): VideoClip[] => getListFromDisk(CLIPS_KEY),
+    saveClips: (updated: VideoClip[]) => saveListToDisk(CLIPS_KEY, updated),
+
+    getEntitlements: (): Entitlement[] => getListFromDisk(ENTITLEMENTS_KEY),
+    purchaseDigitalProduct: (userId: string, product: any) => {
+        const ents = storageService.getEntitlements();
+        const newEnt: Entitlement = {
+            id: `ent-${Date.now()}`,
+            userId,
+            productId: product.id,
+            purchasedAt: new Date(),
+            expiresAt: new Date(Date.now() + (product.durationHours || 720) * 3600000)
+        };
+        saveListToDisk(ENTITLEMENTS_KEY, [...ents, newEnt]);
+    },
 
     getSponsors: (): SponsorDeal[] => getListFromDisk(SPONSORS_KEY),
     saveSponsors: (updated: SponsorDeal[]) => saveListToDisk(SPONSORS_KEY, updated),
@@ -169,43 +256,13 @@ export const storageService = {
         saveListToDisk(SOCIAL_FEED_KEY, updated);
     },
 
-    getStaff: (): StaffMember[] => getListFromDisk(STAFF_KEY),
-    saveStaff: (updated: StaffMember[]) => saveListToDisk(STAFF_KEY, updated),
-
-    getClips: (): VideoClip[] => getListFromDisk(CLIPS_KEY),
-    saveClips: (updated: VideoClip[]) => saveListToDisk(CLIPS_KEY, updated),
-
-    getPlaylists: (): any[] => getListFromDisk('gridiron_playlists'),
-
-    getTacticalPlays: (): TacticalPlay[] => getListFromDisk(TACTICAL_PLAYS_KEY),
-    saveTacticalPlays: (updated: TacticalPlay[]) => saveListToDisk(TACTICAL_PLAYS_KEY, updated),
-
-    getEventSales: (): EventSale[] => getListFromDisk(SALES_KEY),
-    saveEventSales: (updated: EventSale[]) => saveListToDisk(SALES_KEY, updated),
-
-    getMarketplaceItems: (): MarketplaceItem[] => getListFromDisk('gridiron_marketplace'),
-    saveMarketplaceItems: (updated: MarketplaceItem[]) => saveListToDisk('gridiron_marketplace', updated),
-
-    getCoachGameNotes: (): CoachGameNote[] => getListFromDisk(COACH_NOTES_KEY),
-    saveCoachGameNotes: (updated: CoachGameNote[]) => saveListToDisk(COACH_NOTES_KEY, updated),
-
-    createBulkInvoices: (playerIds: number[], title: string, amount: number, dueDate: Date, category: string) => {
-        const invoices = storageService.getInvoices();
-        const newInvoices: Invoice[] = playerIds.map(id => ({
-            id: `inv-${Date.now()}-${id}`,
-            playerId: id,
-            playerName: 'Atleta',
-            title,
-            amount,
-            dueDate,
-            status: 'PENDING',
-            category: category as any
-        }));
-        storageService.saveInvoices([...invoices, ...newInvoices]);
+    saveCoachProfile: (userId: string, profile: CoachCareer) => {
+        const profiles = getListFromDisk<any>(COACH_PROFILES_KEY);
+        saveListToDisk(COACH_PROFILES_KEY, { ...profiles, [userId]: profile });
     },
-
-    checkDocumentSigned: (docId: string) => {
-        return !!localStorage.getItem(`signed_doc_${docId}`);
+    getCoachProfile: (userId: string): CoachCareer | null => {
+        const profiles = getListFromDisk<any>(COACH_PROFILES_KEY);
+        return profiles[userId] || null;
     },
 
     getAthleteMissions: (playerId: number) => {
@@ -228,39 +285,85 @@ export const storageService = {
         { 
             id: 'c1', title: 'Fundamentos de Cover 3', 
             description: 'Leitura obrigatória para a secundária.', 
-            thumbnailUrl: '',
+            thumbnailUrl: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=400',
             priority: true,
             modules: []
         }
     ],
 
-    getActiveProgram: () => (localStorage.getItem('gridiron_active_program') || 'TACKLE') as ProgramType,
-
     getPublicGameData: (gameId: string) => {
         return games.find(g => String(g.id) === gameId) || null;
     },
 
-    getPublicLeagueStats: () => ({ leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
+    getPublicLeagueStats: () => {
+        return {
+            name: 'BFA', season: '2025',
+            leagueTable: [
+                { teamId: 't1', teamName: 'Stars', wins: 8, losses: 0, draws: 0, pointsFor: 240, pointsAgainst: 42, logoUrl: INITIAL_TEAM_SETTINGS.logoUrl }
+            ],
+            leaders: {
+                passing: [], rushing: [], defense: []
+            }
+        };
+    },
 
-    getConfederationStats: (): ConfederationStats => ({ totalAthletes: 0, totalTeams: 0, totalGamesThisYear: 0, activeAffiliates: 0, growthRate: 0 }),
-    getNationalTeamScouting: (): any[] => [],
-    getAffiliatesStatus: (): any[] => [],
-    getTransferRequests: (): any[] => [],
-    getAuditLogs: (): AuditLog[] => [],
-    logAuditAction: (action: string, details: string) => {},
-    exportFullDatabase: () => {},
+    getConfederationStats: (): ConfederationStats => ({
+        totalAthletes: 1245, totalTeams: 42, totalGamesThisYear: 156, activeAffiliates: 18, growthRate: 15
+    }),
+    getNationalTeamScouting: (): NationalTeamCandidate[] => [],
+    getAffiliatesStatus: (): Affiliate[] => [],
+    getTransferRequests: (): TransferRequest[] => [],
+    getAuditLogs: (): AuditLog[] => getListFromDisk('gridiron_audit_logs'),
+    logAuditAction: (action: string, details: string) => {
+        const logs = storageService.getAuditLogs();
+        const newLog: AuditLog = {
+            id: `log-${Date.now()}`, action, details, timestamp: new Date(),
+            userId: 'admin', userName: 'Admin', role: 'MASTER', ipAddress: '127.0.0.1'
+        };
+        saveListToDisk('gridiron_audit_logs', [newLog, ...logs]);
+    },
+    /* Added processTransfer to resolve Confederation.tsx error */
+    processTransfer: (id: string, decision: string, by: string) => {
+        storageService.logAuditAction('TRANSFER_DECISION', `Processou transferência ${id}: ${decision} por ${by}`);
+    },
+    getEventSales: (): EventSale[] => getListFromDisk(SALES_KEY),
+    saveEventSales: (updated: EventSale[]) => saveListToDisk(SALES_KEY, updated),
+    getDrillLibrary: (): Drill[] => getListFromDisk('gridiron_drill_library'),
+    exportFullDatabase: () => {
+        const data = JSON.stringify(localStorage);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_${new Date().toISOString()}.json`;
+        a.click();
+    },
     seedDatabaseToCloud: async () => {},
-    getLeague: (): League | null => null,
+    getLeague: (): League => ({
+        id: 'l1', name: 'BFA', season: '2025',
+        teams: [{ teamId: 't1', teamName: 'Stars', wins: 8, losses: 0, draws: 0, pointsFor: 240, pointsAgainst: 42, logoUrl: INITIAL_TEAM_SETTINGS.logoUrl }]
+    }),
     getRefereeProfile: (id: string): RefereeProfile | null => null,
     getAssociationFinancials: (): AssociationFinance | null => null,
     getCrewLogistics: (gameId: number): CrewLogistics | null => null,
     getReferees: (): RefereeProfile[] => [],
-    addTeamXP: (xp: number) => {},
-    createChampionship: (name: string, year: number, division: string) => {},
-    uploadFile: async (file: File, path: string) => "http://localhost:3000/placeholder.png",
-    getDrillLibrary: (): Drill[] => []
-};
 
-export const LEGAL_DOCUMENTS: LegalDocument[] = [
-    { id: 'compliance-1', title: 'Termos de Compliance', content: 'Termos de uso...', version: '1.0' }
-];
+    /* Added Marketplace methods to resolve Commercial.tsx and Marketplace.tsx errors */
+    getMarketplaceItems: (): any[] => getListFromDisk(MARKETPLACE_KEY),
+    saveMarketplaceItems: (items: any[]) => saveListToDisk(MARKETPLACE_KEY, items),
+
+    /* Added Youth methods to resolve YouthProgram.tsx errors */
+    getYouthClasses: (): YouthClass[] => getListFromDisk(YOUTH_CLASSES_KEY),
+    saveYouthClasses: (classes: YouthClass[]) => saveListToDisk(YOUTH_CLASSES_KEY, classes),
+    getYouthStudents: (): YouthStudent[] => getListFromDisk(YOUTH_STUDENTS_KEY),
+    saveYouthStudents: (students: YouthStudent[]) => saveListToDisk(YOUTH_STUDENTS_KEY, students),
+
+    /* Added addTeamXP to resolve LockerRoom.tsx error */
+    addTeamXP: (amount: number) => {
+        const settings = storageService.getTeamSettings();
+        storageService.saveTeamSettings({ ...settings, xp: (settings.xp || 0) + amount });
+    },
+    createChampionship: (name: string, year: number, division: string) => {
+        storageService.logAuditAction('CHAMPIONSHIP_CREATED', `Criou campeonato: ${name}`);
+    }
+};
