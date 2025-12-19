@@ -1,7 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import Card from '../components/Card';
-import { Player, StaffMember, Game } from '../types';
-import { storageService } from '../services/storageService';
+rt { storageService } from '../services/storageService';
 import { BusIcon, BedIcon, MapPinIcon, CheckCircleIcon, PrinterIcon, UsersIcon, TrashIcon, CloudIcon, SparklesIcon } from '../components/icons/UiIcons';
 import { useToast } from '../contexts/ToastContext';
 import LazyImage from '../components/LazyImage';
@@ -15,7 +12,6 @@ interface Room {
 
 const WeatherWidget: React.FC<{ location: string, date: Date }> = ({ location, date }) => {
     // Simulação Inteligente de Previsão baseada em dados reais aproximados para demonstração
-    // Em produção, isso chamaria uma API Real (OpenWeather) ou usaria o Gemini para "estimar" baseado na estação.
     
     const isSummer = date.getMonth() >= 11 || date.getMonth() <= 2;
     const isRainy = Math.random() > 0.6;
@@ -59,7 +55,6 @@ const Logistics: React.FC = () => {
         { id: 'r3', number: '103', type: 'QUAD', occupants: [] },
     ]);
 
-    // State for adding occupant without prompt
     const [addingToRoomId, setAddingToRoomId] = useState<string | null>(null);
     const [newOccupantName, setNewOccupantName] = useState('');
 
