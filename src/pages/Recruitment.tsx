@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { RecruitmentCandidate, CombineStats } from '../types';
@@ -8,7 +7,7 @@ import { UserPlusIcon, SearchIcon, FilterIcon, CheckCircleIcon, XIcon, ClockIcon
 import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 import { UserContext } from '../components/Layout';
-import LazyImage from '@/components/LazyImage';
+import LazyImage from '../components/LazyImage';
 
 const STATUS_COLUMNS = [
     { id: 'NEW', label: 'Inscritos (Novos)', color: 'border-blue-500' },

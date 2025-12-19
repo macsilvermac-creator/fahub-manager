@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../components/Layout';
 import { storageService } from '../services/storageService';
 import { SocialFeedPost, User } from '../types';
 import { authService } from '../services/authService';
 import { HeartIcon, MessageIcon, FireIcon, CheckCircleIcon } from '../components/icons/UiIcons';
-import LazyImage from '@/components/LazyImage';
+import LazyImage from '../components/LazyImage';
 
 const LockerRoom: React.FC = () => {
     const { currentRole } = useContext(UserContext);
