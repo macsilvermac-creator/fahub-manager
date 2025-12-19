@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { storageService } from '../services/storageService';
 import { UserRole } from '../types';
-// Fix: WhistleIcon will now be exported from UiIcons
 import { LockIcon, UsersIcon, WhistleIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
 
 const Login: React.FC = () => {
@@ -13,7 +12,6 @@ const Login: React.FC = () => {
 
     const handleQuickLogin = (role: UserRole, name: string) => {
         setLoading(true);
-        // Fix: Added missing properties status and cpf to comply with User type
         const mockUser = {
             id: `dev-${role.toLowerCase()}`,
             email: `${role.toLowerCase()}@fahub.com`,
@@ -39,13 +37,14 @@ const Login: React.FC = () => {
                 attendanceRate: 98,
                 xp: 1250,
                 level: 5,
+                // Fix: Corrected property status for Athlete
                 status: 'ACTIVE'
             });
         }
 
         setTimeout(() => {
             if (role === 'PLAYER') navigate('/athlete');
-            // Fix: Replaced invalid 'COACH' with valid 'HEAD_COACH' and coordinators
+            // Fix: Coordinated correct redirect based on role
             else if (role === 'HEAD_COACH' || role === 'OFFENSIVE_COORD' || role === 'DEFENSIVE_COORD') navigate('/coach');
             else navigate('/team');
         }, 500);

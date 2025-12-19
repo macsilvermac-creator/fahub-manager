@@ -24,6 +24,7 @@ const TeamManagement: React.FC = () => {
 
     const handleCreateTeam = (e: React.FormEvent) => {
         e.preventDefault();
+        // Fix: Removed settings property from Team initialization as it's not strictly in types or handled elsewhere
         const team: Team = {
             id: `team-${Date.now()}`,
             name: newTeamName,
@@ -31,8 +32,7 @@ const TeamManagement: React.FC = () => {
             primaryColor,
             secondaryColor: '#ffffff',
             rosterIds: [],
-            coachIds: [],
-            settings: { isPublic: true, allowRegistration: true }
+            coachIds: []
         };
         storageService.saveTeam(team);
         setTeams([...teams, team]);

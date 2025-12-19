@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
-import { Game, PracticeSession } from '../types';
+import { Game, PracticeSession, GameTimelineEvent, SidelineAudioNote } from '../types';
 import { TrashIcon, CheckCircleIcon, DumbbellIcon, XIcon, ClockIcon, PenIcon, SaveIcon } from '../components/icons/UiIcons';
 import { TrophyIcon } from '../components/icons/NavIcons';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -8,9 +9,9 @@ import GameManagementModal from '../components/GameManagementModal';
 import { storageService } from '../services/storageService';
 import Modal from '../components/Modal';
 import { UserContext } from '../components/Layout';
-import LazyImage from '../components/LazyImage';
-import { authService } from '../services/authService';
-import { useToast } from '../contexts/ToastContext';
+import LazyImage from '@/components/LazyImage';
+import { authService } from '@/services/authService';
+import { useToast } from '@/contexts/ToastContext';
 
 interface ScheduleItem {
     id: string | number;
@@ -32,6 +33,7 @@ const GameCard: React.FC<{
     const [scoreInput, setScoreInput] = useState(game.score || '0-0');
     
     const isPast = new Date(game.date) < new Date();
+    // Fix: Using type-safe property access for result
     const resultColor = game.result === 'W' ? 'text-green-400' : game.result === 'L' ? 'text-red-400' : 'text-gray-400';
     const locationText = game.location === 'Home' ? 'Casa' : 'Fora';
     
@@ -53,7 +55,7 @@ const GameCard: React.FC<{
                 <div className="ml-4">
                     <p className="font-bold text-text-primary group-hover:text-highlight transition-colors flex items-center gap-2">
                         {game.opponent}
-                        {game.status === 'FINAL' && <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${game.result === 'W' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{game.result}</span>}
+                        {game.status === 'FINAL' && game.result && <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${game.result === 'W' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{game.result}</span>}
                     </p>
                     <p className="text-sm text-text-secondary">Jogo em {locationText}</p>
                 </div>
@@ -220,13 +222,16 @@ const Schedule: React.FC = () => {
 
     const handleCreateGame = (e: React.FormEvent) => {
         e.preventDefault();
+        // Fix: Added missing required properties timeline and audioNotes
         const newGame: Game = {
             id: Date.now(),
             opponent: newOpponent,
             opponentLogoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(newOpponent)}&background=random&color=fff`,
             date: new Date(newDate),
             location: newLocation,
-            status: 'SCHEDULED'
+            status: 'SCHEDULED',
+            timeline: [],
+            audioNotes: []
         };
         
         const currentGames = storageService.getGames();

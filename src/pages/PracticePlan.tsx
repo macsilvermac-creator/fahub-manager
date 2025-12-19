@@ -1,3 +1,69 @@
+
+import React, { useState, useEffect, useContext } from 'react';
+import Card from '../components/Card';
+import { Player, PracticeSession, PracticeCategory, PracticeScriptItem, Drill, ProgramType } from '../types';
+import { storageService } from '../services/storageService';
+// Fix: Importing generatePracticeScript which was missing previously
+import { generatePracticeScript } from '../services/geminiService';
+import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon, UsersIcon, CheckCircleIcon, ClipboardIcon } from '../components/icons/UiIcons';
+import { UserContext } from '../components/Layout';
+import Button from '../components/Button'; 
+import Input from '../components/Input';
+import { useToast } from '../contexts/ToastContext';
+import QuickEvaluationModal from '../components/QuickEvaluationModal';
+import DrillCard from '../components/DrillCard';
+import CheckInModal from '../components/CheckInModal';
+
+// PRESETS TACKLE
+const QUICK_BLOCKS_TACKLE = [
+    { type: 'WARMUP', name: 'Warmup / Dynamic', duration: 15, desc: 'Mobilidade e Ativação.' },
+    { type: 'INDY', name: 'Indy (Posição)', duration: 20, desc: 'Drills de técnica individual.' },
+    { type: 'GROUP', name: 'Inside Run (9on7)', duration: 15, desc: 'Bloqueios e Corrida.' },
+    { type: 'GROUP', name: 'Skelly (7on7)', duration: 20, desc: 'Passe vs Cobertura.' },
+    { type: 'TEAM', name: 'Team (11on11)', duration: 30, desc: 'Situações de jogo.' },
+    { type: 'SPECIAL', name: 'Punt / Kickoff', duration: 10, desc: 'Special Teams.' },
+];
+
+// PRESETS FLAG
+const QUICK_BLOCKS_FLAG = [
+    { type: 'WARMUP', name: 'Agility Ladder', duration: 10, desc: 'Escada de agilidade e cone drill.' },
+    { type: 'INDY', name: 'Flag Pulling', duration: 15, desc: 'Técnica de retirada de flag.' },
+    { type: 'GROUP', name: 'Route Tree', duration: 15, desc: 'Rotas e Catching.' },
+    { type: 'GROUP', name: '1on1 WR/DB', duration: 15, desc: 'Man coverage drills.' },
+    { type: 'TEAM', name: 'Scrimmage (5on5)', duration: 30, desc: 'Simulação de jogo.' },
+    { type: 'SPECIAL', name: 'Rusher Drills', duration: 10, desc: 'Pass rush específico 7s.' },
+];
+
+const PracticePlan: React.FC = () => {
+    const { currentRole } = useContext(UserContext);
+    const toast = useToast();
+    const [practices, setPractices] = useState<PracticeSession[]>([]);
+    const [players, setPlayers] = useState<Player[]>([]);
+    const [drillLibrary, setDrillLibrary] = useState<Drill[]>([]);
+    
+    const [isCreating, setIsCreating] = useState(false);
+    const [selectedPractice, setSelectedPractice] = useState<PracticeSession | null>(null);
+    const [activeMode, setActiveMode] = useState<'SCRIPT' | 'EVALUATION' | 'LIBRARY'>('SCRIPT');
+
+    // Context & Config
+    const [activeProgram, setActiveProgram] = useState<ProgramType>('TACKLE');
+    const [quickBlocks, setQuickBlocks] = useState(QUICK_BLOCKS_TACKLE);
+
+    // Form State
+    const [newTitle, setNewTitle] = useState('');
+    const [newFocus, setNewFocus] = useState('');
+    const [newDate, setNewDate] = useState('');
+    const [newCategory, setNewCategory] = useState<PracticeCategory>('TACTICAL');
+    const [newDuration, setNewDuration] = useState(120); 
+
+    // Script Management State
+    const [generatedScript, setGeneratedScript] = useState<PracticeScriptItem[]>([]);
+    const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+    
+    // Timer State
+    const [isTimerFullScreen, setIsTimerFullScreen] = useState(false);
+    const [isTimerRunning, setIsTimerRunning] = useState(false);
+    const [timerSeconds, setTimerSeconds] = useState(0);
     const [activeScriptItemId, setActiveScriptItemId] = useState<string | null>(null);
 
     // EVALUATION & CHECK-IN STATE
@@ -15,7 +81,6 @@
         setDrillLibrary(storageService.getDrillLibrary());
 
         const prog = storageService.getActiveProgram();
-        // Fix: Removed conditional casting as activeProgram state now accepts full ProgramType
         setActiveProgram(prog);
         setQuickBlocks(prog === 'FLAG' ? QUICK_BLOCKS_FLAG : QUICK_BLOCKS_TACKLE);
         setNewDuration(prog === 'FLAG' ? 90 : 120); 
@@ -91,9 +156,9 @@
             id: `blk-lib-${Date.now()}`,
             startTime: startTime,
             durationMinutes: drill.durationMinutes,
-            type: 'INDY', // Default
+            type: 'INDY', 
             activityName: drill.name,
-            description: drill.description
+            description: drill.description || ''
         };
         setGeneratedScript([...generatedScript, newItem]);
         toast.success(`Drill "${drill.name}" adicionado ao script.`);
@@ -194,7 +259,6 @@
 
             {isCreating && canEdit && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Column: Config & Manual Builder */}
                     <div className="lg:col-span-2 space-y-6">
                         <Card className="animate-slide-in no-print border border-highlight/20">
                              <form onSubmit={handleCreatePractice} className="space-y-4">
@@ -216,7 +280,6 @@
                                     </div>
                                 </div>
                                 
-                                {/* Script Builder */}
                                 <div className="bg-black/20 p-4 rounded-xl border border-white/10">
                                     <h4 className="font-bold text-white flex items-center gap-2 mb-3">
                                         <ClockIcon className="w-4 h-4 text-highlight"/> Roteiro (Script)
@@ -254,9 +317,7 @@
                         </Card>
                     </div>
 
-                    {/* Right Column: Library & Tools */}
                     <div className="lg:col-span-1 space-y-4">
-                        {/* Tab Switcher for Tools */}
                         <div className="flex border-b border-white/10">
                             <button onClick={() => setActiveMode('SCRIPT')} className={`flex-1 py-2 text-xs font-bold ${activeMode === 'SCRIPT' ? 'text-highlight border-b-2 border-highlight' : 'text-text-secondary'}`}>Rápido</button>
                             <button onClick={() => setActiveMode('LIBRARY')} className={`flex-1 py-2 text-xs font-bold ${activeMode === 'LIBRARY' ? 'text-highlight border-b-2 border-highlight' : 'text-text-secondary'}`}>Biblioteca</button>
@@ -304,7 +365,6 @@
                 </div>
             )}
 
-            {/* PRACTICE LIST & DETAILS */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1 space-y-4 no-print">
                     {practices.map(practice => (
@@ -314,7 +374,6 @@
                                 <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-text-secondary">{practice.script?.length || 0} items</span>
                             </div>
                             <p className="text-xs text-text-secondary mt-1">{new Date(practice.date).toLocaleDateString()} • {practice.focus}</p>
-                            {/* Check-in Indicator */}
                             {practice.checkedInAttendees && practice.checkedInAttendees.length > 0 && (
                                 <div className="mt-2 flex items-center gap-1 text-[10px] text-green-400">
                                     <CheckCircleIcon className="w-3 h-3" /> Check-in Realizado ({practice.checkedInAttendees.length})
@@ -405,42 +464,12 @@
                                         ))}
                                         {playersToEvaluate.length === 0 && (
                                             <div className="col-span-full text-center py-8 text-text-secondary italic">
-                                                Nenhum atleta encontrado com os filtros atuais ou check-in realizado.
+                                                Nenhum atleta encontrado.
                                             </div>
                                         )}
                                     </div>
                                 </div>
                             )}
-
-                            {/* PRINTABLE LIST (HIDDEN NORMALLY) */}
-                            <div className="hidden print:block absolute top-0 left-0 bg-white text-black w-full h-full z-50 p-8">
-                                <h1 className="text-2xl font-bold mb-4 uppercase">{selectedPractice.title} - Lista de Presença</h1>
-                                <p className="mb-4">Data: {new Date(selectedPractice.date).toLocaleDateString()} | Foco: {selectedPractice.focus}</p>
-                                <table className="w-full border-collapse border border-black text-sm">
-                                    <thead>
-                                        <tr className="bg-gray-200">
-                                            <th className="border border-black p-2 text-left">Atleta</th>
-                                            <th className="border border-black p-2 text-center w-20">POS</th>
-                                            <th className="border border-black p-2 text-center w-16">Nº</th>
-                                            <th className="border border-black p-2 text-center w-24">Presença</th>
-                                            <th className="border border-black p-2 text-left">Obs / Avaliação</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {/* Print everyone RSVP'd if checkin not done, else print checked in */}
-                                        {players.filter(p => (selectedPractice.attendees || []).includes(String(p.id))).map(p => (
-                                            <tr key={p.id}>
-                                                <td className="border border-black p-2 font-bold">{p.name}</td>
-                                                <td className="border border-black p-2 text-center">{p.position}</td>
-                                                <td className="border border-black p-2 text-center">{p.jerseyNumber}</td>
-                                                <td className="border border-black p-2 text-center">[ ]</td>
-                                                <td className="border border-black p-2"></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
                         </Card>
                     ) : (
                         <div className="text-center p-12 text-text-secondary italic bg-secondary/20 rounded-xl">Selecione um treino para visualizar.</div>
@@ -448,7 +477,6 @@
                 </div>
             </div>
             
-            {/* --- MODALS --- */}
             <QuickEvaluationModal 
                 isOpen={isEvalModalOpen}
                 onClose={() => setIsEvalModalOpen(false)}
@@ -466,7 +494,6 @@
                 />
             )}
 
-            {/* FULLSCREEN TIMER */}
             {isTimerFullScreen && (
                 <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center animate-fade-in">
                     <button onClick={() => setIsTimerFullScreen(false)} className="absolute top-6 right-6 text-white/50 hover:text-white">Fechar</button>

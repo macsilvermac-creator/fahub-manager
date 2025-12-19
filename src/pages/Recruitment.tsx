@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { RecruitmentCandidate, CombineStats, UserRole } from '../types';
 import { storageService } from '../services/storageService';
+// Fix: Corrected analyzeCombineStats import
 import { analyzeCombineStats } from '../services/geminiService';
 import { UserPlusIcon, SearchIcon, FilterIcon, CheckCircleIcon, XIcon, ClockIcon, ClipboardIcon, SparklesIcon, TrashIcon, LockIcon } from '../components/icons/UiIcons';
 import Modal from '../components/Modal';

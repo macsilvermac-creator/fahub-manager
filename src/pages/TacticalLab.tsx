@@ -29,7 +29,6 @@ const TacticalLab: React.FC = () => {
     const [selectedGameId, setSelectedGameId] = useState<string>('');
     const [playName, setPlayName] = useState('');
     const [conceptDescription, setConceptDescription] = useState('');
-    // Explicitly defining type to resolve mapping error
     const [sportMode, setSportMode] = useState<'FULLPADS' | 'FLAG'>('FULLPADS');
     const [elements, setElements] = useState<PlayElement[]>([]);
     const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -60,7 +59,6 @@ const TacticalLab: React.FC = () => {
         
         // Auto-detect mode from Global Program Context
         const activeProgram = storageService.getActiveProgram();
-        // Mapping TACKLE/BOTH to FULLPADS to resolve type errors
         const initialMode: 'FLAG' | 'FULLPADS' = activeProgram === 'FLAG' ? 'FLAG' : 'FULLPADS';
         setSportMode(initialMode);
         resetTokens(initialMode);
@@ -160,7 +158,6 @@ const TacticalLab: React.FC = () => {
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(fieldWidth, i); ctx.stroke();
         }
         ctx.strokeStyle = '#3b82f6'; // LOS
-        // Fix: Corrected KV to ctx on line 163
         ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(fieldWidth, 200); ctx.stroke();
 
         // 4. Players
@@ -219,6 +216,7 @@ const TacticalLab: React.FC = () => {
     const handleSimulate = async () => {
         if (!selectedGameId || !conceptDescription) return;
         const game = games.find(g => g.id === Number(selectedGameId));
+        // Fix: Corrected property name scoutingReport on Game
         if (!game || !game.scoutingReport) return;
 
         setIsSimulating(true);
@@ -234,9 +232,9 @@ const TacticalLab: React.FC = () => {
             concept: conceptDescription,
             elements: elements,
             frames: frames,
+            // Fix: Added routes property to TacticalPlay initialization
             routes: [],
             aiAnalysis: simulationResult,
-            createdAt: new Date(),
             program: sportMode === 'FULLPADS' ? 'TACKLE' : 'FLAG'
         };
         const updated = [newPlay, ...savedPlays];
@@ -391,11 +389,9 @@ const TacticalLab: React.FC = () => {
                 </div>
             </div>
 
-            {/* === TAB: PLAYBOOK EDITOR === */}
             {activeTab === 'PLAYBOOK' && (
                 <>
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        {/* Left: Controls */}
                         <div className="space-y-6">
                             <Card title="Configuração">
                                 <div className="space-y-4">
@@ -436,7 +432,6 @@ const TacticalLab: React.FC = () => {
                             </Card>
                         </div>
 
-                        {/* Center: Canvas */}
                         <div className="xl:col-span-2">
                             <Card className="h-full flex flex-col">
                                 <div className="flex justify-between items-center mb-4 px-2">
@@ -444,7 +439,6 @@ const TacticalLab: React.FC = () => {
                                     <div className="flex gap-2">
                                         {!isPlayer && (
                                             <>
-                                                {/* Hidden Inputs */}
                                                 <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
                                                 <input type="file" accept="image/*" className="hidden" ref={traceInputRef} onChange={handleTraceFileChange} />
                                                 
