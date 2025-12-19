@@ -1,304 +1,140 @@
-rt { storageService } from '../services/storageService';
-import { BusIcon, BedIcon, MapPinIcon, CheckCircleIcon, PrinterIcon, UsersIcon, TrashIcon, CloudIcon, SparklesIcon } from '../components/icons/UiIcons';
-import { useToast } from '../contexts/ToastContext';
+import React from 'react';
+import PageHeader from '../components/PageHeader';
+import Card from '../components/Card';
+import { storageService } from '../services/storageService';
+import { authService } from '../services/authService';
 import LazyImage from '../components/LazyImage';
+import { 
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    Radar, RadarChart, PolarGrid, PolarAngleAxis
+} from 'recharts';
+import { StarIcon, TrophyIcon } from '../components/icons/NavIcons';
+import { TrendingUpIcon, ActivityIcon, CheckCircleIcon } from '../components/icons/UiIcons';
 
-interface Room {
-    id: string;
-    number: string;
-    type: 'DOUBLE' | 'TRIPLE' | 'QUAD';
-    occupants: string[]; // Names
-}
+const MyProfile: React.FC = () => {
+    const user = authService.getCurrentUser();
+    const playersList = storageService.getPlayers();
+    const player = playersList.find(p => p.name === user?.name) || playersList[0];
+    const statsHistory = storageService.getAthleteStatsHistory(player?.id || 0);
 
-const WeatherWidget: React.FC<{ location: string, date: Date }> = ({ location, date }) => {
-    // Simulação Inteligente de Previsão baseada em dados reais aproximados para demonstração
-    
-    const isSummer = date.getMonth() >= 11 || date.getMonth() <= 2;
-    const isRainy = Math.random() > 0.6;
-    const temp = isSummer ? 28 + Math.floor(Math.random() * 5) : 18 + Math.floor(Math.random() * 5);
-    
-    return (
-        <div className="bg-gradient-to-br from-blue-600/20 to-cyan-500/20 p-4 rounded-xl border border-blue-500/30 flex items-center justify-between">
-            <div>
-                <p className="text-[10px] text-blue-300 font-bold uppercase mb-1">Previsão no Kickoff</p>
-                <div className="flex items-center gap-3">
-                    <CloudIcon className={`w-8 h-8 ${isRainy ? 'text-gray-400' : 'text-yellow-400'}`} />
-                    <div>
-                        <p className="text-2xl font-black text-white">{temp}°C</p>
-                        <p className="text-xs text-text-secondary">{isRainy ? 'Probabilidade de Chuva' : 'Céu Limpo'}</p>
-                    </div>
-                </div>
-            </div>
-            <div className="text-right">
-                <p className="text-[10px] text-text-secondary font-bold uppercase mb-1">Intel do Gramado</p>
-                <span className={`text-xs font-bold px-2 py-1 rounded ${isRainy ? 'bg-yellow-500/20 text-yellow-400' : 'bg-green-500/20 text-green-400'}`}>
-                    {isRainy ? '⚠ Grama Alta / Escorregadia' : '✔ Grama Seca / Rápida'}
-                </span>
-                <p className="text-[9px] text-text-secondary mt-1 max-w-[120px]">Sugestão: Trava {isRainy ? 'Mista/Alta' : 'Baixa'}</p>
-            </div>
-        </div>
-    );
-};
+    const skillData = [
+        { subject: 'Explosão', A: 85 },
+        { subject: 'Força', A: 92 },
+        { subject: 'Agilidade', A: 75 },
+        { subject: 'Velocidade', A: 88 },
+        { subject: 'Técnica', A: 70 },
+        { subject: 'IQ Tático', A: 82 },
+    ];
 
-const Logistics: React.FC = () => {
-    const toast = useToast();
-    const [activeTab, setActiveTab] = useState<'MANIFEST' | 'ROOMING' | 'ITINERARY'>('MANIFEST');
-    const [players, setPlayers] = useState<Player[]>([]);
-    const [staff, setStaff] = useState<StaffMember[]>([]);
-    const [games, setGames] = useState<Game[]>([]);
-    
-    const [selectedGameId, setSelectedGameId] = useState('');
-    const [manifest, setManifest] = useState<string[]>([]); 
-    const [rooms, setRooms] = useState<Room[]>([
-        { id: 'r1', number: '101', type: 'DOUBLE', occupants: [] },
-        { id: 'r2', number: '102', type: 'DOUBLE', occupants: [] },
-        { id: 'r3', number: '103', type: 'QUAD', occupants: [] },
-    ]);
-
-    const [addingToRoomId, setAddingToRoomId] = useState<string | null>(null);
-    const [newOccupantName, setNewOccupantName] = useState('');
-
-    useEffect(() => {
-        setPlayers(storageService.getPlayers().filter(p => p.status === 'ACTIVE'));
-        setStaff(storageService.getStaff());
-        setGames(storageService.getGames().filter(g => g.location === 'Away' && g.status === 'SCHEDULED'));
-    }, []);
-
-    const togglePassenger = (id: string) => {
-        if (manifest.includes(id)) {
-            setManifest(prev => prev.filter(mid => mid !== id));
-        } else {
-            setManifest(prev => [...prev, id]);
-        }
-    };
-
-    const handleAddOccupant = (roomId: string) => {
-        if (!newOccupantName.trim()) return;
-        
-        setRooms(prev => prev.map(r => {
-            if (r.id === roomId && r.occupants.length < (r.type === 'DOUBLE' ? 2 : r.type === 'TRIPLE' ? 3 : 4)) {
-                return { ...r, occupants: [...r.occupants, newOccupantName] };
-            }
-            return r;
-        }));
-        
-        setNewOccupantName('');
-        setAddingToRoomId(null);
-        toast.success("Ocupante adicionado ao quarto.");
-    };
-
-    const removeFromRoom = (roomId: string, name: string) => {
-        setRooms(prev => prev.map(r => r.id === roomId ? { ...r, occupants: r.occupants.filter(o => o !== name) } : r));
-        toast.info("Ocupante removido.");
-    };
-
-    const activeGame = games.find(g => g.id === Number(selectedGameId));
+    const evolutionData = statsHistory.map((s: any) => ({
+        date: new Date(s.date).toLocaleDateString('pt-BR', {month: 'short'}),
+        ovr: 70 + (Math.random() * 20)
+    }));
 
     return (
-        <div className="space-y-6 pb-12 animate-fade-in">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-secondary rounded-xl">
-                        <BusIcon className="text-highlight w-8 h-8" />
-                    </div>
-                    <div>
-                        <h2 className="text-3xl font-bold text-text-primary">Logística de Viagem</h2>
-                        <p className="text-text-secondary text-sm">Gestão de transporte e hospedagem para jogos fora.</p>
-                    </div>
-                </div>
-                
-                <select 
-                    className="bg-secondary border border-white/10 rounded-xl p-3 text-white focus:border-highlight focus:outline-none"
-                    value={selectedGameId}
-                    onChange={(e) => setSelectedGameId(e.target.value)}
-                >
-                    <option value="">Selecione o Jogo...</option>
-                    {games.map(g => (
-                        <option key={g.id} value={g.id}>vs {g.opponent} ({new Date(g.date).toLocaleDateString()})</option>
-                    ))}
-                </select>
-            </div>
+        <div className="space-y-8 animate-fade-in pb-20">
+            <PageHeader title="Meus Stats" subtitle="Performance Lab: Dados Oficiais e Evolução." />
 
-            {!selectedGameId ? (
-                <div className="text-center py-20 text-text-secondary bg-secondary/20 rounded-xl border border-dashed border-white/10">
-                    Selecione um jogo "Fora de Casa" (Away) para iniciar o planejamento.
-                </div>
-            ) : (
-                <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                         <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-500/20 flex justify-between items-center">
-                            <div>
-                                <h4 className="font-bold text-white text-lg">Operação: {activeGame?.opponent}</h4>
-                                <p className="text-sm text-blue-300">Data: {activeGame && new Date(activeGame.date).toLocaleDateString()}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs text-text-secondary uppercase font-bold">Passageiros</p>
-                                <p className="text-2xl font-black text-white">{manifest.length}</p>
-                            </div>
-                        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-4 flex justify-center">
+                    <div className="relative w-[320px] h-[450px] rounded-3xl overflow-hidden shadow-[0_0_60px_rgba(5,150,105,0.4)] border-2 border-highlight/30 group perspective-1000">
+                        <div className="absolute inset-0 bg-gradient-to-br from-highlight via-[#0f172a] to-black"></div>
+                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
                         
-                        {activeGame && <WeatherWidget location={activeGame.opponent} date={new Date(activeGame.date)} />}
-                    </div>
-
-                    <div className="flex border-b border-white/10 overflow-x-auto mb-6">
-                        <button onClick={() => setActiveTab('MANIFEST')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'MANIFEST' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
-                            <BusIcon className="w-4 h-4"/> Manifesto de Ônibus
-                        </button>
-                        <button onClick={() => setActiveTab('ROOMING')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'ROOMING' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary'}`}>
-                            <BedIcon className="w-4 h-4"/> Rooming List (Hotel)
-                        </button>
-                        <button onClick={() => setActiveTab('ITINERARY')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'ITINERARY' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary'}`}>
-                            <MapPinIcon className="w-4 h-4"/> Itinerário
-                        </button>
-                    </div>
-
-                    {activeTab === 'MANIFEST' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-in">
-                            <div className="lg:col-span-2">
-                                <Card title="Seleção de Passageiros">
-                                    <div className="mb-4 flex gap-4 text-sm text-text-secondary bg-black/20 p-2 rounded-lg">
-                                        <span>Total Selecionado: <strong className="text-white">{manifest.length}</strong></span>
-                                        <span>Capacidade Ônibus: <strong className="text-white">46</strong></span>
-                                        <span className={manifest.length > 46 ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}>
-                                            {manifest.length > 46 ? '⚠ Excedido' : '✓ Dentro do Limite'}
-                                        </span>
-                                    </div>
-                                    <div className="h-[500px] overflow-y-auto pr-2 custom-scrollbar space-y-2">
-                                        <h4 className="text-xs font-bold text-text-secondary uppercase sticky top-0 bg-secondary py-2 z-10">Staff & Coaches</h4>
-                                        {staff.map(s => (
-                                            <div key={s.id} onClick={() => togglePassenger(s.id)} className={`flex items-center justify-between p-3 rounded border cursor-pointer transition-colors ${manifest.includes(s.id) ? 'bg-highlight/20 border-highlight' : 'bg-black/20 border-white/5 hover:bg-white/5'}`}>
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${manifest.includes(s.id) ? 'bg-highlight border-highlight' : 'border-white/30'}`}>
-                                                        {manifest.includes(s.id) && <CheckCircleIcon className="w-3 h-3 text-white" />}
-                                                    </div>
-                                                    <span className="text-white font-bold">{s.name}</span>
-                                                </div>
-                                                <span className="text-xs text-text-secondary">{s.role}</span>
-                                            </div>
-                                        ))}
-
-                                        <h4 className="text-xs font-bold text-text-secondary uppercase sticky top-0 bg-secondary py-2 mt-4 z-10">Atletas</h4>
-                                        {players.map(p => (
-                                            <div key={p.id} onClick={() => togglePassenger(String(p.id))} className={`flex items-center justify-between p-3 rounded border cursor-pointer transition-colors ${manifest.includes(String(p.id)) ? 'bg-highlight/20 border-highlight' : 'bg-black/20 border-white/5 hover:bg-white/5'}`}>
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${manifest.includes(String(p.id)) ? 'bg-highlight border-highlight' : 'border-white/30'}`}>
-                                                        {manifest.includes(String(p.id)) && <CheckCircleIcon className="w-3 h-3 text-white" />}
-                                                    </div>
-                                                    <LazyImage src={p.avatarUrl} className="w-8 h-8 rounded-full" />
-                                                    <div>
-                                                        <p className="text-white font-bold text-sm">{p.name}</p>
-                                                        <p className="text-xs text-text-secondary">{p.position}</p>
-                                                    </div>
-                                                </div>
-                                                <span className="text-xs text-text-secondary font-mono bg-black/20 px-2 rounded">RG: {p.cpf || 'PENDENTE'}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </Card>
+                        <div className="relative z-10 p-7 flex flex-col items-center h-full">
+                            <div className="flex justify-between w-full mb-6">
+                                <div className="text-center">
+                                    <p className="text-5xl font-black text-white italic leading-none drop-shadow-lg">{player?.rating || 0}</p>
+                                    <p className="text-[12px] font-black text-highlight uppercase mt-1 tracking-widest">{player?.position}</p>
+                                </div>
+                                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 backdrop-blur-sm">
+                                    <TrophyIcon className="w-6 h-6 text-highlight" />
+                                </div>
                             </div>
-                            <div className="space-y-6">
-                                <Card title="Resumo da Viagem">
-                                    <div className="space-y-4">
-                                        <div className="bg-black/20 p-4 rounded-lg text-center border border-white/5">
-                                            <p className="text-sm text-text-secondary">Custo Estimado (Ônibus)</p>
-                                            <p className="text-2xl font-bold text-white">R$ 4.500,00</p>
-                                            <p className="text-xs text-text-secondary mt-1">Baseado em km e diárias</p>
-                                        </div>
-                                        <button onClick={() => window.print()} className="w-full bg-secondary border border-white/10 hover:bg-white/5 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors">
-                                            <PrinterIcon className="w-4 h-4" /> Imprimir Manifesto (ANTT)
-                                        </button>
-                                    </div>
-                                </Card>
+
+                            <div className="w-56 h-56 relative mb-4">
+                                <div className="absolute inset-0 bg-highlight/30 rounded-full blur-[60px] animate-pulse"></div>
+                                <LazyImage 
+                                    src={player?.avatarUrl} 
+                                    className="w-full h-full object-cover object-top relative z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)]" 
+                                    style={{maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)'}} 
+                                    fallbackText={player?.name}
+                                />
+                            </div>
+
+                            <div className="w-full text-center bg-black/40 backdrop-blur-md py-3 rounded-2xl border border-white/10 mb-4 shadow-xl">
+                                <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none">{player?.name}</h2>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-x-8 gap-y-3 w-full pt-4 border-t border-white/10">
+                                <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-bold">SPD</p><p className="text-lg font-black text-white">88</p></div>
+                                <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-bold">STR</p><p className="text-lg font-black text-white">92</p></div>
+                                <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-bold">AGI</p><p className="text-lg font-black text-white">75</p></div>
+                                <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-bold">ACC</p><p className="text-lg font-black text-white">82</p></div>
+                                <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-bold">AWR</p><p className="text-lg font-black text-white">70</p></div>
+                                <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-bold">POW</p><p className="text-lg font-black text-white">85</p></div>
                             </div>
                         </div>
-                    )}
+                    </div>
+                </div>
 
-                    {activeTab === 'ROOMING' && (
-                        <div className="space-y-6 animate-slide-in">
-                            <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
-                                {rooms.map(room => (
-                                    <div key={room.id} className="min-w-[280px] bg-secondary border border-white/10 rounded-xl p-4 flex flex-col h-full">
-                                        <div className="flex justify-between items-center mb-3 pb-2 border-b border-white/5">
-                                            <h4 className="font-bold text-white flex items-center gap-2">
-                                                <BedIcon className="w-4 h-4 text-blue-400"/> Quarto {room.number}
-                                            </h4>
-                                            <span className={`text-[10px] px-2 py-0.5 rounded text-black font-bold uppercase ${room.occupants.length >= (room.type === 'DOUBLE' ? 2 : room.type === 'TRIPLE' ? 3 : 4) ? 'bg-red-400' : 'bg-green-400'}`}>
-                                                {room.type} ({room.occupants.length})
-                                            </span>
-                                        </div>
-                                        
-                                        <div className="space-y-2 flex-1 bg-black/20 rounded p-2 mb-3 min-h-[120px]">
-                                            {room.occupants.map((occ, idx) => (
-                                                <div key={idx} className="flex justify-between items-center text-sm bg-white/5 p-2 rounded text-white group">
-                                                    <span className="flex items-center gap-2"><UsersIcon className="w-3 h-3 text-text-secondary"/> {occ}</span>
-                                                    <button onClick={() => removeFromRoom(room.id, occ)} className="text-text-secondary hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <TrashIcon className="w-3 h-3"/>
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            {room.occupants.length === 0 && <span className="text-xs text-text-secondary italic flex items-center justify-center h-full">Quarto Vazio</span>}
-                                        </div>
-
-                                        {addingToRoomId === room.id ? (
-                                            <div className="flex gap-1">
-                                                <input 
-                                                    autoFocus
-                                                    className="w-full bg-black/40 border border-white/20 rounded px-2 py-1 text-xs text-white"
-                                                    placeholder="Nome..."
-                                                    value={newOccupantName}
-                                                    onChange={e => setNewOccupantName(e.target.value)}
-                                                    onKeyDown={e => e.key === 'Enter' && handleAddOccupant(room.id)}
-                                                />
-                                                <button onClick={() => handleAddOccupant(room.id)} className="bg-green-600 text-white px-2 rounded font-bold text-xs">OK</button>
-                                            </div>
-                                        ) : (
-                                            <button 
-                                                onClick={() => setAddingToRoomId(room.id)}
-                                                disabled={room.occupants.length >= (room.type === 'DOUBLE' ? 2 : room.type === 'TRIPLE' ? 3 : 4)}
-                                                className="w-full text-xs bg-highlight/10 text-highlight hover:bg-highlight hover:text-white py-2 rounded font-bold border border-highlight/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                + Adicionar Ocupante
-                                            </button>
-                                        )}
-                                    </div>
-                                ))}
-                                
-                                <button 
-                                    onClick={() => setRooms([...rooms, { id: `r${Date.now()}`, number: `${100 + rooms.length + 1}`, type: 'DOUBLE', occupants: [] }])}
-                                    className="min-w-[100px] border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center text-text-secondary hover:text-white hover:border-white/30 transition-colors"
-                                >
-                                    <span className="text-2xl mb-1">+</span>
-                                    <span className="text-xs font-bold">Novo Quarto</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'ITINERARY' && (
-                        <Card title="Cronograma da Viagem">
-                            <div className="space-y-6 relative pl-4 border-l-2 border-white/10 ml-2">
-                                {[
-                                    { time: '07:00', title: 'Apresentação', desc: 'Arena Principal - Café da Manhã' },
-                                    { time: '08:00', title: 'Saída do Ônibus', desc: 'Pontualmente. Quem atrasar fica.' },
-                                    { time: '12:00', title: 'Parada Almoço', desc: 'Graal - Rodovia' },
-                                    { time: '15:00', title: 'Chegada no Hotel', desc: 'Check-in e Descanso' },
-                                    { time: '18:00', title: 'Jantar', desc: 'Restaurante do Hotel' },
-                                    { time: '20:00', title: 'Meeting', desc: 'Sala de Conferência 2' }
-                                ].map((item, idx) => (
-                                    <div key={idx} className="relative">
-                                        <div className="absolute -left-[21px] top-0 w-4 h-4 rounded-full bg-secondary border-2 border-highlight"></div>
-                                        <p className="text-highlight font-mono font-bold text-lg leading-none">{item.time}</p>
-                                        <h4 className="text-white font-bold text-sm mt-1">{item.title}</h4>
-                                        <p className="text-text-secondary text-xs">{item.desc}</p>
-                                    </div>
-                                ))}
+                <div className="lg:col-span-8 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Card title="Matriz de Atributos">
+                            <div className="h-64 w-full flex items-center justify-center">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RadarChart cx="50%" cy="50%" outerRadius="80%" data={skillData}>
+                                        <PolarGrid stroke="rgba(255,255,255,0.05)" />
+                                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }} />
+                                        <Radar name="Skills" dataKey="A" stroke="#059669" fill="#059669" fillOpacity={0.6} />
+                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px' }} />
+                                    </RadarChart>
+                                </ResponsiveContainer>
                             </div>
                         </Card>
-                    )}
-                </>
-            )}
+
+                        <Card title="Evolução de Rating">
+                            <div className="h-64 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={evolutionData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                        <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                                        <YAxis domain={[60, 100]} stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '12px' }} />
+                                        <Line type="monotone" dataKey="ovr" stroke="#059669" strokeWidth={4} dot={{ fill: '#059669', r: 6 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </Card>
+                    </div>
+
+                    <div className="bg-secondary/40 p-6 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden">
+                        <h3 className="text-white font-black uppercase italic text-sm mb-6 flex items-center gap-2">
+                             <CheckCircleIcon className="w-5 h-5 text-highlight" /> Resultados do Último Combine
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
+                                <p className="text-[9px] text-text-secondary uppercase font-bold mb-1">40 Yard Dash</p>
+                                <p className="text-2xl font-black text-white">4.52s</p>
+                            </div>
+                            <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
+                                <p className="text-[9px] text-text-secondary uppercase font-bold mb-1">Bench Press</p>
+                                <p className="text-2xl font-black text-white">18 reps</p>
+                            </div>
+                            <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
+                                <p className="text-[9px] text-text-secondary uppercase font-bold mb-1">Vertical Jump</p>
+                                <p className="text-2xl font-black text-white">32.5"</p>
+                            </div>
+                            <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
+                                <p className="text-[9px] text-text-secondary uppercase font-bold mb-1">L-Drill</p>
+                                <p className="text-2xl font-black text-white">7.15s</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
 
-export default Logistics;
+export default MyProfile;

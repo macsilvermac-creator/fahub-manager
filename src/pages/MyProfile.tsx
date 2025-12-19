@@ -116,22 +116,18 @@ const MyProfile: React.FC = () => {
                             <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
                                 <p className="text-[9px] text-text-secondary uppercase font-bold mb-1">40 Yard Dash</p>
                                 <p className="text-2xl font-black text-white">4.52s</p>
-                                <p className="text-[10px] text-green-400 mt-2 font-black">▼ -0.08s</p>
                             </div>
                             <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
                                 <p className="text-[9px] text-text-secondary uppercase font-bold mb-1">Bench Press</p>
                                 <p className="text-2xl font-black text-white">18 reps</p>
-                                <p className="text-[10px] text-green-400 mt-2 font-black">▲ +3 reps</p>
                             </div>
                             <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
                                 <p className="text-[9px] text-text-secondary uppercase font-bold mb-1">Vertical Jump</p>
                                 <p className="text-2xl font-black text-white">32.5"</p>
-                                <p className="text-[10px] text-text-secondary mt-2">Sem alteração</p>
                             </div>
                             <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
                                 <p className="text-[9px] text-text-secondary uppercase font-bold mb-1">L-Drill</p>
                                 <p className="text-2xl font-black text-white">7.15s</p>
-                                <p className="text-[10px] text-red-400 mt-2">▲ +0.02s</p>
                             </div>
                         </div>
                     </div>
