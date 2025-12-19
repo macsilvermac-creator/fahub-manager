@@ -1,3 +1,4 @@
+
 import React, { useState, useContext, useEffect } from 'react';
 import Modal from './Modal';
 import { Player, DevelopmentPlan } from '../types';
@@ -18,10 +19,9 @@ const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ isOpen, onClose
   const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'SCOUTING' | 'MEDICAL' | 'AI_PERFORMANCE'>('OVERVIEW');
   const [aiAnalysis, setAiAnalysis] = useState<string>('');
   const [isLoadingAi, setIsLoadingAi] = useState(false);
-  const [planFeedback, setPlanFeedback] = useState('');
   
   const isStaff = currentRole !== 'PLAYER';
-  const isMedicalOrHC = currentRole === 'MEDICAL_STAFF' || currentRole === 'HEAD_COACH';
+  const isMedicalOrHC = (currentRole as string) === 'MEDICAL_STAFF' || currentRole === 'HEAD_COACH' || currentRole === 'MASTER';
 
   useEffect(() => {
     if (isOpen) {

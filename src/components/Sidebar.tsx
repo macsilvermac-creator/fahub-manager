@@ -10,7 +10,7 @@ import {
 } from './icons/NavIcons';
 import { UserRole } from '../types';
 import { authService } from '../services/authService';
-import { ClipboardIcon, UsersIcon, ShieldCheckIcon, BusIcon, WalletIcon, DumbbellIcon } from './icons/UiIcons';
+import { ClipboardIcon, UsersIcon, ShieldCheckIcon, WalletIcon } from './icons/UiIcons';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -23,8 +23,8 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
   const navigate = useNavigate();
   
   // Filtros de Visibilidade Baseados na Persona Ativa
-  const isMaster = currentRole === 'MASTER';
-  const isCoach = currentRole === 'HEAD_COACH' || isMaster;
+  const isMaster = currentRole === 'MASTER' || currentRole === 'PLATFORM_OWNER';
+  const isCoach = currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD' || isMaster;
   const isPlayer = currentRole === 'PLAYER' || isMaster;
   const isRef = currentRole === 'REFEREE' || isMaster;
   const isFinance = currentRole === 'FINANCIAL_MANAGER' || isMaster;
@@ -159,7 +159,6 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
         </nav>
       </div>
 
-      {/* MATRIX GOD MODE SELECTOR */}
       <div className="p-3 bg-black/50 border-t border-white/10 shrink-0">
           <p className="text-[8px] font-black text-highlight uppercase mb-2 text-center tracking-[0.2em]">Matrix de Visão (God Mode)</p>
           <div className="grid grid-cols-3 gap-1.5">
