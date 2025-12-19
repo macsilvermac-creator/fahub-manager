@@ -1,11 +1,9 @@
-// Fix: Removed problematic vite/client reference and manually defined ImportMetaEnv with standard Vite properties (PROD, DEV, etc.) to resolve compilation errors
+/// <reference types="vite/client" />
+
+// Fix: Restored the built-in Vite client types and removed manual declarations of standard 
+// environment variables (PROD, DEV, etc.) to resolve modifier and optionality mismatch errors.
 interface ImportMetaEnv {
   readonly VITE_APP_TITLE: string;
-  readonly PROD: boolean;
-  readonly DEV: boolean;
-  readonly MODE: string;
-  readonly BASE_URL: string;
-  readonly SSR?: boolean;
 }
 
 interface ImportMeta {
