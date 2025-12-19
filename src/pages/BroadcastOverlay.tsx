@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 // @ts-ignore
 import { useParams } from 'react-router-dom';
@@ -10,7 +11,6 @@ const BroadcastOverlay: React.FC = () => {
     const [game, setGame] = useState<any | null>(null);
     const [sponsorIndex, setSponsorIndex] = useState(0);
     
-    // Broadcast Dynamic State
     const [tickerMessage, setTickerMessage] = useState('');
     const [activeLowerThird, setActiveLowerThird] = useState<{ title: string, subtitle: string, image?: string } | null>(null);
     const [forcedSponsor, setForcedSponsor] = useState<string | null>(null);
@@ -25,14 +25,11 @@ const BroadcastOverlay: React.FC = () => {
 
         fetchGame(); 
 
-        // Inscreve no serviço de tempo real
         const unsubscribe = realtimeService.subscribe((data) => {
-            // Game Data Sync
             if (data.gameId === Number(gameId) && (data.type === 'SCORE' || data.type === 'CLOCK' || data.type === 'STATUS')) {
                 setGame((prev: any) => ({ ...prev, ...data.payload }));
             }
             
-            // Broadcast Specific Events (Producer Console)
             if (data.type === 'BROADCAST_CONFIG') {
                 if (data.payload.action === 'SET_TICKER') setTickerMessage(data.payload.text);
                 if (data.payload.action === 'SHOW_LOWER_THIRD') setActiveLowerThird(data.payload.data);
@@ -45,7 +42,6 @@ const BroadcastOverlay: React.FC = () => {
         return () => unsubscribe();
     }, [gameId]);
 
-    // Rotação de Patrocinadores (se não houver forçado)
     useEffect(() => {
         const interval = setInterval(() => {
             if (!forcedSponsor && game?.sponsors?.length) {
@@ -67,7 +63,6 @@ const BroadcastOverlay: React.FC = () => {
     return (
         <div className="w-screen h-screen bg-transparent overflow-hidden font-sans relative">
             
-            {/* LOWER THIRD (Destaque de Jogador/Momento) */}
             {activeLowerThird && (
                 <div className="absolute bottom-32 left-10 animate-slide-in flex items-end">
                     {activeLowerThird.image && (
@@ -82,16 +77,13 @@ const BroadcastOverlay: React.FC = () => {
                 </div>
             )}
 
-            {/* SCOREBOARD (Bottom Bar) */}
             <div className="absolute bottom-10 left-10 right-10 flex items-end justify-between transition-all duration-500">
                 <div className="flex items-stretch shadow-2xl rounded-xl overflow-hidden border-2 border-white/10 bg-gray-900">
-                    {/* Placar Mandante */}
                     <div className="bg-[#0B1120] px-6 py-2 flex flex-col items-center justify-center border-r border-white/10 min-w-[140px]">
                         <span className="text-4xl font-black text-white">{score[0] || '0'}</span>
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{homeTeam}</span>
                     </div>
                     
-                    {/* Relógio Central */}
                     <div className="bg-gray-800 px-4 py-2 flex flex-col items-center justify-center min-w-[100px] border-x border-white/5 relative">
                         <span className="text-2xl font-mono font-bold text-yellow-400">{game.clock || '00:00'}</span>
                         <span className="text-xs font-bold text-gray-400 uppercase">Q{game.currentQuarter || 1}</span>
@@ -100,14 +92,12 @@ const BroadcastOverlay: React.FC = () => {
                         )}
                     </div>
                     
-                    {/* Placar Visitante */}
                     <div className="bg-[#0B1120] px-6 py-2 flex flex-col items-center justify-center border-l border-white/10 min-w-[140px]">
                         <span className="text-4xl font-black text-white">{score[1] || '0'}</span>
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{game.opponent?.substring(0,12) || 'VISITANTE'}</span>
                     </div>
                 </div>
                 
-                {/* SPONSOR SLOT */}
                 {currentSponsor && (
                     <div className="bg-white px-4 py-2 rounded-lg shadow-lg animate-fade-in border-b-4 border-highlight">
                          <span className="text-[10px] text-gray-500 font-bold block mb-0 leading-none">OFERECIMENTO</span>
@@ -116,7 +106,6 @@ const BroadcastOverlay: React.FC = () => {
                 )}
             </div>
 
-            {/* TICKER (News Crawl) */}
             {tickerMessage && (
                 <div className="absolute bottom-0 left-0 right-0 bg-highlight/90 h-8 flex items-center overflow-hidden border-t border-white/20">
                     <div className="whitespace-nowrap animate-marquee text-sm font-bold text-white px-4">
@@ -125,7 +114,6 @@ const BroadcastOverlay: React.FC = () => {
                 </div>
             )}
             
-            {/* CSS Animation for Marquee */}
             <style>{`
                 @keyframes marquee {
                     0% { transform: translateX(100%); }

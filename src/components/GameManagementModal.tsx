@@ -7,7 +7,7 @@ import { analyzeOpponentTendencies } from '../services/geminiService';
 import Card from './Card';
 import { PrinterIcon, SparklesIcon, UsersIcon, CheckCircleIcon, XIcon, ShieldCheckIcon } from './icons/UiIcons';
 import { BookIcon } from './icons/NavIcons';
-import LazyImage from '@/components/LazyImage';
+import LazyImage from './LazyImage';
 import { useToast } from '../contexts/ToastContext';
 
 interface GameManagementModalProps {
@@ -46,7 +46,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
         setPlayers(allPlayers);
         setTacticalPlays(storageService.getTacticalPlays());
 
-        // Fix: Safely handling gameRoster mapping
         const initialRoster = (game as any)['gameRoster'] || allPlayers.filter(p => p.status === 'ACTIVE').map(p => String(p.id));
         setGameRoster(initialRoster);
 
@@ -56,7 +55,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
         if (game.callSheet && game.callSheet.length > 0) {
             setCallSheet(game.callSheet);
         } else {
-            // Default Template
             setCallSheet([
                 { title: 'Openers (1st Drive)', plays: ['', '', '', ''] },
                 { title: '3rd & Short (< 2yds)', plays: ['', '', ''] },
@@ -71,8 +69,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
     }
   }, [isOpen, game]);
 
-  // --- HANDLERS ---
-
   const handleSaveAll = () => {
       if(!game) return;
       const updatedGame: Game = {
@@ -80,14 +76,13 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
           scoutingReport: scoutData,
           playerGrades: playerGrades,
           callSheet: callSheet,
-          // @ts-ignore - for simplified persistence
+          // @ts-ignore
           gameRoster: gameRoster 
       };
       onSave(updatedGame);
       toast.success("Dados do jogo salvos com sucesso!");
   };
 
-  // --- AI SCOUT ---
   const handleAiScout = async () => {
       if (!game) return;
       setIsAnalyzing(true);
@@ -109,7 +104,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       }
   };
 
-  // --- ROSTER LOGIC ---
   const togglePlayerInGame = (playerId: string) => {
       if (gameRoster.includes(playerId)) {
           setGameRoster(prev => prev.filter(id => id !== playerId));
@@ -128,7 +122,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
         }).length;
   };
 
-  // --- PLAYBOOK PICKER ---
   const openPlayPicker = (sectionIdx: number, playIdx: number) => {
       setPickerTarget({ sectionIdx, playIdx });
       setIsPickerOpen(true);
@@ -154,7 +147,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       setCallSheet(newSheet);
   };
 
-  // QB WRISTBAND EXPORT
   const exportWristband = () => {
       const opponent = game?.opponent || 'OPPONENT';
       let tableRows = '';
@@ -196,7 +188,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       win?.focus();
   };
 
-  // --- GRADING ---
   const handleGradeChange = (playerId: number, field: 'grade' | 'notes', value: any) => {
       setPlayerGrades(prev => {
           const existing = prev.find(p => p.playerId === playerId);
@@ -235,8 +226,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
         </div>
 
         <div className="min-h-[400px] max-h-[60vh] overflow-y-auto custom-scrollbar pr-2 relative">
-            
-            {/* TAB: ROSTER */}
             {activeTab === 'ROSTER' && (
                 <div className="space-y-4 animate-fade-in">
                     <div className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/10">
@@ -284,7 +273,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
                 </div>
             )}
 
-            {/* TAB: SCOUTING */}
             {activeTab === 'SCOUTING' && (
                 <div className="space-y-6 animate-fade-in">
                     <div className="flex justify-between items-center">
@@ -330,7 +318,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
                 </div>
             )}
 
-            {/* TAB: CALL SHEET */}
             {activeTab === 'CALL_SHEET' && (
                 <div className="space-y-6 animate-fade-in relative">
                     <div className="flex justify-between items-center bg-secondary p-3 rounded-lg border border-white/5 mb-4">
@@ -371,7 +358,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
                         ))}
                     </div>
 
-                    {/* PLAY PICKER OVERLAY */}
                     {isPickerOpen && (
                         <div className="absolute inset-0 bg-black/90 z-20 rounded-xl p-6 flex flex-col animate-fade-in">
                             <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
@@ -396,7 +382,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
                 </div>
             )}
 
-            {/* TAB: GRADING */}
             {activeTab === 'GRADING' && (
                 <div className="space-y-6 animate-fade-in">
                      <div className="flex justify-between items-center bg-secondary/30 p-4 rounded-xl border border-white/5">
@@ -447,7 +432,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
                     </div>
                 </div>
             )}
-
         </div>
 
         <div className="flex justify-end pt-4 border-t border-white/10 mt-4">

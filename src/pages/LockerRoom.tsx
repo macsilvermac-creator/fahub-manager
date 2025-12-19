@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../components/Layout';
 import { storageService } from '../services/storageService';
@@ -30,7 +31,7 @@ const LockerRoom: React.FC = () => {
             authorAvatar: isOfficialPost ? storageService.getTeamSettings().logoUrl : currentUser.avatarUrl,
             authorRole: currentUser.role,
             isOfficialTeamPost: isOfficialPost,
-            isPinned: isOfficialPost, // Master/Coach post is auto-pinned
+            isPinned: isOfficialPost, 
             content: content,
             likes: 0,
             comments: [],
@@ -57,7 +58,6 @@ const LockerRoom: React.FC = () => {
                 <p className="text-text-secondary text-sm italic">Culture beats strategy.</p>
             </div>
 
-            {/* Mensagem Fixada */}
             {pinnedPost && (
                 <div className="bg-highlight/10 border-2 border-highlight/30 rounded-2xl p-4 flex gap-4 items-center shadow-glow">
                     <div className="p-3 bg-highlight/20 rounded-full animate-bounce">
