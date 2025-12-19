@@ -1,4 +1,4 @@
-mport React, { memo } from 'react';
+import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRightIcon } from './icons/UiIcons';
 
