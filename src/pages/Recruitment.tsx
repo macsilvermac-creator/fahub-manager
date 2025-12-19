@@ -23,12 +23,9 @@ const Recruitment: React.FC = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Permissões Estritas
     const isMaster = currentRole === 'MASTER';
-    // Coaches podem apenas gerenciar o status dos cards existentes
     const canManagePipeline = isMaster || currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD';
 
-    // Form State
     const [form, setForm] = useState<Partial<RecruitmentCandidate>>({
         status: 'NEW',
         position: 'WR',
@@ -56,9 +53,7 @@ const Recruitment: React.FC = () => {
             status: 'NEW',
             createdAt: new Date(),
             notes: form.notes || '',
-            // Generate a random avatar for demo purposes
-            // @ts-ignore
-            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(form.name)}&background=random&color=fff`
+            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(form.name || '')}&background=random&color=fff`
         };
 
         const updated = [...candidates, newCandidate];
@@ -115,11 +110,10 @@ const Recruitment: React.FC = () => {
                         <UserPlusIcon className="text-highlight w-8 h-8" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-bold text-text-primary">Recrutamento & Scouting</h2>
-                        <p className="text-text-secondary">Pipeline de novos talentos (Tryouts).</p>
+                        <h2 className="text-3xl font-bold text-text-primary uppercase italic tracking-tighter">Recrutamento</h2>
+                        <p className="text-text-secondary text-sm">Pipeline de novos talentos (Tryouts).</p>
                     </div>
                 </div>
-                {/* APENAS MASTER CRIA NOVOS CANDIDATOS MANUALMENTE */}
                 {isMaster && (
                     <button onClick={() => setIsAddModalOpen(true)} className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2">
                         + Novo Candidato (Admin)
@@ -139,27 +133,14 @@ const Recruitment: React.FC = () => {
                                 <div key={candidate.id} className="bg-secondary p-4 rounded-lg border border-white/5 hover:border-white/20 transition-all group relative">
                                     <div className="flex justify-between items-start mb-2">
                                         <div className="flex items-center gap-3">
-                                            {/* @ts-ignore - avatarUrl is dynamically added on save */}
                                             <LazyImage src={candidate.avatarUrl || `https://ui-avatars.com/api/?name=${candidate.name}`} className="w-8 h-8 rounded-full" />
                                             <div>
                                                 <h4 className="font-bold text-white text-sm">{candidate.name}</h4>
                                                 <p className="text-[10px] text-text-secondary">{candidate.position} • {candidate.age} anos</p>
                                             </div>
                                         </div>
-                                        {candidate.rating && (
-                                            <span className={`text-[10px] font-bold px-2 py-1 rounded ${candidate.rating >= 80 ? 'bg-green-500 text-black' : 'bg-white/10 text-white'}`}>
-                                                {candidate.rating}
-                                            </span>
-                                        )}
                                     </div>
                                     
-                                    {candidate.combineStats && (
-                                        <div className="grid grid-cols-2 gap-2 text-[10px] text-text-secondary mb-3 bg-black/20 p-2 rounded">
-                                            <span>40y: <b className="text-white">{candidate.combineStats.fortyYards || '-'}</b></span>
-                                            <span>Bench: <b className="text-white">{candidate.combineStats.benchPress || '-'}</b></span>
-                                        </div>
-                                    )}
-
                                     {canManagePipeline && (
                                         <div className="flex gap-2 mt-2 pt-2 border-t border-white/5">
                                             {col.id === 'NEW' && <button onClick={() => updateStatus(candidate.id, 'TRYOUT')} className="flex-1 text-[10px] bg-yellow-600/20 text-yellow-400 py-1 rounded hover:bg-yellow-600 hover:text-white font-bold">Agendar Tryout</button>}
@@ -171,11 +152,8 @@ const Recruitment: React.FC = () => {
                                                     <button onClick={() => updateStatus(candidate.id, 'SELECTED')} className="flex-1 text-[10px] bg-green-600/20 text-green-400 py-1 rounded hover:bg-green-600 hover:text-white font-bold">Aprovar</button>
                                                 </>
                                             )}
-                                            {/* Delete: Only Master */}
-                                            {isMaster ? (
+                                            {isMaster && (
                                                 <button onClick={() => handleDelete(candidate.id)} className="text-text-secondary hover:text-red-400 p-1"><TrashIcon className="w-3 h-3"/></button>
-                                            ) : (
-                                                <LockIcon className="w-3 h-3 text-white/20 ml-auto" />
                                             )}
                                         </div>
                                     )}
@@ -193,29 +171,6 @@ const Recruitment: React.FC = () => {
                         <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Email" type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} required />
                         <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Telefone" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
-                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Idade" type="number" value={form.age} onChange={e => setForm({...form, age: Number(e.target.value)})} />
-                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Altura (m)" value={form.height} onChange={e => setForm({...form, height: e.target.value})} />
-                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Peso (kg)" type="number" value={form.weight} onChange={e => setForm({...form, weight: Number(e.target.value)})} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={form.position} onChange={e => setForm({...form, position: e.target.value})}>
-                            <option value="QB">Quarterback</option>
-                            <option value="WR">Wide Receiver</option>
-                            <option value="RB">Running Back</option>
-                            <option value="OL">Offensive Line</option>
-                            <option value="DL">Defensive Line</option>
-                            <option value="LB">Linebacker</option>
-                            <option value="DB">Defensive Back</option>
-                        </select>
-                        <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={form.experience} onChange={e => setForm({...form, experience: e.target.value})}>
-                            <option value="Rookie">Novato (Sem xp)</option>
-                            <option value="HighSchool">Ex-High School</option>
-                            <option value="College">Ex-College</option>
-                            <option value="Pro">Veterano / Pro</option>
-                        </select>
-                    </div>
-                    <textarea className="w-full bg-black/20 border border-white/10 rounded p-2 text-white h-20" placeholder="Observações..." value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
                     <div className="flex justify-end gap-2">
                         <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-4 py-2 text-text-secondary hover:text-white">Cancelar</button>
                         <button type="submit" className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-lg font-bold">Salvar</button>
