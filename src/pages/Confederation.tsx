@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { storageService } from '../services/storageService';
 import { ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest, AuditLog } from '../types';
 import { GlobeIcon, TrophyIcon, FlagIcon } from '../components/icons/NavIcons';
-import { UsersIcon, MapIcon, BuildingIcon, GavelIcon, ShieldCheckIcon, SwapIcon, LockIcon } from '../components/icons/UiIcons';
+import { UsersIcon, MapIcon, BuildingIcon, CheckCircleIcon, AlertTriangleIcon, GavelIcon, ShieldCheckIcon, SwapIcon, LockIcon, FileTextIcon } from '../components/icons/UiIcons';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { authService } from '../services/authService';
-import LazyImage from '@/components/LazyImage';
+import LazyImage from '../components/LazyImage';
 import { useToast } from '../contexts/ToastContext';
 
 const Confederation: React.FC = () => {
@@ -289,7 +288,93 @@ const Confederation: React.FC = () => {
                 </Card>
             )}
 
-            {/* STJD & SECURITY TABS would follow similar patterns of optimization */}
+            {activeTab === 'SECURITY' && (
+                <div className="space-y-6">
+                    <div className="bg-red-900/10 border-l-4 border-red-500 p-4 rounded-r-lg flex items-center gap-4">
+                        <ShieldCheckIcon className="w-10 h-10 text-red-500" />
+                        <div>
+                            <h3 className="font-bold text-white">Centro de Segurança e Auditoria</h3>
+                            <p className="text-sm text-text-secondary">Monitoramento em tempo real de todas as ações críticas do ecossistema.</p>
+                        </div>
+                    </div>
+
+                    <Card title="Logs de Auditoria (Immutable)">
+                        <div className="overflow-x-auto max-h-[600px] custom-scrollbar">
+                            <table className="w-full text-sm text-left text-text-secondary font-mono">
+                                <thead className="bg-black/40 uppercase text-xs font-bold text-text-secondary sticky top-0">
+                                    <tr>
+                                        <th className="px-4 py-3">Timestamp</th>
+                                        <th className="px-4 py-3">Actor</th>
+                                        <th className="px-4 py-3">Evento</th>
+                                        <th className="px-4 py-3">Detalhes</th>
+                                        <th className="px-4 py-3">IP</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {auditLogs.map(log => (
+                                        <tr key={log.id} className="border-b border-white/5 hover:bg-white/5">
+                                            <td className="px-4 py-2 text-xs text-gray-400">{new Date(log.timestamp).toLocaleString()}</td>
+                                            <td className="px-4 py-2">
+                                                <span className="text-white font-bold">{log.userName}</span>
+                                                <span className="text-[10px] ml-2 bg-white/10 px-1 rounded">{log.role}</span>
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                <span className={`text-[10px] uppercase px-2 py-0.5 rounded font-bold ${log.action.includes('REJECT') ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/30 text-blue-400'}`}>
+                                                    {log.action}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-2 text-white">{log.details}</td>
+                                            <td className="px-4 py-2 text-xs">{log.ipAddress}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+            )}
+
+            {activeTab === 'STJD' && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card title="Corte Suprema (STJD)">
+                        <div className="bg-black/20 p-4 rounded-lg border border-white/10 mb-4 flex items-start gap-4">
+                            <ShieldCheckIcon className="w-8 h-8 text-yellow-500 mt-1" />
+                            <div>
+                                <h4 className="font-bold text-white">Última Instância</h4>
+                                <p className="text-sm text-text-secondary">
+                                    O Superior Tribunal de Justiça Desportiva (STJD) julga recursos das federações estaduais e casos de disciplinar de competições nacionais.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="bg-secondary p-3 rounded border border-white/5 flex justify-between items-center">
+                                <div>
+                                    <p className="text-white font-bold text-sm">Processo #2025-042</p>
+                                    <p className="text-xs text-text-secondary">Recurso: Minas Locomotiva vs TJD-MG</p>
+                                </div>
+                                <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">Em Análise</span>
+                            </div>
+                            <div className="bg-secondary p-3 rounded border border-white/5 flex justify-between items-center">
+                                <div>
+                                    <p className="text-white font-bold text-sm">Processo #2025-039</p>
+                                    <p className="text-xs text-text-secondary">Infração Disciplinar: Final BFA</p>
+                                </div>
+                                <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">Julgado</span>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card title="Ações do Tribunal">
+                        <div className="space-y-3">
+                            <button className="w-full bg-secondary hover:bg-white/5 border border-white/10 p-3 rounded-lg text-left text-sm text-white flex items-center gap-2">
+                                <GavelIcon className="w-4 h-4 text-text-secondary" /> Pautar Julgamento
+                            </button>
+                            <button className="w-full bg-secondary hover:bg-white/5 border border-white/10 p-3 rounded-lg text-left text-sm text-white flex items-center gap-2">
+                                <AlertTriangleIcon className="w-4 h-4 text-text-secondary" /> Emitir Mandado de Citação
+                            </button>
+                        </div>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 };
