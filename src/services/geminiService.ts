@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+mport { GoogleGenAI, Type } from "@google/genai";
 import { Player, SidelineAudioNote, InstallMatrixItem, PlayElement } from "../types";
 
 // Guideline: Create a new GoogleGenAI instance right before making an API call to ensure it uses the up-to-date key.
