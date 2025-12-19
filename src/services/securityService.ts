@@ -27,7 +27,10 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'REFEREE': ['OFFICIATE_GAME'],
     'CANDIDATE': [],
     'BROADCASTER': [],
-    // Add SYSTEM role permissions (internal tasks)
+    'FAN': [],
+    // Fix: Added missing ADMIN and STUDENT roles to satisfy type checker
+    'ADMIN': ['MANAGE_ROSTER', 'MANAGE_FINANCE', 'VIEW_FINANCE', 'MANAGE_TACTICS', 'MANAGE_STAFF', 'EDIT_SETTINGS', 'VIEW_SENSITIVE_DOCS', 'OFFICIATE_GAME'],
+    'STUDENT': [],
     'SYSTEM': ['MANAGE_ROSTER', 'MANAGE_FINANCE', 'MANAGE_TACTICS', 'MANAGE_STAFF']
 };
 

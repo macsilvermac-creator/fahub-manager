@@ -169,7 +169,7 @@ const GeminiPlaybook: React.FC = () => {
                 <div className="space-y-4">
                     <div className="p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
                         <p className="text-xs text-yellow-200">
-                            <strong>Dica Pro:</strong> Tire um print de um vídeo ou foto de um desenho tático e peça para a IA explicar a responsabilidade de cada posição.
+                            <strong>Dica Pro:</strong> Tire um print de um vídeo ou foto de um desenho tático e peça para a IA explicar a responsabilidade de cada position.
                         </p>
                     </div>
                     <div 

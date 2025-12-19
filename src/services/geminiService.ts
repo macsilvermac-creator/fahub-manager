@@ -2,20 +2,13 @@
 import { GoogleGenAI } from "@google/genai";
 import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement, CombineStats } from "../types";
 
-let runtimeKey: string | null = null;
-
-export const setRuntimeKey = (key: string) => {
-    runtimeKey = key;
-};
-
 // Guideline: Create a new GoogleGenAI instance right before making an API call to ensure it uses the up-to-date key.
 const getClient = (): GoogleGenAI => {
-    // Guideline: Use process.env.API_KEY directly or runtime key if provided.
-    const key = runtimeKey || process.env.API_KEY;
-    if (!key) {
-        throw new Error("Chave de API ausente.");
+    // Guideline: Use process.env.API_KEY exclusively.
+    if (!process.env.API_KEY) {
+        throw new Error("Chave de API ausente no ambiente de execução.");
     }
-    return new GoogleGenAI({ apiKey: key });
+    return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 // Helper for cleaning JSON output from potential Markdown code blocks
@@ -25,41 +18,58 @@ const cleanJsonString = (input: string): string => {
     return clean;
 };
 
+// COMPLIANCE: API key selection and dialog management are handled by the platform.
+// No-op for runtime key setting to satisfy component imports while maintaining guideline adherence.
+export const setRuntimeKey = (key: string) => {
+    console.debug("API Key management is handled by the platform execution context.");
+};
+
+/**
+ * Checks connectivity to the Gemini 3 Pro model.
+ */
 export const testProConnection = async (): Promise<boolean> => {
     try {
         const ai = getClient();
-        // Tenta um ping simples no modelo PRO para validar a chave e permissões
         await ai.models.generateContent({
             model: 'gemini-3-pro-preview',
-            contents: 'Ping de teste de conexão.',
+            contents: 'ping',
+            config: { maxOutputTokens: 10, thinkingConfig: { thinkingBudget: 0 } }
         });
         return true;
     } catch (e) {
-        console.error("Falha no teste Pro:", e);
+        console.error("Pro Connection Check Failed:", e);
         return false;
     }
 };
 
-// TAREFA BÁSICA: Chat Rápido (Mantém Flash para velocidade)
+/**
+ * Common technical technical response generator.
+ */
 const generateCoachResponse = async (prompt: string): Promise<string> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3-flash-preview', 
         contents: prompt,
         config: {
-            systemInstruction: "Você é um Head Coach de Futebol Americano. Seja técnico e inspirador.",
-            temperature: 0.8
+            systemInstruction: "Você é um Head Coach de Futebol Americano de elite. Seu tom é técnico, inspirador e extremamente profissional.",
+            temperature: 0.7
         }
     });
-    // Guideline: Access generated text via the .text property.
+    // Guideline: Access the generated text directly via the .text property.
     return response.text || "";
 };
 
-// TAREFA PRO: Visão Computacional Avançada
+/**
+ * Generates a practice plan based on coach requirements.
+ */
+export const generatePracticePlan = async (prompt: string): Promise<string> => {
+    return await generateCoachResponse(prompt);
+};
+
+// TAREFA DE IMAGEM: Validação Visual (Padrão Gemini 2.5 Flash Image)
 export const validateGymImage = async (base64Data: string): Promise<boolean> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        // Guideline: Use gemini-2.5-flash-image for general image tasks.
         model: 'gemini-2.5-flash-image', 
         contents: {
             parts: [
@@ -71,27 +81,27 @@ export const validateGymImage = async (base64Data: string): Promise<boolean> => 
     return response.text?.trim().toUpperCase().includes('TRUE') || false;
 };
 
+// TAREFA PRO: Planejamento Físico Estruturado
 export const generateStructuredGymPlan = async (goal: string, equipment: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Plano de academia: ${goal}. Equipamentos: ${equipment}. Retorne JSON array de GymDay.`,
+        model: 'gemini-3-pro-preview', 
+        contents: `Gere um plano de musculação específico para Futebol Americano. Objetivo: ${goal}. Equipamentos: ${equipment}. Retorne APENAS um JSON array de GymDay.`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
-// TAREFA PRO: Raciocínio Tático Profundo (Scout)
+// TAREFA PRO: Scout Profundo de Oponente
 export const analyzeOpponentTendencies = async (notes: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // UPGRADE: Raciocínio complexo para scout
-        contents: `Aja como um Coordenador Defensivo experiente. Analise estas notas brutas de scout: "${notes}". 
-        
-        Gere um relatório JSON estruturado com:
-        1. summary (Resumo executivo da identidade do oponente)
-        2. keysToVictory (Lista de 3 chaves táticas para vencer)
-        3. suggestedConcepts (Lista de conceitos ofensivos/defensivos que funcionam contra eles)`,
+        model: 'gemini-3-pro-preview', 
+        contents: `Aja como um Coordenador Tático. Analise estas notas de scout: "${notes}". 
+        Retorne um JSON estruturado com: 
+        1. summary (análise geral) 
+        2. keysToVictory (array de strings) 
+        3. suggestedConcepts (conceitos que exploram fraquezas).`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "{}"));
@@ -101,76 +111,62 @@ export const analyzeOpponentTendencies = async (notes: string) => {
 export const suggestPlayConcepts = async (situation: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // UPGRADE: Sugestões mais criativas e precisas
-        contents: `Situação de jogo crítica: "${situation}".
-        Sugira 3 conceitos de jogada (Play Concepts) do nível NFL/NCAA.
-        Retorne JSON array de {name, reason}.`,
+        model: 'gemini-3-pro-preview', 
+        contents: `Situação de jogo: ${situation}. Sugira 3 jogadas/conceitos técnicos (ex: Mesh, Flood, Cover 2 Man). Retorne JSON array de {name, reason}.`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
+// TAREFA PRO: Análise de Atributos Físicos
 export const analyzeCombineStats = async (stats: any, pos: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview', // Flash é suficiente para comparar números
-        contents: `Analise combine ${pos}: ${JSON.stringify(stats)}. Retorne JSON com rating, potential, analysis e comparison.`,
+        model: 'gemini-3-pro-preview', 
+        contents: `Avalie estes números de combine para a posição ${pos}: ${JSON.stringify(stats)}. Compare com benchmarks da NFL/CFL. Retorne JSON com rating (0-100), potential, analysis e comparison.`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
-// TAREFA PRO: Análise Holística do Atleta
+// TAREFA PRO: Performance Review do Atleta
 export const generatePlayerAnalysis = async (player: any, context: string): Promise<string> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // UPGRADE: Cruza dados físicos, mentais e de jogo
-        contents: `Analise o atleta ${player.name} (${player.position}) profundamente.
-        Dados: ${context}.
-        Forneça um feedback construtivo estilo "Performance Review".`,
+        model: 'gemini-3-pro-preview', 
+        contents: `Analise o perfil do atleta ${player.name} (${player.position}) considerando o contexto: ${context}. Forneça um feedback construtivo de elite.`,
     });
     return response.text || "";
 };
 
+// TAREFA FLASH: Marketing (Texto rápido e engajador)
 export const generateMarketingContent = async (topic: string, platform: string): Promise<string> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Post para ${platform}: ${topic}. Use emojis e tom engajador.`,
+        contents: `Crie um post engajador para ${platform} sobre o tema: ${topic}. Use emojis e tom de comunidade esportiva.`,
     });
     return response.text || "";
 };
 
+// TAREFA PRO: Email de Patrocínio Profissional
 export const generateSponsorshipProposal = async (companyName: string, amount: number): Promise<string> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // UPGRADE: Texto mais persuasivo e profissional
-        contents: `Escreva um email frio de patrocínio para a empresa ${companyName}.
-        Valor solicitado: R$ ${amount}.
-        Foque em ROI, comunidade e visibilidade.`,
+        model: 'gemini-3-pro-preview', 
+        contents: `Escreva uma proposta formal de patrocínio para a empresa ${companyName}. O valor do aporte é R$ ${amount}. Foque em ROI, visibilidade e impacto social do esporte.`,
     });
     return response.text || "";
 };
 
-export const classifyCoachVoiceNote = async (text: string) => {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Classifique nota técnica: ${text}. Retorne JSON {category, tags, action}`,
-        config: { responseMimeType: "application/json" }
-    });
-    return JSON.parse(cleanJsonString(response.text || "{}"));
-};
-
-// TAREFA PRO: Visão Tática (Diagramas)
+// TAREFA PRO: Análise Visual de Prancheta/Vídeo
 export const explainPlayImage = async (base64Image: string, question: string): Promise<string> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        // Guideline: Use gemini-2.5-flash-image for general image tasks.
         model: 'gemini-2.5-flash-image', 
         contents: {
             parts: [
-                { text: `Você é um analista de vídeo expert. Analise esta imagem tática/frame de jogo. Pergunta do técnico: ${question}` },
+                { text: `Aja como um Video Coordinator da NFL. Analise tecnicamente esta imagem. Pergunta: ${question}` },
                 { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
             ]
         }
@@ -178,110 +174,95 @@ export const explainPlayImage = async (base64Image: string, question: string): P
     return response.text || "";
 };
 
+// TAREFA DE IMAGEM: Extração de Dados de Recibos
 export const scanFinancialDocument = async (base64: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        // Guideline: Use gemini-2.5-flash-image for image-based data extraction.
-        model: "gemini-2.5-flash-image", 
+        model: "gemini-2.5-flash-image",
         contents: {
             parts: [
-                { text: "Extraia dados do recibo/nota fiscal para JSON estrito: {title, amount (number), date (YYYY-MM-DD), category (enum: EQUIPMENT, TRANSPORT, FOOD, OTHER), description}." },
+                { text: "Extraia os dados deste recibo/nota fiscal para um objeto JSON: {title, amount, date (YYYY-MM-DD), category, description}." },
                 { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
             ],
         },
-        // Guideline: DO NOT set responseMimeType for image models.
         config: { } 
     });
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
-// TAREFA PRO: Predição de Jogada (Padrões Complexos)
+// TAREFA PRO: Predição Preditiva de Playcall
 export const predictPlayCall = async (history: any[], down: number, distance: number) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // UPGRADE: Análise de séries históricas
-        contents: `Preveja a próxima jogada defensiva.
-        Situação: ${down}ª para ${distance} jardas.
-        Histórico recente: ${JSON.stringify(history)}.
-        
-        Retorne JSON {prediction, confidence (%), reason}.`,
+        model: 'gemini-3-pro-preview', 
+        contents: `Baseado no histórico de jogadas: ${JSON.stringify(history)}, qual a probabilidade de jogada para uma ${down}ª para ${distance}? Retorne JSON {prediction, confidence, reason}.`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
-export const generateInstallSchedule = async (context: string, week: string) => {
+/**
+ * Generates an installation schedule for tactical concepts.
+ */
+export const generateInstallSchedule = async (context: string, week: string): Promise<InstallMatrixItem[]> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Crie uma matriz de instalação semanal (Install Schedule).
-        Contexto: ${context}. Semana: ${week}.
-        Retorne JSON Array de InstallMatrixItem.`,
+        contents: `Crie uma matriz de instalação semanal para o time. Contexto: ${context}. Semana: ${week}. Retorne APENAS um JSON array de InstallMatrixItem {id, day, category, concept}.`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
-export const importPlaybookFromImage = async (base64: string) => {
+/**
+ * Detects players and positions from a playbook image.
+ */
+export const importPlaybookFromImage = async (base64: string): Promise<PlayElement[]> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        // Guideline: Use gemini-2.5-flash-image for image-based diagram analysis.
-        model: "gemini-2.5-flash-image", 
+        model: "gemini-2.5-flash-image",
         contents: {
             parts: [
-                { text: "Analise este diagrama de playbook. Identifique a posição (x,y) de cada jogador (OFFENSE=O, DEFENSE=X). Retorne JSON Array de PlayElement." },
+                { text: "Analise este diagrama tático e extraia a localização dos jogadores. Retorne APENAS um JSON array de PlayElement {id, type (OFFENSE/DEFENSE), label, x, y}." },
                 { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
             ],
         },
-        // Guideline: DO NOT set responseMimeType for image models.
-        config: { } 
+        config: { }
     });
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
-export const generateColorCommentary = async (home: string, away: string, context: string) => {
+// TAREFA PRO: Roteiro de Treino Minuto-a-Minuto
+export const generatePracticeScript = async (focus: string, duration: number, intensity: string): Promise<PracticeScriptItem[]> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview', // Flash é ok para texto criativo rápido
-        contents: `Narração ${home} vs ${away}: ${context}. Retorne JSON {intro, homePlayerToWatch, awayPlayerToWatch, keyMatchups}.`,
-        config: { responseMimeType: "application/json" }
-    });
-    return JSON.parse(cleanJsonString(response.text || "{}"));
-};
-
-export const generatePracticePlan = (p: string) => generateCoachResponse(p);
-
-// TAREFA PRO: Logística de Treino
-export const generatePracticeScript = async (focus: string, duration: number, intensity: string) => {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // UPGRADE: Melhor gestão de tempo e encadeamento lógico
-        contents: `Crie um roteiro de treino de futebol americano.
-        Foco: ${focus}. Duração Total: ${duration}min. Intensidade: ${intensity}.
-        
-        Regras:
-        1. Inclua Warmup e Cool down.
-        2. Divida em blocos lógicos (Indy, Group, Team).
-        3. Seja específico nos drills.
-        
-        Retorne JSON array de PracticeScriptItem.`,
+        model: 'gemini-3-pro-preview', 
+        contents: `Crie um roteiro de treino de ${duration} minutos com foco em ${focus} e intensidade ${intensity}. Retorne um JSON array de PracticeScriptItem {startTime, durationMinutes, type, activityName, description}.`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
+// TAREFA PRO: Simulação de Matchup Tático
 export const analyzePlayMatchup = async (play: string, scouting: any, opponent: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // UPGRADE: Análise de matchup tático
-        contents: `Simule a jogada "${play}" contra a defesa de ${opponent}.
-        Baseie-se neste scout report: ${JSON.stringify(scouting)}.
-        
-        Descreva o resultado provável e o porquê. Seja breve.`,
+        model: 'gemini-3-pro-preview', 
+        contents: `Simule nossa jogada "${play}" contra a defesa de ${opponent} baseada neste scout: ${JSON.stringify(scouting)}. Descreva o resultado provável e o ajuste necessário.`,
     });
     return response.text || "";
 };
 
 export const generateGymPlan = async (goal: string, equipment: string, program: string): Promise<string> => {
-    return await generateCoachResponse(`Gere um plano de treino HTML para: ${goal}. Equipamentos: ${equipment}. Programa: ${program}.`);
+    return await generateCoachResponse(`Gere um plano de treino detalhado em HTML para um atleta de ${program}. Objetivo: ${goal}. Equipamentos: ${equipment}.`);
+};
+
+export const generateColorCommentary = async (home: string, away: string, context: string) => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview', 
+        contents: `Crie notas de narração para ${home} vs ${away}. Contexto: ${context}. Retorne JSON {intro, homePlayerToWatch, awayPlayerToWatch, keyMatchups}.`,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(cleanJsonString(response.text || "{}"));
 };

@@ -29,7 +29,7 @@ const TacticalLab: React.FC = () => {
     const [selectedGameId, setSelectedGameId] = useState<string>('');
     const [playName, setPlayName] = useState('');
     const [conceptDescription, setConceptDescription] = useState('');
-    // Fix: Explicitly defining type to resolve mapping error
+    // Explicitly defining type to resolve mapping error
     const [sportMode, setSportMode] = useState<'FULLPADS' | 'FLAG'>('FULLPADS');
     const [elements, setElements] = useState<PlayElement[]>([]);
     const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -60,7 +60,7 @@ const TacticalLab: React.FC = () => {
         
         // Auto-detect mode from Global Program Context
         const activeProgram = storageService.getActiveProgram();
-        // Fix: Mapping TACKLE/BOTH to FULLPADS to resolve type errors
+        // Mapping TACKLE/BOTH to FULLPADS to resolve type errors
         const initialMode: 'FLAG' | 'FULLPADS' = activeProgram === 'FLAG' ? 'FLAG' : 'FULLPADS';
         setSportMode(initialMode);
         resetTokens(initialMode);
