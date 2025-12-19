@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Game, Player } from '../types';
@@ -7,7 +6,7 @@ import { realtimeService } from '../services/realtimeService';
 import { generateColorCommentary } from '../services/geminiService';
 import { MicIcon, PlayCircleIcon, UsersIcon, SparklesIcon } from '../components/icons/UiIcons';
 import { VideoIcon } from '../components/icons/NavIcons';
-import LazyImage from '@/components/LazyImage';
+import LazyImage from '../components/LazyImage';
 import { useToast } from '../contexts/ToastContext';
 
 const BroadcastBooth: React.FC = () => {

@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { Player, StaffMember, Game } from '../types';
 import { storageService } from '../services/storageService';
 import { BusIcon, BedIcon, MapPinIcon, CheckCircleIcon, PrinterIcon, UsersIcon, TrashIcon, CloudIcon, SparklesIcon } from '../components/icons/UiIcons';
 import { useToast } from '../contexts/ToastContext';
-import LazyImage from '@/components/LazyImage';
+import LazyImage from '../components/LazyImage';
 
 interface Room {
     id: string;
@@ -109,7 +108,7 @@ const Logistics: React.FC = () => {
                     </div>
                     <div>
                         <h2 className="text-3xl font-bold text-text-primary">Logística de Viagem</h2>
-                        <p className="text-text-secondary">Gestão de transporte e hospedagem para jogos fora.</p>
+                        <p className="text-text-secondary text-sm">Gestão de transporte e hospedagem para jogos fora.</p>
                     </div>
                 </div>
                 

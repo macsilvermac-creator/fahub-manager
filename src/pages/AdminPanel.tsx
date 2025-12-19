@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { authService } from '../services/authService';
 import { User, AuditLog, UserRole, ProgramType } from '../types';
 import { CheckCircleIcon, TrashIcon, ShieldCheckIcon, LockIcon, SparklesIcon, ScanIcon, ClipboardIcon, UsersIcon } from '../components/icons/UiIcons';
 import { storageService } from '../services/storageService';
-import LazyImage from '@/components/LazyImage';
+import LazyImage from '../components/LazyImage';
 import Modal from '../components/Modal';
 
 const AdminPanel: React.FC = () => {
@@ -74,17 +73,6 @@ const AdminPanel: React.FC = () => {
         }
     };
 
-    const loadEntityData = (key: string) => {
-        setInspectedEntity(key);
-        const data = localStorage.getItem(key);
-        try {
-            const parsed = data ? JSON.parse(data) : null;
-            setEntityData(JSON.stringify(parsed, null, 2));
-        } catch {
-            setEntityData(data || 'Vazio/Inválido');
-        }
-    };
-
     const pendingUsers = users.filter(u => u.status === 'PENDING');
     const activeUsers = users.filter(u => u.status === 'APPROVED');
 
@@ -107,9 +95,6 @@ const AdminPanel: React.FC = () => {
                 </button>
                 <button onClick={() => setActiveTab('COMPLIANCE')} className={`px-6 py-2 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'COMPLIANCE' ? 'border-red-500 text-red-400' : 'border-transparent text-text-secondary'}`}>
                     Compliance & Logs
-                </button>
-                <button onClick={() => setActiveTab('INSPECTOR')} className={`px-6 py-2 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'INSPECTOR' ? 'border-purple-500 text-purple-400' : 'border-transparent text-text-secondary'}`}>
-                    Inspetor de Dados
                 </button>
                 <button onClick={() => setActiveTab('SYSTEM')} className={`px-6 py-2 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${activeTab === 'SYSTEM' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary'}`}>
                     Sistema
@@ -170,7 +155,6 @@ const AdminPanel: React.FC = () => {
                 </div>
             )}
 
-            {/* MODAL DE APROVAÇÃO */}
             <Modal isOpen={isApprovalModalOpen} onClose={() => setIsApprovalModalOpen(false)} title="Definir Função e Acesso">
                 <div className="space-y-6">
                     <div className="text-center">
@@ -237,7 +221,6 @@ const AdminPanel: React.FC = () => {
                 </div>
             </Modal>
             
-            {/* ... Resto do componente SYSTEM e COMPLIANCE ... */}
             {activeTab === 'SYSTEM' && (
                 <div className="space-y-6">
                     <Card title="Operações de Banco de Dados">
