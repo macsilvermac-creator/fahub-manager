@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Game, PracticeSession, GameTimelineEvent, SidelineAudioNote } from '../types';
@@ -9,9 +8,9 @@ import GameManagementModal from '../components/GameManagementModal';
 import { storageService } from '../services/storageService';
 import Modal from '../components/Modal';
 import { UserContext } from '../components/Layout';
-import LazyImage from '@/components/LazyImage';
-import { authService } from '@/services/authService';
-import { useToast } from '@/contexts/ToastContext';
+import LazyImage from '../components/LazyImage';
+import { authService } from '../services/authService';
+import { useToast } from '../contexts/ToastContext';
 
 interface ScheduleItem {
     id: string | number;
@@ -33,7 +32,6 @@ const GameCard: React.FC<{
     const [scoreInput, setScoreInput] = useState(game.score || '0-0');
     
     const isPast = new Date(game.date) < new Date();
-    // Fix: Using type-safe property access for result
     const resultColor = game.result === 'W' ? 'text-green-400' : game.result === 'L' ? 'text-red-400' : 'text-gray-400';
     const locationText = game.location === 'Home' ? 'Casa' : 'Fora';
     
@@ -222,7 +220,6 @@ const Schedule: React.FC = () => {
 
     const handleCreateGame = (e: React.FormEvent) => {
         e.preventDefault();
-        // Fix: Added missing required properties timeline and audioNotes
         const newGame: Game = {
             id: Date.now(),
             opponent: newOpponent,
