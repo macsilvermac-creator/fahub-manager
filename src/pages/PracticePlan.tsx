@@ -1,68 +1,3 @@
-
-import React, { useState, useEffect, useContext } from 'react';
-import Card from '../components/Card';
-import { Player, PracticeSession, PracticeCategory, PracticeScriptItem, Drill } from '../types';
-import { storageService } from '../services/storageService';
-import { generatePracticeScript } from '../services/geminiService';
-import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon, UsersIcon, CheckCircleIcon, ClipboardIcon } from '../components/icons/UiIcons';
-import { UserContext } from '../components/Layout';
-import Button from '../components/Button'; 
-import Input from '../components/Input';
-import { useToast } from '../contexts/ToastContext';
-import QuickEvaluationModal from '../components/QuickEvaluationModal';
-import DrillCard from '../components/DrillCard';
-import CheckInModal from '../components/CheckInModal';
-
-// PRESETS TACKLE
-const QUICK_BLOCKS_TACKLE = [
-    { type: 'WARMUP', name: 'Warmup / Dynamic', duration: 15, desc: 'Mobilidade e Ativação.' },
-    { type: 'INDY', name: 'Indy (Posição)', duration: 20, desc: 'Drills de técnica individual.' },
-    { type: 'GROUP', name: 'Inside Run (9on7)', duration: 15, desc: 'Bloqueios e Corrida.' },
-    { type: 'GROUP', name: 'Skelly (7on7)', duration: 20, desc: 'Passe vs Cobertura.' },
-    { type: 'TEAM', name: 'Team (11on11)', duration: 30, desc: 'Situações de jogo.' },
-    { type: 'SPECIAL', name: 'Punt / Kickoff', duration: 10, desc: 'Special Teams.' },
-];
-
-// PRESETS FLAG
-const QUICK_BLOCKS_FLAG = [
-    { type: 'WARMUP', name: 'Agility Ladder', duration: 10, desc: 'Escada de agilidade e cone drill.' },
-    { type: 'INDY', name: 'Flag Pulling', duration: 15, desc: 'Técnica de retirada de flag.' },
-    { type: 'GROUP', name: 'Route Tree', duration: 15, desc: 'Rotas e Catching.' },
-    { type: 'GROUP', name: '1on1 WR/DB', duration: 15, desc: 'Man coverage drills.' },
-    { type: 'TEAM', name: 'Scrimmage (5on5)', duration: 30, desc: 'Simulação de jogo.' },
-    { type: 'SPECIAL', name: 'Rusher Drills', duration: 10, desc: 'Pass rush específico 7s.' },
-];
-
-const PracticePlan: React.FC = () => {
-    const { currentRole } = useContext(UserContext);
-    const toast = useToast();
-    const [practices, setPractices] = useState<PracticeSession[]>([]);
-    const [players, setPlayers] = useState<Player[]>([]);
-    const [drillLibrary, setDrillLibrary] = useState<Drill[]>([]);
-    
-    const [isCreating, setIsCreating] = useState(false);
-    const [selectedPractice, setSelectedPractice] = useState<PracticeSession | null>(null);
-    const [activeMode, setActiveMode] = useState<'SCRIPT' | 'EVALUATION' | 'LIBRARY'>('SCRIPT');
-
-    // Context & Config
-    const [activeProgram, setActiveProgram] = useState<'TACKLE' | 'FLAG'>('TACKLE');
-    const [quickBlocks, setQuickBlocks] = useState(QUICK_BLOCKS_TACKLE);
-
-    // Form State
-    const [newTitle, setNewTitle] = useState('');
-    const [newFocus, setNewFocus] = useState('');
-    const [newDate, setNewDate] = useState('');
-    const [newCategory, setNewCategory] = useState<PracticeCategory>('TACTICAL');
-    const [newDuration, setNewDuration] = useState(120); 
-
-    // Script Management State
-    const [generatedScript, setGeneratedScript] = useState<PracticeScriptItem[]>([]);
-    const [isGeneratingScript, setIsGeneratingScript] = useState(false);
-    
-    // Timer State
-    const [isTimerFullScreen, setIsTimerFullScreen] = useState(false);
-    const [isTimerRunning, setIsTimerRunning] = useState(false);
-    const [timerSeconds, setTimerSeconds] = useState(0);
     const [activeScriptItemId, setActiveScriptItemId] = useState<string | null>(null);
 
     // EVALUATION & CHECK-IN STATE
@@ -80,7 +15,8 @@ const PracticePlan: React.FC = () => {
         setDrillLibrary(storageService.getDrillLibrary());
 
         const prog = storageService.getActiveProgram();
-        setActiveProgram(prog === 'BOTH' ? 'TACKLE' : prog);
+        // Fix: Removed conditional casting as activeProgram state now accepts full ProgramType
+        setActiveProgram(prog);
         setQuickBlocks(prog === 'FLAG' ? QUICK_BLOCKS_FLAG : QUICK_BLOCKS_TACKLE);
         setNewDuration(prog === 'FLAG' ? 90 : 120); 
     }, []);
