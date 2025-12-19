@@ -1,38 +1,32 @@
 
-import React, { useState, useEffect, useContext, useRef } from 'react';
-import { Game, Player, PlayerRotation, GameTimelineEvent, SidelineAudioNote } from '../types';
+import React, { useState, useEffect, useContext } from 'react';
+import { Game, GameTimelineEvent, SidelineAudioNote } from '../types';
 import { storageService } from '../services/storageService';
-import { MicIcon, ActivityIcon, CheckCircleIcon, ClockIcon, TrashIcon, SparklesIcon, UsersIcon } from '../components/icons/UiIcons';
+import { MicIcon, ActivityIcon, CheckCircleIcon, SparklesIcon, TrashIcon, ClockIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext';
-import Card from '../components/Card';
-import LazyImage from '../components/LazyImage';
 import { voiceService } from '../services/voiceService';
-import { parseSidelineVoice } from '../services/geminiService';
+import { parseSidelineAudio } from '../services/geminiService';
+import Card from '../components/Card';
 
 const CoachGameDay: React.FC = () => {
     const { currentRole } = useContext(UserContext);
     const toast = useToast();
     const [activeGame, setActiveGame] = useState<Game | null>(null);
-    const [players, setPlayers] = useState<Player[]>([]);
     
-    // View Modes
-    const [view, setView] = useState<'SIDELINE' | 'ROTATION' | 'TIMELINE'>('SIDELINE');
-    
-    // Sideline State
+    // Estados do Modo Sideline
     const [isRecording, setIsRecording] = useState(false);
-    const [transcript, setTranscript] = useState('');
-    const [processingAudio, setProcessingAudio] = useState(false);
-    const [lastVoiceNote, setLastVoiceNote] = useState<Partial<SidelineAudioNote> | null>(null);
-
-    // Auxiliary Inputs
-    const [currentDown, setCurrentDown] = useState(1);
-    const [currentDistance, setCurrentDistance] = useState(10);
-    const [currentYardline, setCurrentYardline] = useState('25');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [lastNote, setLastNote] = useState<Partial<SidelineAudioNote> | null>(null);
+    
+    // Estados do Auxiliar (Marcação Rápida)
+    const [down, setDown] = useState(1);
+    const [distance, setDistance] = useState(10);
+    const [yardLine, setYardLine] = useState('25');
 
     useEffect(() => {
         const games = storageService.getGames();
-        const live = games.find(g => g.status === 'IN_PROGRESS' || g.status === 'HALFTIME') || games[0];
+        const live = games.find(g => g.status === 'IN_PROGRESS') || games[0];
         if (live) {
             setActiveGame({
                 ...live,
@@ -40,180 +34,182 @@ const CoachGameDay: React.FC = () => {
                 audioNotes: live.audioNotes || []
             });
         }
-        setPlayers(storageService.getPlayers());
     }, []);
 
-    // --- VOICE LOGIC ---
-    const startRecording = () => {
+    // --- LÓGICA DE VOZ (PUSH-TO-TALK) ---
+    const handleVoiceStart = () => {
         setIsRecording(true);
-        setTranscript('');
         voiceService.listenToCommand(
-            (text) => {
-                setTranscript(text);
-                processTranscript(text);
+            async (transcript) => {
                 setIsRecording(false);
+                setIsProcessing(true);
+                try {
+                    const parsed = await parseSidelineAudio(transcript);
+                    const newNote: SidelineAudioNote = {
+                        id: `note-${Date.now()}`,
+                        timestamp: new Date(),
+                        gameTime: activeGame?.clock || '00:00',
+                        unit: (parsed.unit as any) || 'GERAL',
+                        rawTranscript: transcript,
+                        analysis: parsed.analysis
+                    };
+
+                    const updatedGame = {
+                        ...activeGame!,
+                        audioNotes: [newNote, ...(activeGame?.audioNotes || [])]
+                    };
+                    
+                    setActiveGame(updatedGame);
+                    storageService.updateLiveGame(activeGame!.id, updatedGame);
+                    setLastNote(newNote);
+                    
+                    // Feedback Visual Baseado na Unidade
+                    const unitLabel = newNote.unit === 'ATAQUE' ? '🔵 Ataque' : newNote.unit === 'DEFESA' ? '🔴 Defesa' : '🟡 ST';
+                    toast.success(`Nota de ${unitLabel} registrada!`);
+                } catch (e) {
+                    toast.error("IA falhou ao processar áudio tático.");
+                } finally {
+                    setIsProcessing(false);
+                }
             },
             (error) => {
-                toast.error("Erro no áudio: " + error);
                 setIsRecording(false);
+                toast.error("Erro no microfone: " + error);
             }
         );
     };
 
-    const processTranscript = async (text: string) => {
-        setProcessingAudio(true);
-        try {
-            const noteData = await parseSidelineVoice(text);
-            const fullNote: SidelineAudioNote = {
-                id: `note-${Date.now()}`,
-                timestamp: new Date(),
-                gameTime: activeGame?.clock || '--:--',
-                unit: (noteData.unit as any) || 'GERAL',
-                rawTranscript: text,
-                analysis: noteData.analysis
-            };
-
-            const updatedNotes = [fullNote, ...(activeGame?.audioNotes || [])];
-            const updatedGame = { ...activeGame!, audioNotes: updatedNotes };
-            
-            setActiveGame(updatedGame);
-            storageService.updateLiveGame(activeGame!.id, updatedGame);
-            setLastVoiceNote(fullNote);
-            toast.success(`Nota de ${fullNote.unit} registrada!`);
-        } catch (e) {
-            toast.error("IA falhou ao processar comando.");
-        } finally {
-            setProcessingAudio(false);
-        }
-    };
-
-    // --- AUXILIARY LOGIC ---
-    const logEvent = (type: GameTimelineEvent['type'], result: string) => {
+    // --- LÓGICA DE EVENTO (AUXILIAR DE CAMPO) ---
+    const logPlay = (type: GameTimelineEvent['playType'], result: string) => {
         const newEvent: GameTimelineEvent = {
             id: `evt-${Date.now()}`,
             timestamp: new Date(),
+            gameTime: activeGame?.clock || '00:00',
             quarter: activeGame?.currentQuarter || 1,
-            clock: activeGame?.clock || '00:00',
-            down: currentDown,
-            distance: currentDistance,
-            yardLine: currentYardline,
-            type,
+            down,
+            distance,
+            yardLine,
+            playType: type,
             result
         };
 
-        const updatedTimeline = [newEvent, ...(activeGame?.timeline || [])];
-        const updatedGame = { ...activeGame!, timeline: updatedTimeline };
-        
+        const updatedGame = {
+            ...activeGame!,
+            timeline: [newEvent, ...(activeGame?.timeline || [])]
+        };
+
         setActiveGame(updatedGame);
         storageService.updateLiveGame(activeGame!.id, updatedGame);
-        toast.info(`Evento registrado: ${type}`);
+        toast.info(`${type} marcado no Q${newEvent.quarter}`);
     };
 
-    if (!activeGame) return <div className="text-white text-center py-20 font-black uppercase italic opacity-20">Nenhum Jogo Ativo</div>;
+    if (!activeGame) return <div className="p-10 text-white text-center font-black uppercase italic opacity-20">Nenhum jogo ativo no momento.</div>;
 
-    const unitColor = lastVoiceNote?.unit === 'ATAQUE' ? 'border-blue-500 bg-blue-500/10' : 
-                      lastVoiceNote?.unit === 'DEFESA' ? 'border-red-500 bg-red-500/10' : 
-                      lastVoiceNote?.unit === 'ST' ? 'border-yellow-500 bg-yellow-500/10' : 'border-white/10';
+    // Dinâmica de cor para feedback da última nota
+    const unitBorder = lastNote?.unit === 'ATAQUE' ? 'border-blue-500' : 
+                       lastNote?.unit === 'DEFESA' ? 'border-red-500' : 
+                       lastNote?.unit === 'ST' ? 'border-yellow-500' : 'border-white/10';
 
     return (
-        <div className="space-y-4 animate-fade-in pb-20 bg-primary min-h-screen">
-            {/* SCOREBOARD COMPACTO */}
+        <div className="min-h-screen bg-black pb-20 animate-fade-in no-scrollbar">
+            {/* SCOREBOARD DE ALTO CONTRASTE (STIKY) */}
             <div className="bg-black p-4 border-b-2 border-highlight flex justify-between items-center sticky top-0 z-50">
-                <div>
-                    <h1 className="text-sm font-black text-white italic uppercase tracking-tighter">vs {activeGame.opponent}</h1>
-                    <div className="flex gap-2 text-[10px] font-mono font-bold">
-                        <span className="text-yellow-400">Q{activeGame.currentQuarter}</span>
-                        <span className="text-white">{activeGame.clock}</span>
-                    </div>
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">vs {activeGame.opponent}</span>
+                    <span className="text-xl font-black text-white italic tracking-tighter">{activeGame.clock || '12:00'} • Q{activeGame.currentQuarter}</span>
                 </div>
-                <div className="text-3xl font-mono font-black text-white tracking-widest">{activeGame.score || '00-00'}</div>
+                <div className="text-4xl font-mono font-black text-white tabular-nums tracking-widest">{activeGame.score || '00-00'}</div>
             </div>
 
-            {/* MODO SIDELINE (COMBATE) */}
-            {view === 'SIDELINE' && (
-                <div className="px-4 space-y-6">
-                    {/* BOTÃO PTT (HEAD COACH) */}
-                    <div className="flex flex-col items-center justify-center pt-8">
+            <div className="p-4 space-y-8 max-w-lg mx-auto pt-6">
+                
+                {/* BOTÃO PTT (HEAD COACH) */}
+                <div className="flex flex-col items-center gap-6 py-4">
+                    <div className="relative">
                         <button 
-                            onMouseDown={startRecording}
-                            onTouchStart={startRecording}
-                            className={`w-48 h-48 rounded-full border-8 flex flex-col items-center justify-center transition-all shadow-2xl relative ${isRecording ? 'bg-red-600 border-white scale-110 animate-pulse' : 'bg-secondary border-highlight/30'}`}
+                            onMouseDown={handleVoiceStart}
+                            onTouchStart={handleVoiceStart}
+                            className={`w-64 h-64 rounded-full border-[12px] transition-all flex flex-col items-center justify-center shadow-2xl relative ${isRecording ? 'bg-red-600 border-white scale-110' : 'bg-[#1e293b] border-highlight/20'}`}
                         >
-                            {isRecording ? <div className="absolute inset-0 bg-white/20 rounded-full animate-ping"></div> : null}
-                            <MicIcon className={`w-16 h-16 ${isRecording ? 'text-white' : 'text-highlight'}`} />
-                            <span className="text-[10px] font-black uppercase mt-2 text-white">Segure para Falar</span>
+                            {isRecording && <div className="absolute inset-0 bg-white/20 rounded-full animate-ping"></div>}
+                            <MicIcon className={`w-24 h-24 ${isRecording ? 'text-white' : 'text-highlight'}`} />
+                            <span className={`text-[10px] font-black uppercase mt-4 ${isRecording ? 'text-white' : 'text-text-secondary'}`}>
+                                {isRecording ? 'Ouvindo Campo...' : 'Segure para Falar'}
+                            </span>
                         </button>
-                        
-                        {processingAudio && (
-                            <div className="mt-4 flex items-center gap-2 text-blue-400 text-xs font-bold uppercase animate-pulse">
-                                <SparklesIcon className="w-4 h-4" /> IA Processando Tática...
+                    </div>
+
+                    {isProcessing && (
+                        <div className="flex items-center gap-2 text-blue-400 text-xs font-black uppercase animate-pulse">
+                            <SparklesIcon className="w-5 h-5" /> IA Sincronizando Tática...
+                        </div>
+                    )}
+                </div>
+
+                {/* VISUALIZAÇÃO DO ÚLTIMO INSIGHT */}
+                {lastNote && (
+                    <div className={`p-5 rounded-2xl border-l-8 bg-secondary/30 shadow-xl animate-slide-in ${unitBorder}`}>
+                        <div className="flex justify-between text-[10px] font-black uppercase mb-2">
+                            <span className="text-text-secondary tracking-widest">{lastNote.unit} • {lastNote.gameTime}</span>
+                            <span className="text-highlight">AI ANALYZED</span>
+                        </div>
+                        <p className="text-white text-base font-bold italic leading-tight">"{lastNote.rawTranscript}"</p>
+                        {lastNote.analysis?.insight && (
+                            <div className="mt-3 pt-3 border-t border-white/5">
+                                <p className="text-highlight text-[10px] font-black uppercase">Sugestão de Ajuste:</p>
+                                <p className="text-text-secondary text-xs font-medium">{lastNote.analysis.insight}</p>
                             </div>
                         )}
                     </div>
+                )}
 
-                    {/* ÚLTIMO INSIGHT DA IA */}
-                    {lastVoiceNote && (
-                        <div className={`p-4 rounded-2xl border-l-4 transition-all animate-slide-in ${unitColor}`}>
-                            <div className="flex justify-between items-center mb-1">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary">{lastVoiceNote.unit} • {lastVoiceNote.gameTime}</span>
-                                <span className="text-[8px] bg-white/10 px-2 py-0.5 rounded text-white">IA TRANSCRIPT</span>
+                {/* MARCAÇÃO AUXILIAR (BOTÕES GIGANTES) */}
+                <div className="space-y-4 pt-4 border-t border-white/5">
+                    <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.3em] text-center">Auxiliar de Campo</h3>
+                    
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-secondary p-3 rounded-2xl border border-white/5 text-center">
+                            <span className="text-[8px] font-black text-text-secondary uppercase block mb-1">Down</span>
+                            <div className="flex justify-between items-center px-2">
+                                <button onClick={() => setDown(Math.max(1, down-1))} className="text-white font-bold text-lg">-</button>
+                                <span className="text-2xl font-black text-white">{down}</span>
+                                <button onClick={() => setDown(Math.min(4, down+1))} className="text-white font-bold text-lg">+</button>
                             </div>
-                            <p className="text-white text-sm font-bold italic">"{lastVoiceNote.rawTranscript}"</p>
-                            {lastVoiceNote.analysis?.insight && (
-                                <p className="text-highlight text-[10px] font-black uppercase mt-2">💡 AJUSTE: {lastVoiceNote.analysis.insight}</p>
-                            )}
                         </div>
-                    )}
+                        <div className="bg-secondary p-3 rounded-2xl border border-white/5 text-center">
+                            <span className="text-[8px] font-black text-text-secondary uppercase block mb-1">Distância</span>
+                            <input type="number" className="w-full bg-transparent text-center text-2xl font-black text-white focus:outline-none" value={distance} onChange={e => setDistance(Number(e.target.value))} />
+                        </div>
+                        <div className="bg-secondary p-3 rounded-2xl border border-white/5 text-center">
+                            <span className="text-[8px] font-black text-text-secondary uppercase block mb-1">Yardline</span>
+                            <input className="w-full bg-transparent text-center text-2xl font-black text-white focus:outline-none" value={yardLine} onChange={e => setYardLine(e.target.value)} />
+                        </div>
+                    </div>
 
-                    {/* AUXILIARY FAST INPUTS */}
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
-                        <Card title="Situação (Auxiliar)">
-                            <div className="grid grid-cols-3 gap-2">
-                                <div className="text-center">
-                                    <span className="text-[8px] text-text-secondary font-bold uppercase">Down</span>
-                                    <div className="flex items-center justify-center gap-2 mt-1">
-                                        <button onClick={() => setCurrentDown(Math.max(1, currentDown-1))} className="text-white opacity-40">-</button>
-                                        <span className="text-lg font-black text-white">{currentDown}</span>
-                                        <button onClick={() => setCurrentDown(Math.min(4, currentDown+1))} className="text-white opacity-40">+</button>
-                                    </div>
-                                </div>
-                                <div className="text-center">
-                                    <span className="text-[8px] text-text-secondary font-bold uppercase">Dist</span>
-                                    <input type="number" className="bg-black/40 w-full text-center text-lg font-black text-white border-none mt-1" value={currentDistance} onChange={e => setCurrentDistance(Number(e.target.value))} />
-                                </div>
-                                <div className="text-center">
-                                    <span className="text-[8px] text-text-secondary font-bold uppercase">Yard</span>
-                                    <input className="bg-black/40 w-full text-center text-lg font-black text-white border-none mt-1" value={currentYardline} onChange={e => setCurrentYardline(e.target.value)} />
-                                </div>
-                            </div>
-                        </Card>
-
-                        <Card title="Ação de Campo">
-                            <div className="grid grid-cols-2 gap-2">
-                                <button onClick={() => logEvent('RUN', 'Gain')} className="bg-blue-600 py-2 rounded-lg text-[10px] font-black text-white uppercase shadow-lg">Corrida</button>
-                                <button onClick={() => logEvent('PASS', 'Complete')} className="bg-blue-600 py-2 rounded-lg text-[10px] font-black text-white uppercase shadow-lg">Passe</button>
-                                <button onClick={() => logEvent('FOUL', 'Yellow Flag')} className="bg-yellow-500 py-2 rounded-lg text-[10px] font-black text-black uppercase shadow-lg">Falta</button>
-                                <button onClick={() => logEvent('TIMEOUT', 'T.O.')} className="bg-white/10 py-2 rounded-lg text-[10px] font-black text-white uppercase">Timeout</button>
-                            </div>
-                        </Card>
+                    <div className="grid grid-cols-2 gap-3">
+                        <button onClick={() => logPlay('RUN', 'Gain')} className="bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-2xl uppercase italic text-sm shadow-xl active:scale-95 transition-all">Corrida</button>
+                        <button onClick={() => logPlay('PASS', 'Complete')} className="bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-2xl uppercase italic text-sm shadow-xl active:scale-95 transition-all">Passe</button>
+                        <button onClick={() => logPlay('FOUL', 'Flag')} className="bg-yellow-500 hover:bg-yellow-400 text-black font-black py-5 rounded-2xl uppercase italic text-sm shadow-xl active:scale-95 transition-all">Falta (Flag)</button>
+                        <button onClick={() => logPlay('TIMEOUT', 'TO')} className="bg-white/10 hover:bg-white/20 text-white font-black py-5 rounded-2xl uppercase italic text-sm border border-white/10 active:scale-95 transition-all">Timeout</button>
                     </div>
                 </div>
-            )}
 
-            {/* NAVEGAÇÃO DE PÁGINA (FIXADA NO FUNDO) */}
-            <div className="fixed bottom-0 left-0 right-0 h-14 bg-secondary border-t border-white/10 grid grid-cols-3 z-50">
-                <button onClick={() => setView('SIDELINE')} className={`flex flex-col items-center justify-center ${view === 'SIDELINE' ? 'text-highlight' : 'text-text-secondary'}`}>
-                    <MicIcon className="w-5 h-5" />
-                    <span className="text-[8px] font-black uppercase mt-1 tracking-widest">Sideline</span>
-                </button>
-                <button onClick={() => setView('TIMELINE')} className={`flex flex-col items-center justify-center ${view === 'TIMELINE' ? 'text-highlight' : 'text-text-secondary'}`}>
-                    <ActivityIcon className="w-5 h-5" />
-                    <span className="text-[8px] font-black uppercase mt-1 tracking-widest">Timeline</span>
-                </button>
-                <button onClick={() => setView('ROTATION')} className={`flex flex-col items-center justify-center ${view === 'ROTATION' ? 'text-highlight' : 'text-text-secondary'}`}>
-                    <UsersIcon className="w-5 h-5" />
-                    <span className="text-[8px] font-black uppercase mt-1 tracking-widest">Rotação</span>
-                </button>
+                {/* MINI TIMELINE RECENTE */}
+                <div className="bg-secondary/20 p-4 rounded-2xl border border-white/5">
+                    <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] font-black text-text-secondary uppercase">Eventos Recentes</span>
+                        <ActivityIcon className="w-4 h-4 text-text-secondary" />
+                    </div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto no-scrollbar">
+                        {activeGame.timeline.slice(0, 3).map(evt => (
+                            <div key={evt.id} className="text-[10px] flex justify-between border-b border-white/5 pb-1">
+                                <span className="text-white font-bold uppercase">{evt.gameTime} - {evt.playType}</span>
+                                <span className="text-text-secondary font-mono">{evt.down}ª & {evt.distance} em {evt.yardLine}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
             </div>
         </div>
     );

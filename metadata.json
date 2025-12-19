@@ -1,8 +1,7 @@
 
 {
-  "name": "FAHUB MANAGER",
-  "description": "Plataforma SaaS B2B v3.5 - Production Grade. Gestão profissional de Futebol Americano.",
   "requestFramePermissions": [
-    "camera"
+    "camera",
+    "microphone"
   ]
 }
