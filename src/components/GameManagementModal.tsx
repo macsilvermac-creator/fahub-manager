@@ -69,7 +69,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
           gameRoster: gameRoster 
       };
       onSave(updatedGame as Game);
-      toast.success("Salvo!");
+      toast.success("Dados do jogo salvos!");
   };
 
   const togglePlayerInGame = (playerId: string) => {

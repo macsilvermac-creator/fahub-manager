@@ -103,7 +103,7 @@ const Logistics: React.FC = () => {
                     </div>
                     <div>
                         <h2 className="text-3xl font-bold text-text-primary">Logística</h2>
-                        <p className="text-text-secondary text-sm">Gestão de transporte e hospedagem.</p>
+                        <p className="text-text-secondary text-sm">Transporte e hospedagem.</p>
                     </div>
                 </div>
                 
@@ -121,7 +121,7 @@ const Logistics: React.FC = () => {
 
             {!selectedGameId ? (
                 <div className="text-center py-20 text-text-secondary bg-secondary/20 rounded-xl border border-dashed border-white/10">
-                    Selecione um jogo "Fora de Casa" para iniciar.
+                    Selecione um jogo para iniciar.
                 </div>
             ) : (
                 <>
@@ -202,7 +202,6 @@ const Logistics: React.FC = () => {
                                                 </button>
                                             </div>
                                         ))}
-                                        {room.occupants.length === 0 && <span className="text-xs text-text-secondary italic">Vazio</span>}
                                     </div>
                                     {addingToRoomId === room.id ? (
                                         <div className="flex gap-1">
