@@ -1,7 +1,7 @@
-export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER' | 'CANDIDATE' | 'PLATFORM_OWNER' | 'BROADCASTER' | 'SYSTEM' | 'FAN' | 'STUDENT' | 'ADMIN';
+export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER' | 'CANDIDATE' | 'PLATFORM_OWNER' | 'BROADCASTER' | 'SYSTEM';
 
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
-export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH' | 'YOUTH';
+export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH';
 
 export interface CombineStats {
     date: Date;
@@ -86,7 +86,7 @@ export interface Player {
     level: number;
     xp: number;
     rating: number;
-    status: 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'IR' | 'INACTIVE';
+    status: 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'IR';
     rosterCategory?: RosterCategory;
     program?: ProgramType;
     combineStats?: CombineStats;
@@ -229,6 +229,7 @@ export interface Game {
     rotation?: PlayerRotation[];
     officialReport?: GameReport;
     sponsors?: any[];
+    // Fix: Added missing timeline and audioNotes properties
     timeline: GameTimelineEvent[];
     audioNotes: SidelineAudioNote[];
 }
@@ -517,6 +518,11 @@ export interface VideoClip {
     tags: any;
 }
 
+export interface TacticalFrame {
+    id: number;
+    elements: PlayElement[];
+}
+
 export interface PlayElement {
     id: string;
     type: 'OFFENSE' | 'DEFENSE';
@@ -737,6 +743,7 @@ export interface TeamDocument {
     url: string;
 }
 
+// Fix: Added missing ChatMessage interface
 export interface ChatMessage {
     id: string;
     senderName: string;
@@ -799,6 +806,7 @@ export interface CrewExpense {
     amount: number;
 }
 
+// Fix: Added missing SidelineAudioNote interface
 export interface SidelineAudioNote {
     id: string;
     timestamp: Date;
@@ -813,6 +821,7 @@ export interface SidelineAudioNote {
     audioBlobUrl?: string;
 }
 
+// Fix: Added missing GameTimelineEvent interface
 export interface GameTimelineEvent {
     id: string;
     timestamp: Date;
@@ -824,41 +833,4 @@ export interface GameTimelineEvent {
     playType: 'RUN' | 'PASS' | 'FOUL' | 'PUNT' | 'FG' | 'KICKOFF' | 'TIMEOUT';
     result: string;
     audioNoteId?: string;
-}
-
-export interface Athlete {
-    id: string;
-    userId: string;
-    name: string;
-    position: string;
-    jerseyNumber: number;
-    category: string;
-    stats: { ovr: number; speed: number; strength: number; agility: number; tacticalIQ: number };
-    attendanceRate: number;
-    xp: number;
-    level: number;
-    status: 'ACTIVE' | 'INACTIVE';
-}
-
-export interface Coach {
-    id: string;
-    userId: string;
-    name: string;
-    teamId: string;
-    specialization: string;
-}
-
-export interface Team {
-    id: string;
-    name: string;
-    logoUrl: string;
-    primaryColor: string;
-    secondaryColor: string;
-    rosterIds: string[];
-    coachIds: string[];
-}
-
-export interface TacticalFrame {
-    id: number;
-    elements: PlayElement[];
 }

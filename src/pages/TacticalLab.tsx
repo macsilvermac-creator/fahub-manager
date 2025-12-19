@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import Card from '../components/Card';
 import { Game, PlayElement, TacticalPlay, TacticalFrame, InstallMatrixItem } from '../types';
@@ -216,7 +215,6 @@ const TacticalLab: React.FC = () => {
     const handleSimulate = async () => {
         if (!selectedGameId || !conceptDescription) return;
         const game = games.find(g => g.id === Number(selectedGameId));
-        // Fix: Corrected property name scoutingReport on Game
         if (!game || !game.scoutingReport) return;
 
         setIsSimulating(true);
@@ -226,16 +224,17 @@ const TacticalLab: React.FC = () => {
     };
 
     const handleSavePlay = () => {
+        // Fix: Added missing property createdAt to TacticalPlay object literal
         const newPlay: TacticalPlay = {
             id: Date.now().toString(),
             name: playName || 'Sem Nome',
             concept: conceptDescription,
             elements: elements,
             frames: frames,
-            // Fix: Added routes property to TacticalPlay initialization
             routes: [],
             aiAnalysis: simulationResult,
-            program: sportMode === 'FULLPADS' ? 'TACKLE' : 'FLAG'
+            program: sportMode === 'FULLPADS' ? 'TACKLE' : 'FLAG',
+            createdAt: new Date()
         };
         const updated = [newPlay, ...savedPlays];
         setSavedPlays(updated);
