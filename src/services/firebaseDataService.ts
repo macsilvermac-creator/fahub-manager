@@ -1,24 +1,17 @@
-
 import { db, storage } from './apiConnection';
 import { collection, doc, getDocs, setDoc, query, orderBy, limit, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Player, Game, TeamSettings, Transaction } from '../types';
-import { cacheService } from '@/services/cacheService';
-import { compressImage } from '@/utils/imageOptimizer';
+import { cacheService } from './cacheService';
+import { compressImage } from '../utils/imageOptimizer';
 
-// Helper to map Firestore docs to our types
 const mapDocs = (snapshot: any) => snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id }));
 
 export const firebaseDataService = {
-    // --- STORAGE (ARQUIVOS) ---
     uploadFile: async (file: File, path: string): Promise<string> => {
         try {
-            // OTIMIZAÇÃO #4: Compressão automática antes do upload
             const optimizedFile = await compressImage(file);
-
-            // Otimização: Adicionar timestamp para evitar colisão
             const storageRef = ref(storage, `${path}/${Date.now()}_${optimizedFile.name}`);
-            
             const snapshot = await uploadBytes(storageRef, optimizedFile);
             const downloadURL = await getDownloadURL(snapshot.ref);
             return downloadURL;
@@ -28,42 +21,36 @@ export const firebaseDataService = {
         }
     },
 
-    // --- PLAYERS ---
     syncPlayers: async (players: Player[]) => {
         try {
             const batch = players.map(p => setDoc(doc(db, 'players', String(p.id)), p));
             await Promise.all(batch);
-            cacheService.invalidate('players'); // Limpa cache pois dados mudaram
+            cacheService.invalidate('players'); 
         } catch (e) {
             console.error("Erro ao sincronizar players:", e);
         }
     },
     
     getPlayers: async (): Promise<Player[]> => {
-        // 1. Tenta pegar do Cache
         const cached = cacheService.get<Player[]>('players_all');
         if (cached) return cached;
 
         try {
-            // 2. Se não tiver, busca no Firebase
             const snapshot = await getDocs(collection(db, 'players'));
             const data = mapDocs(snapshot);
-            
-            // 3. Salva no Cache
             cacheService.set('players_all', data);
             return data;
         } catch (e) {
-            console.warn("Firestore offline ou sem permissão, usando local.", e);
+            console.warn("Firestore offline, usando local.", e);
             return [];
         }
     },
     
     savePlayer: async (player: Player) => {
         await setDoc(doc(db, 'players', String(player.id)), player);
-        cacheService.invalidate('players'); // Força recarga na próxima leitura
+        cacheService.invalidate('players'); 
     },
 
-    // --- GAMES ---
     syncGames: async (games: Game[]) => {
         const batch = games.map(g => setDoc(doc(db, 'games', String(g.id)), g));
         await Promise.all(batch);
@@ -77,12 +64,10 @@ export const firebaseDataService = {
         try {
             const q = query(collection(db, 'games'), orderBy('date', 'desc'));
             const snapshot = await getDocs(q);
-            
             const data = mapDocs(snapshot).map((g: any) => ({
                 ...g,
                 date: new Date(g.date.seconds ? g.date.seconds * 1000 : g.date)
             }));
-
             cacheService.set('games_all', data);
             return data;
         } catch (e) {
@@ -95,7 +80,6 @@ export const firebaseDataService = {
         cacheService.invalidate('games');
     },
 
-    // --- FINANCE ---
     syncTransactions: async (transactions: Transaction[]) => {
         const batch = transactions.map(t => setDoc(doc(db, 'transactions', String(t.id)), t));
         await Promise.all(batch);
@@ -113,7 +97,6 @@ export const firebaseDataService = {
                 ...t,
                 date: new Date(t.date.seconds ? t.date.seconds * 1000 : t.date)
             }));
-            
             cacheService.set('transactions_all', data);
             return data;
         } catch(e) {
@@ -121,7 +104,6 @@ export const firebaseDataService = {
         }
     },
 
-    // --- TEAM SETTINGS ---
     saveTeamSettings: async (settings: TeamSettings) => {
         await setDoc(doc(db, 'settings', 'team_config'), settings);
         cacheService.invalidate('settings');
