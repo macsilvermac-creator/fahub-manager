@@ -1,17 +1,15 @@
-
 import React, { useState, useRef, useContext } from 'react';
-import { UserContext, UserContextType } from '@/components/Layout';
-import PageHeader from '@/components/PageHeader';
-import Card from '@/components/Card';
-import { storageService } from '@/services/storageService';
-/* Added CameraIcon and RefreshIcon imports from UiIcons */
+import { UserContext, UserContextType } from '../components/Layout';
+import PageHeader from '../components/PageHeader';
+import Card from '../components/Card';
+import { storageService } from '../services/storageService';
 import { 
     SparklesIcon, DumbbellIcon, CameraIcon, 
     CheckCircleIcon, AlertTriangleIcon, RefreshIcon 
-} from '@/components/icons/UiIcons';
-import { useToast } from '@/contexts/ToastContext';
-import { generateGymPlan } from '@/services/geminiService';
-import LazyImage from '@/components/LazyImage';
+} from '../components/icons/UiIcons';
+import { useToast } from '../contexts/ToastContext';
+import { generateGymPlan } from '../services/geminiService';
+import LazyImage from '../components/LazyImage';
 
 const Academy: React.FC = () => {
     const { currentRole } = useContext(UserContext) as UserContextType;
@@ -64,7 +62,7 @@ const Academy: React.FC = () => {
             </div>
 
             {view === 'COURSES' ? (
-                <div className="space-y-8">
+                <div className="space-y-8 animate-slide-in">
                     {priorityCourses.length > 0 && (
                         <div>
                             <h3 className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -80,7 +78,7 @@ const Academy: React.FC = () => {
                                         <div className="flex-1 p-6 flex flex-col justify-center">
                                             <h4 className="text-white font-black uppercase italic text-xl">{course.title}</h4>
                                             <p className="text-text-secondary text-[10px] mt-2 line-clamp-2">{course.description}</p>
-                                            <button className="mt-4 bg-red-500 text-white font-black text-[10px] uppercase px-6 py-2 rounded-xl w-fit">Estudar</button>
+                                            <button className="mt-4 bg-red-500 text-white font-black text-[10px] uppercase px-6 py-2 rounded-xl w-fit transition-all hover:scale-105 active:scale-95">Estudar</button>
                                         </div>
                                     </div>
                                 ))}
@@ -96,9 +94,9 @@ const Academy: React.FC = () => {
                                 <div>
                                     <label className="text-[10px] font-black text-text-secondary uppercase mb-3 block">Ambiente</label>
                                     <div className="grid grid-cols-3 gap-2">
-                                        <button onClick={() => setLocation('GYM')} className={`p-3 rounded-2xl border text-[8px] font-black ${location === 'GYM' ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-text-secondary'}`}>ACADEMIA</button>
-                                        <button onClick={() => setLocation('HOME')} className={`p-3 rounded-2xl border text-[8px] font-black ${location === 'HOME' ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-text-secondary'}`}>CASA</button>
-                                        <button onClick={() => setLocation('CALISTHENICS')} className={`p-3 rounded-2xl border text-[8px] font-black ${location === 'CALISTHENICS' ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-text-secondary'}`}>RUAS</button>
+                                        <button onClick={() => setLocation('GYM')} className={`p-3 rounded-2xl border text-[8px] font-black transition-all ${location === 'GYM' ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-text-secondary'}`}>ACADEMIA</button>
+                                        <button onClick={() => setLocation('HOME')} className={`p-3 rounded-2xl border text-[8px] font-black transition-all ${location === 'HOME' ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-text-secondary'}`}>CASA</button>
+                                        <button onClick={() => setLocation('CALISTHENICS')} className={`p-3 rounded-2xl border text-[8px] font-black transition-all ${location === 'CALISTHENICS' ? 'bg-orange-600 border-orange-500 text-white shadow-lg' : 'bg-black/20 border-white/5 text-text-secondary'}`}>RUAS</button>
                                     </div>
                                 </div>
 
@@ -117,7 +115,7 @@ const Academy: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <button onClick={handleGenerate} disabled={isGenerating} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase shadow-glow flex items-center justify-center gap-2 group">
+                                <button onClick={handleGenerate} disabled={isGenerating} className="w-full bg-white text-black font-black py-4 rounded-2xl uppercase shadow-glow flex items-center justify-center gap-2 group transition-all active:scale-95">
                                     {isGenerating ? <RefreshIcon className="w-5 h-5 animate-spin" /> : <><SparklesIcon className="w-4 h-4 text-orange-600" /> Gerar Plano Técnico</>}
                                 </button>
                             </div>
@@ -126,7 +124,7 @@ const Academy: React.FC = () => {
 
                     <div className="lg:col-span-2 space-y-6">
                         {workout ? (
-                            <div className="space-y-4">
+                            <div className="space-y-4 animate-fade-in">
                                 <div className="flex justify-between items-center bg-black/60 p-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
                                     <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
                                     <div>
