@@ -4,6 +4,7 @@ export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
 export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH' | 'YOUTH';
 
+// Fix: Added missing CombineStats interface
 export interface CombineStats {
     date: Date;
     fortyYards?: number;
@@ -14,6 +15,7 @@ export interface CombineStats {
     lDrill?: number;
 }
 
+// Fix: Added missing WellnessEntry interface
 export interface WellnessEntry {
     date: string;
     sleepQuality: number;
@@ -23,6 +25,7 @@ export interface WellnessEntry {
     rpe: number;
 }
 
+// Fix: Added missing SavedWorkout interface
 export interface SavedWorkout {
     id: string;
     date: Date;
@@ -31,6 +34,7 @@ export interface SavedWorkout {
     category: string;
 }
 
+// Fix: Added missing DevelopmentPlan interface
 export interface DevelopmentPlan {
     id: string;
     playerId: number;
@@ -42,6 +46,7 @@ export interface DevelopmentPlan {
     coachFeedback?: string;
 }
 
+// Fix: Added missing MedicalReport interface
 export interface MedicalReport {
     id: string;
     type: 'PHYSICAL' | 'PSYCHOLOGICAL';
@@ -51,6 +56,7 @@ export interface MedicalReport {
     author: string;
 }
 
+// Fix: Added missing GameLog interface
 export interface GameLog {
     week: number;
     opponent: string;
@@ -59,6 +65,7 @@ export interface GameLog {
     grade: number;
 }
 
+// Fix: Added missing PlayerHighlight interface
 export interface PlayerHighlight {
     id: string;
     title: string;
@@ -68,6 +75,7 @@ export interface PlayerHighlight {
     views: number;
 }
 
+// Fix: Added missing PlayerAchievement interface
 export interface PlayerAchievement {
     id: string;
     title: string;
@@ -75,6 +83,7 @@ export interface PlayerAchievement {
     type: string;
 }
 
+// Fix: Restored detailed Player interface
 export interface Player {
     id: number;
     name: string;
@@ -112,8 +121,10 @@ export interface Player {
     birthDate?: Date;
 }
 
+// Fix: Added missing PracticeCategory type
 export type PracticeCategory = 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
 
+// Fix: Added missing PracticeScriptItem interface
 export interface PracticeScriptItem {
     id: string;
     startTime: string;
@@ -123,6 +134,7 @@ export interface PracticeScriptItem {
     description: string;
 }
 
+// Fix: Restored detailed PracticeSession interface with drills
 export interface PracticeSession {
     id: string | number;
     title: string;
@@ -140,6 +152,7 @@ export interface PracticeSession {
     drills?: Drill[];
 }
 
+// Fix: Restored detailed Drill interface
 export interface Drill {
     id: string;
     name: string;
@@ -149,6 +162,7 @@ export interface Drill {
     videoSearchTerm?: string;
 }
 
+// Fix: Added missing GameScoutingReport interface
 export interface GameScoutingReport {
     offenseAnalysis: string;
     defenseAnalysis: string;
@@ -159,17 +173,20 @@ export interface GameScoutingReport {
     suggestedConcepts?: string[];
 }
 
+// Fix: Added missing PlayerPerformance interface
 export interface PlayerPerformance {
     playerId: number;
     grade: number;
     notes: string;
 }
 
+// Fix: Added missing CallSheetSection interface
 export interface CallSheetSection {
     title: string;
     plays: string[];
 }
 
+// Fix: Added missing GameInfrastructureChecklist interface
 export interface GameInfrastructureChecklist {
     ambulancePresent: boolean;
     ambulanceArrivalTime?: string;
@@ -184,8 +201,10 @@ export interface GameInfrastructureChecklist {
     waterProvided: boolean;
 }
 
+// Fix: Added missing FoulType type
 export type FoulType = 'HOLDING' | 'FALSE_START' | 'OFFSIDES' | 'PASS_INTERFERENCE' | 'UNSPORTSMANLIKE' | 'PERSONAL_FOUL' | 'DELAY_OF_GAME' | 'BLOCK_IN_BACK';
 
+// Fix: Added missing FoulRecord interface
 export interface FoulRecord {
     type: string;
     label?: string;
@@ -195,12 +214,14 @@ export interface FoulRecord {
     quarter?: number;
 }
 
+// Fix: Added missing OfficialAssignment interface
 export interface OfficialAssignment {
     id: string;
     name: string;
     role: string;
 }
 
+// Fix: Added missing GameReport interface
 export interface GameReport {
     infrastructure: GameInfrastructureChecklist;
     fouls: FoulRecord[];
@@ -210,6 +231,43 @@ export interface GameReport {
     isFinalized: boolean;
 }
 
+// Fix: Added missing PlayerRotation interface
+export interface PlayerRotation {
+    playerId: number;
+    status: 'ON_FIELD' | 'BENCH';
+    minutesPlayed: number;
+    fatigueLevel: number;
+}
+
+// Fix: Added missing SidelineAudioNote interface
+export interface SidelineAudioNote {
+    id: string;
+    timestamp: Date;
+    gameTime?: string; // Ex: "Q2 05:30"
+    unit: 'ATAQUE' | 'DEFESA' | 'ST' | 'GERAL';
+    rawTranscript?: string;
+    analysis?: {
+        playerNumber?: number;
+        action?: string;
+        insight?: string;
+    };
+    audioBlobUrl?: string;
+}
+
+// Fix: Added missing GameTimelineEvent interface
+export interface GameTimelineEvent {
+    id: string;
+    timestamp: Date;
+    quarter: number;
+    clock: string;
+    down?: number;
+    distance?: number;
+    yardLine?: string;
+    type: 'RUN' | 'PASS' | 'FOUL' | 'PUNT' | 'FG' | 'KICKOFF' | 'TIMEOUT';
+    result?: string;
+}
+
+// Fix: Restored detailed Game interface
 export interface Game {
     id: number;
     opponent: string;
@@ -230,15 +288,11 @@ export interface Game {
     rotation?: PlayerRotation[];
     officialReport?: GameReport;
     sponsors?: any[];
+    timeline?: GameTimelineEvent[];
+    audioNotes?: SidelineAudioNote[];
 }
 
-export interface PlayerRotation {
-    playerId: number;
-    status: 'ON_FIELD' | 'BENCH';
-    minutesPlayed: number;
-    fatigueLevel: number;
-}
-
+// Fix: Added missing CourseLesson interface
 export interface CourseLesson {
     id: string;
     title: string;
@@ -247,12 +301,14 @@ export interface CourseLesson {
     completed: boolean;
 }
 
+// Fix: Added missing CourseModule interface
 export interface CourseModule {
     id: string;
     title: string;
     lessons: CourseLesson[];
 }
 
+// Fix: Added missing Course interface
 export interface Course {
     id: string;
     title: string;
@@ -267,6 +323,7 @@ export interface Course {
     price?: number;
 }
 
+// Fix: Restored detailed TeamSettings interface
 export interface TeamSettings {
     id: string;
     teamName: string;
@@ -283,6 +340,7 @@ export interface TeamSettings {
     contactEmail?: string;
 }
 
+// Fix: Restored detailed User interface
 export interface User {
     id: string;
     email: string;
@@ -295,6 +353,7 @@ export interface User {
     isProfileComplete: boolean;
 }
 
+// Fix: Added missing RecruitmentCandidate interface
 export interface RecruitmentCandidate {
     id: string;
     name: string;
@@ -314,6 +373,7 @@ export interface RecruitmentCandidate {
     combineStats?: CombineStats;
 }
 
+// Fix: Added missing SocialPost interface
 export interface SocialPost {
     id: string;
     platform: 'INSTAGRAM' | 'TIKTOK' | 'WEBSITE';
@@ -323,6 +383,7 @@ export interface SocialPost {
     scheduledDate: Date;
 }
 
+// Fix: Added missing Announcement interface
 export interface Announcement {
     id: string;
     title: string;
@@ -333,6 +394,7 @@ export interface Announcement {
     readBy?: string[];
 }
 
+// Fix: Added missing KanbanTask interface
 export interface KanbanTask {
     id: string;
     title: string;
@@ -343,6 +405,7 @@ export interface KanbanTask {
     dueDate: Date;
 }
 
+// Fix: Added missing CoachGameNote interface
 export interface CoachGameNote {
     id: string;
     gameId: number;
@@ -353,6 +416,7 @@ export interface CoachGameNote {
     tags?: string[];
 }
 
+// Fix: Added missing Championship interface
 export interface Championship {
     id: string;
     name: string;
@@ -360,6 +424,10 @@ export interface Championship {
     division: string;
 }
 
+// Fix: Added missing TransactionCategory type
+export type TransactionCategory = 'TRANSPORT' | 'EQUIPMENT' | 'REFEREE' | 'FIELD_RENTAL' | 'EVENT' | 'SPONSORSHIP' | 'TUITION' | 'STORE' | 'OTHER';
+
+// Fix: Added missing Transaction interface
 export interface Transaction {
     id: string;
     title: string;
@@ -374,8 +442,7 @@ export interface Transaction {
     verifiedBy?: string;
 }
 
-export type TransactionCategory = 'TRANSPORT' | 'EQUIPMENT' | 'REFEREE' | 'FIELD_RENTAL' | 'EVENT' | 'SPONSORSHIP' | 'TUITION' | 'STORE' | 'OTHER';
-
+// Fix: Added missing Invoice interface
 export interface Invoice {
     id: string;
     playerId?: number;
@@ -388,6 +455,7 @@ export interface Invoice {
     inventoryItemId?: string;
 }
 
+// Fix: Restored detailed Subscription interface
 export interface Subscription {
     id: string;
     title: string;
@@ -398,12 +466,14 @@ export interface Subscription {
     assignedTo: number[];
 }
 
+// Fix: Restored detailed Budget interface
 export interface Budget {
     category: TransactionCategory;
     limit: number;
     spent: number;
 }
 
+// Fix: Restored detailed Bill interface
 export interface Bill {
     id: string;
     title: string;
@@ -413,6 +483,7 @@ export interface Bill {
     category: TransactionCategory;
 }
 
+// Fix: Restored detailed EquipmentItem interface
 export interface EquipmentItem {
     id: string;
     name: string;
@@ -430,6 +501,7 @@ export interface EquipmentItem {
     qrCodeUrl?: string;
 }
 
+// Fix: Restored detailed Objective interface
 export interface Objective {
     id: string;
     title: string;
@@ -441,6 +513,7 @@ export interface Objective {
     keyResults: KeyResult[];
 }
 
+// Fix: Added missing KeyResult interface
 export interface KeyResult {
     id: string;
     title: string;
@@ -450,6 +523,7 @@ export interface KeyResult {
     lastUpdated: Date;
 }
 
+// Fix: Added missing ConfederationStats interface
 export interface ConfederationStats {
     totalAthletes: number;
     totalTeams: number;
@@ -458,11 +532,13 @@ export interface ConfederationStats {
     growthRate: number;
 }
 
+// Fix: Added missing NationalTeamCandidate interface
 export interface NationalTeamCandidate extends Player {
     teamName: string;
     teamLogo: string;
 }
 
+// Fix: Added missing Affiliate interface
 export interface Affiliate {
     id: string;
     name: string;
@@ -474,6 +550,7 @@ export interface Affiliate {
     lastAuditDate: Date;
 }
 
+// Fix: Added missing TransferRequest interface
 export interface TransferRequest {
     id: string;
     playerId: number;
@@ -486,6 +563,7 @@ export interface TransferRequest {
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
+// Fix: Added missing AuditLog interface
 export interface AuditLog {
     id: string;
     action: string;
@@ -497,6 +575,7 @@ export interface AuditLog {
     ipAddress: string;
 }
 
+// Fix: Added missing EventSale interface
 export interface EventSale {
     id: string;
     type: 'TICKET' | 'BAR';
@@ -506,6 +585,7 @@ export interface EventSale {
     timestamp: Date;
 }
 
+// Fix: Restored detailed VideoClip interface
 export interface VideoClip {
     id: string;
     gameId: string;
@@ -516,11 +596,13 @@ export interface VideoClip {
     tags: any;
 }
 
+// Fix: Added missing TacticalFrame interface
 export interface TacticalFrame {
     id: number;
     elements: PlayElement[];
 }
 
+// Fix: Added missing PlayElement interface
 export interface PlayElement {
     id: string;
     type: 'OFFENSE' | 'DEFENSE';
@@ -529,6 +611,7 @@ export interface PlayElement {
     y: number;
 }
 
+// Fix: Restored detailed TacticalPlay interface
 export interface TacticalPlay {
     id: string;
     name: string;
@@ -541,6 +624,7 @@ export interface TacticalPlay {
     program?: ProgramType;
 }
 
+// Fix: Added missing InstallMatrixItem interface
 export interface InstallMatrixItem {
     id: string;
     day: 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT';
@@ -548,6 +632,7 @@ export interface InstallMatrixItem {
     concept: string;
 }
 
+// Fix: Added missing DigitalProduct interface
 export interface DigitalProduct {
     id: string;
     title: string;
@@ -558,6 +643,7 @@ export interface DigitalProduct {
     coverUrl: string;
 }
 
+// Fix: Added missing Entitlement interface
 export interface Entitlement {
     id: string;
     userId: string;
@@ -566,6 +652,7 @@ export interface Entitlement {
     expiresAt: Date;
 }
 
+// Fix: Added missing Tenant interface
 export interface Tenant {
     id: string;
     name: string;
@@ -577,6 +664,7 @@ export interface Tenant {
     contactEmail: string;
 }
 
+// Fix: Added missing ServiceTicket interface
 export interface ServiceTicket {
     id: string;
     tenantId: string;
@@ -588,6 +676,7 @@ export interface ServiceTicket {
     deliverableUrl?: string;
 }
 
+// Fix: Added missing PlatformMetric interface
 export interface PlatformMetric {
     totalRevenue: number;
     activeTeams: number;
@@ -595,6 +684,7 @@ export interface PlatformMetric {
     churnRate: number;
 }
 
+// Fix: Added missing LeagueTeam interface
 export interface LeagueTeam {
     teamId: string;
     teamName: string;
@@ -606,6 +696,7 @@ export interface LeagueTeam {
     pointsAgainst: number;
 }
 
+// Fix: Added missing League interface
 export interface League {
     id: string;
     name: string;
@@ -613,6 +704,7 @@ export interface League {
     teams: LeagueTeam[];
 }
 
+// Fix: Restored detailed MarketplaceItem interface
 export interface MarketplaceItem {
     id: string;
     title: string;
@@ -626,6 +718,7 @@ export interface MarketplaceItem {
     qrCodeDelivery?: string;
 }
 
+// Fix: Added missing SocialFeedPost interface
 export interface SocialFeedPost {
     id: string;
     authorName: string;
@@ -641,6 +734,7 @@ export interface SocialFeedPost {
     timestamp: Date;
 }
 
+// Fix: Added missing StaffContract interface
 export interface StaffContract {
     active: boolean;
     type: 'VOLUNTEER' | 'PAID';
@@ -648,6 +742,7 @@ export interface StaffContract {
     signed: boolean;
 }
 
+// Fix: Added missing StaffMember interface
 export interface StaffMember {
     id: string;
     name: string;
@@ -659,6 +754,7 @@ export interface StaffMember {
     program?: ProgramType;
 }
 
+// Fix: Added missing CoachCareer interface
 export interface CoachCareer {
     careerRecord: { wins: number, losses: number, ties: number };
     philosophy: string;
@@ -666,6 +762,7 @@ export interface CoachCareer {
     specialties: string[];
 }
 
+// Fix: Added missing SponsorDeal interface
 export interface SponsorDeal {
     id: string;
     companyName: string;
@@ -675,6 +772,7 @@ export interface SponsorDeal {
     lastInteraction: Date;
 }
 
+// Fix: Added missing CrewLogistics interface
 export interface CrewLogistics {
     gameId: number;
     meetingPoint: string;
@@ -683,6 +781,7 @@ export interface CrewLogistics {
     uniformColor: string;
 }
 
+// Fix: Added missing RefereeProfile interface
 export interface RefereeProfile {
     id: string;
     name: string;
@@ -694,12 +793,14 @@ export interface RefereeProfile {
     certifications: { id: string, name: string, expiryDate: Date }[];
 }
 
+// Fix: Added missing AssociationFinance interface
 export interface AssociationFinance {
     totalReceivableFromLeagues: number;
     totalPayableToReferees: number;
     cashBalance: number;
 }
 
+// Fix: Added missing LegalDocument interface
 export interface LegalDocument {
     id: string;
     title: string;
@@ -707,6 +808,7 @@ export interface LegalDocument {
     version: string;
 }
 
+// Fix: Added missing YouthClass interface
 export interface YouthClass {
     id: string;
     name: string;
@@ -717,6 +819,7 @@ export interface YouthClass {
     maxCapacity: number;
 }
 
+// Fix: Added missing YouthStudent interface
 export interface YouthStudent {
     id: string;
     name: string;
@@ -724,6 +827,7 @@ export interface YouthStudent {
     isSocialProject: boolean;
 }
 
+// Fix: Added missing AffiliateEarnings interface
 export interface AffiliateEarnings {
     id: string;
     amount: number;
@@ -731,6 +835,7 @@ export interface AffiliateEarnings {
     status: 'PAID' | 'PENDING';
 }
 
+// Fix: Added missing TeamDocument interface
 export interface TeamDocument {
     id: string;
     title: string;
@@ -741,6 +846,7 @@ export interface TeamDocument {
     url: string;
 }
 
+// Fix: Added missing ChatMessage interface
 export interface ChatMessage {
     id: string;
     senderName: string;
@@ -750,6 +856,7 @@ export interface ChatMessage {
     channel: 'GENERAL' | 'OFFENSE' | 'DEFENSE';
 }
 
+// Fix: Added missing FinancialAttachment interface
 export interface FinancialAttachment {
     id: string;
     name: string;
@@ -757,6 +864,7 @@ export interface FinancialAttachment {
     type: string;
 }
 
+// Fix: Added missing VideoTag interface
 export interface VideoTag {
     down: 1 | 2 | 3 | 4;
     distance: number;
@@ -774,19 +882,23 @@ export interface VideoTag {
     startY: number;
 }
 
+// Fix: Added missing VideoPlaylist interface
 export interface VideoPlaylist {
     id: string;
     title: string;
     clipIds: string[];
 }
 
+// Fix: Added missing VideoPermissionGroup interface
 export interface VideoPermissionGroup {
     id: string;
     name: string;
 }
 
+// Fix: Added missing PaymentMethod type
 export type PaymentMethod = 'PIX' | 'CREDIT_CARD';
 
+// Fix: Added missing PaymentTransaction interface
 export interface PaymentTransaction {
     id: string;
     amount: number;
@@ -797,12 +909,14 @@ export interface PaymentTransaction {
     netAmount: number;
 }
 
+// Fix: Added missing CrewExpense interface
 export interface CrewExpense {
     id: string;
     title: string;
     amount: number;
 }
 
+// Fix: Added missing PerformanceStats interface
 export interface PerformanceStats {
     ovr: number;
     speed: number;
@@ -811,6 +925,7 @@ export interface PerformanceStats {
     tacticalIQ: number;
 }
 
+// Fix: Added missing Athlete interface
 export interface Athlete {
     id: string;
     userId: string;
@@ -825,6 +940,7 @@ export interface Athlete {
     status: 'ACTIVE' | 'INJURED' | 'INACTIVE';
 }
 
+// Fix: Added missing Coach interface
 export interface Coach {
     id: string;
     userId: string;
@@ -834,6 +950,7 @@ export interface Coach {
     activeTeams: string[];
 }
 
+// Fix: Added missing Team interface
 export interface Team {
     id: string;
     name: string;

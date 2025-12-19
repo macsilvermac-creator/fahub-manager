@@ -1,29 +1,65 @@
 
-import { GoogleGenAI } from "@google/genai";
-import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement, CombineStats } from "../types";
+import { GoogleGenAI, Type } from "@google/genai";
+import { Player, GameScoutingReport, InstallMatrixItem, PracticeScriptItem, VideoClip, PlayElement, CombineStats, SidelineAudioNote } from "../types";
 
-// Guideline: Create a new GoogleGenAI instance right before making an API call to ensure it uses the up-to-date key.
 const getClient = (): GoogleGenAI => {
-    // Guideline: Use process.env.API_KEY exclusively.
     if (!process.env.API_KEY) {
         throw new Error("Chave de API ausente no ambiente de execução.");
     }
     return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
-// Helper for cleaning JSON output from potential Markdown code blocks
 const cleanJsonString = (input: string): string => {
     let clean = input.trim();
     clean = clean.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
     return clean;
 };
 
-// Fix: Added missing setRuntimeKey export
-export const setRuntimeKey = (key: string) => {
-    // Platform context handles API key management
+// NOVO: Processamento de Áudio Tático de Campo
+export const parseSidelineVoice = async (transcript: string): Promise<Partial<SidelineAudioNote>> => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Analise o seguinte comando de voz de um treinador de futebol americano: "${transcript}".
+        As palavras-chave iniciais (Ataque, Defesa, ST) definem a unidade.
+        Extraia:
+        1. unit (ATAQUE, DEFESA, ST, GERAL)
+        2. playerNumber (apenas se mencionado)
+        3. action (o que aconteceu)
+        4. insight (análise técnica do coach)
+        
+        Retorne APENAS um JSON válido.`,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    unit: { type: Type.STRING },
+                    playerNumber: { type: Type.NUMBER },
+                    action: { type: Type.STRING },
+                    insight: { type: Type.STRING }
+                }
+            }
+        }
+    });
+    
+    try {
+        const data = JSON.parse(cleanJsonString(response.text || "{}"));
+        return {
+            unit: data.unit || 'GERAL',
+            analysis: {
+                playerNumber: data.playerNumber,
+                action: data.action,
+                insight: data.insight
+            }
+        };
+    } catch (e) {
+        return { unit: 'GERAL' };
+    }
 };
 
-// Fix: Added missing testProConnection export
+export const setRuntimeKey = (key: string) => {};
+
 export const testProConnection = async (): Promise<boolean> => {
     try {
         const ai = getClient();
@@ -38,11 +74,10 @@ export const testProConnection = async (): Promise<boolean> => {
     }
 };
 
-// TAREFA PRO: Head Coach Response (Raciocínio Técnico)
 const generateCoachResponse = async (prompt: string): Promise<string> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // UPGRADE: Melhor interpretação de nuances táticas
+        model: 'gemini-3-pro-preview',
         contents: prompt,
         config: {
             systemInstruction: "Você é um Head Coach de Futebol Americano de elite. Seu tom é técnico, inspirador e extremamente profissional.",
@@ -52,12 +87,10 @@ const generateCoachResponse = async (prompt: string): Promise<string> => {
     return response.text || "";
 };
 
-// Fix: Added missing generatePracticePlan export
 export const generatePracticePlan = async (prompt: string): Promise<string> => {
     return await generateCoachResponse(prompt);
 };
 
-// TAREFA DE IMAGEM: Validação Visual (Padrão Gemini 2.5 Flash Image)
 export const validateGymImage = async (base64Data: string): Promise<boolean> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
@@ -72,22 +105,20 @@ export const validateGymImage = async (base64Data: string): Promise<boolean> => 
     return response.text?.trim().toUpperCase().includes('TRUE') || false;
 };
 
-// TAREFA PRO: Planejamento Físico Estruturado
 export const generateStructuredGymPlan = async (goal: string, equipment: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // UPGRADE: Planos de treino baseados em fisiologia do esporte
+        model: 'gemini-3-pro-preview',
         contents: `Gere um plano de musculação específico para Futebol Americano. Objetivo: ${goal}. Equipamentos: ${equipment}. Retorne APENAS um JSON array de GymDay.`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
-// TAREFA PRO: Scout Profundo de Oponente
 export const analyzeOpponentTendencies = async (notes: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', // UPGRADE: Identificação de tendências complexas (Down & Distance)
+        model: 'gemini-3-pro-preview',
         contents: `Aja como um Coordenador Tático. Analise estas notas de scout: "${notes}". 
         Retorne um JSON estruturado com: 
         1. summary (análise geral) 
@@ -98,7 +129,6 @@ export const analyzeOpponentTendencies = async (notes: string) => {
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
-// TAREFA PRO: Criatividade Tática
 export const suggestPlayConcepts = async (situation: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
@@ -109,7 +139,6 @@ export const suggestPlayConcepts = async (situation: string) => {
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
-// TAREFA PRO: Análise de Atributos Físicos
 export const analyzeCombineStats = async (stats: any, pos: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
@@ -120,7 +149,6 @@ export const analyzeCombineStats = async (stats: any, pos: string) => {
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
-// TAREFA PRO: Performance Review do Atleta
 export const generatePlayerAnalysis = async (player: any, context: string): Promise<string> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
@@ -130,7 +158,6 @@ export const generatePlayerAnalysis = async (player: any, context: string): Prom
     return response.text || "";
 };
 
-// TAREFA FLASH: Marketing (Texto rápido e engajador)
 export const generateMarketingContent = async (topic: string, platform: string): Promise<string> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
@@ -140,7 +167,6 @@ export const generateMarketingContent = async (topic: string, platform: string):
     return response.text || "";
 };
 
-// TAREFA PRO: Email de Patrocínio Profissional
 export const generateSponsorshipProposal = async (companyName: string, amount: number): Promise<string> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
@@ -150,11 +176,10 @@ export const generateSponsorshipProposal = async (companyName: string, amount: n
     return response.text || "";
 };
 
-// TAREFA PRO: Análise Visual de Prancheta/Vídeo
 export const explainPlayImage = async (base64Image: string, question: string): Promise<string> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image', // Modelos de imagem seguem a linha nano banana
+        model: 'gemini-2.5-flash-image', 
         contents: {
             parts: [
                 { text: `Aja como um Video Coordinator da NFL. Analise tecnicamente esta imagem. Pergunta: ${question}` },
@@ -165,7 +190,6 @@ export const explainPlayImage = async (base64Image: string, question: string): P
     return response.text || "";
 };
 
-// TAREFA DE IMAGEM: Extração de Dados de Recibos
 export const scanFinancialDocument = async (base64: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
@@ -175,13 +199,11 @@ export const scanFinancialDocument = async (base64: string) => {
                 { text: "Extraia os dados deste recibo/nota fiscal para um objeto JSON: {title, amount, date (YYYY-MM-DD), category, description}." },
                 { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
             ],
-        },
-        config: { } 
+        }
     });
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
-// TAREFA PRO: Predição Preditiva de Playcall
 export const predictPlayCall = async (history: any[], down: number, distance: number) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
@@ -192,7 +214,6 @@ export const predictPlayCall = async (history: any[], down: number, distance: nu
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
-// Fix: Added missing generateInstallSchedule export
 export const generateInstallSchedule = async (context: string, week: string): Promise<InstallMatrixItem[]> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
@@ -203,7 +224,6 @@ export const generateInstallSchedule = async (context: string, week: string): Pr
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
-// Fix: Added missing importPlaybookFromImage export
 export const importPlaybookFromImage = async (base64: string): Promise<PlayElement[]> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
@@ -218,8 +238,7 @@ export const importPlaybookFromImage = async (base64: string): Promise<PlayEleme
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
-// TAREFA PRO: Roteiro de Treino Minuto-a-Minuto
-export const generatePracticeScript = async (focus: string, duration: number, intensity: string) => {
+export const generatePracticeScript = async (focus: string, duration: number, intensity: string): Promise<PracticeScriptItem[]> => {
     const ai = getClient();
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview', 
@@ -229,7 +248,6 @@ export const generatePracticeScript = async (focus: string, duration: number, in
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
-// TAREFA PRO: Simulação de Matchup Tático
 export const analyzePlayMatchup = async (play: string, scouting: any, opponent: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
