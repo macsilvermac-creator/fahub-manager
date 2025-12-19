@@ -1,154 +1,110 @@
 
 import React, { useState } from 'react';
-// @ts-ignore
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { storageService } from '../services/storageService';
-import { SparklesIcon, AlertTriangleIcon, LockIcon, CloudIcon, TrashIcon } from '../components/icons/UiIcons';
-import Button from '../components/Button';
-import Input from '../components/Input';
+import { UserRole } from '../types';
+// Fix: WhistleIcon will now be exported from UiIcons
+import { LockIcon, UsersIcon, WhistleIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [seedStatus, setSeedStatus] = useState('');
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    
-    try {
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Tempo limite de conexão excedido.")), 8000)
-      );
-
-      await Promise.race([authService.login(email, password), timeoutPromise]);
-      
-      navigate('/dashboard');
-      window.location.reload();
-    } catch (err: any) {
-      console.error(err);
-      if (err.message.includes('invalid-credential')) {
-        setError("Senha incorreta.");
-      } else {
-        setError(err.message);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEmergencyLogin = () => {
-      const mockUser = {
-          id: 'dev-master',
-          email: 'admin@gridiron.com',
-          name: 'Master Dev',
-          role: 'MASTER' as const,
-          avatarUrl: 'https://ui-avatars.com/api/?name=MD&background=random',
-          status: 'APPROVED' as const
-      };
-      localStorage.setItem('gridiron_current_user', JSON.stringify(mockUser));
-      navigate('/dashboard');
-      window.location.reload();
-  };
-
-  const handlePanicBackup = async () => {
-      if(confirm("SEGURANÇA: Deseja baixar uma cópia de TODOS os dados do sistema agora? Isso é recomendado antes de atualizações.")) {
-          try {
-             await storageService.exportFullDatabase();
-             alert("Backup iniciado! Verifique seus downloads.");
-          } catch(e: any) {
-             alert("Erro no backup: " + e.message);
-          }
-      }
-  };
-
-  const handleHardReset = () => {
-      if(confirm("PERIGO: Isso limpará TODOS os dados locais (Cache e Banco de Dados) para corrigir erros fatais. \n\nVocê perderá dados não salvos se não tiver backup. Continuar?")) {
-          localStorage.clear();
-          // Limpa IndexedDB também (via idb-keyval clean ou reload forçado)
-          window.location.reload();
-      }
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-primary p-4 overflow-hidden">
-      <div className="bg-secondary p-6 rounded-2xl border border-white/10 w-full max-w-sm shadow-2xl">
+    const handleQuickLogin = (role: UserRole, name: string) => {
+        setLoading(true);
+        // Fix: Added missing properties status and cpf to comply with User type
+        const mockUser = {
+            id: `dev-${role.toLowerCase()}`,
+            email: `${role.toLowerCase()}@fahub.com`,
+            name: name,
+            role: role,
+            cpf: '000.000.000-00',
+            status: 'APPROVED' as const,
+            avatarUrl: `https://ui-avatars.com/api/?name=${name}`,
+            isProfileComplete: true
+        };
+        storageService.setCurrentUser(mockUser);
         
-        <div className="text-center mb-5">
-            <div className="flex justify-center mb-3">
-                <div className="w-12 h-12 bg-highlight rounded-xl flex items-center justify-center shadow-glow transform -skew-x-6">
-                    <span className="text-white font-black text-xl transform skew-x-6 tracking-tighter">FH</span>
+        // Criação de dados base se não existirem para o teste
+        if (role === 'PLAYER' && !storageService.getAthleteByUserId(mockUser.id)) {
+            storageService.saveAthlete({
+                id: 'ath-1',
+                userId: mockUser.id,
+                name: name,
+                position: 'QB',
+                jerseyNumber: 12,
+                category: 'TACKLE',
+                stats: { ovr: 88, speed: 90, strength: 75, agility: 82, tacticalIQ: 95 },
+                attendanceRate: 98,
+                xp: 1250,
+                level: 5,
+                status: 'ACTIVE'
+            });
+        }
+
+        setTimeout(() => {
+            if (role === 'PLAYER') navigate('/athlete');
+            // Fix: Replaced invalid 'COACH' with valid 'HEAD_COACH' and coordinators
+            else if (role === 'HEAD_COACH' || role === 'OFFENSIVE_COORD' || role === 'DEFENSIVE_COORD') navigate('/coach');
+            else navigate('/team');
+        }, 500);
+    };
+
+    return (
+        <div className="min-h-screen bg-[#0B1120] flex items-center justify-center p-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 pointer-events-none"></div>
+            
+            <div className="w-full max-w-md bg-secondary p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative z-10">
+                <div className="text-center mb-10">
+                    <div className="w-20 h-20 bg-highlight rounded-3xl mx-auto flex items-center justify-center shadow-glow mb-6 transform -rotate-6">
+                        <span className="text-white font-black text-3xl italic tracking-tighter">FH</span>
+                    </div>
+                    <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">FAHUB MANAGER</h1>
+                    <p className="text-text-secondary text-xs font-bold uppercase tracking-widest mt-2">Selecione sua Persona Base</p>
+                </div>
+
+                <div className="space-y-4">
+                    <button 
+                        onClick={() => handleQuickLogin('MASTER', 'Presidente')}
+                        className="w-full bg-white/5 hover:bg-highlight transition-all border border-white/10 p-5 rounded-2xl flex items-center gap-4 group"
+                    >
+                        <ShieldCheckIcon className="w-8 h-8 text-highlight group-hover:text-white" />
+                        <div className="text-left">
+                            <p className="text-white font-black uppercase text-sm italic">Master / Equipe</p>
+                            <p className="text-[10px] text-text-secondary group-hover:text-white/80 uppercase">Fundação e Gestão de Roster</p>
+                        </div>
+                    </button>
+
+                    <button 
+                        onClick={() => handleQuickLogin('HEAD_COACH', 'Coach Principal')}
+                        className="w-full bg-white/5 hover:bg-blue-600 transition-all border border-white/10 p-5 rounded-2xl flex items-center gap-4 group"
+                    >
+                        <WhistleIcon className="w-8 h-8 text-blue-400 group-hover:text-white" />
+                        <div className="text-left">
+                            <p className="text-white font-black uppercase text-sm italic">Coach / Treinador</p>
+                            <p className="text-[10px] text-text-secondary group-hover:text-white/80 uppercase">Planejamento e Frequência</p>
+                        </div>
+                    </button>
+
+                    <button 
+                        onClick={() => handleQuickLogin('PLAYER', 'Atleta Estrela')}
+                        className="w-full bg-white/5 hover:bg-orange-600 transition-all border border-white/10 p-5 rounded-2xl flex items-center gap-4 group"
+                    >
+                        <UsersIcon className="w-8 h-8 text-orange-400 group-hover:text-white" />
+                        <div className="text-left">
+                            <p className="text-white font-black uppercase text-sm italic">Atleta / Aluno</p>
+                            <p className="text-[10px] text-text-secondary group-hover:text-white/80 uppercase">Performance e Gamificação</p>
+                        </div>
+                    </button>
+                </div>
+
+                <div className="mt-10 pt-6 border-t border-white/5 text-center">
+                    <p className="text-[9px] font-black text-text-secondary/40 uppercase tracking-[0.3em]">Ambiente de Teste em Tempo Real</p>
                 </div>
             </div>
-            <h2 className="text-xl font-bold text-white">FAHUB MANAGER</h2>
-            <p className="text-text-secondary text-[10px] uppercase tracking-widest">Acesso ao Sistema</p>
         </div>
-
-        {error && (
-            <div className="bg-red-900/50 text-red-200 p-2 rounded mb-3 text-xs text-center border border-red-500/20">
-                {error}
-            </div>
-        )}
-
-        <form onSubmit={handleLogin} className="space-y-3">
-            <Input 
-                label="Email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                className="py-2 text-sm"
-            />
-            
-            <div>
-                <Input 
-                    label="Senha"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    icon={<LockIcon className="w-4 h-4" />}
-                    required
-                    className="py-2 text-sm"
-                />
-            </div>
-
-            <Button type="submit" isLoading={loading} fullWidth size="md" className="mt-2 py-2.5 shadow-glow">
-                ENTRAR
-            </Button>
-        </form>
-
-        <div className="mt-4 pt-3 border-t border-white/10 text-center space-y-2">
-            <Link to="/register">
-                <Button variant="ghost" fullWidth size="sm" className="text-xs text-text-secondary hover:text-white border border-white/5 hover:bg-white/5">
-                    CRIAR NOVA CONTA
-                </Button>
-            </Link>
-            
-            <div className="flex justify-between pt-2 opacity-60 hover:opacity-100 transition-opacity">
-                <button onClick={handlePanicBackup} className="text-[9px] text-green-400 hover:text-white flex items-center gap-1 border border-green-500/30 px-2 py-1 rounded">
-                    <CloudIcon className="w-3 h-3" /> Backup de Pânico
-                </button>
-                <div className="flex gap-2">
-                    <button onClick={handleEmergencyLogin} className="text-[9px] text-text-secondary hover:text-highlight flex items-center gap-1">
-                        <LockIcon className="w-3 h-3" /> Dev
-                    </button>
-                    <button onClick={handleHardReset} className="text-[9px] text-text-secondary hover:text-red-500 flex items-center gap-1" title="Resetar Dados">
-                        <TrashIcon className="w-3 h-3" /> Reset
-                    </button>
-                </div>
-            </div>
-            {seedStatus && <p className="text-[10px] text-green-400">{seedStatus}</p>}
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Login;
