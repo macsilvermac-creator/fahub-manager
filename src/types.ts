@@ -1,7 +1,8 @@
-export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER' | 'CANDIDATE' | 'PLATFORM_OWNER' | 'BROADCASTER' | 'SYSTEM';
+
+export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER' | 'CANDIDATE' | 'PLATFORM_OWNER' | 'BROADCASTER' | 'SYSTEM' | 'FAN' | 'STUDENT' | 'ADMIN';
 
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
-export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH';
+export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH' | 'YOUTH';
 
 export interface CombineStats {
     date: Date;
@@ -86,7 +87,7 @@ export interface Player {
     level: number;
     xp: number;
     rating: number;
-    status: 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'IR';
+    status: 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'IR' | 'INACTIVE';
     rosterCategory?: RosterCategory;
     program?: ProgramType;
     combineStats?: CombineStats;
@@ -740,7 +741,6 @@ export interface TeamDocument {
     url: string;
 }
 
-// Fix: Added missing ChatMessage interface
 export interface ChatMessage {
     id: string;
     senderName: string;
@@ -801,4 +801,49 @@ export interface CrewExpense {
     id: string;
     title: string;
     amount: number;
+}
+
+export interface PerformanceStats {
+    ovr: number;
+    speed: number;
+    strength: number;
+    agility: number;
+    tacticalIQ: number;
+}
+
+export interface Athlete {
+    id: string;
+    userId: string;
+    name: string;
+    position: string;
+    jerseyNumber: number;
+    category: ProgramType;
+    stats: PerformanceStats;
+    attendanceRate: number;
+    xp: number;
+    level: number;
+    status: 'ACTIVE' | 'INJURED' | 'INACTIVE';
+}
+
+export interface Coach {
+    id: string;
+    userId: string;
+    name: string;
+    specialty: string;
+    experienceLevel: 'JUNIOR' | 'PRO' | 'ELITE';
+    activeTeams: string[];
+}
+
+export interface Team {
+    id: string;
+    name: string;
+    logoUrl: string;
+    primaryColor: string;
+    secondaryColor: string;
+    rosterIds: string[];
+    coachIds: string[];
+    settings: {
+        isPublic: boolean;
+        allowRegistration: boolean;
+    };
 }
