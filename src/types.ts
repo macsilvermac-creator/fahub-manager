@@ -56,31 +56,26 @@ export interface AuditLog {
     userId: string;
     userName: string;
     role: string;
-    ipAddress: string;
+    ipAddress?: string;
 }
 
-export interface Objective {
-    id: string;
-    title: string;
-    description?: string;
-    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING' | 'OPERATIONAL';
-    status: 'PLANNED' | 'IN_PROGRESS' | 'BEHIND' | 'COMPLETED' | 'AT_RISK';
-    progress: number;
-    deadline: Date;
-    owner?: string;
-    ownerRole: UserRole;
-    keyResults: KeyResult[];
-    parentObjectiveId?: string;
+export interface WellnessEntry {
+    date: string;
+    sleepQuality: number;
+    fatigue: number;
+    soreness: number;
+    stress: number;
+    rpe: number;
 }
 
-export interface KeyResult {
+export interface DevelopmentPlan {
     id: string;
+    playerId: number;
     title: string;
-    currentValue: number;
-    targetValue: number;
-    unit: string;
-    lastUpdated: Date;
-    updatedBy?: string;
+    generatedContent: string;
+    createdAt: Date;
+    deadline?: Date;
+    status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 }
 
 export interface Player {
@@ -120,14 +115,60 @@ export interface Player {
     birthDate?: Date;
 }
 
-export interface DevelopmentPlan {
+export interface GameTimelineEvent {
     id: string;
-    playerId: number;
-    title: string;
-    generatedContent: string;
-    createdAt: Date;
-    deadline?: Date;
-    status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+    timestamp: Date;
+    gameTime: string;
+    quarter: number;
+    down: number;
+    distance: number;
+    yardLine: string;
+    playType: 'RUN' | 'PASS' | 'FOUL' | 'PUNT' | 'FG' | 'KICKOFF' | 'TIMEOUT';
+    result: string;
+}
+
+export interface SidelineAudioNote {
+    id: string;
+    timestamp: Date;
+    gameTime: string;
+    unit: 'ATAQUE' | 'DEFESA' | 'ST' | 'GERAL';
+    rawTranscript: string;
+    analysis?: {
+        playerNumber?: number;
+        action?: string;
+        insight?: string;
+    };
+}
+
+export interface GameInfrastructureChecklist {
+    ambulancePresent: boolean;
+    ambulanceArrivalTime: string;
+    visitorArrivalTime: string;
+    lightingAdequate: boolean;
+    fieldDimensionsOk: boolean;
+    goalPostsOk: boolean;
+    fieldMarkingsCorrect: boolean;
+    visitorLockerRoom: { hasHotWater: boolean, secure: boolean };
+    refereeLockerRoom: { hasHotWater: boolean, secure: boolean };
+    ballsProvided: boolean;
+    waterProvided: boolean;
+}
+
+export interface FoulRecord {
+    id: string;
+    playerNumber: number;
+    team: 'HOME' | 'AWAY';
+    type: string;
+    quarter: number;
+}
+
+export interface GameReport {
+    infrastructure: GameInfrastructureChecklist;
+    fouls: FoulRecord[];
+    ejections: any[];
+    notes: string;
+    crew: string[];
+    isFinalized: boolean;
 }
 
 export interface Game {
@@ -150,6 +191,8 @@ export interface Game {
     rotation?: PlayerRotation[];
     officialReport?: GameReport;
     homeTeamName?: string;
+    halftimeStats?: any;
+    sponsors?: any[];
 }
 
 export interface GameScoutingReport {
@@ -177,6 +220,15 @@ export interface PlayerRotation {
     fatigueLevel: number;
 }
 
+export interface PracticeScriptItem {
+    id: string;
+    startTime: string;
+    durationMinutes: number;
+    activityName: string;
+    description: string;
+    type: string;
+}
+
 export interface PracticeSession {
     id: string | number;
     title: string;
@@ -196,13 +248,16 @@ export interface PracticeSession {
 
 export type PracticeCategory = 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
 
-export interface PracticeScriptItem {
+export interface TeamSettings {
     id: string;
-    startTime: string;
-    durationMinutes: number;
-    activityName: string;
-    description: string;
-    type: string;
+    teamName: string;
+    logoUrl: string;
+    address: string;
+    primaryColor: string;
+    secondaryColor?: string;
+    sportType?: 'TACKLE' | 'FLAG' | 'BOTH';
+    website?: string;
+    contactEmail?: string;
 }
 
 export type TransactionCategory = 'TRANSPORT' | 'EQUIPMENT' | 'REFEREE' | 'FIELD_RENTAL' | 'EVENT' | 'SPONSORSHIP' | 'TUITION' | 'STORE' | 'OTHER';
@@ -212,7 +267,7 @@ export interface Transaction {
     title: string;
     amount: number;
     type: 'INCOME' | 'EXPENSE';
-    category: string;
+    category: TransactionCategory;
     date: Date;
     status: 'PAID' | 'PENDING';
     aiGenerated?: boolean;
@@ -284,16 +339,6 @@ export interface TeamDocument {
     url: string;
 }
 
-export interface VideoClip {
-    id: string;
-    title: string;
-    startTime: number;
-    videoUrl: string;
-    endTime?: number;
-    gameId?: string;
-    tags: VideoTag;
-}
-
 export interface VideoTag {
     down: 1 | 2 | 3 | 4;
     distance: number;
@@ -311,12 +356,27 @@ export interface VideoTag {
     startY?: number;
 }
 
+export interface VideoClip {
+    id: string;
+    title: string;
+    startTime: number;
+    videoUrl: string;
+    endTime?: number;
+    gameId?: string;
+    tags: VideoTag;
+}
+
 export interface PlayElement {
     id: string;
     x: number;
     y: number;
     label: string;
     type: 'OFFENSE' | 'DEFENSE';
+}
+
+export interface TacticalFrame {
+    id: number;
+    elements: PlayElement[];
 }
 
 export interface TacticalPlay {
@@ -329,11 +389,6 @@ export interface TacticalPlay {
     aiAnalysis?: string;
     program?: ProgramType;
     createdAt?: Date;
-}
-
-export interface TacticalFrame {
-    id: number;
-    elements: PlayElement[];
 }
 
 export interface SocialPost {
@@ -386,13 +441,11 @@ export interface EventSale {
     quantity?: number;
 }
 
-export interface WellnessEntry {
-    date: string;
-    sleepQuality: number;
-    fatigue: number;
-    soreness: number;
-    stress: number;
-    rpe: number;
+export interface StaffContract {
+    active: boolean;
+    type: 'VOLUNTEER' | 'PAID';
+    value: number;
+    signed: boolean;
 }
 
 export interface StaffMember {
@@ -405,36 +458,14 @@ export interface StaffMember {
     documentsPending?: boolean;
 }
 
-export interface StaffContract {
-    active: boolean;
-    type: 'VOLUNTEER' | 'PAID';
-    value: number;
-    signed: boolean;
-}
-
-export interface SidelineAudioNote {
+export interface PaymentTransaction {
     id: string;
-    timestamp: Date;
-    gameTime: string; 
-    unit: 'ATAQUE' | 'DEFESA' | 'ST' | 'GERAL';
-    rawTranscript: string;
-    analysis?: {
-        playerNumber?: number;
-        action?: string;
-        insight?: string;
-    };
-}
-
-export interface GameTimelineEvent {
-    id: string;
-    timestamp: Date;
-    gameTime: string;
-    quarter: number;
-    down: number;
-    distance: number;
-    yardLine: string;
-    playType: 'RUN' | 'PASS' | 'FOUL' | 'PUNT' | 'FG' | 'KICKOFF' | 'TIMEOUT';
-    result: string;
+    amount: number;
+    method: 'PIX' | 'CREDIT_CARD';
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    createdAt: Date;
+    platformFee: number;
+    netAmount: number;
 }
 
 export interface SocialFeedPost {
@@ -448,6 +479,13 @@ export interface SocialFeedPost {
     likes: number;
     comments: any[];
     timestamp: Date;
+}
+
+export interface LegalDocument {
+    id: string;
+    title: string;
+    content: string;
+    version: string;
 }
 
 export interface EquipmentItem {
@@ -484,98 +522,25 @@ export interface YouthStudent {
     isSocialProject: boolean;
 }
 
-export interface GameReport {
-    infrastructure: GameInfrastructureChecklist;
-    fouls: FoulRecord[];
-    ejections: any[];
-    notes: string;
-    crew: string[];
-    isFinalized: boolean;
-}
-
-export interface GameInfrastructureChecklist {
-    ambulancePresent: boolean;
-    ambulanceArrivalTime: string;
-    visitorArrivalTime: string;
-    lightingAdequate: boolean;
-    fieldDimensionsOk: boolean;
-    goalPostsOk: boolean;
-    fieldMarkingsCorrect: boolean;
-    visitorLockerRoom: { hasHotWater: boolean, secure: boolean };
-    refereeLockerRoom: { hasHotWater: boolean, secure: boolean };
-    ballsProvided: boolean;
-    waterProvided: boolean;
-}
-
-export interface FoulRecord {
-    id: string;
-    playerNumber: number;
-    team: 'HOME' | 'AWAY';
-    type: FoulType;
-    quarter: number;
-}
-
-export type FoulType = string;
-
-export interface RefereeProfile {
-    id: string;
-    name: string;
-}
-
-export interface AssociationFinance {
-    balance: number;
-}
-
-export interface CrewLogistics {
-    id: string;
-}
-
-export interface ConfederationStats {
-    totalAthletes: number;
-    totalTeams: number;
-    totalGamesThisYear: number;
-    activeAffiliates: number;
-    growthRate: number;
-}
-
-export interface NationalTeamCandidate {
-    id: number;
-    name: string;
-    position: string;
-    rating: number;
-    avatarUrl: string;
-    teamName: string;
-    teamLogo: string;
-    combineStats: CombineStats;
-}
-
-export interface Affiliate {
-    id: string;
-    name: string;
-    region: string;
-    president: string;
-    status: 'REGULAR' | 'PENDING' | 'IRREGULAR';
-    athletesCount: number;
-    teamsCount: number;
-    lastAuditDate: Date;
-}
-
-export interface TransferRequest {
-    id: string;
-    playerName: string;
-    originTeamName: string;
-    destinationTeamName: string;
-    fee: number;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-}
-
-export interface Course {
+export interface Objective {
     id: string;
     title: string;
-    description: string;
-    thumbnailUrl: string;
-    priority?: boolean;
-    level?: string;
+    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING' | 'OPERATIONAL';
+    status: 'PLANNED' | 'ON_TRACK' | 'BEHIND' | 'COMPLETED' | 'AT_RISK' | 'IN_PROGRESS';
+    progress: number;
+    deadline: Date;
+    owner: string;
+    ownerRole: UserRole;
+    keyResults: KeyResult[];
+}
+
+export interface KeyResult {
+    id: string;
+    title: string;
+    currentValue: number;
+    targetValue: number;
+    unit: string;
+    lastUpdated: Date;
 }
 
 export interface Entitlement {
@@ -584,13 +549,6 @@ export interface Entitlement {
     productId: string;
     purchasedAt: Date;
     expiresAt: Date;
-}
-
-export interface PlatformMetric {
-    totalRevenue: number;
-    activeTeams: number;
-    pendingServices: number;
-    churnRate: number;
 }
 
 export interface DigitalProduct {
@@ -664,11 +622,11 @@ export interface Tenant {
     contactEmail: string;
 }
 
-export interface League {
-    id: string;
-    name: string;
-    season: string;
-    teams: LeagueTeamStanding[];
+export interface PlatformMetric {
+    totalRevenue: number;
+    activeTeams: number;
+    pendingServices: number;
+    churnRate: number;
 }
 
 export interface LeagueTeamStanding {
@@ -682,12 +640,66 @@ export interface LeagueTeamStanding {
     pointsAgainst: number;
 }
 
-export interface TeamSettings {
+export interface League {
     id: string;
+    name: string;
+    season: string;
+    teams: LeagueTeamStanding[];
+}
+
+export interface ConfederationStats {
+    totalAthletes: number;
+    totalTeams: number;
+    totalGamesThisYear: number;
+    activeAffiliates: number;
+    growthRate: number;
+}
+
+export interface NationalTeamCandidate {
+    id: number;
+    name: string;
+    position: string;
+    rating: number;
+    avatarUrl: string;
     teamName: string;
-    logoUrl: string;
-    address: string;
-    primaryColor: string;
-    secondaryColor?: string;
-    sportType?: 'TACKLE' | 'FLAG' | 'BOTH';
+    teamLogo: string;
+    combineStats: CombineStats;
+}
+
+export interface Affiliate {
+    id: string;
+    name: string;
+    region: string;
+    president: string;
+    status: 'REGULAR' | 'PENDING' | 'IRREGULAR';
+    athletesCount: number;
+    teamsCount: number;
+    lastAuditDate: Date;
+}
+
+export interface TransferRequest {
+    id: string;
+    playerName: string;
+    originTeamName: string;
+    destinationTeamName: string;
+    fee: number;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+}
+
+export interface FoulType {
+    id: string;
+    name: string;
+}
+
+export interface RefereeProfile {
+    id: string;
+    name: string;
+}
+
+export interface AssociationFinance {
+    balance: number;
+}
+
+export interface CrewLogistics {
+    id: string;
 }
