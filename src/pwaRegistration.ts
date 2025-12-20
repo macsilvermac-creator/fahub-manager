@@ -18,7 +18,9 @@ type Config = {
 };
 
 export function register(config?: Config) {
-  if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  // Fix: Ensured metadata check is robust
+  const isProd = (import.meta.env as any).PROD || import.meta.env.MODE === 'production';
+  if (isProd && 'serviceWorker' in navigator) {
     const publicUrl = new URL(window.location.href);
     if (publicUrl.origin !== window.location.origin) {
       return;

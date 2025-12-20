@@ -12,9 +12,10 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  public state: State = {
-    hasError: false
-  };
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
   public static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
@@ -24,8 +25,6 @@ class ErrorBoundary extends React.Component<Props, State> {
     console.error("Uncaught error:", error, errorInfo);
     
     // AUTO-CURA: Erros de Chunk (comum em SPAs após deploy)
-    // Se o navegador tentar carregar um arquivo JS que não existe mais no servidor (versão antiga),
-    // forçamos um reload para pegar a versão nova.
     const chunkFailedMessage = /Loading chunk [\d]+ failed/;
     const importFailedMessage = /Importing a module script failed/;
     

@@ -1,13 +1,11 @@
-// Fix: Removed problematic reference to 'vite/client' to resolve the "Cannot find type definition file" error.
-// The ImportMeta and ImportMetaEnv interfaces are manually declared below to ensure Vite's environment types are available.
+
+/// <reference types="vite/client" />
+
 interface ImportMetaEnv {
-  readonly VITE_APP_TITLE: string;
-  readonly BASE_URL: string;
-  readonly MODE: string;
-  readonly DEV: boolean;
   readonly PROD: boolean;
-  readonly SSR: boolean;
-  [key: string]: any;
+  readonly DEV: boolean;
+  readonly MODE: string;
+  readonly API_KEY: string;
 }
 
 interface ImportMeta {

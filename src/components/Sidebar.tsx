@@ -22,7 +22,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, setRole }) => {
   const navigate = useNavigate();
   
-  // Filtros de Visibilidade Baseados na Persona Ativa
   const isMaster = currentRole === 'MASTER' || currentRole === 'PLATFORM_OWNER';
   const isCoach = currentRole === 'HEAD_COACH' || currentRole === 'OFFENSIVE_COORD' || currentRole === 'DEFENSIVE_COORD' || isMaster;
   const isPlayer = currentRole === 'PLAYER' || isMaster;
@@ -42,7 +41,8 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
       navigate('/login');
   };
 
-  const SectionLabel = ({ children }: { children: string }) => (
+  // Fix: Changed type from string to React.ReactNode
+  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mt-4 mb-1 border-b border-white/5 pb-1">{children}</p>
   );
 
