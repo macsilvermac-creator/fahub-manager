@@ -619,3 +619,33 @@ export interface Drill {
     durationMinutes: number;
     videoSearchTerm?: string;
 }
+
+/* Fix: Added missing interfaces for PlatformHQ */
+export interface Tenant {
+    id: string;
+    name: string;
+    plan: 'ROOKIE' | 'STARTER' | 'ALL_PRO';
+    status: 'ACTIVE' | 'DELINQUENT';
+    mrr: number;
+    joinedAt: Date;
+    logoUrl: string;
+    contactEmail: string;
+}
+
+export interface ServiceTicket {
+    id: string;
+    tenantId: string;
+    tenantName: string;
+    serviceName: string;
+    status: 'PENDING' | 'IN_PROGRESS' | 'DELIVERED';
+    purchasedAt: Date;
+    assignedTo: string;
+    deliverableUrl?: string;
+}
+
+export interface PlatformMetric {
+    totalRevenue: number;
+    activeTeams: number;
+    pendingServices: number;
+    churnRate: number;
+}

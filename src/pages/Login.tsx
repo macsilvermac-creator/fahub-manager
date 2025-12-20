@@ -28,6 +28,7 @@ const Login: React.FC = () => {
         
         // Criação de dados base se não existirem para o teste
         if (role === 'PLAYER' && !storageService.getAthleteByUserId(mockUser.id)) {
+            /* Fix: Provided all mandatory Player properties (height, weight, class, avatarUrl, rating) to avoid build error */
             storageService.saveAthlete({
                 id: 'ath-1',
                 userId: mockUser.id,
@@ -40,7 +41,12 @@ const Login: React.FC = () => {
                 xp: 1250,
                 level: 5,
                 // Fix: Corrected property status for Athlete
-                status: 'ACTIVE'
+                status: 'ACTIVE',
+                height: '1.85m',
+                weight: 210,
+                class: 'Senior',
+                avatarUrl: mockUser.avatarUrl,
+                rating: 88
             });
         }
 
@@ -58,7 +64,7 @@ const Login: React.FC = () => {
             
             <div className="w-full max-w-md bg-secondary p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative z-10">
                 <div className="text-center mb-10">
-                    <div className="w-20 h-20 bg-highlight rounded-3xl mx-auto flex items-center justify-center shadow-glow mb-6 transform -rotate-6">
+                    <div className="w-20 h-20 bg-highlight rounded-3xl mx-auto flex items-center justify-center shadow-glow mb-6 transform -skew-x-6">
                         <span className="text-white font-black text-3xl italic tracking-tighter">FH</span>
                     </div>
                     <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">FAHUB MANAGER</h1>
