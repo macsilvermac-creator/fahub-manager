@@ -46,6 +46,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
         setPlayers(allPlayers);
         setTacticalPlays(storageService.getTacticalPlays());
 
+        // Fix: Safely handling gameRoster mapping
         const initialRoster = (game as any)['gameRoster'] || allPlayers.filter(p => p.status === 'ACTIVE').map(p => String(p.id));
         setGameRoster(initialRoster);
 
@@ -55,6 +56,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
         if (game.callSheet && game.callSheet.length > 0) {
             setCallSheet(game.callSheet);
         } else {
+            // Default Template
             setCallSheet([
                 { title: 'Openers (1st Drive)', plays: ['', '', '', ''] },
                 { title: '3rd & Short (< 2yds)', plays: ['', '', ''] },
@@ -69,6 +71,8 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
     }
   }, [isOpen, game]);
 
+  // --- HANDLERS ---
+
   const handleSaveAll = () => {
       if(!game) return;
       const updatedGame: Game = {
@@ -76,13 +80,14 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
           scoutingReport: scoutData,
           playerGrades: playerGrades,
           callSheet: callSheet,
-          // @ts-ignore
+          // @ts-ignore - for simplified persistence
           gameRoster: gameRoster 
       };
       onSave(updatedGame);
       toast.success("Dados do jogo salvos com sucesso!");
   };
 
+  // --- AI SCOUT ---
   const handleAiScout = async () => {
       if (!game) return;
       setIsAnalyzing(true);
@@ -104,6 +109,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       }
   };
 
+  // --- ROSTER LOGIC ---
   const togglePlayerInGame = (playerId: string) => {
       if (gameRoster.includes(playerId)) {
           setGameRoster(prev => prev.filter(id => id !== playerId));
@@ -122,6 +128,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
         }).length;
   };
 
+  // --- PLAYBOOK PICKER ---
   const openPlayPicker = (sectionIdx: number, playIdx: number) => {
       setPickerTarget({ sectionIdx, playIdx });
       setIsPickerOpen(true);
@@ -147,6 +154,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       setCallSheet(newSheet);
   };
 
+  // QB WRISTBAND EXPORT
   const exportWristband = () => {
       const opponent = game?.opponent || 'OPPONENT';
       let tableRows = '';
@@ -188,6 +196,8 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       win?.focus();
   };
 
+  // --- GRADING ---
+  /* Fix: Updated playerId type to string | number */
   const handleGradeChange = (playerId: string | number, field: 'grade' | 'notes', value: any) => {
       setPlayerGrades(prev => {
           const existing = prev.find(p => String(p.playerId) === String(playerId));
@@ -257,6 +267,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
                             return (
                                 <div 
                                     key={player.id} 
+                                    /* Fix: Correct argument type */
                                     onClick={() => togglePlayerInGame(String(player.id))}
                                     className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all select-none ${isSelected ? 'bg-green-900/20 border-green-500' : 'bg-secondary border-white/5 opacity-60'}`}
                                 >
@@ -421,14 +432,16 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
                                             type="number" min="0" max="100" 
                                             placeholder="Nota"
                                             value={gradeData?.grade || ''}
-                                            onChange={(e) => handleGradeChange(player.id, 'grade', Number(e.target.value))}
+                                            /* Fix: Cast player.id to string | number */
+                                            onChange={(e) => handleGradeChange(String(player.id), 'grade', Number(e.target.value))}
                                             className={`w-16 bg-black/30 border border-white/10 rounded p-1 text-center font-bold text-sm focus:outline-none ${getGradeColor(gradeData?.grade || 0)}`}
                                         />
                                         <input 
                                             type="text" 
                                             placeholder="Comentário..."
                                             value={gradeData?.notes || ''}
-                                            onChange={(e) => handleGradeChange(player.id, 'notes', e.target.value)}
+                                            /* Fix: Cast player.id to string | number */
+                                            onChange={(e) => handleGradeChange(String(player.id), 'notes', e.target.value)}
                                             className="flex-1 bg-black/30 border border-white/10 rounded p-1 text-sm text-white focus:border-highlight focus:outline-none"
                                         />
                                     </div>

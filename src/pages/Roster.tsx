@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext, useMemo, useRef } from 'react';
 import { Player, RosterCategory } from '../types';
 import AthleteCard from '../components/AthleteCard';
@@ -14,7 +15,7 @@ import { useAppStore } from '../utils/storeHooks';
 import LazyImage from '../components/LazyImage';
 
 const Roster: React.FC = () => {
-    const { currentRole } = useContext(UserContext);
+    const { currentRole } = useContext(UserContext) as any;
     const toast = useToast();
     
     // --- REATIVIDADE ---
@@ -33,7 +34,8 @@ const Roster: React.FC = () => {
     const [unitFilter, setUnitFilter] = useState<'ALL' | 'OFFENSE' | 'DEFENSE' | 'ST'>('ALL');
 
     const [isCompareMode, setIsCompareMode] = useState(false);
-    const [compareSelection, setCompareSelection] = useState<number[]>([]);
+    /* Fix: Updated compareSelection to handle string | number IDs */
+    const [compareSelection, setCompareSelection] = useState<(string | number)[]>([]);
     const [showCompareModal, setShowCompareModal] = useState(false);
 
     const isPlayer = currentRole === 'PLAYER';
@@ -59,7 +61,6 @@ const Roster: React.FC = () => {
                 status: 'ACTIVE',
                 rosterCategory: 'ACTIVE',
                 badges: ['Novato'],
-                // Fix: Correct property name and initialization for rosterHistory
                 rosterHistory: [{ id: `h-${Date.now()}`, date: new Date(), type: 'RECRUITMENT', description: 'Adicionado ao Roster via Cadastro' }],
                 depthChartOrder: 3,
                 ...newPlayerData
@@ -93,7 +94,8 @@ const Roster: React.FC = () => {
         toast.success(`${player.name} movido.`); 
     };
 
-    const toggleCompareSelect = (id: number) => {
+    /* Fix: Updated toggleCompareSelect to accept string | number */
+    const toggleCompareSelect = (id: string | number) => {
         if (compareSelection.includes(id)) {
             setCompareSelection(prev => prev.filter(pid => pid !== id));
         } else {
@@ -153,6 +155,7 @@ const Roster: React.FC = () => {
     }, [displayedPlayers.length, filteredPlayers.length]);
 
     const renderComparisonModal = () => {
+        /* Fix: ID comparison logic */
         const p1 = players.find(p => p.id === compareSelection[0]);
         const p2 = players.find(p => p.id === compareSelection[1]);
         if (!p1 || !p2) return null;
@@ -292,6 +295,7 @@ const Roster: React.FC = () => {
                                 <div key={player.id} className="relative group">
                                     <AthleteCard 
                                         player={player} 
+                                        /* Fix: Casting player.id */
                                         onClick={(p) => isCompareMode ? toggleCompareSelect(p.id) : setSelectedPlayer(p)}
                                         onDelete={canCreateDelete ? handleDeleteClick : () => {}}
                                     />

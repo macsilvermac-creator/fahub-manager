@@ -26,6 +26,38 @@ export interface User {
     isProfileComplete: boolean;
 }
 
+export interface RecruitmentCandidate {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    position: string;
+    age: number;
+    height: string;
+    weight: number;
+    experience: string;
+    status: 'NEW' | 'TRYOUT' | 'TESTING' | 'EVALUATED' | 'SELECTED' | 'ONBOARDING';
+    createdAt: Date;
+    notes?: string;
+    rating?: number;
+    aiAnalysis?: string;
+    combineStats?: CombineStats;
+    avatarUrl?: string;
+    bibNumber?: number;
+    behaviorTags?: string[];
+    cpf?: string;
+}
+
+export interface DevelopmentPlan {
+    id: string;
+    playerId: string | number;
+    title: string;
+    generatedContent: string;
+    createdAt: Date;
+    deadline?: Date;
+    status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+}
+
 export interface Player {
     id: string | number;
     userId?: string;
@@ -43,7 +75,6 @@ export interface Player {
     attendanceRate: number;
     rosterCategory?: RosterCategory;
     program?: ProgramType;
-    // Fix: Added category and stats to Player for compatibility with Athlete dashboards
     category?: string;
     stats?: { ovr: number; speed: number; strength: number; agility: number; tacticalIQ: number };
     combineStats?: CombineStats;
@@ -62,16 +93,6 @@ export interface Player {
     rosterHistory?: any[];
     commitmentLevel?: number;
     verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
-}
-
-export interface DevelopmentPlan {
-    id: string;
-    playerId: string | number;
-    title: string;
-    generatedContent: string;
-    createdAt: Date;
-    deadline?: Date;
-    status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
 }
 
 export interface WellnessEntry {
@@ -173,6 +194,7 @@ export interface PracticeSession {
     checkedInAttendees?: string[];
     script?: PracticeScriptItem[];
     category?: 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
+    deadlineDate?: Date;
 }
 
 export interface PracticeScriptItem {
@@ -201,6 +223,8 @@ export interface TeamSettings {
     primaryColor: string;
     secondaryColor?: string;
     sportType?: 'TACKLE' | 'FLAG' | 'BOTH';
+    website?: string;
+    contactEmail?: string;
 }
 
 export type TransactionCategory = 'TRANSPORT' | 'EQUIPMENT' | 'REFEREE' | 'FIELD_RENTAL' | 'EVENT' | 'SPONSORSHIP' | 'TUITION' | 'STORE' | 'OTHER';
@@ -236,7 +260,7 @@ export interface Objective {
     title: string;
     ownerRole: UserRole;
     progress: number;
-    status: string;
+    status: 'ON_TRACK' | 'BEHIND' | 'COMPLETED' | 'AT_RISK';
     category?: 'SPORTING' | 'FINANCIAL' | 'MARKETING' | 'OPERATIONAL';
     keyResults?: KeyResult[];
     deadline?: Date;
@@ -260,28 +284,6 @@ export interface AuditLog {
     userName: string;
     role: string;
     ipAddress?: string;
-}
-
-export interface RecruitmentCandidate {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    position: string;
-    age: number;
-    height: string;
-    weight: number;
-    experience: string;
-    status: 'NEW' | 'TRYOUT' | 'TESTING' | 'EVALUATED' | 'SELECTED' | 'ONBOARDING';
-    createdAt: Date;
-    notes?: string;
-    // Fix: Added behaviorTags to RecruitmentCandidate
-    behaviorTags?: string[];
-    rating?: number;
-    aiAnalysis?: string;
-    combineStats?: CombineStats;
-    avatarUrl?: string;
-    bibNumber?: number;
 }
 
 export interface MarketplaceItem {
@@ -605,4 +607,68 @@ export interface StaffContract {
     type: 'VOLUNTEER' | 'PAID';
     value: number;
     signed: boolean;
+}
+
+export interface GameTimelineEvent {
+    id: string;
+    type: string;
+    description: string;
+    timestamp: Date;
+}
+
+export interface SidelineAudioNote {
+    id: string;
+    url: string;
+    duration: number;
+    timestamp: Date;
+}
+
+export interface LegalDocument {
+    id: string;
+    title: string;
+    content: string;
+    version: string;
+}
+
+export interface PaymentTransaction {
+    id: string;
+    amount: number;
+    method: 'PIX' | 'CREDIT_CARD';
+    status: 'APPROVED' | 'PENDING' | 'REJECTED';
+    createdAt: Date;
+    platformFee: number;
+    netAmount: number;
+}
+
+export type PaymentMethod = 'PIX' | 'CREDIT_CARD';
+export type FoulType = 'HOLDING' | 'OFFSIDE' | 'PASS_INTERFERENCE' | 'PERSONAL_FOUL' | 'UNSPORTSMANLIKE_CONDUCT' | 'OTHER';
+
+export interface YouthClass {
+    id: string;
+    name: string;
+    ageGroup: string;
+    schedule: string;
+    coachId: string;
+    students: string[];
+    maxCapacity: number;
+}
+
+export interface YouthStudent {
+    id: string;
+    name: string;
+    isSocialProject: boolean;
+}
+
+export interface CoachGameNote {
+    id: string;
+    gameId: string | number;
+    content: string;
+    timestamp: Date;
+}
+
+export interface Championship {
+    id: string;
+    name: string;
+    year: number;
+    division: string;
 }

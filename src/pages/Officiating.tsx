@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
-// Fix: StarIcon is exported from NavIcons, not UiIcons
-import { FlagIcon, BriefcaseIcon, WhistleIcon, StarIcon } from '../components/icons/NavIcons';
-import { CheckCircleIcon, PlayCircleIcon, MicIcon, MapIcon, AlertTriangleIcon, ScanIcon, XIcon, CameraIcon, LockIcon } from '../components/icons/UiIcons';
-import { Game, GameReport, FoulRecord, FoulType, Player, GameInfrastructureChecklist, TeamSettings, RefereeProfile, AssociationFinance, CrewLogistics } from '../types';
+import { FlagIcon, WhistleIcon } from '../components/icons/NavIcons';
+/* Fix: Ensuring correct icon and type imports */
+import { CheckCircleIcon, PlayCircleIcon, MicIcon, StarIcon, AlertTriangleIcon, ScanIcon, CameraIcon, LockIcon } from '../components/icons/UiIcons';
+import { Game, GameReport, Player, TeamSettings } from '../types';
 import { storageService } from '../services/storageService';
-import { voiceService } from '../services/voiceService';
 import { realtimeService } from '../services/realtimeService';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext'; 
@@ -14,38 +13,20 @@ import LazyImage from '../components/LazyImage';
 import Modal from '../components/Modal';
 
 const Officiating: React.FC = () => {
-    const { currentRole } = useContext(UserContext);
+    const { currentRole } = useContext(UserContext) as any;
     const toast = useToast();
-    const [viewMode, setViewMode] = useState<'CAREER' | 'WORKFLOW' | 'FIELD' | 'ADMIN'>('CAREER');
+    const [viewMode, setViewMode] = useState<'CAREER' | 'FIELD'>('CAREER');
     const [games, setGames] = useState<Game[]>([]);
     const [players, setPlayers] = useState<Player[]>([]);
     const [teamSettings, setTeamSettings] = useState<TeamSettings | null>(null);
-    const [activeTab, setActiveTab] = useState<'SUMULA_PRE' | 'LIVE' | 'ROSTER' | 'EDUCATION'>('SUMULA_PRE');
+    const [activeTab, setActiveTab] = useState<'SUMULA_PRE' | 'LIVE' | 'ROSTER'>('SUMULA_PRE');
     
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
-
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-    const [gameReport, setGameReport] = useState<GameReport>({ 
-        infrastructure: {
-            ambulancePresent: false,
-            ambulanceArrivalTime: '',
-            visitorArrivalTime: '',
-            lightingAdequate: true,
-            fieldDimensionsOk: true,
-            goalPostsOk: true,
-            fieldMarkingsCorrect: true,
-            visitorLockerRoom: { hasHotWater: true, secure: true },
-            refereeLockerRoom: { hasHotWater: true, secure: true },
-            ballsProvided: true,
-            waterProvided: true
-        },
-        fouls: [], ejections: [], notes: '', crew: [], isFinalized: false 
-    });
     
-    const [homeScore, setHomeScore] = useState(0);
-    const [awayScore, setAwayScore] = useState(0);
-    const [checkedPlayers, setCheckedPlayers] = useState<Record<number, boolean>>({});
+    /* Fix: Updated checkedPlayers to handle string | number keys */
+    const [checkedPlayers, setCheckedPlayers] = useState<Record<string | number, boolean>>({});
 
     useEffect(() => {
         setGames(storageService.getGames());
@@ -56,9 +37,7 @@ const Officiating: React.FC = () => {
     const startScanner = () => {
         setIsScannerOpen(true);
         setIsScanning(true);
-        setTimeout(() => {
-            handleScanSuccess();
-        }, 3000);
+        setTimeout(() => handleScanSuccess(), 2000);
     };
 
     const handleScanSuccess = () => {
@@ -69,7 +48,7 @@ const Officiating: React.FC = () => {
             const isMedicalExpired = randomPlayer.medicalExamExpiry ? new Date(randomPlayer.medicalExamExpiry) < new Date() : true;
             
             if (isMedicalExpired) {
-                toast.error(`BLOQUEADO: Atleta ${randomPlayer.name} está com Atestado Médico vencido ou ausente!`);
+                toast.error(`BLOQUEADO: Atleta ${randomPlayer.name} com Atestado Médico vencido!`);
                 setCheckedPlayers(prev => ({ ...prev, [randomPlayer.id]: false }));
             } else {
                 setCheckedPlayers(prev => ({ ...prev, [randomPlayer.id]: true }));
@@ -81,22 +60,14 @@ const Officiating: React.FC = () => {
 
     const syncLiveState = (updates: Partial<Game>, type: 'SCORE' | 'CLOCK' | 'STATUS') => {
         if(!selectedGame) return;
-        const updatedGame = { ...selectedGame, ...updates, officialReport: gameReport };
+        const updatedGame = { ...selectedGame, ...updates };
         storageService.updateLiveGame(selectedGame.id, updatedGame);
         setSelectedGame(updatedGame as Game); 
         realtimeService.broadcastUpdate(selectedGame.id, type, updates);
     };
 
-    const updateScore = (team: 'HOME' | 'AWAY', delta: number) => {
-        const newHome = team === 'HOME' ? Math.max(0, homeScore + delta) : homeScore;
-        const newAway = team === 'AWAY' ? Math.max(0, awayScore + delta) : awayScore;
-        setHomeScore(newHome);
-        setAwayScore(newAway);
-        syncLiveState({ score: `${newHome}-${newAway}` }, 'SCORE');
-    };
-
     return (
-        <div className="space-y-6 pb-12 animate-fade-in">
+        <div className="space-y-6 pb-12 animate-fade-in no-scrollbar">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-secondary rounded-xl"><FlagIcon className="text-highlight w-8 h-8" /></div>
@@ -105,7 +76,7 @@ const Officiating: React.FC = () => {
                         <p className="text-text-secondary text-sm">Controle de Identidade e Súmula Digital</p>
                     </div>
                 </div>
-                <div className="flex bg-secondary p-1 rounded-xl border border-white/10 overflow-x-auto">
+                <div className="flex bg-secondary p-1 rounded-xl border border-white/10">
                     <button onClick={() => setViewMode('CAREER')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'CAREER' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}>Carreira</button>
                     <button onClick={() => setViewMode('FIELD')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${viewMode === 'FIELD' ? 'bg-red-600 text-white' : 'text-text-secondary hover:text-white'}`}><WhistleIcon className="w-4 h-4" /> Game Day</button>
                 </div>
@@ -113,68 +84,46 @@ const Officiating: React.FC = () => {
 
             {viewMode === 'FIELD' && selectedGame && (
                 <div className="space-y-6 animate-slide-in">
-                    <div className="bg-black rounded-2xl p-6 border-b-4 border-highlight relative overflow-hidden shadow-2xl">
-                         <button onClick={() => setSelectedGame(null)} className="absolute top-4 right-4 text-xs text-text-secondary hover:text-white underline">Sair</button>
-                         <div className="flex justify-between items-center relative z-10">
-                            <div className="text-center">
-                                <h3 className="text-xl font-black text-white">{teamSettings?.teamName?.toUpperCase()}</h3>
-                                <div className="flex items-center gap-4 mt-2">
-                                    <button onClick={() => updateScore('HOME', 1)} className="text-3xl font-black text-white">+</button>
-                                    <span className="text-5xl font-mono font-bold text-highlight">{homeScore}</span>
-                                </div>
-                            </div>
-                            <div className="text-center">
-                                <p className="text-xs font-bold text-text-secondary uppercase">Quarto</p>
-                                <p className="text-2xl font-black text-white">Q{selectedGame.currentQuarter || 1}</p>
-                            </div>
-                            <div className="text-center">
-                                <h3 className="text-xl font-black text-white">{selectedGame.opponent.toUpperCase()}</h3>
-                                <div className="flex items-center gap-4 mt-2">
-                                    <span className="text-5xl font-mono font-bold text-highlight">{awayScore}</span>
-                                    <button onClick={() => updateScore('AWAY', 1)} className="text-3xl font-black text-white">+</button>
-                                </div>
-                            </div>
+                    <div className="bg-black rounded-2xl p-6 border-b-4 border-highlight flex justify-between items-center shadow-2xl relative overflow-hidden">
+                         <div className="text-center">
+                            <h3 className="text-xl font-black text-white">{teamSettings?.teamName?.toUpperCase()}</h3>
+                            <span className="text-4xl font-mono font-bold text-highlight">{selectedGame.score?.split('-')[0] || 0}</span>
+                         </div>
+                         <div className="text-center">
+                            <p className="text-xs font-bold text-text-secondary uppercase">Quarto</p>
+                            <p className="text-2xl font-black text-white">Q{selectedGame.currentQuarter || 1}</p>
+                            <button onClick={() => setSelectedGame(null)} className="text-[10px] text-text-secondary hover:text-white mt-2 block mx-auto underline">Sair do Jogo</button>
+                         </div>
+                         <div className="text-center">
+                            <h3 className="text-xl font-black text-white">{selectedGame.opponent.toUpperCase()}</h3>
+                            <span className="text-4xl font-mono font-bold text-highlight">{selectedGame.score?.split('-')[1] || 0}</span>
                          </div>
                     </div>
 
-                    <div className="flex border-b border-white/10">
+                    <div className="flex border-b border-white/10 overflow-x-auto">
                         {['SUMULA_PRE', 'ROSTER', 'LIVE'].map(t => (
-                            <button key={t} onClick={() => setActiveTab(t as any)} className={`px-6 py-3 font-bold text-sm border-b-2 ${activeTab === t ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
-                                {t === 'SUMULA_PRE' ? 'Infra' : t === 'ROSTER' ? 'Check-in' : 'Jogo'}
+                            <button key={t} onClick={() => setActiveTab(t as any)} className={`px-6 py-3 font-bold text-sm border-b-2 transition-all ${activeTab === t ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
+                                {t === 'SUMULA_PRE' ? 'Checklist' : t === 'ROSTER' ? 'Check-in' : 'Ocorrências'}
                             </button>
                         ))}
                     </div>
 
                     {activeTab === 'ROSTER' && (
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-white font-bold uppercase italic tracking-tighter">Check-in Automático (Scanner)</h3>
-                                <button onClick={startScanner} className="bg-highlight text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform">
-                                    <ScanIcon className="w-5 h-5" /> Abrir Scanner BID
-                                </button>
-                            </div>
+                            <button onClick={startScanner} className="w-full bg-highlight text-white py-4 rounded-xl font-black flex items-center justify-center gap-2 shadow-glow animate-pulse">
+                                <ScanIcon className="w-5 h-5" /> ABRIR SCANNER DE IDENTIDADE
+                            </button>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                {players.map(p => {
-                                    const isMedicalExpired = p.medicalExamExpiry ? new Date(p.medicalExamExpiry) < new Date() : true;
-                                    return (
-                                        <div key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border relative ${checkedPlayers[p.id] ? 'bg-green-600/20 border-green-500' : 'bg-secondary border-white/5 opacity-60'}`}>
-                                            <LazyImage src={p.avatarUrl} className="w-10 h-10 rounded-full" />
-                                            <div className="flex-1">
-                                                <p className="text-sm font-bold text-white leading-none">{p.name}</p>
-                                                <p className="text-[10px] text-text-secondary mt-1">#{p.jerseyNumber} • {p.position}</p>
-                                            </div>
-                                            <div className="flex flex-col items-end gap-1">
-                                                {checkedPlayers[p.id] && <CheckCircleIcon className="w-5 h-5 text-green-500" />}
-                                                {isMedicalExpired && <span className="text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded font-black">SEM ATESTADO</span>}
-                                            </div>
-                                            {isMedicalExpired && (
-                                                <div className="absolute inset-0 bg-red-900/10 flex items-center justify-center rounded-xl pointer-events-none">
-                                                    <LockIcon className="w-4 h-4 text-red-500/50" />
-                                                </div>
-                                            )}
+                                {players.map(p => (
+                                    <div key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border ${checkedPlayers[p.id] ? 'bg-green-600/20 border-green-500' : 'bg-secondary border-white/5 opacity-60'}`}>
+                                        <LazyImage src={p.avatarUrl} className="w-10 h-10 rounded-full" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-bold text-white leading-none">{p.name}</p>
+                                            <p className="text-[10px] text-text-secondary mt-1">#{p.jerseyNumber} • {p.position}</p>
                                         </div>
-                                    );
-                                })}
+                                        {checkedPlayers[p.id] && <CheckCircleIcon className="w-5 h-5 text-green-500" />}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
@@ -182,22 +131,23 @@ const Officiating: React.FC = () => {
             )}
 
             {viewMode === 'FIELD' && !selectedGame && (
-                <Card title="Selecione o Jogo para Súmula">
+                <Card title="Escalação de Partidas">
                     <div className="space-y-3">
-                        {games.filter(g => g.status !== 'FINAL').map(game => (
-                            <div key={game.id} onClick={() => setSelectedGame(game)} className="bg-secondary p-4 rounded-xl border border-white/5 hover:border-highlight cursor-pointer flex justify-between items-center">
+                        {games.map(game => (
+                            <div key={game.id} onClick={() => setSelectedGame(game)} className="bg-secondary p-4 rounded-xl border border-white/5 hover:border-highlight cursor-pointer flex justify-between items-center transition-all group">
                                 <div>
-                                    <p className="font-bold text-white">{teamSettings?.teamName} vs {game.opponent}</p>
+                                    <p className="font-bold text-white uppercase italic">{teamSettings?.teamName} vs {game.opponent}</p>
                                     <p className="text-xs text-text-secondary">{new Date(game.date).toLocaleString()}</p>
                                 </div>
-                                <PlayCircleIcon className="text-highlight" />
+                                <PlayCircleIcon className="text-highlight group-hover:scale-110 transition-transform" />
                             </div>
                         ))}
+                        {games.length === 0 && <p className="text-center py-10 text-text-secondary italic">Nenhuma partida escalada.</p>}
                     </div>
                 </Card>
             )}
 
-            <Modal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} title="Scanner BID Digital">
+            <Modal isOpen={isScannerOpen} onClose={() => setIsScannerOpen(false)} title="Zebra Scan - Validação BID">
                 <div className="flex flex-col items-center py-8">
                     <div className="w-64 h-64 border-4 border-highlight rounded-3xl relative overflow-hidden bg-black flex items-center justify-center">
                         {isScanning ? (
@@ -209,10 +159,9 @@ const Officiating: React.FC = () => {
                             <CheckCircleIcon className="w-16 h-16 text-green-500 animate-bounce" />
                         )}
                     </div>
-                    <p className="text-sm text-text-secondary mt-6 text-center">
-                        {isScanning ? 'Posicione o QR Code do Atleta dentro da área marcada.' : 'Atleta Identificado com Sucesso!'}
+                    <p className="text-sm text-text-secondary mt-6 text-center px-6">
+                        {isScanning ? 'Aponte a câmera para o QR Code da carteirinha do atleta.' : 'Identidade verificada com sucesso no BID.'}
                     </p>
-                    <button onClick={() => setIsScannerOpen(false)} className="mt-8 text-white/50 hover:text-white uppercase text-xs font-bold tracking-widest">Cancelar</button>
                 </div>
             </Modal>
             
