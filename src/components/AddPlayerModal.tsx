@@ -55,7 +55,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
 
   useEffect(() => {
     if (isOpen) {
-        // Fix: Cast explicitly to ProgramType to resolve assignment error
+        // Fix: Explicitly defining type from service getter
         const program = storageService.getActiveProgram() as ProgramType;
         setCurrentProgram(program);
         setPositions(program === 'FLAG' ? POSITIONS_FLAG : POSITIONS_TACKLE);
@@ -129,9 +129,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
 
     onAdd({
       name: formData.name,
-      // @ts-ignore
       cpf: formData.cpf,
-      // @ts-ignore
       birthDate: new Date(formData.birthDate),
       nationality: formData.nationality as any,
       position: formData.position,
@@ -142,6 +140,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
       avatarUrl: formData.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`,
       depthChartOrder: 3, 
       combineStats: combineData,
+      attendanceRate: 100, // Fix: Added missing property
       medicalReports: [],
       verificationStatus: 'PENDING',
       rosterCategory: 'ACTIVE',

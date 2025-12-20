@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
-// Fix: Corrected types for Objective and KeyResult
 import { Objective, KeyResult, UserRole } from '../types';
 import { storageService } from '../services/storageService';
 import { CheckCircleIcon, AlertTriangleIcon, TrendingUpIcon, PenIcon } from '../components/icons/UiIcons';
@@ -11,7 +10,7 @@ import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 
 const Goals: React.FC = () => {
-    const { currentRole } = useContext(UserContext);
+    const { currentRole } = useContext(UserContext) as any;
     const toast = useToast();
     const [objectives, setObjectives] = useState<Objective[]>([]);
     
@@ -42,13 +41,11 @@ const Goals: React.FC = () => {
         const newObj: Objective = {
             id: `obj-${Date.now()}`,
             title: newTitle,
-            // Fix: category and status are correctly used according to updated type
             category: newCategory,
             status: 'ON_TRACK',
             progress: 0,
             deadline: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
             ownerRole: 'MASTER',
-            // Fix: keyResults is correctly used
             keyResults: [{
                 id: `kr-${Date.now()}`,
                 title: newKRTitle,

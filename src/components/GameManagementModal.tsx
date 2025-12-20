@@ -46,7 +46,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
         setPlayers(allPlayers);
         setTacticalPlays(storageService.getTacticalPlays());
 
-        // Fix: Safely handling gameRoster mapping
         const initialRoster = (game as any)['gameRoster'] || allPlayers.filter(p => p.status === 'ACTIVE').map(p => String(p.id));
         setGameRoster(initialRoster);
 
@@ -56,7 +55,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
         if (game.callSheet && game.callSheet.length > 0) {
             setCallSheet(game.callSheet);
         } else {
-            // Default Template
             setCallSheet([
                 { title: 'Openers (1st Drive)', plays: ['', '', '', ''] },
                 { title: '3rd & Short (< 2yds)', plays: ['', '', ''] },
@@ -71,8 +69,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
     }
   }, [isOpen, game]);
 
-  // --- HANDLERS ---
-
   const handleSaveAll = () => {
       if(!game) return;
       const updatedGame: Game = {
@@ -80,14 +76,13 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
           scoutingReport: scoutData,
           playerGrades: playerGrades,
           callSheet: callSheet,
-          // @ts-ignore - for simplified persistence
+          // @ts-ignore
           gameRoster: gameRoster 
       };
       onSave(updatedGame);
       toast.success("Dados do jogo salvos com sucesso!");
   };
 
-  // --- AI SCOUT ---
   const handleAiScout = async () => {
       if (!game) return;
       setIsAnalyzing(true);
@@ -109,7 +104,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       }
   };
 
-  // --- ROSTER LOGIC ---
   const togglePlayerInGame = (playerId: string) => {
       if (gameRoster.includes(playerId)) {
           setGameRoster(prev => prev.filter(id => id !== playerId));
@@ -128,7 +122,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
         }).length;
   };
 
-  // --- PLAYBOOK PICKER ---
   const openPlayPicker = (sectionIdx: number, playIdx: number) => {
       setPickerTarget({ sectionIdx, playIdx });
       setIsPickerOpen(true);
@@ -154,7 +147,6 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       setCallSheet(newSheet);
   };
 
-  // QB WRISTBAND EXPORT
   const exportWristband = () => {
       const opponent = game?.opponent || 'OPPONENT';
       let tableRows = '';
@@ -196,12 +188,11 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
       win?.focus();
   };
 
-  // --- GRADING ---
-  const handleGradeChange = (playerId: number, field: 'grade' | 'notes', value: any) => {
+  const handleGradeChange = (playerId: string | number, field: 'grade' | 'notes', value: any) => {
       setPlayerGrades(prev => {
-          const existing = prev.find(p => p.playerId === playerId);
+          const existing = prev.find(p => String(p.playerId) === String(playerId));
           if (existing) {
-              return prev.map(p => p.playerId === playerId ? { ...p, [field]: value } : p);
+              return prev.map(p => String(p.playerId) === String(playerId) ? { ...p, [field]: value } : p);
           } else {
               return [...prev, { playerId, grade: field === 'grade' ? value : 0, notes: field === 'notes' ? value : '' }];
           }
@@ -415,7 +406,7 @@ const GameManagementModal: React.FC<GameManagementModalProps> = ({ isOpen, onClo
                          {gameRoster.map(id => {
                             const player = players.find(p => String(p.id) === id);
                             if(!player) return null;
-                            const gradeData = playerGrades.find(g => g.playerId === player.id);
+                            const gradeData = playerGrades.find(g => String(g.playerId) === String(player.id));
                             return (
                                 <div key={player.id} className="flex items-center gap-4 bg-secondary/20 p-2 rounded-lg border border-white/5">
                                     <div className="w-8 h-8 rounded-full bg-black/40 overflow-hidden shrink-0">
