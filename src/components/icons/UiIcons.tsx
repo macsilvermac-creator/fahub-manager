@@ -31,7 +31,6 @@ export const BuildingIcon = (props: any) => <svg {...iconProps} {...props} viewB
 export const ClockIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
 export const CalendarIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>;
 
-// Novas exportações para resolver erros de compilação
 export const ShieldCheckIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>;
 export const DumbbellIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 1 1 0 8h-1"></path><path d="M6 8H5a4 4 0 1 0 0 8h1"></path><line x1="8" y1="12" x2="16" y2="12"></line><rect x="6" y="7" width="2" height="10"></rect><rect x="16" y="7" width="2" height="10"></rect></svg>;
 export const TrendingUpIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
@@ -54,7 +53,7 @@ export const BusIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0
 export const BedIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M2 4v16"></path><path d="M2 8h18a2 2 0 0 1 2 2v10"></path><path d="M2 17h20"></path><path d="M6 8v9"></path></svg>;
 export const CloudIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>;
 export const MapPinIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>;
-export const MicIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>;
+export const MicIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12.01" y2="19"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>;
 export const MapIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon></svg>;
 export const GavelIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="m14.5 12.5-8 8a2.121 2.121 0 0 1-3-3l8-8"></path><path d="m16 16 6-6"></path><path d="m8 8 6-6"></path><path d="m9 7 8 8"></path><path d="m21 11-8-8"></path></svg>;
 export const SwapIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="m16 3 5 5-5 5"></path><path d="m8 21-5-5 5-5"></path><path d="M21 8H3"></path><path d="M3 16h18"></path></svg>;
@@ -75,7 +74,9 @@ export const LockIcon = (props: any) => <svg {...iconProps} {...props} viewBox="
 export const CameraIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>;
 export const WifiOffIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path></svg>;
 export const StarIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>;
+
 export const SparklesIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>;
 export const SearchIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 export const EyeIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
 export const ScanIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>;
+export const WhistleIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2z"></path><path d="M12 12h5"></path></svg>;
