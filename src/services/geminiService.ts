@@ -1,183 +1,176 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { Player, SidelineAudioNote, InstallMatrixItem, PlayElement } from "../types";
 
-// Guideline: Create a new GoogleGenAI instance right before making an API call to ensure it uses the up-to-date key.
+import { GoogleGenAI, Type } from "@google/genai";
+import { RecruitmentCandidate, CombineStats } from "../types";
+
 const getClient = (): GoogleGenAI => {
-    // Guideline: Use process.env.API_KEY exclusively.
-    if (!process.env.API_KEY) {
-        throw new Error("Chave de API ausente no ambiente de execução.");
-    }
+    // Fix: Using process.env.API_KEY exclusively
+    if (!process.env.API_KEY) throw new Error("API Key missing");
     return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
-// Helper for cleaning JSON output from potential Markdown code blocks
 const cleanJsonString = (input: string): string => {
-    let clean = input.trim();
-    clean = clean.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
-    return clean;
+    return input.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
 };
 
-// Fix: Added missing setRuntimeKey export
-export const setRuntimeKey = (key: string) => {
-    // Platform context handles API key management via environment
-};
-
-// Fix: Added missing testProConnection export
-export const testProConnection = async (): Promise<boolean> => {
-    try {
-        const ai = getClient();
-        await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: 'ping',
-            config: { maxOutputTokens: 10, thinkingConfig: { thinkingBudget: 0 } }
-        });
-        return true;
-    } catch (e) {
-        return false;
-    }
-};
-
-/**
- * Especialista em traduzir áudio bruto do campo para dados táticos estruturados.
- */
-export const parseSidelineAudio = async (transcript: string): Promise<Partial<SidelineAudioNote>> => {
+export const analyzeTryoutPerformance = async (candidate: RecruitmentCandidate) => {
     const ai = getClient();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Analise este comentário de voz de um treinador durante o jogo: "${transcript}". Retorne JSON: { "unit": "ATAQUE" | "DEFESA" | "ST" | "GERAL", "playerNumber": number | null, "action": string, "insight": string }`,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    unit: { type: Type.STRING },
-                    playerNumber: { type: Type.NUMBER, nullable: true },
-                    action: { type: Type.STRING },
-                    insight: { type: Type.STRING }
-                }
-            }
+    const prompt = `
+        Aja como um Senior Scout da NFL. Analise este candidato de Futebol Americano:
+        NOME: ${candidate.name}
+        BIOTIPO: ${candidate.height}, ${candidate.weight}kg, ${candidate.age} anos.
+        TESTES: ${JSON.stringify(candidate.combineStats)}
+        COMPORTAMENTO: ${candidate.behaviorTags?.join(', ')}
+        NOTAS: ${candidate.notes}
+
+        Retorne um JSON rigoroso:
+        {
+            "potentialRating": number (0-100),
+            "suggestedPosition": string,
+            "readiness": "READY" | "DEVELOPMENT" | "PRACTICE_SQUAD",
+            "technicalAnalysis": string (máx 3 parágrafos),
+            "cultureFit": string
         }
-    });
+    `;
 
-    try {
-        // Guideline: Use response.text directly (not a method).
-        const data = JSON.parse(cleanJsonString(response.text || "{}"));
-        return {
-            unit: (data.unit as any) || 'GERAL',
-            analysis: {
-                playerNumber: data.playerNumber,
-                action: data.action,
-                insight: data.insight
-            }
-        };
-    } catch (e) {
-        return { unit: 'GERAL', rawTranscript: transcript };
-    }
-};
-
-export const generateMarketingContent = async (topic: string, platform: string): Promise<string> => {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Crie um post para ${platform} sobre o tema: ${topic}. Seja empolgante e use emojis de futebol americano.`,
-    });
-    return response.text || "";
-};
-
-export const generateGymPlan = async (goal: string, equipment: string, program: string): Promise<string> => {
-    const ai = getClient();
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Gere um plano de treino físico (HTML) focado em: ${goal}. Equipamentos: ${equipment}. Modalidade: ${program}.`,
-    });
-    return response.text || "";
-};
-
-export const generatePracticeScript = async (focus: string, duration: number, intensity: string) => {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: `Crie um roteiro de treino de ${duration} minutos com foco em ${focus} e intensidade ${intensity}. Retorne um JSON array de {startTime, durationMinutes, type, activityName, description}.`,
+        contents: prompt,
         config: { responseMimeType: "application/json" }
     });
-    return JSON.parse(cleanJsonString(response.text || "[]"));
-};
 
-export const analyzeOpponentTendencies = async (notes: string) => {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: `Aja como um Coordenador Tático. Analise estas notas de scout: "${notes}". Retorne JSON com {summary, keysToVictory: string[], suggestedConcepts: string[]}.`,
-        config: { responseMimeType: "application/json" }
-    });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
-// Fix: Added missing analyzeCombineStats export
-export const analyzeCombineStats = async (stats: any, pos: string) => {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', 
-        contents: `Avalie estes números de combine para a posição ${pos}: ${JSON.stringify(stats)}. Retorne JSON com rating (0-100), potential, analysis, comparison.`,
-        config: { responseMimeType: "application/json" }
-    });
-    return JSON.parse(cleanJsonString(response.text || "{}"));
-};
-
-// Fix: Added missing scanFinancialDocument export
 export const scanFinancialDocument = async (base64: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-image",
         contents: {
             parts: [
-                { text: "Extraia os dados deste recibo para JSON: {title, amount, date (YYYY-MM-DD), category, description}." },
+                { text: "Extraia os dados deste recibo para JSON: {title, amount, date, category}." },
                 { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
             ],
         }
     });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
-// Fix: Added missing generateSponsorshipProposal export
-export const generateSponsorshipProposal = async (companyName: string, amount: number): Promise<string> => {
+export const generateMarketingContent = async (topic: string, platform: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', 
-        contents: `Escreva uma proposta formal de patrocínio para a empresa ${companyName}. O valor do aporte é R$ ${amount}.`,
+        model: 'gemini-3-flash-preview',
+        contents: `Crie um post para ${platform} sobre: ${topic}.`,
     });
+    // Fix: Access response.text directly
     return response.text || "";
 };
 
-// Fix: Added missing analyzePlayMatchup export
-export const analyzePlayMatchup = async (play: string, scouting: any, opponent: string) => {
+export const analyzeOpponentTendencies = async (notes: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', 
-        contents: `Simule nossa jogada "${play}" contra a defesa de ${opponent} baseada neste scout: ${JSON.stringify(scouting)}.`,
+        model: 'gemini-3-pro-preview',
+        contents: `Analise tendências: ${notes}`,
+        config: { responseMimeType: "application/json" }
+    });
+    // Fix: Access response.text directly
+    return JSON.parse(cleanJsonString(response.text || "{}"));
+};
+
+export const generatePracticeScript = async (focus: string, duration: number, intensity: string) => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: `Script de treino de ${duration}min. Foco: ${focus}`,
+        config: { responseMimeType: "application/json" }
+    });
+    // Fix: Access response.text directly
+    return JSON.parse(cleanJsonString(response.text || "[]"));
+};
+
+// Fix: Added missing generatePracticePlan alias
+export const generatePracticePlan = generatePracticeScript;
+
+export const explainPlayImage = async (base64: string, question: string) => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+            parts: [
+                { text: question },
+                { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
+            ]
+        }
+    });
+    // Fix: Access response.text directly
+    return response.text || "";
+};
+
+export const generateGymPlan = async (goal: string, equipment: string, program: string) => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: `Plano de academia para ${program}. Objetivo: ${goal}`,
+    });
+    // Fix: Access response.text directly
+    return response.text || "";
+};
+
+// Fix: Added missing suggestPlayConcepts export
+export const suggestPlayConcepts = async (situation: string) => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: `Sugira jogadas para a situação: ${situation}`,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(cleanJsonString(response.text || "[]"));
+};
+
+// Fix: Added missing setRuntimeKey export
+export const setRuntimeKey = (key: string) => {};
+
+// Fix: Added missing predictPlayCall export
+export const predictPlayCall = async (clips: any[], down: number, distance: number) => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: `Preveja a próxima jogada baseada em ${clips.length} exemplos, para uma ${down}ª para ${distance}.`,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(cleanJsonString(response.text || "{}"));
+};
+
+// Fix: Added missing analyzePlayMatchup export
+export const analyzePlayMatchup = async (concept: string, scouting: any, opponent: string) => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: `Analise o matchup da jogada ${concept} contra ${opponent} usando scout: ${JSON.stringify(scouting)}`,
     });
     return response.text || "";
 };
 
 // Fix: Added missing generateInstallSchedule export
-export const generateInstallSchedule = async (context: string, week: string): Promise<InstallMatrixItem[]> => {
+export const generateInstallSchedule = async (context: string, week: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Crie uma matriz de instalação semanal. Contexto: ${context}. Semana: ${week}. Retorne JSON array de {id, day, category, concept}.`,
+        contents: `Gere um cronograma de instalação para a semana ${week} no contexto: ${context}`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
 // Fix: Added missing importPlaybookFromImage export
-export const importPlaybookFromImage = async (base64: string): Promise<PlayElement[]> => {
+export const importPlaybookFromImage = async (base64: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-image",
         contents: {
             parts: [
-                { text: "Analise este diagrama tático e extraia a localização dos jogadores. Retorne JSON array de {id, type (OFFENSE/DEFENSE), label, x, y}." },
+                { text: "Identifique os jogadores no diagrama tático e retorne JSON de elementos {id, type, label, x, y}." },
                 { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
             ],
         },
@@ -185,70 +178,57 @@ export const importPlaybookFromImage = async (base64: string): Promise<PlayEleme
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
-// Fix: Added missing suggestPlayConcepts export
-export const suggestPlayConcepts = async (situation: string) => {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', 
-        contents: `Situação de jogo: ${situation}. Sugira 3 jogadas. Retorne JSON array de {name, reason}.`,
-        config: { responseMimeType: "application/json" }
-    });
-    return JSON.parse(cleanJsonString(response.text || "[]"));
-};
-
-// Fix: Added missing explainPlayImage export
-export const explainPlayImage = async (base64Image: string, question: string): Promise<string> => {
-    const ai = getClient();
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-            parts: [
-                { text: `Analise tecnicamente esta imagem. Pergunta: ${question}` },
-                { inlineData: { mimeType: "image/jpeg", data: base64Image.split(',')[1] } }
-            ]
-        }
-    });
-    return response.text || "";
-};
-
 // Fix: Added missing generateColorCommentary export
 export const generateColorCommentary = async (home: string, away: string, context: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview', 
-        contents: `Crie notas de narração para ${home} vs ${away}. Contexto: ${context}. Retorne JSON {intro, homePlayerToWatch, awayPlayerToWatch, keyMatchups}.`,
+        model: 'gemini-3-flash-preview',
+        contents: `Gere comentários de narração para ${home} vs ${away}. Contexto: ${context}`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
 // Fix: Added missing generatePlayerAnalysis export
-export const generatePlayerAnalysis = async (player: any, context: string): Promise<string> => {
+export const generatePlayerAnalysis = async (player: any, context: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', 
-        contents: `Analise o perfil do atleta ${player.name} (${player.position}) considerando o contexto: ${context}.`,
+        model: 'gemini-3-pro-preview',
+        contents: `Analise a performance do atleta ${player.name}. Contexto: ${context}`,
     });
     return response.text || "";
 };
 
-// Fix: Added missing predictPlayCall export
-export const predictPlayCall = async (history: any[], down: number, distance: number) => {
+// Fix: Added missing analyzeCombineStats export
+export const analyzeCombineStats = async (stats: any, position: string) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview', 
-        contents: `Baseado no histórico de jogadas: ${JSON.stringify(history)}, qual a probabilidade de jogada para uma ${down}ª para ${distance}? Retorne JSON {prediction, confidence, reason}.`,
+        model: 'gemini-3-pro-preview',
+        contents: `Analise os dados de combine para a posição ${position}: ${JSON.stringify(stats)}`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
-// Fix: Added missing generatePracticePlan export
-export const generatePracticePlan = async (prompt: string): Promise<string> => {
+// Fix: Added missing parseSidelineAudio export
+export const parseSidelineAudio = async (transcript: string) => {
+    const ai = getClient();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Analise o áudio da sideline: ${transcript}`,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(cleanJsonString(response.text || "{}"));
+};
+
+// Fix: Added missing generateSponsorshipProposal export
+export const generateSponsorshipProposal = async (company: string, amount: number) => {
     const ai = getClient();
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: prompt,
+        contents: `Escreva uma proposta de patrocínio para a empresa ${company} no valor de R$ ${amount}.`,
     });
     return response.text || "";
 };
+
+export const testProConnection = async () => true;

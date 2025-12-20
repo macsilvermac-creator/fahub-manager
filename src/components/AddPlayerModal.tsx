@@ -120,21 +120,20 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
     onAdd({
       name: formData.name,
       cpf: formData.cpf,
-      // Fixed property assignments for types compatibility
-      // @ts-ignore
+      // Fixed: birthDate type compatibility
       birthDate: new Date(formData.birthDate),
-      nationality: formData.nationality as any,
+      // Fix: Added nationality to match updated Omit type
+      nationality: formData.nationality,
       position: formData.position,
       jerseyNumber: Number(formData.jerseyNumber),
       height: formData.height,
       weight: Number(formData.weight),
       class: formData.class,
       avatarUrl: formData.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`,
-      depthChartOrder: 3, // Default to lowest depth
+      // Fix: Added depthChartOrder to match Omit type
+      depthChartOrder: 3, 
       combineStats: combineData,
-      medicalReports: [],
-      verificationStatus: 'PENDING',
-      rosterCategory: 'ACTIVE'
+      rosterHistory: []
     });
   };
 
