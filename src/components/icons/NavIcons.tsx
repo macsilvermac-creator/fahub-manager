@@ -29,14 +29,5 @@ export const StarIcon = (props: any) => <svg {...iconProps} {...props} viewBox="
 export const GlobeIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>;
 export const FootballIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="6"></ellipse><path d="M12 6v12"></path><path d="M8 8v8"></path><path d="M16 8v8"></path></svg>;
 export const BookIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>;
-
-// Fix: Added missing TicketIcon export to resolve errors in Commercial.tsx and EventDesk.tsx
-export const TicketIcon = (props: any) => (
-  <svg {...iconProps} {...props} viewBox="0 0 24 24">
-    <path d="M3 6h18"></path>
-    <path d="M3 18h18"></path>
-    <path d="M19 6v12"></path>
-    <path d="M5 6v12"></path>
-    <circle cx="12" cy="12" r="3"></circle>
-  </svg>
-);
+export const TicketIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M3 6h18"></path><path d="M3 18h18"></path><path d="M19 6v12"></path><path d="M5 6v12"></path><circle cx="12" cy="12" r="3"></circle></svg>;
+export const KanbanIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>;
