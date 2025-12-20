@@ -2,6 +2,9 @@
 {
   "requestFramePermissions": [
     "camera",
-    "microphone"
-  ]
+    "microphone",
+    "geolocation"
+  ],
+  "name": "FAHUB MANAGER",
+  "description": "Ecossistema de Gestão de Futebol Americano em Tempo Real."
 }
