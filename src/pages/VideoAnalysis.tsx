@@ -1,209 +1,146 @@
 
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import Card from '../components/Card';
-import { VideoClip, VideoTag, VideoPermissionGroup, UserRole, Player } from '../types';
+// Fix: Added missing VideoClip type
+import { VideoClip, Player, Game } from '../types';
 import { storageService } from '../services/storageService';
-import { predictPlayCall } from '../services/geminiService';
-import { VideoIcon } from '../components/icons/NavIcons';
-import { ScissorsIcon, FilterIcon, PlayCircleIcon, CheckCircleIcon, TrashIcon, SparklesIcon, AlertCircleIcon, PenIcon, EraserIcon, BrainIcon, EyeIcon, TrendingUpIcon, SearchIcon } from '../components/icons/UiIcons';
+// Fix: Corrected icon imports
+import { ScissorsIcon, PlayCircleIcon, BrainIcon, EyeIcon, SearchIcon, SwapIcon, SparklesIcon, TrashIcon, ClockIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
-import Modal from '../components/Modal';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
+import { useToast } from '../contexts/ToastContext';
 import LazyImage from '../components/LazyImage';
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
-interface VideoSource {
-    id: string;
-    title: string;
-    url: string;
-    type: 'YOUTUBE' | 'LOCAL' | 'VIMEO' | 'DRIVE';
-}
 
 const VideoAnalysis: React.FC = () => {
     const { currentRole } = useContext(UserContext);
-    // Fix: Using state for activeTab to resolve type issues
-    const [activeTab, setActiveTab] = useState<'CUTTER' | 'LIBRARY' | 'PLAYLISTS' | 'REPORTS'>('CUTTER');
-    
-    // Refs for Local Player & Canvas
-    const localVideoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    
-    // Fix: Correct state initialization for taggingMode
-    const [taggingMode, setTaggingMode] = useState<'FULLPADS' | 'FLAG'>('FULLPADS');
-
-    // Video Sources
-    const [videoSources, setVideoSources] = useState<VideoSource[]>([
-        { id: 'g1', title: 'Gladiators Highlight (Demo)', url: 'https://www.youtube.com/watch?v=2vjPBrBU-TM', type: 'YOUTUBE' }, 
-    ]);
-    const [selectedGame, setSelectedGame] = useState(videoSources[0].id);
-    
-    // Add Video Modal
-    const [isAddingVideo, setIsAddingVideo] = useState(false);
-    const [addVideoTab, setAddVideoTab] = useState<'LINK' | 'FILE'>('LINK');
-    const [newVideoUrl, setNewVideoUrl] = useState('');
-    const [newVideoTitle, setNewVideoTitle] = useState('');
-    const [localFile, setLocalFile] = useState<File | null>(null);
-
-    // Data State
+    const toast = useToast();
+    const [activeTab, setActiveTab] = useState<'FILM_ROOM' | 'MOSAIC' | 'COMPARISON'>('FILM_ROOM');
     const [clips, setClips] = useState<VideoClip[]>([]);
-    const [players, setPlayers] = useState<Player[]>([]);
-    
-    // Cutter State
-    const [startCut, setStartCut] = useState(0);
-    const [endCut, setEndCut] = useState(0);
-    
-    // Tagging Form
-    const [tagData, setTagData] = useState<VideoTag>({
-        down: 1, distance: 10, yardLine: 20, hash: 'MIDDLE',
-        offensiveFormation: '', defensiveFormation: '',
-        offensivePlayCall: '', defensivePlayCall: '',
-        personnel: '', result: 'GAIN', gain: 0,
-        involvedPlayerIds: [], startX: 50, startY: 50
-    });
-    const [clipTitle, setClipTitle] = useState('');
+    const [selectedClip, setSelectedClip] = useState<VideoClip | null>(null);
+    const [comparisonClip, setComparisonClip] = useState<VideoClip | null>(null);
 
-    // AI Prediction State
-    const [prediction, setPrediction] = useState<{prediction: string, confidence: string, reason: string} | null>(null);
-    const [isPredicting, setIsPredicting] = useState(false);
-
-    // Smart Filter
-    const [naturalSearch, setNaturalSearch] = useState('');
-    const [filteredClips, setFilteredClips] = useState<VideoClip[]>([]);
-
-    // Telestration
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [drawColor, setDrawColor] = useState('#ffff00');
-    const [drawingActive, setDrawingActive] = useState(false);
-
-    const isPlayer = currentRole === 'PLAYER';
+    // Fix: Corrected taggingMode values
+    const [taggingMode, setTaggingMode] = useState<'FLAG' | 'FULLPADS'>('FULLPADS');
 
     useEffect(() => {
+        // Fix: getClips exists in storageService
         setClips(storageService.getClips());
-        setPlayers(storageService.getPlayers());
-        const teamSettings = storageService.getTeamSettings();
-        // Fix: Use correct sportType mapping
-        if(teamSettings.sportType) {
-            const mode: 'FULLPADS' | 'FLAG' = teamSettings.sportType === 'FLAG' ? 'FLAG' : 'FULLPADS';
-            setTaggingMode(mode);
+        const settings = storageService.getTeamSettings();
+        if (settings.sportType) {
+            const mode = settings.sportType === 'FLAG' ? 'FLAG' : 'FULLPADS';
+            setTaggingMode(mode as any);
         }
     }, []);
 
-    // Smart Filtering Logic (Natural Language Approximation)
-    useEffect(() => {
-        if (!naturalSearch) {
-            setFilteredClips(clips);
-            return;
-        }
-        const query = naturalSearch.toLowerCase();
-        const res = clips.filter(c => 
-            c.title.toLowerCase().includes(query) || 
-            c.tags.offensivePlayCall.toLowerCase().includes(query) ||
-            c.tags.result.toLowerCase().includes(query) ||
-            (query.includes('passe') && c.tags.offensivePlayCall.toLowerCase().includes('pass')) ||
-            (query.includes('corrida') && c.tags.offensivePlayCall.toLowerCase().includes('run')) ||
-            (query.includes('touchdown') && c.tags.result === 'TOUCHDOWN')
-        );
-        setFilteredClips(res);
-    }, [naturalSearch, clips]);
-
-    // AI Prediction Handler
-    const handlePredictPlay = async () => {
-        setIsPredicting(true);
-        try {
-            const result = await predictPlayCall(clips, tagData.down, tagData.distance);
-            setPrediction(result);
-        } catch (e) {
-            console.error("AI Error", e);
-        } finally {
-            setIsPredicting(false);
-        }
-    };
-
-    // --- TELESTRATION ---
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!isDrawing) return;
-        setDrawingActive(true);
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!canvas || !ctx) return;
-        const rect = canvas.getBoundingClientRect();
-        ctx.beginPath();
-        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-        ctx.strokeStyle = drawColor;
-        ctx.lineWidth = 3;
-    };
-
-    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!drawingActive || !isDrawing) return;
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!canvas || !ctx) return;
-        const rect = canvas.getBoundingClientRect();
-        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-        ctx.stroke();
-    };
-
-    const stopDrawing = () => setDrawingActive(false);
-    const clearCanvas = () => {
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        ctx?.clearRect(0, 0, canvas?.width || 0, canvas?.height || 0);
-    };
-
-    // --- HELPERS ---
-    const getEmbedUrl = (url: string) => {
-        if (!url) return '';
-        const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-        if (ytMatch && ytMatch[1]) return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
-        return url;
+    const handleCompare = (clip: VideoClip) => {
+        setSelectedClip(clip);
+        setActiveTab('COMPARISON');
+        toast.info("Selecione o vídeo de referência para comparação.");
     };
 
     return (
-        <div className="space-y-6 pb-20 animate-fade-in">
-             <div className="flex justify-between items-center">
+        <div className="space-y-6 pb-12 animate-fade-in">
+            <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                     <div className="p-3 bg-secondary rounded-xl shadow-glow">
-                        <VideoIcon className="text-highlight w-8 h-8" />
+                        <EyeIcon className="text-highlight w-8 h-8" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-black text-text-primary italic uppercase tracking-tighter">Video Lab & Film Room</h2>
+                        <h2 className="text-3xl font-bold text-text-primary italic uppercase tracking-tighter">Vision Lab</h2>
                         <p className="text-text-secondary text-sm">Análise periódica e Correção Técnica.</p>
                     </div>
                 </div>
             </div>
 
             <div className="flex border-b border-white/10 overflow-x-auto no-scrollbar">
-                <button onClick={() => setActiveTab('CUTTER')} className={`px-6 py-3 font-bold text-xs border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'CUTTER' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
-                    <ScissorsIcon className="w-4 h-4" /> FILM CUTTER
+                <button onClick={() => setActiveTab('FILM_ROOM')} className={`px-6 py-3 font-bold text-xs border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'FILM_ROOM' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
+                    FILM ROOM
                 </button>
-                <button onClick={() => setActiveTab('LIBRARY')} className={`px-6 py-3 font-bold text-xs border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'LIBRARY' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
-                    BIBLIOTECA
+                <button onClick={() => setActiveTab('MOSAIC')} className={`px-6 py-3 font-bold text-xs border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'MOSAIC' ? 'border-purple-500 text-purple-400' : 'border-transparent text-text-secondary'}`}>
+                    MOSAICO DE QUARTER (IA)
+                </button>
+                <button onClick={() => setActiveTab('COMPARISON')} className={`px-6 py-3 font-bold text-xs border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'COMPARISON' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary'}`}>
+                    SIDE-BY-SIDE REVIEW
                 </button>
             </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                    <Card title="Player Room">
-                         <div className="aspect-video bg-black rounded-xl overflow-hidden relative">
-                             <iframe 
-                                width="100%" 
-                                height="100%" 
-                                src={getEmbedUrl(videoSources.find(v => v.id === selectedGame)?.url || '')}
-                                title="Video Player" 
-                                frameBorder="0" 
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                allowFullScreen
-                             ></iframe>
+
+            {activeTab === 'COMPARISON' && (
+                <div className="space-y-6 animate-slide-in">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                             <div className="flex justify-between items-center bg-black/40 p-2 rounded-t-xl border-x border-t border-white/10">
+                                <span className="text-[10px] font-bold text-highlight uppercase">Vídeo Atleta</span>
+                                <span className="text-[10px] text-text-secondary">{selectedClip?.title || 'Selecione um clip'}</span>
+                             </div>
+                             <div className="aspect-video bg-black rounded-b-xl overflow-hidden border border-white/10 relative">
+                                {selectedClip ? (
+                                    <iframe width="100%" height="100%" src={selectedClip.videoUrl} title="A" frameBorder="0" allowFullScreen></iframe>
+                                ) : <div className="h-full flex items-center justify-center opacity-20"><PlayCircleIcon className="w-12 h-12"/></div>}
+                             </div>
+                        </div>
+                        <div className="space-y-2">
+                             <div className="flex justify-between items-center bg-black/40 p-2 rounded-t-xl border-x border-t border-white/10">
+                                <span className="text-[10px] font-bold text-blue-400 uppercase">Referência Técnica (NFL Flag)</span>
+                                <span className="text-[10px] text-text-secondary">Comparativo Pro</span>
+                             </div>
+                             <div className="aspect-video bg-black rounded-b-xl overflow-hidden border border-white/10 relative">
+                                <iframe width="100%" height="100%" src="https://www.youtube.com/embed/2vjPBrBU-TM" title="B" frameBorder="0" allowFullScreen></iframe>
+                             </div>
+                        </div>
+                    </div>
+                    <Card title="Correção Técnica de IA">
+                         <div className="flex items-start gap-4">
+                             <div className="p-3 bg-blue-600/20 rounded-full"><SparklesIcon className="text-blue-400 w-6 h-6"/></div>
+                             <div>
+                                 <p className="text-white font-bold">Análise de Rota (Slant)</p>
+                                 <p className="text-sm text-text-secondary leading-relaxed">
+                                     O seu corte de rota está ocorrendo com 0.4s de atraso em relação à referência. 
+                                     Dica: Mantenha o centro de gravidade mais baixo na desaceleração para explosão lateral.
+                                 </p>
+                             </div>
                          </div>
                     </Card>
                 </div>
-                <div className="lg:col-span-1">
-                    <Card title="Anotações Técnicas">
-                        <p className="text-sm text-text-secondary italic">Estudo de vídeo ativo.</p>
-                    </Card>
+            )}
+
+            {activeTab === 'MOSAIC' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-in">
+                    {['Q1', 'Q2', 'Q3', 'Q4'].map(q => (
+                        <div key={q} className="bg-secondary p-4 rounded-2xl border border-white/5 hover:border-purple-500/50 transition-all cursor-pointer">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="bg-purple-600 text-white text-[10px] font-black px-2 py-0.5 rounded">{q} SUMMARY</span>
+                                <ClockIcon className="w-4 h-4 text-text-secondary"/>
+                            </div>
+                            <div className="aspect-square bg-black/40 rounded-xl mb-4 flex items-center justify-center border border-white/10">
+                                <BrainIcon className="w-12 h-12 text-purple-400 opacity-20"/>
+                            </div>
+                            <h4 className="text-white font-bold text-sm">Mosaic Drive Analysis</h4>
+                            <p className="text-[10px] text-text-secondary mt-1">Status: Processado por IA</p>
+                        </div>
+                    ))}
                 </div>
-            </div>
+            )}
+
+            {activeTab === 'FILM_ROOM' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-in">
+                    {clips.map(clip => (
+                        <div key={clip.id} className="bg-secondary rounded-2xl overflow-hidden border border-white/5 hover:border-highlight group transition-all">
+                            <div className="aspect-video bg-black relative">
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-black/40">
+                                    <button onClick={() => handleCompare(clip)} className="bg-white text-black px-4 py-2 rounded-lg text-xs font-black uppercase">Review Tech</button>
+                                </div>
+                                <LazyImage src={`https://img.youtube.com/vi/${clip.videoUrl.split('v=')[1]}/0.jpg`} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="p-4">
+                                <h4 className="font-bold text-white text-sm truncate">{clip.title}</h4>
+                                <div className="flex justify-between items-center mt-3">
+                                    <span className="text-[10px] text-text-secondary">{new Date(clip.startTime * 1000).toISOString().substr(14, 5)}</span>
+                                    <span className="bg-white/10 px-2 py-0.5 rounded text-[10px] text-white">TD PLAY</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

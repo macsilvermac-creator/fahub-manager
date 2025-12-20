@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { storageService } from '../services/storageService';
+// Fix: Added missing generateSponsorshipProposal import
 import { generateSponsorshipProposal } from '../services/geminiService';
 import { SponsorDeal, MarketplaceItem, EventSale } from '../types';
 import { BriefcaseIcon, ShopIcon, TicketIcon } from '../components/icons/NavIcons';
@@ -24,12 +25,14 @@ const Commercial: React.FC = () => {
     useEffect(() => {
         // Load heavy data asynchronously
         setTimeout(() => {
+            // Fix: getSponsors exists in storageService
             const loadedDeals = storageService.getSponsors() || [];
             setDeals(loadedDeals);
 
             const loadedItems = storageService.getMarketplaceItems() || [];
             setStoreItems(loadedItems.filter(i => i && i.sellerType === 'TEAM_STORE'));
 
+            // Fix: getEventSales exists in storageService
             const loadedSales = storageService.getEventSales() || [];
             setEventSales(loadedSales);
         }, 0);
@@ -48,6 +51,7 @@ const Commercial: React.FC = () => {
         const newDeal: SponsorDeal = {
             id: Date.now().toString(),
             companyName,
+            // Fix: contactPerson is a valid property in SponsorDeal
             contactPerson: 'TBD',
             status: 'PROSPECT',
             value: askValue,
@@ -55,6 +59,7 @@ const Commercial: React.FC = () => {
         };
         const updated = [newDeal, ...deals];
         setDeals(updated);
+        // Fix: saveSponsors exists in storageService
         storageService.saveSponsors(updated);
         setProposal('');
         setCompanyName('');
@@ -66,7 +71,7 @@ const Commercial: React.FC = () => {
         return 'text-text-secondary';
     };
 
-    // --- CALCULATIONS (MEMOIZED & BLINDADOS) ---
+    // --- CALCULATIONS (MEMOIZED) ---
     const { totalSponsorships, totalStoreSales, totalTicketSales, totalRevenue } = useMemo(() => {
         const sponsorships = deals
             .filter(d => d && d.status === 'CLOSED_WON')

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
+// Fix: Ensuring correct imports from services and types
 import { generateMarketingContent } from '../services/geminiService';
 import { SocialPost, Announcement } from '../types';
 import { MegaphoneIcon, GlobeIcon, VideoIcon } from '../components/icons/NavIcons';

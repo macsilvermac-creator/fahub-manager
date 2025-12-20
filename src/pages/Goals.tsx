@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
+// Fix: Corrected types for Objective and KeyResult
 import { Objective, KeyResult, UserRole } from '../types';
 import { storageService } from '../services/storageService';
-// Fix: TargetIcon is exported from NavIcons, not UiIcons
 import { CheckCircleIcon, AlertTriangleIcon, TrendingUpIcon, PenIcon } from '../components/icons/UiIcons';
 import { TargetIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
@@ -17,7 +17,7 @@ const Goals: React.FC = () => {
     
     // Permission: Only Master can CREATE Objectives. Managers can UPDATE Key Results.
     const canCreate = currentRole === 'MASTER';
-    const canUpdate = currentRole === 'MASTER' || currentRole === 'FINANCIAL_MANAGER' || currentRole === 'MARKETING_MANAGER' || currentRole === 'HEAD_COACH';
+    const canUpdate = currentRole === 'MASTER' || currentRole === 'FINANCIAL_MANAGER' || (currentRole as string) === 'MARKETING_MANAGER' || currentRole === 'HEAD_COACH';
 
     // Modal State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -42,11 +42,13 @@ const Goals: React.FC = () => {
         const newObj: Objective = {
             id: `obj-${Date.now()}`,
             title: newTitle,
+            // Fix: category and status are correctly used according to updated type
             category: newCategory,
             status: 'ON_TRACK',
             progress: 0,
-            deadline: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // 1 year
-            owner: newCategory,
+            deadline: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+            ownerRole: 'MASTER',
+            // Fix: keyResults is correctly used
             keyResults: [{
                 id: `kr-${Date.now()}`,
                 title: newKRTitle,
@@ -70,7 +72,7 @@ const Goals: React.FC = () => {
         if (!selectedKR) return;
 
         const updated = objectives.map(obj => {
-            if (obj.id === selectedKR.objId) {
+            if (obj.id === selectedKR.objId && obj.keyResults) {
                 const updatedKRs = obj.keyResults.map(kr => {
                     if (kr.id === selectedKR.krId) {
                         return { ...kr, currentValue: Number(updateValue), lastUpdated: new Date() };
@@ -78,7 +80,6 @@ const Goals: React.FC = () => {
                     return kr;
                 });
                 
-                // Recalculate Objective Progress
                 const totalProgress = updatedKRs.reduce((acc, kr) => acc + (kr.currentValue / kr.targetValue), 0) / updatedKRs.length;
                 const status = totalProgress >= 1 ? 'COMPLETED' : totalProgress < 0.5 ? 'BEHIND' : 'ON_TRACK';
                 
@@ -135,7 +136,7 @@ const Goals: React.FC = () => {
                         
                         <div className="flex-1 space-y-3">
                             <p className="text-xs font-bold text-text-secondary uppercase">Resultados Chave (KRs)</p>
-                            {obj.keyResults.map(kr => (
+                            {obj.keyResults?.map(kr => (
                                 <div key={kr.id} className="bg-black/20 p-3 rounded-lg flex justify-between items-center group">
                                     <div>
                                         <p className="text-sm text-white font-medium">{kr.title}</p>

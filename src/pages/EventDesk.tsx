@@ -5,6 +5,7 @@ import { TicketIcon, ShopIcon } from '../components/icons/NavIcons';
 import { TrashIcon, CheckCircleIcon, CreditCardIcon, QrcodeIcon, WalletIcon, PrinterIcon } from '../components/icons/UiIcons';
 import PaymentModal from '../components/PaymentModal';
 import { storageService } from '../services/storageService';
+// Fix: Added missing EventSale type
 import { EventSale } from '../types';
 import { UserContext } from '../components/Layout';
 import Modal from '../components/Modal';
@@ -47,6 +48,7 @@ const EventDesk: React.FC = () => {
     const [mobileView, setMobileView] = useState<'CATALOG' | 'CART'>('CATALOG');
 
     useEffect(() => {
+        // Fix: getEventSales exists in storageService
         const sales = storageService.getEventSales();
         const today = new Date().toDateString();
         setRecentSales(sales.filter(s => new Date(s.timestamp).toDateString() === today));
@@ -87,13 +89,13 @@ const EventDesk: React.FC = () => {
             timestamp: new Date()
         }));
 
+        // Fix: getEventSales and saveEventSales exist in storageService
         const allSales = storageService.getEventSales();
         const updatedAllSales = [...allSales, ...newSales];
         storageService.saveEventSales(updatedAllSales);
 
         setRecentSales([...recentSales, ...newSales]);
         
-        // CORREÇÃO: Set lastOrder FIRST
         setLastOrder({
             id: saleId,
             items: [...cart],
@@ -106,7 +108,6 @@ const EventDesk: React.FC = () => {
         setMobileView('CATALOG');
         toast.success("Venda realizada com sucesso!");
         
-        // Print confirmation
         setTimeout(() => {
             if(window.confirm("Deseja imprimir o comprovante?")) {
                 window.print();

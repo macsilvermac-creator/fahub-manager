@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
+// Fix: Corrected types for EquipmentItem
 import { EquipmentItem, Player } from '../types';
 import { storageService } from '../services/storageService';
 import { ClipboardIcon, AlertTriangleIcon, CheckCircleIcon, TrashIcon, QrcodeIcon, PrinterIcon, SmartphoneIcon, BarcodeIcon } from '../components/icons/UiIcons';
@@ -26,6 +27,7 @@ const Inventory: React.FC = () => {
     const [printMode, setPrintMode] = useState(false);
 
     useEffect(() => {
+        // Fix: getInventory exists in storageService
         setItems(storageService.getInventory());
         setPlayers(storageService.getPlayers());
     }, []);
@@ -37,11 +39,12 @@ const Inventory: React.FC = () => {
         
         const updatedItems = items.map(i => 
             i.id === selectedItem.id 
-            ? { ...i, assignedToPlayerId: Number(selectedPlayerId), quantity: i.quantity - 1 } 
+            ? { ...i, assignedToPlayerId: selectedPlayerId, quantity: i.quantity - 1 } 
             : i
         );
         
         setItems(updatedItems);
+        // Fix: saveInventory exists in storageService
         storageService.saveInventory(updatedItems);
         setIsAssignModalOpen(false);
         setSelectedItem(null);
@@ -56,6 +59,7 @@ const Inventory: React.FC = () => {
             : i
         );
         setItems(updatedItems);
+        // Fix: saveInventory exists in storageService
         storageService.saveInventory(updatedItems);
         toast.info("Item devolvido ao estoque.");
     };
@@ -77,6 +81,7 @@ const Inventory: React.FC = () => {
         };
         const updated = [...items, item];
         setItems(updated);
+        // Fix: saveInventory exists in storageService
         storageService.saveInventory(updated);
         setIsAddModalOpen(false);
         setNewItem({ category: 'HELMET', condition: 'NEW', quantity: 1, forSale: false });
@@ -106,7 +111,6 @@ Assinado: Gestão de Patrimônio`;
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in relative">
-            {/* THERMAL PRINTER STYLES */}
             <style>{`
                 @media print {
                     body * { visibility: hidden; }
@@ -132,7 +136,6 @@ Assinado: Gestão de Patrimônio`;
                 }
             `}</style>
 
-            {/* HIDDEN PRINT AREA */}
             <div id="thermal-labels" className="hidden print:block">
                 {items.filter(i => !i.forSale).map(item => (
                     <div key={item.id} className="label-item">
@@ -168,7 +171,6 @@ Assinado: Gestão de Patrimônio`;
                 </div>
             </div>
 
-            {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 no-print">
                 <Card className="bg-gradient-to-br from-blue-900/40 to-secondary border-l-4 border-l-blue-500">
                     <div className="flex items-center">
@@ -194,7 +196,6 @@ Assinado: Gestão de Patrimônio`;
                 </Card>
             </div>
 
-            {/* Tabs */}
             <div className="flex border-b border-white/10 no-print">
                 <button 
                     onClick={() => setFilter('ASSETS')}
@@ -210,7 +211,6 @@ Assinado: Gestão de Patrimônio`;
                 </button>
             </div>
 
-            {/* Table */}
             <Card className="no-print">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-text-secondary">
@@ -355,7 +355,6 @@ Assinado: Gestão de Patrimônio`;
                         </div>
                     </div>
                     
-                    {/* LIFECYCLE FIELDS */}
                     <div className="grid grid-cols-2 gap-4 bg-white/5 p-3 rounded-lg border border-white/10">
                         <div>
                             <label className="text-xs font-bold text-text-secondary">Data Fabricação (Opcional)</label>
