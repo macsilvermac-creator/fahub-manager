@@ -22,14 +22,14 @@ interface VideoSource {
 
 const VideoAnalysis: React.FC = () => {
     const { currentRole } = useContext(UserContext);
-    // Fix: Changed activeTab from constant to state to resolve comparison errors
+    // Fix: Using state for activeTab to resolve type issues
     const [activeTab, setActiveTab] = useState<'CUTTER' | 'LIBRARY' | 'PLAYLISTS' | 'REPORTS'>('CUTTER');
     
     // Refs for Local Player & Canvas
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     
-    // Fix: Updated taggingMode state type and initialized correctly
+    // Fix: Correct state initialization for taggingMode
     const [taggingMode, setTaggingMode] = useState<'FULLPADS' | 'FLAG'>('FULLPADS');
 
     // Video Sources
@@ -82,7 +82,7 @@ const VideoAnalysis: React.FC = () => {
         setClips(storageService.getClips());
         setPlayers(storageService.getPlayers());
         const teamSettings = storageService.getTeamSettings();
-        // Fix: Mapping TACKLE/BOTH to FULLPADS to resolve type errors
+        // Fix: Use correct sportType mapping
         if(teamSettings.sportType) {
             const mode: 'FULLPADS' | 'FLAG' = teamSettings.sportType === 'FLAG' ? 'FLAG' : 'FULLPADS';
             setTaggingMode(mode);
@@ -110,9 +110,14 @@ const VideoAnalysis: React.FC = () => {
     // AI Prediction Handler
     const handlePredictPlay = async () => {
         setIsPredicting(true);
-        const result = await predictPlayCall(clips, tagData.down, tagData.distance);
-        setPrediction(result);
-        setIsPredicting(false);
+        try {
+            const result = await predictPlayCall(clips, tagData.down, tagData.distance);
+            setPrediction(result);
+        } catch (e) {
+            console.error("AI Error", e);
+        } finally {
+            setIsPredicting(false);
+        }
     };
 
     // --- TELESTRATION ---
@@ -152,3 +157,55 @@ const VideoAnalysis: React.FC = () => {
         const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
         if (ytMatch && ytMatch[1]) return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
         return url;
+    };
+
+    return (
+        <div className="space-y-6 pb-20 animate-fade-in">
+             <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 bg-secondary rounded-xl shadow-glow">
+                        <VideoIcon className="text-highlight w-8 h-8" />
+                    </div>
+                    <div>
+                        <h2 className="text-3xl font-black text-text-primary italic uppercase tracking-tighter">Video Lab & Film Room</h2>
+                        <p className="text-text-secondary text-sm">Análise periódica e Correção Técnica.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex border-b border-white/10 overflow-x-auto no-scrollbar">
+                <button onClick={() => setActiveTab('CUTTER')} className={`px-6 py-3 font-bold text-xs border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'CUTTER' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
+                    <ScissorsIcon className="w-4 h-4" /> FILM CUTTER
+                </button>
+                <button onClick={() => setActiveTab('LIBRARY')} className={`px-6 py-3 font-bold text-xs border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'LIBRARY' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
+                    BIBLIOTECA
+                </button>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                    <Card title="Player Room">
+                         <div className="aspect-video bg-black rounded-xl overflow-hidden relative">
+                             <iframe 
+                                width="100%" 
+                                height="100%" 
+                                src={getEmbedUrl(videoSources.find(v => v.id === selectedGame)?.url || '')}
+                                title="Video Player" 
+                                frameBorder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowFullScreen
+                             ></iframe>
+                         </div>
+                    </Card>
+                </div>
+                <div className="lg:col-span-1">
+                    <Card title="Anotações Técnicas">
+                        <p className="text-sm text-text-secondary italic">Estudo de vídeo ativo.</p>
+                    </Card>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default VideoAnalysis;

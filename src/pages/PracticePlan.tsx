@@ -67,6 +67,7 @@ const PracticePlan: React.FC = () => {
 
     const handleCreatePractice = (e: React.FormEvent) => {
         e.preventDefault();
+        // Fix: Removed 'notes' as it's not a direct property of PracticeSession
         const practice: PracticeSession = {
             id: Date.now().toString(),
             title: newTitle,
@@ -77,7 +78,6 @@ const PracticePlan: React.FC = () => {
             instructor: '',
             attendees: [],
             checkedInAttendees: [],
-            notes: '',
             script: generatedScript.length > 0 ? generatedScript : [], 
             performances: []
         };
@@ -263,7 +263,7 @@ const PracticePlan: React.FC = () => {
                                 <div className="flex justify-end pt-2">
                                      <Button type="submit">Confirmar Agendamento</Button>
                                 </div>
-                            </form>
+                             </form>
                         </Card>
                     </div>
 

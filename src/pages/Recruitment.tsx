@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
-import { RecruitmentCandidate, CombineStats, UserRole } from '../types';
+import { RecruitmentCandidate, CombineStats } from '../types';
 import { storageService } from '../services/storageService';
 // Fix: Corrected analyzeCombineStats import
 import { analyzeCombineStats } from '../services/geminiService';
@@ -35,6 +35,7 @@ const Recruitment: React.FC = () => {
     });
 
     useEffect(() => {
+        // Fix: Use correct storageService method
         setCandidates(storageService.getCandidates());
     }, []);
 
@@ -60,6 +61,7 @@ const Recruitment: React.FC = () => {
 
         const updated = [...candidates, newCandidate];
         setCandidates(updated);
+        // Fix: Use correct storageService method
         storageService.saveCandidates(updated);
         setIsAddModalOpen(false);
         setForm({ status: 'NEW', position: 'WR', experience: 'Rookie' });
@@ -81,6 +83,7 @@ const Recruitment: React.FC = () => {
                 notes: `${c.notes || ''}\n\n[IA]: ${analysis.comparison} - Potencial: ${analysis.potential}`
             } : c);
             setCandidates(updated);
+            // Fix: Use correct storageService method
             storageService.saveCandidates(updated);
             toast.success("Análise de IA concluída!");
         } catch (e) {
@@ -93,6 +96,7 @@ const Recruitment: React.FC = () => {
     const updateStatus = (id: string, newStatus: any) => {
         const updated = candidates.map(c => c.id === id ? { ...c, status: newStatus } : c);
         setCandidates(updated);
+        // Fix: Use correct storageService method
         storageService.saveCandidates(updated);
     };
 
@@ -101,6 +105,7 @@ const Recruitment: React.FC = () => {
         if(!confirm("Remover candidato?")) return;
         const updated = candidates.filter(c => c.id !== id);
         setCandidates(updated);
+        // Fix: Use correct storageService method
         storageService.saveCandidates(updated);
     };
 

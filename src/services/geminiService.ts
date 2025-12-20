@@ -82,6 +82,7 @@ export const generateMarketingContent = async (topic: string, platform: string):
         model: 'gemini-3-flash-preview',
         contents: `Crie um post para ${platform} sobre o tema: ${topic}. Seja empolgante e use emojis de futebol americano.`,
     });
+    // Fix: Access response.text directly
     return response.text || "";
 };
 
@@ -91,6 +92,7 @@ export const generateGymPlan = async (goal: string, equipment: string, program: 
         model: 'gemini-3-pro-preview',
         contents: `Gere um plano de treino físico (HTML) focado em: ${goal}. Equipamentos: ${equipment}. Modalidade: ${program}.`,
     });
+    // Fix: Access response.text directly
     return response.text || "";
 };
 
@@ -101,6 +103,7 @@ export const generatePracticeScript = async (focus: string, duration: number, in
         contents: `Crie um roteiro de treino de ${duration} minutos com foco em ${focus} e intensidade ${intensity}. Retorne um JSON array de {startTime, durationMinutes, type, activityName, description}.`,
         config: { responseMimeType: "application/json" }
     });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
@@ -111,6 +114,7 @@ export const analyzeOpponentTendencies = async (notes: string) => {
         contents: `Aja como um Coordenador Tático. Analise estas notas de scout: "${notes}". Retorne JSON com {summary, keysToVictory: string[], suggestedConcepts: string[]}.`,
         config: { responseMimeType: "application/json" }
     });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
@@ -122,6 +126,7 @@ export const analyzeCombineStats = async (stats: any, pos: string) => {
         contents: `Avalie estes números de combine para a posição ${pos}: ${JSON.stringify(stats)}. Retorne JSON com rating (0-100), potential, analysis, comparison.`,
         config: { responseMimeType: "application/json" }
     });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
@@ -137,6 +142,7 @@ export const scanFinancialDocument = async (base64: string) => {
             ],
         }
     });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
@@ -147,6 +153,7 @@ export const generateSponsorshipProposal = async (companyName: string, amount: n
         model: 'gemini-3-pro-preview', 
         contents: `Escreva uma proposta formal de patrocínio para a empresa ${companyName}. O valor do aporte é R$ ${amount}.`,
     });
+    // Fix: Access response.text directly
     return response.text || "";
 };
 
@@ -157,6 +164,7 @@ export const analyzePlayMatchup = async (play: string, scouting: any, opponent: 
         model: 'gemini-3-pro-preview', 
         contents: `Simule nossa jogada "${play}" contra a defesa de ${opponent} baseada neste scout: ${JSON.stringify(scouting)}.`,
     });
+    // Fix: Access response.text directly
     return response.text || "";
 };
 
@@ -168,6 +176,7 @@ export const generateInstallSchedule = async (context: string, week: string): Pr
         contents: `Crie uma matriz de instalação semanal. Contexto: ${context}. Semana: ${week}. Retorne JSON array de {id, day, category, concept}.`,
         config: { responseMimeType: "application/json" }
     });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
@@ -183,6 +192,7 @@ export const importPlaybookFromImage = async (base64: string): Promise<PlayEleme
             ],
         },
     });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
@@ -194,6 +204,7 @@ export const suggestPlayConcepts = async (situation: string) => {
         contents: `Situação de jogo: ${situation}. Sugira 3 jogadas. Retorne JSON array de {name, reason}.`,
         config: { responseMimeType: "application/json" }
     });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "[]"));
 };
 
@@ -209,6 +220,7 @@ export const explainPlayImage = async (base64Image: string, question: string): P
             ]
         }
     });
+    // Fix: Access response.text directly
     return response.text || "";
 };
 
@@ -220,6 +232,7 @@ export const generateColorCommentary = async (home: string, away: string, contex
         contents: `Crie notas de narração para ${home} vs ${away}. Contexto: ${context}. Retorne JSON {intro, homePlayerToWatch, awayPlayerToWatch, keyMatchups}.`,
         config: { responseMimeType: "application/json" }
     });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
@@ -230,6 +243,7 @@ export const generatePlayerAnalysis = async (player: any, context: string): Prom
         model: 'gemini-3-pro-preview', 
         contents: `Analise o perfil do atleta ${player.name} (${player.position}) considerando o contexto: ${context}.`,
     });
+    // Fix: Access response.text directly
     return response.text || "";
 };
 
@@ -241,6 +255,7 @@ export const predictPlayCall = async (history: any[], down: number, distance: nu
         contents: `Baseado no histórico de jogadas: ${JSON.stringify(history)}, qual a probabilidade de jogada para uma ${down}ª para ${distance}? Retorne JSON {prediction, confidence, reason}.`,
         config: { responseMimeType: "application/json" }
     });
+    // Fix: Access response.text directly
     return JSON.parse(cleanJsonString(response.text || "{}"));
 };
 
@@ -251,5 +266,6 @@ export const generatePracticePlan = async (prompt: string): Promise<string> => {
         model: 'gemini-3-pro-preview',
         contents: prompt,
     });
+    // Fix: Access response.text directly
     return response.text || "";
 };

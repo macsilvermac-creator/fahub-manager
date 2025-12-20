@@ -59,6 +59,30 @@ export interface AuditLog {
     ipAddress: string;
 }
 
+export interface Objective {
+    id: string;
+    title: string;
+    description?: string;
+    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING' | 'OPERATIONAL';
+    status: 'PLANNED' | 'IN_PROGRESS' | 'BEHIND' | 'COMPLETED' | 'AT_RISK';
+    progress: number;
+    deadline: Date;
+    owner?: string;
+    ownerRole: UserRole;
+    keyResults: KeyResult[];
+    parentObjectiveId?: string;
+}
+
+export interface KeyResult {
+    id: string;
+    title: string;
+    currentValue: number;
+    targetValue: number;
+    unit: string;
+    lastUpdated: Date;
+    updatedBy?: string;
+}
+
 export interface Player {
     id: number;
     name: string;
@@ -166,6 +190,8 @@ export interface PracticeSession {
     locationType?: string;
     performances?: any[];
     instructor?: string;
+    notes?: string;
+    drills?: any[];
 }
 
 export type PracticeCategory = 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
@@ -179,18 +205,6 @@ export interface PracticeScriptItem {
     type: string;
 }
 
-export interface TeamSettings {
-    id: string;
-    teamName: string;
-    logoUrl: string;
-    address: string;
-    primaryColor: string;
-    secondaryColor?: string;
-    sportType?: 'TACKLE' | 'FLAG' | 'BOTH';
-    website?: string;
-    contactEmail?: string;
-}
-
 export type TransactionCategory = 'TRANSPORT' | 'EQUIPMENT' | 'REFEREE' | 'FIELD_RENTAL' | 'EVENT' | 'SPONSORSHIP' | 'TUITION' | 'STORE' | 'OTHER';
 
 export interface Transaction {
@@ -198,7 +212,7 @@ export interface Transaction {
     title: string;
     amount: number;
     type: 'INCOME' | 'EXPENSE';
-    category: TransactionCategory;
+    category: string;
     date: Date;
     status: 'PAID' | 'PENDING';
     aiGenerated?: boolean;
@@ -297,18 +311,6 @@ export interface VideoTag {
     startY?: number;
 }
 
-export interface VideoPlaylist {
-    id: string;
-    title: string;
-    clipIds: string[];
-}
-
-export interface VideoPermissionGroup {
-    id: string;
-    name: string;
-    roleIds: UserRole[];
-}
-
 export interface PlayElement {
     id: string;
     x: number;
@@ -399,7 +401,7 @@ export interface StaffMember {
     role?: string;
     email?: string;
     phone?: string;
-    contract?: StaffContract;
+    contract: StaffContract;
     documentsPending?: boolean;
 }
 
@@ -435,18 +437,6 @@ export interface GameTimelineEvent {
     result: string;
 }
 
-export interface PaymentTransaction {
-    id: string;
-    amount: number;
-    method: PaymentMethod;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    createdAt: Date;
-    platformFee: number;
-    netAmount: number;
-}
-
-export type PaymentMethod = 'PIX' | 'CREDIT_CARD';
-
 export interface SocialFeedPost {
     id: string;
     authorName: string;
@@ -458,13 +448,6 @@ export interface SocialFeedPost {
     likes: number;
     comments: any[];
     timestamp: Date;
-}
-
-export interface LegalDocument {
-    id: string;
-    title: string;
-    content: string;
-    version: string;
 }
 
 export interface EquipmentItem {
@@ -586,18 +569,6 @@ export interface TransferRequest {
     status: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
-export interface CoachGameNote {
-    id: string;
-}
-
-export interface Championship {
-    id: string;
-}
-
-export interface Coach {
-    id: string;
-}
-
 export interface Course {
     id: string;
     title: string;
@@ -607,36 +578,12 @@ export interface Course {
     level?: string;
 }
 
-export interface Objective {
-    id: string;
-    title: string;
-    category: 'SPORTING' | 'FINANCIAL' | 'MARKETING';
-    status: 'ON_TRACK' | 'BEHIND' | 'COMPLETED' | 'AT_RISK';
-    progress: number;
-    deadline: Date;
-    owner: string;
-    keyResults: KeyResult[];
-}
-
-export interface KeyResult {
-    id: string;
-    title: string;
-    currentValue: number;
-    targetValue: number;
-    unit: string;
-    lastUpdated: Date;
-}
-
 export interface Entitlement {
     id: string;
     userId: string;
     productId: string;
     purchasedAt: Date;
     expiresAt: Date;
-}
-
-export interface CoachCareer {
-    id: string;
 }
 
 export interface PlatformMetric {
@@ -733,4 +680,14 @@ export interface LeagueTeamStanding {
     draws: number;
     pointsFor: number;
     pointsAgainst: number;
+}
+
+export interface TeamSettings {
+    id: string;
+    teamName: string;
+    logoUrl: string;
+    address: string;
+    primaryColor: string;
+    secondaryColor?: string;
+    sportType?: 'TACKLE' | 'FLAG' | 'BOTH';
 }
