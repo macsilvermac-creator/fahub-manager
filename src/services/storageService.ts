@@ -1,5 +1,5 @@
 
-import { Player, Game, PracticeSession, Transaction, TeamSettings, Objective, AuditLog, RecruitmentCandidate, MarketplaceItem, Team, Invoice, SponsorDeal, Subscription, Budget, Bill, SocialPost, Announcement, TeamDocument, VideoClip, SocialFeedPost, Athlete, Tenant, ServiceTicket, DigitalProduct, Entitlement, Course, StaffMember } from '../types';
+import { Player, Game, PracticeSession, Transaction, TeamSettings, Objective, AuditLog, RecruitmentCandidate, MarketplaceItem, Team, Invoice, SponsorDeal, Subscription, Budget, Bill, SocialPost, Announcement, TeamDocument, VideoClip, SocialFeedPost, Athlete, Tenant, ServiceTicket, DigitalProduct, Entitlement, Course, StaffMember, NationalTeamCandidate, Affiliate, TransferRequest } from '../types';
 
 const get = <T>(key: string): T[] => {
     const data = localStorage.getItem(key);

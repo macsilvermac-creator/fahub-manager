@@ -43,6 +43,9 @@ export interface Player {
     attendanceRate: number;
     rosterCategory?: RosterCategory;
     program?: ProgramType;
+    // Fix: Added category and stats to Player for compatibility with Athlete dashboards
+    category?: string;
+    stats?: { ovr: number; speed: number; strength: number; agility: number; tacticalIQ: number };
     combineStats?: CombineStats;
     combineHistory?: CombineStats[];
     developmentPlans?: DevelopmentPlan[];
@@ -272,6 +275,8 @@ export interface RecruitmentCandidate {
     status: 'NEW' | 'TRYOUT' | 'TESTING' | 'EVALUATED' | 'SELECTED' | 'ONBOARDING';
     createdAt: Date;
     notes?: string;
+    // Fix: Added behaviorTags to RecruitmentCandidate
+    behaviorTags?: string[];
     rating?: number;
     aiAnalysis?: string;
     combineStats?: CombineStats;

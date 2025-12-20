@@ -2,14 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../../components/Card';
 import { storageService } from '../../services/storageService';
-import { Athlete } from '../../types';
+// Fix: Updated component state to use Player instead of Athlete to match return type of service
+import { Player } from '../../types';
 import LazyImage from '../../components/LazyImage';
 // Fix: TrophyIcon is exported from NavIcons, not UiIcons
 import { ActivityIcon, FireIcon } from '../../components/icons/UiIcons';
 import { TrophyIcon } from '../../components/icons/NavIcons';
 
 const AthleteDashboard: React.FC = () => {
-    const [athlete, setAthlete] = useState<Athlete | null>(null);
+    // Fix: Using Player state as getAthleteByUserId returns Player
+    const [athlete, setAthlete] = useState<Player | null>(null);
     const user = storageService.getCurrentUser();
 
     useEffect(() => {
@@ -49,11 +51,12 @@ const AthleteDashboard: React.FC = () => {
                 <div className="md:col-span-2 space-y-6">
                     <Card title="Performance Atual (OVR)">
                         <div className="flex items-end gap-2 mb-4">
-                            <span className="text-6xl font-black text-white">{athlete.stats.ovr}</span>
+                            {/* Fix: stats is now a property on Player in src/types.ts */}
+                            <span className="text-6xl font-black text-white">{athlete.stats?.ovr || athlete.rating}</span>
                             <span className="text-highlight font-bold mb-2">Rating Geral</span>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
-                            {Object.entries(athlete.stats).filter(([k]) => k !== 'ovr').map(([key, val]) => (
+                            {athlete.stats && Object.entries(athlete.stats).filter(([k]) => k !== 'ovr').map(([key, val]) => (
                                 <div key={key} className="bg-black/20 p-3 rounded-xl border border-white/5">
                                     <p className="text-[10px] text-text-secondary uppercase font-bold">{key}</p>
                                     <div className="flex items-center justify-between">
