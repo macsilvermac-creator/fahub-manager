@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { FlagIcon, WhistleIcon } from '../components/icons/NavIcons';
-// Fix: Ensuring correct icon and type imports
+// Added missing types and component imports
 import { CheckCircleIcon, PlayCircleIcon, MicIcon, StarIcon, AlertTriangleIcon, ScanIcon, CameraIcon, LockIcon } from '../components/icons/UiIcons';
 import { Game, GameReport, Player, TeamSettings } from '../types';
 import { storageService } from '../services/storageService';
@@ -25,8 +25,8 @@ const Officiating: React.FC = () => {
     const [isScanning, setIsScanning] = useState(false);
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     
-    // Fix: Updated checkedPlayers to handle string | number keys
-    const [checkedPlayers, setCheckedPlayers] = useState<Record<string | number, boolean>>({});
+    // Casting ID to string to ensure Record compatibility
+    const [checkedPlayers, setCheckedPlayers] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         setGames(storageService.getGames());
@@ -45,13 +45,14 @@ const Officiating: React.FC = () => {
         const randomPlayer = players[Math.floor(Math.random() * players.length)];
         
         if (randomPlayer) {
+            // Correctly used medicalExamExpiry property on Player
             const isMedicalExpired = randomPlayer.medicalExamExpiry ? new Date(randomPlayer.medicalExamExpiry) < new Date() : true;
             
             if (isMedicalExpired) {
                 toast.error(`BLOQUEADO: Atleta ${randomPlayer.name} com Atestado Médico vencido!`);
-                setCheckedPlayers(prev => ({ ...prev, [randomPlayer.id]: false }));
+                setCheckedPlayers(prev => ({ ...prev, [String(randomPlayer.id)]: false }));
             } else {
-                setCheckedPlayers(prev => ({ ...prev, [randomPlayer.id]: true }));
+                setCheckedPlayers(prev => ({ ...prev, [String(randomPlayer.id)]: true }));
                 toast.success(`Atleta Validado: ${randomPlayer.name} #${randomPlayer.jerseyNumber}`);
             }
         }
@@ -115,13 +116,13 @@ const Officiating: React.FC = () => {
                             </button>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                 {players.map(p => (
-                                    <div key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border ${checkedPlayers[p.id] ? 'bg-green-600/20 border-green-500' : 'bg-secondary border-white/5 opacity-60'}`}>
+                                    <div key={p.id} className={`flex items-center gap-3 p-3 rounded-xl border ${checkedPlayers[String(p.id)] ? 'bg-green-600/20 border-green-500' : 'bg-secondary border-white/5 opacity-60'}`}>
                                         <LazyImage src={p.avatarUrl} className="w-10 h-10 rounded-full" />
                                         <div className="flex-1">
                                             <p className="text-sm font-bold text-white leading-none">{p.name}</p>
                                             <p className="text-[10px] text-text-secondary mt-1">#{p.jerseyNumber} • {p.position}</p>
                                         </div>
-                                        {checkedPlayers[p.id] && <CheckCircleIcon className="w-5 h-5 text-green-500" />}
+                                        {checkedPlayers[String(p.id)] && <CheckCircleIcon className="w-5 h-5 text-green-500" />}
                                     </div>
                                 ))}
                             </div>

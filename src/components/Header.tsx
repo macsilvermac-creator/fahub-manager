@@ -1,9 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { BellIcon, ChevronDownIcon, WifiOffIcon, RefreshIcon, CheckCircleIcon, AlertCircleIcon, MenuIcon } from './icons/UiIcons';
-import { syncService } from '../services/syncService';
-import { authService } from '../services/authService';
-import LazyImage from './LazyImage';
+import { BellIcon, ChevronDownIcon, WifiIcon, WifiOffIcon, MenuIcon } from './icons/UiIcons';
 
 interface HeaderProps {
     children?: React.ReactNode;
@@ -11,59 +8,48 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ children, onMenuClick }) => {
-  const [syncStatus, setSyncStatus] = useState<'SAVED' | 'SYNCING' | 'OFFLINE' | 'ERROR'>('SAVED');
-  const user = authService.getCurrentUser();
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
-    const unsubscribe = syncService.subscribe((status: any) => {
-        setSyncStatus(status);
-    });
-    return () => unsubscribe();
+    const handleStatusChange = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', handleStatusChange);
+    window.addEventListener('offline', handleStatusChange);
+    return () => {
+      window.removeEventListener('online', handleStatusChange);
+      window.removeEventListener('offline', handleStatusChange);
+    };
   }, []);
 
-  const getStatusDisplay = () => {
-      switch(syncStatus) {
-          case 'SAVED': return { icon: <CheckCircleIcon className="w-3 h-3" />, text: 'Salvo', color: 'text-green-400 border-green-500/20 bg-green-500/10' };
-          case 'SYNCING': return { icon: <RefreshIcon className="w-3 h-3 animate-spin" />, text: 'Sincronizando...', color: 'text-blue-400 border-blue-500/20 bg-blue-500/10' };
-          case 'OFFLINE': return { icon: <WifiOffIcon className="w-3 h-3" />, text: 'Offline (Local)', color: 'text-gray-400 border-gray-500/20 bg-gray-500/10' };
-          case 'ERROR': return { icon: <AlertCircleIcon className="w-3 h-3" />, text: 'Erro no Sync', color: 'text-red-400 border-red-500/20 bg-red-500/10' };
-          default: return { icon: null, text: '', color: '' };
-      }
-  };
-
-  const statusDisplay = getStatusDisplay();
-
   return (
-    <header className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 bg-[#0F172A] border-b border-white/5 shadow-sm">
+    <header className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 bg-secondary border-b border-accent">
       <div className="flex items-center">
+        {/* Added menu button for mobile layout */}
         <button 
-            onClick={onMenuClick}
-            className="p-2 text-text-secondary hover:text-white lg:hidden"
+          onClick={onMenuClick}
+          className="p-2 text-text-secondary hover:text-text-primary lg:hidden"
         >
-            <MenuIcon />
+          <MenuIcon />
         </button>
         {children}
-        <h1 className="text-xl font-semibold text-white ml-4 hidden sm:block">Painel do Time</h1>
+        <h1 className="text-xl font-semibold text-text-primary ml-4 hidden sm:block">Painel do Time</h1>
       </div>
       
       <div className="flex items-center space-x-4">
-        <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold border transition-colors uppercase tracking-wider ${statusDisplay.color}`}>
-            {statusDisplay.icon}
-            <span>{statusDisplay.text}</span>
+        <div 
+            className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border transition-colors ${isOnline ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}
+        >
+            {isOnline ? <WifiIcon className="w-4 h-4" /> : <WifiOffIcon className="w-4 h-4" />}
+            <span>{isOnline ? 'Online' : 'Offline'}</span>
         </div>
 
-        <button className="p-2 text-text-secondary rounded-full hover:bg-white/5 hover:text-white transition-colors relative">
+        <button className="p-2 text-text-secondary rounded-full hover:bg-accent hover:text-text-primary">
           <BellIcon />
         </button>
 
         <div className="relative">
-          <button className="flex items-center space-x-2 p-1 pr-3 rounded-full hover:bg-white/5 transition-colors border border-transparent hover:border-white/10">
-            <LazyImage 
-                className="h-8 w-8 rounded-full object-cover border border-white/10" 
-                src={user?.avatarUrl || "https://ui-avatars.com/api/?name=User"} 
-                alt="User avatar" 
-            />
-            <span className="hidden md:block text-white text-sm font-medium">{user?.name?.split(' ')[0] || 'Usuário'}</span>
+          <button className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent">
+            <img className="h-8 w-8 rounded-full object-cover" src="https://ui-avatars.com/api/?name=Admin" alt="User avatar" />
+            <span className="hidden md:block text-text-primary">Admin</span>
             <ChevronDownIcon />
           </button>
         </div>

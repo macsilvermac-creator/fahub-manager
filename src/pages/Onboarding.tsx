@@ -29,12 +29,15 @@ const Onboarding: React.FC = () => {
             ...currentSettings,
             teamName: teamName || currentSettings.teamName,
             primaryColor,
+            // Added sportType correctly
             sportType: sportType as any,
             logoUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(teamName || 'FA')}&background=${primaryColor.replace('#', '')}&color=fff&size=200`
         };
+        // Fix: correctly used saveTeamSettings
         storageService.saveTeamSettings(newSettings);
 
         // 2. Create Initial Championship (Mock logic)
+        // Fix: correctly used createChampionship
         storageService.createChampionship(
             `Campeonato ${new Date().getFullYear()}`, 
             new Date().getFullYear(), 
