@@ -4,7 +4,9 @@ import Card from '../../components/Card';
 import { storageService } from '../../services/storageService';
 import { Team, Athlete, User } from '../../types';
 import LazyImage from '../../components/LazyImage';
-import { UsersIcon, SettingsNavIcon, CheckCircleIcon, ShareIcon } from '../../components/icons/UiIcons';
+// Fix: SettingsNavIcon is exported from NavIcons, not UiIcons
+import { UsersIcon, CheckCircleIcon, ShareIcon } from '../../components/icons/UiIcons';
+import { SettingsNavIcon } from '../../components/icons/NavIcons';
 import { useToast } from '../../contexts/ToastContext';
 
 const TeamManagement: React.FC = () => {

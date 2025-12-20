@@ -4,7 +4,9 @@ import Card from '../../components/Card';
 import { storageService } from '../../services/storageService';
 import { Athlete } from '../../types';
 import LazyImage from '../../components/LazyImage';
-import { ActivityIcon, TrophyIcon, FireIcon } from '../../components/icons/UiIcons';
+// Fix: TrophyIcon is exported from NavIcons, not UiIcons
+import { ActivityIcon, FireIcon } from '../../components/icons/UiIcons';
+import { TrophyIcon } from '../../components/icons/NavIcons';
 
 const AthleteDashboard: React.FC = () => {
     const [athlete, setAthlete] = useState<Athlete | null>(null);

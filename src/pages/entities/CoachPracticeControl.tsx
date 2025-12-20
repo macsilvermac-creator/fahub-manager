@@ -3,7 +3,9 @@ import React, { useState, useEffect } from 'react';
 import Card from '../../components/Card';
 import { storageService } from '../../services/storageService';
 import { Athlete, Team } from '../../types';
-import { WhistleIcon, CheckCircleIcon, ActivityIcon, SparklesIcon } from '../../components/icons/UiIcons';
+// Fix: WhistleIcon is exported from NavIcons, not UiIcons
+import { CheckCircleIcon, ActivityIcon, SparklesIcon } from '../../components/icons/UiIcons';
+import { WhistleIcon } from '../../components/icons/NavIcons';
 import { useToast } from '../../contexts/ToastContext';
 
 const CoachPracticeControl: React.FC = () => {

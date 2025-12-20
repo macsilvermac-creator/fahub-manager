@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import Card from '../components/Card';
-import { FlagIcon, BriefcaseIcon, WhistleIcon } from '../components/icons/NavIcons';
-import { CheckCircleIcon, PlayCircleIcon, MicIcon, MapIcon, StarIcon, AlertTriangleIcon, ScanIcon, XIcon, CameraIcon, LockIcon } from '../components/icons/UiIcons';
+// Fix: StarIcon is exported from NavIcons, not UiIcons
+import { FlagIcon, BriefcaseIcon, WhistleIcon, StarIcon } from '../components/icons/NavIcons';
+import { CheckCircleIcon, PlayCircleIcon, MicIcon, MapIcon, AlertTriangleIcon, ScanIcon, XIcon, CameraIcon, LockIcon } from '../components/icons/UiIcons';
 import { Game, GameReport, FoulRecord, FoulType, Player, GameInfrastructureChecklist, TeamSettings, RefereeProfile, AssociationFinance, CrewLogistics } from '../types';
 import { storageService } from '../services/storageService';
 import { voiceService } from '../services/voiceService';
@@ -21,7 +22,6 @@ const Officiating: React.FC = () => {
     const [teamSettings, setTeamSettings] = useState<TeamSettings | null>(null);
     const [activeTab, setActiveTab] = useState<'SUMULA_PRE' | 'LIVE' | 'ROSTER' | 'EDUCATION'>('SUMULA_PRE');
     
-    // Scanner State
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
 
@@ -56,7 +56,6 @@ const Officiating: React.FC = () => {
     const startScanner = () => {
         setIsScannerOpen(true);
         setIsScanning(true);
-        // Simulação de Scanner
         setTimeout(() => {
             handleScanSuccess();
         }, 3000);
@@ -67,7 +66,6 @@ const Officiating: React.FC = () => {
         const randomPlayer = players[Math.floor(Math.random() * players.length)];
         
         if (randomPlayer) {
-            // TRAVA DE SAÚDE: Checa expiração do atestado médico
             const isMedicalExpired = randomPlayer.medicalExamExpiry ? new Date(randomPlayer.medicalExamExpiry) < new Date() : true;
             
             if (isMedicalExpired) {

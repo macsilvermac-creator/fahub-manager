@@ -1,7 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { storageService } from '../services/storageService';
-import { TrophyIcon, GlobeIcon } from '../components/icons/NavIcons';
-import { UsersIcon, StarIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
+// Fix: StarIcon is exported from NavIcons, not UiIcons
+import { TrophyIcon, GlobeIcon, StarIcon } from '../components/icons/NavIcons';
+import { UsersIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
 import LazyImage from '../components/LazyImage';
 
 const PublicLeague: React.FC = () => {

@@ -3,7 +3,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { Objective, KeyResult, UserRole } from '../types';
 import { storageService } from '../services/storageService';
-import { TargetIcon, CheckCircleIcon, AlertTriangleIcon, TrendingUpIcon, PenIcon } from '../components/icons/UiIcons';
+// Fix: TargetIcon is exported from NavIcons, not UiIcons
+import { CheckCircleIcon, AlertTriangleIcon, TrendingUpIcon, PenIcon } from '../components/icons/UiIcons';
+import { TargetIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';

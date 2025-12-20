@@ -1,149 +1,148 @@
 
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
-import { VideoClip, Player, Game } from '../types';
+import { YouthClass, YouthStudent } from '../types';
 import { storageService } from '../services/storageService';
-// Fix: Added missing icon imports
-import { ScissorsIcon, PlayCircleIcon, BrainIcon, EyeIcon, SearchIcon, SwapIcon, SparklesIcon, TrashIcon, ClockIcon } from '../components/icons/UiIcons';
-import { UserContext } from '../components/Layout';
-import { useToast } from '../contexts/ToastContext';
-import LazyImage from '../components/LazyImage';
+// Fix: StarIcon is exported from NavIcons, not UiIcons
+import { UsersIcon, CheckCircleIcon } from '../components/icons/UiIcons';
+import { SchoolIcon, StarIcon } from '../components/icons/NavIcons';
+import Modal from '../components/Modal';
 
-const VideoAnalysis: React.FC = () => {
-    const { currentRole } = useContext(UserContext);
-    const toast = useToast();
-    const [activeTab, setActiveTab] = useState<'FILM_ROOM' | 'MOSAIC' | 'COMPARISON'>('FILM_ROOM');
-    const [clips, setClips] = useState<VideoClip[]>([]);
-    const [selectedClip, setSelectedClip] = useState<VideoClip | null>(null);
-    const [comparisonClip, setComparisonClip] = useState<VideoClip | null>(null);
-
-    // Fix: Corrected state type to resolve compilation error
-    const [taggingMode, setTaggingMode] = useState<'FLAG' | 'FULLPADS'>('FULLPADS');
+const YouthProgram: React.FC = () => {
+    const [classes, setClasses] = useState<YouthClass[]>([]);
+    const [students, setStudents] = useState<YouthStudent[]>([]);
+    const [activeTab, setActiveTab] = useState<'CLASSES' | 'STUDENTS'>('CLASSES');
+    
+    // Add Class State
+    const [isAddClassOpen, setIsAddClassOpen] = useState(false);
+    const [newClassName, setNewClassName] = useState('');
+    const [newClassAge, setNewClassAge] = useState('Sub-12');
 
     useEffect(() => {
-        setClips(storageService.getClips());
-        const settings = storageService.getTeamSettings();
-        if (settings.sportType) {
-            // Fix: Mapping TACKLE/BOTH to FULLPADS to resolve type errors
-            const mode = settings.sportType === 'FLAG' ? 'FLAG' : 'FULLPADS';
-            setTaggingMode(mode);
-        }
+        setClasses(storageService.getYouthClasses());
+        setStudents(storageService.getYouthStudents());
     }, []);
 
-    const handleCompare = (clip: VideoClip) => {
-        setSelectedClip(clip);
-        setActiveTab('COMPARISON');
-        toast.info("Selecione o vídeo de referência para comparação.");
+    const handleAddClass = (e: React.FormEvent) => {
+        e.preventDefault();
+        const newClass: YouthClass = {
+            id: `yc-${Date.now()}`,
+            name: newClassName,
+            ageGroup: newClassAge,
+            schedule: 'Seg/Qua 18h',
+            coachId: 'coach-1',
+            students: [],
+            maxCapacity: 20
+        };
+        const updated = [...classes, newClass];
+        setClasses(updated);
+        storageService.saveYouthClasses(updated);
+        setIsAddClassOpen(false);
+        setNewClassName('');
     };
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-secondary rounded-xl shadow-glow">
-                        <EyeIcon className="text-highlight w-8 h-8" />
+                    <div className="p-3 bg-secondary rounded-xl">
+                        <SchoolIcon className="text-highlight w-8 h-8" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-bold text-text-primary italic uppercase tracking-tighter">Vision Lab</h2>
-                        <p className="text-text-secondary text-sm">Análise periódica e Correção Técnica.</p>
+                        <h2 className="text-3xl font-bold text-text-primary">Escolinhas & Social</h2>
+                        <p className="text-text-secondary">Formação de Atletas e Projetos Comunitários.</p>
                     </div>
                 </div>
-            </div>
-
-            <div className="flex border-b border-white/10 overflow-x-auto no-scrollbar">
-                <button onClick={() => setActiveTab('FILM_ROOM')} className={`px-6 py-3 font-bold text-xs border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'FILM_ROOM' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>
-                    FILM ROOM
-                </button>
-                <button onClick={() => setActiveTab('MOSAIC')} className={`px-6 py-3 font-bold text-xs border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'MOSAIC' ? 'border-purple-500 text-purple-400' : 'border-transparent text-text-secondary'}`}>
-                    MOSAICO DE QUARTER (IA)
-                </button>
-                <button onClick={() => setActiveTab('COMPARISON')} className={`px-6 py-3 font-bold text-xs border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeTab === 'COMPARISON' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary'}`}>
-                    SIDE-BY-SIDE REVIEW
+                <button 
+                    onClick={() => setIsAddClassOpen(true)}
+                    className="bg-highlight hover:bg-highlight-hover text-white px-6 py-2 rounded-xl font-bold shadow-lg"
+                >
+                    + Nova Turma
                 </button>
             </div>
 
-            {activeTab === 'COMPARISON' && (
-                <div className="space-y-6 animate-slide-in">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {/* Player Player 1 */}
-                        <div className="space-y-2">
-                             <div className="flex justify-between items-center bg-black/40 p-2 rounded-t-xl border-x border-t border-white/10">
-                                <span className="text-[10px] font-bold text-highlight uppercase">Vídeo Atleta</span>
-                                <span className="text-[10px] text-text-secondary">{selectedClip?.title || 'Selecione um clip'}</span>
-                             </div>
-                             <div className="aspect-video bg-black rounded-b-xl overflow-hidden border border-white/10 relative">
-                                {selectedClip ? (
-                                    <iframe width="100%" height="100%" src={selectedClip.videoUrl} title="A" frameBorder="0" allowFullScreen></iframe>
-                                ) : <div className="h-full flex items-center justify-center opacity-20"><PlayCircleIcon className="w-12 h-12"/></div>}
-                             </div>
-                        </div>
-                        {/* Player Player 2 (Pro/Reference) */}
-                        <div className="space-y-2">
-                             <div className="flex justify-between items-center bg-black/40 p-2 rounded-t-xl border-x border-t border-white/10">
-                                <span className="text-[10px] font-bold text-blue-400 uppercase">Referência Técnica (NFL Flag)</span>
-                                <span className="text-[10px] text-text-secondary">Comparativo Pro</span>
-                             </div>
-                             <div className="aspect-video bg-black rounded-b-xl overflow-hidden border border-white/10 relative">
-                                <iframe width="100%" height="100%" src="https://www.youtube.com/embed/2vjPBrBU-TM" title="B" frameBorder="0" allowFullScreen></iframe>
-                             </div>
+            {/* Dashboard Widgets */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="bg-gradient-to-br from-indigo-900/40 to-secondary border-l-4 border-l-indigo-500">
+                    <div className="flex items-center gap-4">
+                        <UsersIcon className="w-8 h-8 text-indigo-400" />
+                        <div>
+                            <p className="text-xs text-text-secondary font-bold uppercase">Total de Alunos</p>
+                            <p className="text-2xl font-bold text-white">{students.length}</p>
                         </div>
                     </div>
-                    <Card title="Correção Técnica de IA">
-                         <div className="flex items-start gap-4">
-                             <div className="p-3 bg-blue-600/20 rounded-full"><SparklesIcon className="text-blue-400 w-6 h-6"/></div>
-                             <div>
-                                 <p className="text-white font-bold">Análise de Rota (Slant)</p>
-                                 <p className="text-sm text-text-secondary leading-relaxed">
-                                     O seu corte de rota está ocorrendo com 0.4s de atraso em relação à referência. 
-                                     Dica: Mantenha o centro de gravidade mais baixo na desaceleração para explosão lateral.
-                                 </p>
-                             </div>
-                         </div>
-                    </Card>
-                </div>
-            )}
-
-            {activeTab === 'MOSAIC' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-in">
-                    {['Q1', 'Q2', 'Q3', 'Q4'].map(q => (
-                        <div key={q} className="bg-secondary p-4 rounded-2xl border border-white/5 hover:border-purple-500/50 transition-all cursor-pointer">
-                            <div className="flex justify-between items-center mb-4">
-                                <span className="bg-purple-600 text-white text-[10px] font-black px-2 py-0.5 rounded">{q} SUMMARY</span>
-                                <ClockIcon className="w-4 h-4 text-text-secondary"/>
-                            </div>
-                            <div className="aspect-square bg-black/40 rounded-xl mb-4 flex items-center justify-center border border-white/10">
-                                <BrainIcon className="w-12 h-12 text-purple-400 opacity-20"/>
-                            </div>
-                            <h4 className="text-white font-bold text-sm">Mosaic Drive Analysis</h4>
-                            <p className="text-[10px] text-text-secondary mt-1">Status: Processado por IA</p>
+                </Card>
+                <Card className="bg-gradient-to-br from-pink-900/40 to-secondary border-l-4 border-l-pink-500">
+                    <div className="flex items-center gap-4">
+                        <CheckCircleIcon className="w-8 h-8 text-pink-400" />
+                        <div>
+                            <p className="text-xs text-text-secondary font-bold uppercase">Bolsistas (Social)</p>
+                            <p className="text-2xl font-bold text-white">{students.filter(s => s.isSocialProject).length}</p>
                         </div>
-                    ))}
-                </div>
-            )}
+                    </div>
+                </Card>
+            </div>
 
-            {activeTab === 'FILM_ROOM' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-slide-in">
-                    {clips.map(clip => (
-                        <div key={clip.id} className="bg-secondary rounded-2xl overflow-hidden border border-white/5 hover:border-highlight group transition-all">
-                            <div className="aspect-video bg-black relative">
-                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-black/40">
-                                    <button onClick={() => handleCompare(clip)} className="bg-white text-black px-4 py-2 rounded-lg text-xs font-black uppercase">Review Tech</button>
-                                </div>
-                                <LazyImage src={`https://img.youtube.com/vi/${clip.videoUrl.split('v=')[1]}/0.jpg`} className="w-full h-full object-cover" />
+            {/* Content Tabs */}
+            <div className="flex border-b border-white/10">
+                <button onClick={() => setActiveTab('CLASSES')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === 'CLASSES' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>Turmas Ativas</button>
+                <button onClick={() => setActiveTab('STUDENTS')} className={`px-6 py-3 font-bold text-sm border-b-2 transition-colors ${activeTab === 'STUDENTS' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>Lista de Alunos</button>
+            </div>
+
+            {activeTab === 'CLASSES' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {classes.map(cls => (
+                        <div key={cls.id} className="bg-secondary rounded-xl p-5 border border-white/5 hover:border-highlight/30 transition-all group">
+                            <div className="flex justify-between items-start mb-4">
+                                <span className="bg-white/10 text-white text-xs font-bold px-2 py-1 rounded uppercase">{cls.ageGroup}</span>
+                                <span className="text-text-secondary text-xs">{cls.schedule}</span>
                             </div>
-                            <div className="p-4">
-                                <h4 className="font-bold text-white text-sm truncate">{clip.title}</h4>
-                                <div className="flex justify-between items-center mt-3">
-                                    <span className="text-[10px] text-text-secondary">{new Date(clip.startTime * 1000).toISOString().substr(14, 5)}</span>
-                                    <span className="bg-white/10 px-2 py-0.5 rounded text-[10px] text-white">TD PLAY</span>
-                                </div>
+                            <h3 className="text-xl font-bold text-white mb-1">{cls.name}</h3>
+                            <p className="text-sm text-text-secondary mb-4">Coach Responsável: {cls.coachId}</p>
+                            
+                            <div className="w-full bg-black/30 h-2 rounded-full overflow-hidden mb-2">
+                                <div className="bg-green-500 h-full" style={{ width: `${(cls.students.length / cls.maxCapacity) * 100}%` }}></div>
+                            </div>
+                            <div className="flex justify-between text-xs text-text-secondary mb-4">
+                                <span>{cls.students.length} Inscritos</span>
+                                <span>Capacidade: {cls.maxCapacity}</span>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button className="flex-1 bg-highlight hover:bg-highlight-hover text-white py-2 rounded text-sm font-bold">Chamada</button>
+                                <button className="flex-1 bg-white/5 hover:bg-white/10 text-white py-2 rounded text-sm font-bold">Boletim</button>
                             </div>
                         </div>
                     ))}
+                    {classes.length === 0 && (
+                        <div className="col-span-full text-center py-12 text-text-secondary italic bg-secondary/20 rounded-xl">
+                            Nenhuma turma cadastrada. Crie uma para começar.
+                        </div>
+                    )}
                 </div>
             )}
+
+            {/* Add Class Modal */}
+            <Modal isOpen={isAddClassOpen} onClose={() => setIsAddClassOpen(false)} title="Nova Turma">
+                <form onSubmit={handleAddClass} className="space-y-4">
+                    <div>
+                        <label className="text-xs font-bold text-text-secondary uppercase">Nome da Turma</label>
+                        <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newClassName} onChange={e => setNewClassName(e.target.value)} placeholder="Ex: Little Giants" required />
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-text-secondary uppercase">Faixa Etária</label>
+                        <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={newClassAge} onChange={e => setNewClassAge(e.target.value)}>
+                            <option value="Sub-10">Sub-10 (Kids)</option>
+                            <option value="Sub-12">Sub-12</option>
+                            <option value="Sub-15">Sub-15</option>
+                            <option value="Sub-17">Sub-17</option>
+                        </select>
+                    </div>
+                    <button type="submit" className="w-full bg-green-600 text-white font-bold py-2 rounded mt-4">Criar Turma</button>
+                </form>
+            </Modal>
         </div>
     );
 };
 
-export default VideoAnalysis;
+export default YouthProgram;

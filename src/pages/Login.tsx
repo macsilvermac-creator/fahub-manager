@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { storageService } from '../services/storageService';
 import { UserRole } from '../types';
-import { LockIcon, UsersIcon, WhistleIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
+// Fix: WhistleIcon is exported from NavIcons, not UiIcons
+import { LockIcon, UsersIcon, ShieldCheckIcon } from '../components/icons/UiIcons';
+import { WhistleIcon } from '../components/icons/NavIcons';
 
 const Login: React.FC = () => {
     const navigate = useNavigate();

@@ -3,8 +3,9 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { YouthClass, YouthStudent } from '../types';
 import { storageService } from '../services/storageService';
-import { StarIcon, UsersIcon, CheckCircleIcon } from '../components/icons/UiIcons';
-import { SchoolIcon } from '../components/icons/NavIcons';
+// Fix: StarIcon is exported from NavIcons, not UiIcons
+import { UsersIcon, CheckCircleIcon } from '../components/icons/UiIcons';
+import { SchoolIcon, StarIcon } from '../components/icons/NavIcons';
 import Modal from '../components/Modal';
 
 const YouthProgram: React.FC = () => {
