@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { FlagIcon, WhistleIcon } from '../components/icons/NavIcons';
-/* Fix: Ensuring correct icon and type imports */
+// Fix: Ensuring correct icon and type imports
 import { CheckCircleIcon, PlayCircleIcon, MicIcon, StarIcon, AlertTriangleIcon, ScanIcon, CameraIcon, LockIcon } from '../components/icons/UiIcons';
 import { Game, GameReport, Player, TeamSettings } from '../types';
 import { storageService } from '../services/storageService';
@@ -25,7 +25,7 @@ const Officiating: React.FC = () => {
     const [isScanning, setIsScanning] = useState(false);
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
     
-    /* Fix: Updated checkedPlayers to handle string | number keys */
+    // Fix: Updated checkedPlayers to handle string | number keys
     const [checkedPlayers, setCheckedPlayers] = useState<Record<string | number, boolean>>({});
 
     useEffect(() => {

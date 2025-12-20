@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
-/* Fix: Ensuring correct type imports */
+// Fix: Ensuring correct type imports
 import { Player, PracticeSession, PracticeScriptItem } from '../types';
 import { storageService } from '../services/storageService';
-/* Fix: Updated import name for generatePracticeScript */
+// Fix: Updated import name for generatePracticeScript
 import { generatePracticeScript } from '../services/geminiService';
 import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon } from '../components/icons/UiIcons';
 import { UserContext } from '../components/Layout';
@@ -74,7 +74,7 @@ const PracticePlan: React.FC = () => {
             title: newTitle,
             focus: newFocus,
             date: new Date(newDate),
-            /* Fix: Added missing properties */
+            // Fix: category and attendees added to match type definition
             category: newCategory,
             attendees: [],
             checkedInAttendees: [],

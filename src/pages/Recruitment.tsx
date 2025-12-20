@@ -26,7 +26,7 @@ const Recruitment: React.FC = () => {
 
     const startTimer = () => {
         if (isTimerRunning) {
-            clearInterval(timerRef.current);
+            if (timerRef.current) clearInterval(timerRef.current);
             setIsTimerRunning(false);
         } else {
             setTimer(0);
@@ -39,9 +39,20 @@ const Recruitment: React.FC = () => {
 
     const handleSaveTime = (field: keyof CombineStats) => {
         if (!selectedCandidate) return;
+        
         const currentStats = selectedCandidate.combineStats || { date: new Date() };
-        const updatedStats = { ...currentStats, [field]: Number(timer.toFixed(2)), date: new Date() };
-        const updated = { ...selectedCandidate, combineStats: updatedStats as CombineStats, status: 'TESTING' as const };
+        const updatedStats: CombineStats = { 
+            ...currentStats, 
+            [field]: Number(timer.toFixed(2)), 
+            date: new Date() 
+        };
+        
+        const updated: RecruitmentCandidate = { 
+            ...selectedCandidate, 
+            combineStats: updatedStats, 
+            status: 'TESTING' 
+        };
+        
         saveCandidate(updated);
         toast.success(`Tempo salvo: ${timer.toFixed(2)}s`);
     };
@@ -57,10 +68,16 @@ const Recruitment: React.FC = () => {
         toast.info("IA Analisando biotipo e tempos...");
         try {
             const result = await analyzeTryoutPerformance(c);
-            const updated = { ...c, aiAnalysis: result.technicalAnalysis, rating: result.potentialRating, status: 'EVALUATED' as const };
+            const updated: RecruitmentCandidate = { 
+                ...c, 
+                aiAnalysis: result.technicalAnalysis, 
+                rating: result.potentialRating, 
+                status: 'EVALUATED' 
+            };
             saveCandidate(updated);
             toast.success("Relatório Pro gerado!");
         } catch (e) {
+            console.error(e);
             toast.error("IA falhou.");
         }
     };
@@ -81,7 +98,7 @@ const Recruitment: React.FC = () => {
             {view === 'LIST' && (
                 <div className="grid grid-cols-1 gap-3">
                     {candidates.map(c => (
-                        <div key={c.id} onClick={() => { setSelectedCandidate(c); setView('STATION'); }} className="bg-secondary p-4 rounded-2xl border border-white/5 flex items-center justify-between group active:scale-95 transition-all">
+                        <div key={c.id} onClick={() => { setSelectedCandidate(c); setView('STATION'); }} className="bg-secondary p-4 rounded-2xl border border-white/5 flex items-center justify-between group active:scale-95 transition-all cursor-pointer">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 bg-black/40 rounded-xl flex items-center justify-center font-black text-highlight border border-highlight/20 text-lg">
                                     {c.bibNumber || '??'}
@@ -96,7 +113,7 @@ const Recruitment: React.FC = () => {
                     ))}
                     {candidates.length === 0 && (
                          <div className="text-center py-20 opacity-30 border-2 border-dashed border-white/10 rounded-2xl">
-                            <p className="font-bold uppercase text-xs">Nenhum candidato registrado</p>
+                            <p className="font-bold uppercase text-xs text-white">Nenhum candidato registrado</p>
                         </div>
                     )}
                 </div>
@@ -115,7 +132,7 @@ const Recruitment: React.FC = () => {
                     <div className="flex flex-col items-center gap-4">
                         <div 
                             onClick={startTimer}
-                            className={`w-full aspect-square max-w-[300px] rounded-full border-[12px] flex flex-col items-center justify-center shadow-2xl transition-all active:scale-95 ${isTimerRunning ? 'bg-red-600 border-white' : 'bg-secondary border-highlight/30'}`}
+                            className={`w-full aspect-square max-w-[300px] rounded-full border-[12px] flex flex-col items-center justify-center shadow-2xl transition-all active:scale-95 cursor-pointer ${isTimerRunning ? 'bg-red-600 border-white' : 'bg-secondary border-highlight/30'}`}
                         >
                             <span className="text-6xl font-mono font-black text-white">{timer.toFixed(2)}</span>
                             <span className="text-[10px] font-black uppercase mt-2 text-white/50">{isTimerRunning ? 'Toque para Parar' : 'Toque para Iniciar'}</span>
