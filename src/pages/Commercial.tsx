@@ -1,7 +1,6 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
-// Fix: Added missing generateSponsorshipProposal import
 import { generateSponsorshipProposal } from '../services/geminiService';
 import { SponsorDeal, MarketplaceItem, EventSale } from '../types';
 import { BriefcaseIcon, ShopIcon, TicketIcon } from '../components/icons/NavIcons';
@@ -23,19 +22,24 @@ const Commercial: React.FC = () => {
     const [eventSales, setEventSales] = useState<EventSale[]>([]);
 
     useEffect(() => {
-        // Load heavy data asynchronously
-        setTimeout(() => {
-            // Fix: getSponsors exists in storageService
-            const loadedDeals = storageService.getSponsors() || [];
-            setDeals(loadedDeals);
-
-            const loadedItems = storageService.getMarketplaceItems() || [];
-            setStoreItems(loadedItems.filter(i => i && i.sellerType === 'TEAM_STORE'));
-
-            // Fix: getEventSales exists in storageService
-            const loadedSales = storageService.getEventSales() || [];
-            setEventSales(loadedSales);
-        }, 0);
+        /* Fix: Cast values to literal types to satisfy interfaces */
+        const loadedSponsors = storageService.getSponsors().map(s => ({
+            ...s,
+            status: s.status as "REJECTED" | "PROSPECT" | "NEGOTIATION" | "CLOSED_WON"
+        }));
+        setDeals(loadedSponsors);
+        
+        const loadedMarketplace = storageService.getMarketplaceItems().map(i => ({
+            ...i,
+            sellerType: i.sellerType as "PLAYER" | "TEAM_STORE"
+        }));
+        setStoreItems(loadedMarketplace.filter(i => i.sellerType === 'TEAM_STORE'));
+        
+        const loadedSales = storageService.getEventSales().map(s => ({
+            ...s,
+            type: s.type as "TICKET" | "BAR"
+        }));
+        setEventSales(loadedSales);
     }, []);
 
     // --- CRM LOGIC ---
@@ -51,7 +55,6 @@ const Commercial: React.FC = () => {
         const newDeal: SponsorDeal = {
             id: Date.now().toString(),
             companyName,
-            // Fix: contactPerson is a valid property in SponsorDeal
             contactPerson: 'TBD',
             status: 'PROSPECT',
             value: askValue,
@@ -59,7 +62,6 @@ const Commercial: React.FC = () => {
         };
         const updated = [newDeal, ...deals];
         setDeals(updated);
-        // Fix: saveSponsors exists in storageService
         storageService.saveSponsors(updated);
         setProposal('');
         setCompanyName('');
@@ -71,27 +73,11 @@ const Commercial: React.FC = () => {
         return 'text-text-secondary';
     };
 
-    // --- CALCULATIONS (MEMOIZED) ---
-    const { totalSponsorships, totalStoreSales, totalTicketSales, totalRevenue } = useMemo(() => {
-        const sponsorships = deals
-            .filter(d => d && d.status === 'CLOSED_WON')
-            .reduce((acc, d) => acc + (d.value || 0), 0);
-
-        const storeSales = storeItems
-            .filter(i => i && i.isSold)
-            .reduce((acc, i) => acc + (i.price || 0), 0);
-
-        const ticketSales = eventSales
-            .filter(s => s && s.totalAmount)
-            .reduce((acc, s) => acc + (s.totalAmount || 0), 0);
-
-        return {
-            totalSponsorships: sponsorships,
-            totalStoreSales: storeSales,
-            totalTicketSales: ticketSales,
-            totalRevenue: sponsorships + storeSales + ticketSales
-        };
-    }, [deals, storeItems, eventSales]);
+    // --- CALCULATIONS ---
+    const totalSponsorships = deals.filter(d => d.status === 'CLOSED_WON').reduce((acc, d) => acc + d.value, 0);
+    const totalStoreSales = storeItems.filter(i => i.isSold).reduce((acc, i) => acc + i.price, 0);
+    const totalTicketSales = eventSales.reduce((acc, s) => acc + s.totalAmount, 0);
+    const totalRevenue = totalSponsorships + totalStoreSales + totalTicketSales;
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
@@ -173,21 +159,14 @@ const Commercial: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {deals.filter(d => d && d.id).map(deal => (
+                                    {deals.map(deal => (
                                         <tr key={deal.id} className="border-b border-white/5 hover:bg-white/5">
                                             <td className="px-6 py-4 font-bold text-white">{deal.companyName}</td>
                                             <td className={`px-6 py-4 font-bold text-xs ${getStatusColor(deal.status)}`}>{deal.status}</td>
-                                            <td className="px-6 py-4 text-white">R$ {deal.value?.toFixed(2)}</td>
-                                            <td className="px-6 py-4 text-xs">{deal.lastInteraction ? new Date(deal.lastInteraction).toLocaleDateString() : '-'}</td>
+                                            <td className="px-6 py-4 text-white">R$ {deal.value.toFixed(2)}</td>
+                                            <td className="px-6 py-4 text-xs">{new Date(deal.lastInteraction).toLocaleDateString()}</td>
                                         </tr>
                                     ))}
-                                    {deals.filter(d => d && d.id).length === 0 && (
-                                        <tr>
-                                            <td colSpan={4} className="px-6 py-8 text-center text-text-secondary italic">
-                                                Nenhum patrocínio cadastrado.
-                                            </td>
-                                        </tr>
-                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -215,18 +194,18 @@ const Commercial: React.FC = () => {
                             </div>
                             <div className="flex justify-between text-sm border-b border-white/5 pb-2">
                                 <span className="text-text-secondary">Itens Vendidos</span>
-                                <span className="text-white font-bold">{storeItems.filter(i => i && i.isSold).length}</span>
+                                <span className="text-white font-bold">{storeItems.filter(i => i.isSold).length}</span>
                             </div>
                             <div className="flex justify-between text-sm border-b border-white/5 pb-2">
                                 <span className="text-text-secondary">Taxa de Conversão</span>
-                                <span className="text-green-400 font-bold">{storeItems.length > 0 ? ((storeItems.filter(i => i && i.isSold).length / storeItems.length) * 100).toFixed(1) : 0}%</span>
+                                <span className="text-green-400 font-bold">{storeItems.length > 0 ? ((storeItems.filter(i => i.isSold).length / storeItems.length) * 100).toFixed(1) : 0}%</span>
                             </div>
                         </div>
                     </Card>
 
                     <Card title="Top Produtos (Estoque)">
                         <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar">
-                            {storeItems.filter(i => i && i.id).slice(0, 5).map(item => (
+                            {storeItems.slice(0, 5).map(item => (
                                 <div key={item.id} className="flex items-center gap-3 bg-secondary/50 p-2 rounded-lg border border-white/5">
                                     <div className="w-10 h-10 bg-black/40 rounded flex items-center justify-center text-xs">
                                         <ShopIcon className="w-5 h-5 text-gray-500"/>
@@ -238,9 +217,8 @@ const Commercial: React.FC = () => {
                                     <span className="font-mono text-sm text-white">R$ {item.price}</span>
                                 </div>
                             ))}
-                            {storeItems.length === 0 && <p className="text-center text-text-secondary italic">Nenhum produto em estoque.</p>}
                         </div>
-                        <button className="w-full mt-4 text-xs text-highlight hover:underline" onClick={() => window.location.href='#/marketplace'}>Gerenciar Produtos no Marketplace →</button>
+                        <button className="w-full mt-4 text-xs text-highlight hover:underline">Gerenciar Produtos no Marketplace →</button>
                     </Card>
                 </div>
             )}
@@ -273,21 +251,18 @@ const Commercial: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {eventSales.filter(s => s && s.id).slice(0, 10).map(sale => (
+                                    {eventSales.slice(0, 10).map(sale => (
                                         <tr key={sale.id} className="border-b border-white/5 hover:bg-white/5">
-                                            <td className="px-4 py-2 text-xs">{sale.timestamp ? new Date(sale.timestamp).toLocaleDateString() : '-'}</td>
+                                            <td className="px-4 py-2 text-xs">{new Date(sale.timestamp).toLocaleDateString()}</td>
                                             <td className="px-4 py-2 font-bold text-white">{sale.itemName}</td>
                                             <td className="px-4 py-2">
                                                 <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${sale.type === 'TICKET' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'}`}>
                                                     {sale.type}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-2 text-right text-green-400 font-mono">+ R$ {sale.totalAmount?.toFixed(2)}</td>
+                                            <td className="px-4 py-2 text-right text-green-400 font-mono">+ R$ {sale.totalAmount.toFixed(2)}</td>
                                         </tr>
                                     ))}
-                                    {eventSales.length === 0 && (
-                                        <tr><td colSpan={4} className="text-center py-8 text-text-secondary italic">Nenhuma venda registrada.</td></tr>
-                                    )}
                                 </tbody>
                             </table>
                         </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
 import { MarketplaceItem } from '../types';
@@ -26,7 +27,12 @@ const Marketplace: React.FC = () => {
     const [newItemType, setNewItemType] = useState<'PLAYER' | 'TEAM_STORE'>('PLAYER');
 
     useEffect(() => {
-        setItems(storageService.getMarketplaceItems());
+        /* Fix: Cast sellerType to satisfy literal union type */
+        const loadedItems = storageService.getMarketplaceItems().map(item => ({
+            ...item,
+            sellerType: item.sellerType as 'TEAM_STORE' | 'PLAYER'
+        }));
+        setItems(loadedItems);
     }, []);
 
     const filteredItems = items.filter(item => {

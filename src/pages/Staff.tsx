@@ -12,7 +12,15 @@ const Staff: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'PAYROLL'>('OVERVIEW');
 
     useEffect(() => {
-        setStaff(storageService.getStaff());
+        /* Fix: Cast contract.type to literal */
+        const loadedStaff = storageService.getStaff().map(s => ({
+            ...s,
+            contract: {
+                ...s.contract,
+                type: s.contract.type as "PAID" | "VOLUNTEER"
+            }
+        }));
+        setStaff(loadedStaff);
     }, []);
 
     // Permission Check: Only Master/CFO can see money
