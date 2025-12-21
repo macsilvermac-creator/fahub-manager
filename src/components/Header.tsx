@@ -1,61 +1,39 @@
 
-import React, { useState, useEffect } from 'react';
-import { BellIcon, ChevronDownIcon, WifiIcon, WifiOffIcon, MenuIcon } from './icons/UiIcons';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronRightIcon } from './icons/UiIcons';
 
-interface HeaderProps {
-    children?: React.ReactNode;
-    onMenuClick?: () => void;
+interface PageHeaderProps {
+  title: string;
+  subtitle?: string;
+  showBack?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ children, onMenuClick }) => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  useEffect(() => {
-    const handleStatusChange = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', handleStatusChange);
-    window.addEventListener('offline', handleStatusChange);
-    return () => {
-      window.removeEventListener('online', handleStatusChange);
-      window.removeEventListener('offline', handleStatusChange);
-    };
-  }, []);
+const PageHeader: React.FC<PageHeaderProps> = ({ title, subtitle, showBack = true }) => {
+  const navigate = useNavigate();
 
   return (
-    <header className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 bg-secondary border-b border-accent">
-      <div className="flex items-center">
-        {/* Added menu button for mobile layout */}
+    <div className="flex flex-col mb-8 gap-2 animate-fade-in no-print">
+      {showBack && (
         <button 
-          onClick={onMenuClick}
-          className="p-2 text-text-secondary hover:text-text-primary lg:hidden"
+          onClick={() => navigate(-1)}
+          className="flex items-center text-[10px] font-black text-highlight uppercase tracking-[0.3em] hover:opacity-70 transition-all w-fit group"
         >
-          <MenuIcon />
+          <span className="rotate-180 inline-block mr-2 group-hover:-translate-x-1 transition-transform">
+            <ChevronRightIcon className="w-3 h-3" />
+          </span>
+          Voltar para Base
         </button>
-        {children}
-        <h1 className="text-xl font-semibold text-text-primary ml-4 hidden sm:block">Painel do Time</h1>
-      </div>
-      
-      <div className="flex items-center space-x-4">
-        <div 
-            className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border transition-colors ${isOnline ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}
-        >
-            {isOnline ? <WifiIcon className="w-4 h-4" /> : <WifiOffIcon className="w-4 h-4" />}
-            <span>{isOnline ? 'Online' : 'Offline'}</span>
-        </div>
-
-        <button className="p-2 text-text-secondary rounded-full hover:bg-accent hover:text-text-primary">
-          <BellIcon />
-        </button>
-
-        <div className="relative">
-          <button className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent">
-            <img className="h-8 w-8 rounded-full object-cover" src="https://ui-avatars.com/api/?name=Admin" alt="User avatar" />
-            <span className="hidden md:block text-text-primary">Admin</span>
-            <ChevronDownIcon />
-          </button>
+      )}
+      <div className="flex items-center gap-4">
+        <div className="h-10 w-1.5 bg-highlight rounded-full"></div>
+        <div>
+            <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter leading-none">{title}</h2>
+            {subtitle && <p className="text-text-secondary text-xs font-bold uppercase tracking-widest mt-2 opacity-60">{subtitle}</p>}
         </div>
       </div>
-    </header>
+    </div>
   );
 };
 
-export default Header;
+export default PageHeader;

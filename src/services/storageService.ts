@@ -1,13 +1,12 @@
 
 import { 
-    Player, Game, PracticeSession, TeamSettings, AuditLog, RecruitmentCandidate, 
-    Team, Transaction, Invoice, Subscription, Budget, Bill, Announcement, 
-    ChatMessage, TeamDocument, VideoClip, TacticalPlay, MarketplaceItem, 
-    KanbanTask, SocialPost, SponsorDeal, EventSale, SocialFeedPost, 
-    EquipmentItem, StaffMember, YouthClass, YouthStudent, ConfederationStats, 
-    NationalTeamCandidate, Affiliate, TransferRequest, League, Objective, 
-    Course, DigitalProduct, Entitlement, RoadmapItem, OKR, ObjectiveSignal, 
-    ProgramType, Championship 
+    Player, Game, PracticeSession, RecruitmentCandidate, TeamSettings, 
+    OKR, AuditLog, TacticalPlay, Transaction, Invoice, Subscription, 
+    Budget, Bill, Announcement, ChatMessage, TeamDocument, VideoClip, 
+    MarketplaceItem, KanbanTask, SocialPost, SponsorDeal, EventSale, 
+    SocialFeedPost, StaffMember, YouthClass, YouthStudent, 
+    ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest,
+    RoadmapItem, Drill, DigitalProduct, Entitlement, ObjectiveSignal, ProgramType
 } from '../types';
 
 const get = <T>(key: string): T[] => {
@@ -15,253 +14,281 @@ const get = <T>(key: string): T[] => {
     return data ? JSON.parse(data) : [];
 };
 
-const set = <T>(key: string, data: T) => {
+const set = (key: string, data: any) => {
     localStorage.setItem(key, JSON.stringify(data));
     window.dispatchEvent(new Event('storage_update'));
+    // Trigger specific key update for useAppStore hook
+    window.dispatchEvent(new CustomEvent('storage_update_key', { detail: { key } }));
 };
 
 export const storageService = {
     initializeRAM: () => {
-        // SEED: CONFIGURAÇÕES DO TIME
+        // SETTINGS
         if (!localStorage.getItem('fahub_settings')) {
             set('fahub_settings', {
                 id: '1',
                 teamName: 'Joinville Gladiators',
                 logoUrl: 'https://ui-avatars.com/api/?name=JG&background=059669&color=fff',
                 primaryColor: '#059669',
-                address: 'Joinville, SC',
+                sportType: 'TACKLE',
                 plan: 'ALL_PRO'
             });
         }
 
-        // SEED: ATLETAS (MIX DE MODALIDADES)
+        // PLAYERS (SEED DATA)
         if (!localStorage.getItem('fahub_players')) {
-            const mockPlayers: Player[] = [
-                { id: 'p1', name: 'Lucas "Thor"', position: 'QB', jerseyNumber: 12, height: '1.85m', weight: 92, class: 'Veterano', avatarUrl: 'https://i.pravatar.cc/150?u=p1', level: 8, xp: 4500, rating: 88, status: 'ACTIVE', program: 'TACKLE', commitmentLevel: 95, attendanceRate: 100 },
-                { id: 'p2', name: 'Mariana Silva', position: 'WR', jerseyNumber: 80, height: '1.70m', weight: 65, class: 'Sênior', avatarUrl: 'https://i.pravatar.cc/150?u=p2', level: 6, xp: 2200, rating: 82, status: 'ACTIVE', program: 'FLAG', commitmentLevel: 88, attendanceRate: 100 },
-                { id: 'p3', name: 'Roberto Carlos', position: 'LB', jerseyNumber: 55, height: '1.82m', weight: 105, class: 'Sênior', avatarUrl: 'https://i.pravatar.cc/150?u=p3', level: 7, xp: 3100, rating: 85, status: 'ACTIVE', program: 'TACKLE', commitmentLevel: 90, attendanceRate: 100 },
-                { id: 'p4', name: 'Julia Costa', position: 'DB', jerseyNumber: 21, height: '1.65m', weight: 60, class: 'Rookie', avatarUrl: 'https://i.pravatar.cc/150?u=p4', level: 2, xp: 400, rating: 72, status: 'INCUBATING', program: 'FLAG', incubation: { cultureAccepted: true, fundamentalsProgress: 45, fieldEvaluationScore: 0, status: 'FUNDAMENTALS' }, attendanceRate: 100 }
+            const players: Player[] = [
+                { id: 1, name: 'Lucas Thor', position: 'QB', jerseyNumber: 12, height: '1.85m', weight: 92, class: 'Veterano', avatarUrl: 'https://i.pravatar.cc/150?u=1', level: 8, xp: 4500, rating: 88, status: 'ACTIVE', commitmentLevel: 95, stats: { ovr: 88, speed: 82, strength: 75, agility: 78, tacticalIQ: 92 }, attendanceRate: 98 },
+                { id: 2, name: 'Matheus Tank', position: 'OL', jerseyNumber: 77, height: '1.92m', weight: 130, class: 'Sênior', avatarUrl: 'https://i.pravatar.cc/150?u=2', level: 6, xp: 2200, rating: 84, status: 'ACTIVE', commitmentLevel: 88, stats: { ovr: 84, speed: 45, strength: 98, agility: 40, tacticalIQ: 70 }, attendanceRate: 95 },
+                { id: 3, name: 'Gabriel Fly', position: 'WR', jerseyNumber: 80, height: '1.80m', weight: 85, class: 'Júnior', avatarUrl: 'https://i.pravatar.cc/150?u=3', level: 5, xp: 1800, rating: 82, status: 'ACTIVE', commitmentLevel: 92, stats: { ovr: 82, speed: 95, strength: 55, agility: 92, tacticalIQ: 75 }, attendanceRate: 90 },
+                { id: 4, name: 'Bruno Beast', position: 'LB', jerseyNumber: 52, height: '1.82m', weight: 105, class: 'Veterano', avatarUrl: 'https://i.pravatar.cc/150?u=4', level: 7, xp: 3200, rating: 86, status: 'ACTIVE', commitmentLevel: 90, stats: { ovr: 86, speed: 78, strength: 88, agility: 75, tacticalIQ: 85 }, attendanceRate: 92 }
             ];
-            set('fahub_players', mockPlayers);
+            set('fahub_players', players);
         }
 
-        // SEED: NOVATOS (10 CANDIDATOS)
+        // CANDIDATOS TRYOUT
         if (!localStorage.getItem('fahub_candidates')) {
-            const candidates: RecruitmentCandidate[] = Array.from({ length: 10 }).map((_, i) => ({
-                id: `cand-${i}`,
-                name: `Recruta ${i + 1}`,
-                position: i % 2 === 0 ? 'OL' : 'WR',
-                weight: 70 + (i * 5),
-                height: '1.80m',
-                status: (i < 3 ? 'EVALUATED' : 'NEW') as any,
-                bibNumber: 100 + i,
-                rating: 60 + i
-            }));
+            const candidates: RecruitmentCandidate[] = [
+                { id: 'c1', name: 'Ricardo Alvo', position: 'WR', weight: 88, height: '1.82m', status: 'NEW', bibNumber: 101 },
+                { id: 'c2', name: 'Marcos Mão', position: 'DB', weight: 82, height: '1.78m', status: 'TESTING', bibNumber: 102 }
+            ];
             set('fahub_candidates', candidates);
         }
 
-        // SEED: JOGOS E CALENDÁRIO
-        if (!localStorage.getItem('fahub_games')) {
-            const games: Game[] = [
-                { id: 101, opponent: 'Istepuôs FA', date: new Date('2025-06-15T14:00:00'), location: 'Home', status: 'SCHEDULED', homeTeamName: 'Gladiators' },
-                { id: 102, opponent: 'Silverhawks', date: new Date('2025-05-20T10:00:00'), location: 'Away', status: 'SCHEDULED', homeTeamName: 'Gladiators' },
-                { id: 103, opponent: 'Timbó Rex', date: new Date('2024-11-10T15:00:00'), location: 'Away', status: 'FINAL', score: '24-21', result: 'W' }
+        // PRACTICES
+        if (!localStorage.getItem('fahub_practice')) {
+            const practices: PracticeSession[] = [
+                { 
+                    id: 'p1', title: 'Ajuste de Blitz (Week 4)', focus: 'Defensivo', date: new Date(), attendees: ['1','2','3','4'], 
+                    script: [
+                        { id: 's1', startTime: '19:00', durationMinutes: 20, activityName: 'Alongamento Dinâmico', type: 'WARMUP' },
+                        { id: 's2', startTime: '19:20', durationMinutes: 40, activityName: 'Indy Drills (Posição)', type: 'TECHNICAL' }
+                    ] 
+                }
             ];
-            set('fahub_games', games);
+            set('fahub_practice', practices);
         }
 
-        // SEED: FEDERAÇÕES E LIGA
-        if (!localStorage.getItem('fahub_league')) {
-            set('fahub_league', {
-                id: 'l1',
-                name: 'Campeonato Catarinense 2025',
-                season: '2025',
-                teams: [
-                    { teamId: 't1', teamName: 'Gladiators', wins: 3, losses: 0, pointsFor: 120, pointsAgainst: 45 },
-                    { teamId: 't2', teamName: 'Istepuôs', wins: 2, losses: 1, pointsFor: 90, pointsAgainst: 80 },
-                    { teamId: 't3', teamName: 'Timbó Rex', wins: 1, losses: 2, pointsFor: 70, pointsAgainst: 95 }
-                ]
-            });
+        // PLAYS
+        if (!localStorage.getItem('fahub_plays')) {
+            const plays: TacticalPlay[] = [
+                { id: 'pl1', name: 'Slant 77', concept: 'Quick Pass', elements: [], program: 'TACKLE', createdAt: new Date() },
+                { id: 'pl2', name: 'Inside Zone', concept: 'Run Game', elements: [], program: 'TACKLE', createdAt: new Date() }
+            ];
+            set('fahub_plays', plays);
         }
 
-        // SEED: OKRs (METAS MASTER)
-        if (!localStorage.getItem('fahub_okrs')) {
-            set('fahub_okrs', [
-                { id: 'okr1', title: 'Sustentabilidade Financeira', ownerRole: 'PRESIDENT', targetValue: 100000, currentValue: 45800, unit: 'R$', category: 'FINANCE', status: 'ON_TRACK', subordinatesCheck: false },
-                { id: 'okr2', title: 'Expansão Feminina (Flag)', ownerRole: 'SPORTS_DIRECTOR', targetValue: 20, currentValue: 12, unit: 'Atletas', category: 'SPORTS', status: 'ON_TRACK', subordinatesCheck: false }
-            ]);
-        }
-
-        // SEED: AUDITORIA
-        if (!localStorage.getItem('fahub_audit')) {
-            set('fahub_audit', [
-                { id: 'a1', action: 'LOGIN', details: 'Presidente acessou o War Room', timestamp: new Date(), userId: 'dev', userName: 'Presidente', role: 'MASTER' }
+        // GAMES
+        if (!localStorage.getItem('fahub_games')) {
+            set('fahub_games', [
+                { id: 1, opponent: 'Timbó Rex', date: new Date('2025-07-20T15:00:00'), location: 'Away', status: 'SCHEDULED', score: '0-0' },
+                { id: 2, opponent: 'Istepuôs', date: new Date('2025-08-05T14:00:00'), location: 'Home', status: 'SCHEDULED', score: '0-0' }
             ]);
         }
     },
 
     subscribe: (key: string, callback: () => void) => {
-        const handler = () => callback();
+        const handler = (e: any) => {
+            if (e.type === 'storage_update' || (e.detail && e.detail.key === key)) {
+                callback();
+            }
+        };
         window.addEventListener('storage_update', handler);
-        return () => window.removeEventListener('storage_update', handler);
+        window.addEventListener('storage_update_key', handler);
+        return () => {
+            window.removeEventListener('storage_update', handler);
+            window.removeEventListener('storage_update_key', handler);
+        };
     },
 
-    notify: (key: string) => {
-        window.dispatchEvent(new Event('storage_update'));
-        return true;
-    },
-
-    getCurrentUser: () => JSON.parse(localStorage.getItem('gridiron_current_user') || '{"id":"dev","role":"MASTER","name":"Admin"}'),
-    setCurrentUser: (user: any) => localStorage.setItem('gridiron_current_user', JSON.stringify(user)),
-
+    getCurrentUser: () => JSON.parse(localStorage.getItem('gridiron_current_user') || '{"role":"HEAD_COACH","name":"Coach Guto","id":"user-default"}'),
+    setCurrentUser: (u: any) => localStorage.setItem('gridiron_current_user', JSON.stringify(u)),
+    
     getPlayers: () => get<Player>('fahub_players'),
     savePlayers: (data: Player[]) => set('fahub_players', data),
-    getAthletes: () => get<Player>('fahub_players'),
-    registerAthlete: (p: Player) => {
-        const players = get<Player>('fahub_players');
-        set('fahub_players', [...players, p]);
-    },
-    getAthleteByUserId: (id: string) => storageService.getPlayers().find(p => String(p.id) === id),
-    saveAthlete: (p: Player) => set('fahub_players', [...get<Player>('fahub_players').filter(x => x.id !== p.id), p]),
     
+    getPracticeSessions: () => get<PracticeSession>('fahub_practice'),
+    savePracticeSessions: (data: PracticeSession[]) => set('fahub_practice', data),
+    
+    getGames: () => get<Game>('fahub_games'),
+    saveGames: (data: Game[]) => set('fahub_games', data),
+    updateLiveGame: (id: any, updates: any) => set('fahub_games', get<Game>('fahub_games').map(g => g.id === id ? {...g, ...updates} : g)),
+
     getCandidates: () => get<RecruitmentCandidate>('fahub_candidates'),
     saveCandidates: (data: RecruitmentCandidate[]) => set('fahub_candidates', data),
     approveCandidate: (id: string) => {
-        const candidates = storageService.getCandidates();
-        const cand = candidates.find(c => c.id === id);
+        const list = get<RecruitmentCandidate>('fahub_candidates');
+        const cand = list.find(c => c.id === id);
         if (cand) {
-            const players = storageService.getPlayers();
-            const newPlayer: Player = { id: Date.now(), name: cand.name, position: cand.position, jerseyNumber: 0, height: '1.80m', weight: cand.weight, class: 'Rookie', avatarUrl: '', level: 1, xp: 0, rating: cand.rating || 60, status: 'INCUBATING', program: 'TACKLE', attendanceRate: 100 };
-            set('fahub_players', [...players, newPlayer]);
-            set('fahub_candidates', candidates.filter(c => c.id !== id));
+            const players = get<Player>('fahub_players');
+            const newP: Player = { id: Date.now(), name: cand.name, position: cand.position, jerseyNumber: 0, height: '1.80m', weight: cand.weight, class: 'Rookie', avatarUrl: '', level: 1, xp: 0, rating: 65, status: 'INCUBATING', attendanceRate: 100 };
+            set('fahub_players', [...players, newP]);
+            set('fahub_candidates', list.filter(c => c.id !== id));
         }
     },
 
-    getGames: () => get<Game>('fahub_games'),
-    saveGames: (data: Game[]) => set('fahub_games', data),
-    updateLiveGame: (id: any, updates: any) => {
-        const games = storageService.getGames();
-        set('fahub_games', games.map(g => String(g.id) === String(id) ? { ...g, ...updates } : g));
-    },
+    getTacticalPlays: () => get<TacticalPlay>('fahub_plays'),
+    saveTacticalPlays: (data: TacticalPlay[]) => set('fahub_plays', data),
 
-    getPracticeSessions: () => get<PracticeSession>('fahub_practice'),
-    savePracticeSessions: (data: PracticeSession[]) => set('fahub_practice', data),
+    getTeamSettings: (): TeamSettings => JSON.parse(localStorage.getItem('fahub_settings') || '{}'),
+    saveTeamSettings: (settings: TeamSettings) => set('fahub_settings', settings),
+    
+    getAuditLogs: () => get<AuditLog>('fahub_audit'),
+    logAuditAction: (action: string, details: string) => {
+        const logs = get<AuditLog>('fahub_audit');
+        const user = storageService.getCurrentUser();
+        set('fahub_audit', [{ id: Date.now().toString(), action, details, timestamp: new Date(), userName: user.name, role: user.role }, ...logs]);
+    },
+    
+    getOKRs: () => get<OKR>('fahub_okrs'),
+    saveOKRs: (data: OKR[]) => set('fahub_okrs', data),
+    
+    getObjectives: () => get<any>('fahub_objectives'),
+    saveObjectives: (data: any[]) => set('fahub_objectives', data),
+    
+    getActiveProgram: () => 'TACKLE',
+    
+    registerAthlete: (player: Player) => {
+        const players = storageService.getPlayers();
+        set('fahub_players', [...players, player]);
+    },
+    
     togglePracticeAttendance: (practiceId: string, playerId: string) => {
-        const sessions = get<PracticeSession>('fahub_practice');
+        const sessions = storageService.getPracticeSessions();
         const updated = sessions.map(s => {
             if (String(s.id) === practiceId) {
                 const attendees = s.attendees || [];
-                return {
-                    ...s,
-                    attendees: attendees.includes(playerId) 
-                        ? attendees.filter(a => a !== playerId) 
-                        : [...attendees, playerId]
-                };
+                if (attendees.includes(playerId)) {
+                    return { ...s, attendees: attendees.filter(id => id !== playerId) };
+                } else {
+                    return { ...s, attendees: [...attendees, playerId] };
+                }
             }
             return s;
         });
-        set('fahub_practice', updated);
+        storageService.savePracticeSessions(updated);
     },
-
-    getOKRs: () => get<OKR>('fahub_okrs'),
-    saveOKRs: (data: OKR[]) => set('fahub_okrs', data),
-    getObjectives: () => get<Objective>('fahub_objectives'),
-    saveObjectives: (data: Objective[]) => set('fahub_objectives', data),
 
     getTransactions: () => get<Transaction>('fahub_transactions'),
     saveTransactions: (data: Transaction[]) => set('fahub_transactions', data),
+
     getInvoices: () => get<Invoice>('fahub_invoices'),
+    saveInvoices: (data: Invoice[]) => set('fahub_invoices', data),
+
     getSubscriptions: () => get<Subscription>('fahub_subscriptions'),
     saveSubscriptions: (data: Subscription[]) => set('fahub_subscriptions', data),
+
     getBudgets: () => get<Budget>('fahub_budgets'),
     saveBudgets: (data: Budget[]) => set('fahub_budgets', data),
+
     getBills: () => get<Bill>('fahub_bills'),
-    generateMonthlyInvoices: () => { console.log('Monthly invoices generated'); },
-
-    getAuditLogs: () => get<AuditLog>('fahub_audit'),
-    logAuditAction: (action: string, details: string) => {
-        const user = storageService.getCurrentUser();
-        const logs = get<AuditLog>('fahub_audit');
-        set('fahub_audit', [{ id: Date.now().toString(), action, details, timestamp: new Date(), userId: user.id, userName: user.name, role: user.role }, ...logs]);
-    },
-    logAction: (action: string, details: string) => storageService.logAuditAction(action, details),
-
-    getTeamSettings: () => JSON.parse(localStorage.getItem('fahub_settings') || '{}'),
-    saveTeamSettings: (data: any) => localStorage.setItem('fahub_settings', JSON.stringify(data)),
-    
-    getRoadmap: () => [
-        { id: '1', day: 1, title: 'Fundação', description: 'Base de dados e Persona Matrix', status: 'DONE' },
-        { id: '2', day: 2, title: 'IA Scouting', description: 'Integração Gemini 3.0 Pro', status: 'DONE' },
-        { id: '3', day: 3, title: 'Broadcast', description: 'Overlay e Spotter Chart', status: 'DOING' }
-    ],
-    getProjectCompletion: () => 85,
-
-    getStaff: () => get<StaffMember>('fahub_staff').length ? get<StaffMember>('fahub_staff') : [
-        { id: 's1', name: 'Coach Guto', role: 'HEAD_COACH', email: 'guto@gladiators.com', phone: '47 9999-0000', contract: { active: true, type: 'PAID', value: 2500, signed: true }, documentsPending: false }
-    ],
-    getSponsors: () => get<SponsorDeal>('fahub_sponsors').length ? get<SponsorDeal>('fahub_sponsors') : [
-        { id: 'sp1', companyName: 'Academia Iron', contactPerson: 'Marcos', status: 'CLOSED_WON', value: 12000, lastInteraction: new Date() }
-    ],
-    saveSponsors: (data: SponsorDeal[]) => set('fahub_sponsors', data),
-    getMarketplaceItems: () => get<MarketplaceItem>('fahub_marketplace').length ? get<MarketplaceItem>('fahub_marketplace') : [
-        { id: 'm1', title: 'Camiseta Oficial 2025', description: 'Edição Especial Joinville', price: 89.90, category: 'MERCH', sellerType: 'TEAM_STORE', sellerName: 'Gladiators', imageUrl: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', isSold: false }
-    ],
-    saveMarketplaceItems: (data: MarketplaceItem[]) => set('fahub_marketplace', data),
-    getEventSales: () => get<EventSale>('fahub_event_sales').length ? get<EventSale>('fahub_event_sales') : [
-        { id: 'e1', type: 'TICKET', itemName: 'Ingresso vs Istepuôs', quantity: 2, totalAmount: 40, timestamp: new Date() }
-    ],
-    saveEventSales: (data: EventSale[]) => set('fahub_event_sales', data),
-    getInventory: () => get<EquipmentItem>('fahub_inventory').length ? get<EquipmentItem>('fahub_inventory') : [
-        { id: 'i1', name: 'Capacete Riddell Speed', category: 'HELMET', quantity: 15, condition: 'USED', forSale: false, acquisitionDate: new Date() }
-    ],
-    saveInventory: (data: EquipmentItem[]) => set('fahub_inventory', data),
-    getPublicGameData: (id: string) => storageService.getGames().find(g => String(g.id) === id),
-    getConfederationStats: () => ({ totalAthletes: 4850, totalTeams: 18, totalGamesThisYear: 142, activeAffiliates: 8 }),
-    getNationalTeamScouting: () => [],
-    getAffiliatesStatus: () => [],
-    getTransferRequests: () => [],
-    getActiveProgram: () => (localStorage.getItem('active_program') || 'TACKLE') as ProgramType,
-    setActiveProgram: (p: ProgramType) => localStorage.setItem('active_program', p),
-    getLeague: () => JSON.parse(localStorage.getItem('fahub_league') || '{}'),
+    saveBills: (data: Bill[]) => set('fahub_bills', data),
 
     getAnnouncements: () => get<Announcement>('fahub_announcements'),
     saveAnnouncements: (data: Announcement[]) => set('fahub_announcements', data),
+
     getChatMessages: () => get<ChatMessage>('fahub_chat'),
     saveChatMessages: (data: ChatMessage[]) => set('fahub_chat', data),
+
     getDocuments: () => get<TeamDocument>('fahub_documents'),
     saveDocuments: (data: TeamDocument[]) => set('fahub_documents', data),
+
     getClips: () => get<VideoClip>('fahub_clips'),
-    getTacticalPlays: () => get<TacticalPlay>('fahub_plays'),
-    saveTacticalPlays: (data: TacticalPlay[]) => set('fahub_plays', data),
-    getCourses: () => get<Course>('fahub_courses'),
+    saveClips: (data: VideoClip[]) => set('fahub_clips', data),
+
+    getCourses: () => get<any>('fahub_courses'),
+    saveCourses: (data: any[]) => set('fahub_courses', data),
+
+    getLeague: () => JSON.parse(localStorage.getItem('fahub_league') || '{}'),
+    saveLeague: (data: any) => set('fahub_league', data),
+
+    getMarketplaceItems: () => get<MarketplaceItem>('fahub_marketplace'),
+    saveMarketplaceItems: (data: MarketplaceItem[]) => set('fahub_marketplace', data),
+
     getTasks: () => get<KanbanTask>('fahub_tasks'),
     saveTasks: (data: KanbanTask[]) => set('fahub_tasks', data),
+
     getSocialPosts: () => get<SocialPost>('fahub_social_posts'),
     saveSocialPosts: (data: SocialPost[]) => set('fahub_social_posts', data),
-    seedDatabaseToCloud: async () => { console.log('Seeding...'); },
-    uploadFile: async (file: File, folder: string) => `https://mock.url/${folder}/${file.name}`,
+
+    getSponsors: () => get<SponsorDeal>('fahub_sponsors'),
+    saveSponsors: (data: SponsorDeal[]) => set('fahub_sponsors', data),
+
+    getEventSales: () => get<EventSale>('fahub_event_sales'),
+    saveEventSales: (data: EventSale[]) => set('fahub_event_sales', data),
+
     getSocialFeed: () => get<SocialFeedPost>('fahub_social_feed'),
-    saveSocialFeedPost: (p: SocialFeedPost) => set('fahub_social_feed', [p, ...get<SocialFeedPost>('fahub_social_feed')]),
-    toggleLikePost: (id: string) => {
-        const feed = get<SocialFeedPost>('fahub_social_feed');
-        set('fahub_social_feed', feed.map(p => p.id === id ? { ...p, likes: p.likes + 1 } : p));
+    saveSocialFeedPost: (post: SocialFeedPost) => {
+        const feed = storageService.getSocialFeed();
+        set('fahub_social_feed', [post, ...feed]);
     },
+    toggleLikePost: (postId: string) => {
+        const feed = storageService.getSocialFeed();
+        const updated = feed.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
+        set('fahub_social_feed', updated);
+    },
+
+    getInventory: () => get<EquipmentItem>('fahub_inventory'),
+    saveInventory: (data: EquipmentItem[]) => set('fahub_inventory', data),
+
+    getStaff: () => get<StaffMember>('fahub_staff'),
+    saveStaff: (data: StaffMember[]) => set('fahub_staff', data),
+
     getYouthClasses: () => get<YouthClass>('fahub_youth_classes'),
     saveYouthClasses: (data: YouthClass[]) => set('fahub_youth_classes', data),
+
     getYouthStudents: () => get<YouthStudent>('fahub_youth_students'),
-    processTransfer: (id: string, decision: string, actor: string) => { console.log(`${actor} processed transfer ${id}: ${decision}`); },
-    getAthleteStatsHistory: (id: string | number) => [],
-    getPublicLeagueStats: () => ({ leagueTable: [], name: 'Liga', season: '2025', leaders: { passing: [], rushing: [], defense: [] } }),
-    createChampionship: (name: string, year: number, div: string) => { console.log(`Created ${name}`); },
-    sendSignal: (signal: any) => { console.log('Signal sent', signal); },
-    getEntitlements: () => get<Entitlement>('fahub_entitlements'),
-    purchaseDigitalProduct: (userId: string, product: DigitalProduct) => { 
-        const e = get<Entitlement>('fahub_entitlements');
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + product.durationHours);
-        set('fahub_entitlements', [...e, { id: `ent-${Date.now()}`, userId, productId: product.id, expiresAt }]);
+    saveYouthStudents: (data: YouthStudent[]) => set('fahub_youth_students', data),
+
+    getConfederationStats: (): ConfederationStats => ({ totalAthletes: 4850, totalTeams: 120, totalGamesThisYear: 342, activeAffiliates: 18 }),
+    getNationalTeamScouting: () => get<NationalTeamCandidate>('fahub_national_scouting'),
+    getAffiliatesStatus: () => get<Affiliate>('fahub_affiliates'),
+    getTransferRequests: () => get<TransferRequest>('fahub_transfers'),
+    processTransfer: (id: string, decision: 'APPROVE' | 'REJECT', adminName: string) => {
+        const transfers = storageService.getTransferRequests();
+        const updated = transfers.map(t => t.id === id ? { ...t, status: decision === 'APPROVE' ? 'APPROVED' : 'REJECTED' } : t);
+        set('fahub_transfers', updated);
+        storageService.logAuditAction('TRANSFER_PROCESS', `${adminName} processou transferência ${id} como ${decision}`);
     },
-    saveCoachProfile: (userId: string, profile: any) => { localStorage.setItem(`coach_profile_${userId}`, JSON.stringify(profile)); },
+
+    getPublicGameData: (gameId: string) => {
+        const games = storageService.getGames();
+        const g = games.find(gm => String(gm.id) === gameId);
+        return g ? { ...g, sponsors: storageService.getSponsors().filter(s => s.status === 'CLOSED_WON') } : null;
+    },
+
+    getAthleteStatsHistory: (playerId: string | number) => [],
+    getPublicLeagueStats: () => ({ name: 'BFA', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
+    createChampionship: (name: string, year: number, division: string) => {},
+    generateMonthlyInvoices: () => {},
+    sendSignal: (signal: Partial<ObjectiveSignal>) => {},
+    getAthleteByUserId: (userId: string) => storageService.getPlayers().find(p => p.userId === userId),
+    getAthletes: () => storageService.getPlayers(),
     getTeams: () => get<Team>('fahub_teams'),
-    saveTeam: (team: Team) => set('fahub_teams', [...get<Team>('fahub_teams'), team])
+    saveTeam: (team: Team) => {
+        const teams = storageService.getTeams();
+        set('fahub_teams', [...teams, team]);
+    },
+    saveCoachProfile: (userId: string, profile: any) => {},
+    getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
+    getProjectCompletion: () => 85,
+    seedDatabaseToCloud: async () => { console.log('Seeding...'); },
+    logAction: (action: string, details: string) => storageService.logAuditAction(action, details),
+    uploadFile: async (file: File, path: string) => 'https://example.com/file.png',
+    notify: (key: string) => {
+        window.dispatchEvent(new CustomEvent('storage_notify', { detail: { key } }));
+    },
+    getEntitlements: () => get<Entitlement>('fahub_entitlements'),
+    purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
+        const entitlements = storageService.getEntitlements();
+        const expiry = new Date();
+        expiry.setHours(expiry.getHours() + product.durationHours);
+        const newEntitlement: Entitlement = {
+            id: `ent-${Date.now()}`,
+            userId,
+            productId: product.id,
+            expiresAt: expiry
+        };
+        set('fahub_entitlements', [...entitlements, newEntitlement]);
+    }
 };
