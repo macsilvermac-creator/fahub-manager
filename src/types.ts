@@ -3,6 +3,8 @@ export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_
 
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
 export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH' | 'YOUTH';
+
+// Added PracticeSource and PracticeTarget types
 export type PracticeSource = 'MANUAL' | 'AI';
 export type PracticeTarget = 'FULL_TEAM' | 'UNIT' | 'POSITION' | 'OFFENSE' | 'DEFENSE';
 
@@ -109,6 +111,7 @@ export interface Player {
     medicalExamExpiry?: Date;
     developmentPlans?: DevelopmentPlan[];
     wellnessHistory?: WellnessEntry[];
+    // Fix: Added missing properties to Player interface
     cpf?: string;
     nationality?: string;
     rosterHistory?: any[];
@@ -125,6 +128,7 @@ export interface PracticeScriptItem {
     description?: string;
 }
 
+// Added PracticeFeedback interface
 export interface PracticeFeedback {
     playerId: string | number;
     notes: string;
@@ -137,15 +141,16 @@ export interface PracticeSession {
     title: string;
     focus: string;
     date: Date;
+    // Fix: Added missing properties to PracticeSession interface
     startTime?: string;
-    deadlineDate?: Date;
-    category?: 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
     target?: PracticeTarget;
     source?: PracticeSource;
-    attendees: string[]; 
+    attendees: string[];
     checkedInAttendees?: string[];
     script?: PracticeScriptItem[];
     feedbacks?: PracticeFeedback[];
+    deadlineDate?: Date;
+    category?: 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
     performances?: any[];
 }
 
@@ -185,7 +190,8 @@ export interface Game {
     officialReport?: any;
     currentQuarter?: number;
     clock?: string;
-    rotation?: PlayerRotation[];
+    rotation?: any[];
+    // Fix: Added missing properties to Game interface
     timeline?: any[];
     audioNotes?: any[];
 }
