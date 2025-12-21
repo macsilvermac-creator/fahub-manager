@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { FlagIcon, WhistleIcon } from '../components/icons/NavIcons';
 // Added missing types and component imports
 import { CheckCircleIcon, PlayCircleIcon, MicIcon, StarIcon, AlertTriangleIcon, ScanIcon, CameraIcon, LockIcon } from '../components/icons/UiIcons';
-import { Game, GameReport, Player, TeamSettings } from '../types';
+import { Game, Player, TeamSettings } from '../types';
 import { storageService } from '../services/storageService';
 import { realtimeService } from '../services/realtimeService';
 import { UserContext } from '../components/Layout';
