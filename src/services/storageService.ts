@@ -13,7 +13,7 @@ import {
 // Função utilitária de busca - Corrigida para sintaxe padrão return/data
 const get = <T>(key: string): T[] => {
     const data = localStorage.getItem(key);
-    // JavaScript exige 'return' e 'data'. Termos traduzidos quebram o build.
+    // JavaScript exige 'return' e 'data'. 
     return data ? JSON.parse(data, (k, v) => {
         if (typeof v === 'string' && (k.toLowerCase().includes('date') || k === 'timestamp' || k === 'expiresat' || k === 'birthdate' || k === 'deadline')) {
             return new Date(v);
@@ -38,8 +38,8 @@ export const storageService = {
     initializeRAM: () => {
         if (!localStorage.getItem('fahub_players')) {
             const mockPlayers: Player[] = [
-                { id: 'p1', name: 'Lucas "Thor"', position: 'QB', jerseyNumber: 12, height: '1.85m', weight: 92, class: 'Sênior', avatarUrl: '', level: 5, xp: 850, rating: 88, status: 'ACTIVE', stats: { ovr: 88, speed: 82, strength: 75, agility: 78, tacticalIQ: 95 }, financialStatus: 'OK', documentStatus: 'OK' },
-                { id: 'p2', name: 'Gabriel Silva', position: 'LB', jerseyNumber: 55, height: '1.82m', weight: 105, class: 'Veterano', avatarUrl: '', level: 7, xp: 2100, rating: 91, status: 'ACTIVE', stats: { ovr: 91, speed: 78, strength: 95, agility: 72, tacticalIQ: 88 }, financialStatus: 'OK', documentStatus: 'OK' }
+                { id: 'p1', name: 'Lucas "Thor"', position: 'QB', jerseyNumber: 12, height: '1.85m', weight: 92, class: 'Sênior', avatarUrl: '', level: 5, xp: 850, rating: 88, status: 'ACTIVE', stats: { ovr: 88, speed: 82, strength: 75, agility: 78, tacticalIQ: 95 }, financialStatus: 'OK', documentStatus: 'OK', attendanceRate: 100 },
+                { id: 'p2', name: 'Gabriel Silva', position: 'LB', jerseyNumber: 55, height: '1.82m', weight: 105, class: 'Veterano', avatarUrl: '', level: 7, xp: 2100, rating: 91, status: 'ACTIVE', stats: { ovr: 91, speed: 78, strength: 95, agility: 72, tacticalIQ: 88 }, financialStatus: 'OK', documentStatus: 'OK', attendanceRate: 100 }
             ];
             set('fahub_players', mockPlayers);
         }
@@ -225,7 +225,8 @@ export const storageService = {
                     fundamentalsProgress: 0,
                     fieldEvaluationScore: 0,
                     status: 'CULTURE'
-                }
+                },
+                attendanceRate: 100
             };
             storageService.savePlayers([...players, newPlayer]);
             storageService.saveCandidates(candidates.filter(c => c.id !== id));
