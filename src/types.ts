@@ -26,6 +26,20 @@ export interface User {
     isProfileComplete: boolean;
 }
 
+export interface CoordinatorTask {
+    id: string;
+    title: string;
+    description: string;
+    assignedTo: 'OFFENSE' | 'DEFENSE' | 'ST';
+    status: 'TODO' | 'DOING' | 'DONE';
+}
+
+export interface LeagueRanking {
+    position: number;
+    teamName: string;
+    record: string; // ex: 4-0
+}
+
 export interface DevelopmentPlan {
     id: string;
     playerId: string | number;
@@ -77,31 +91,22 @@ export interface Player {
     xp: number;
     rating: number;
     status: 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'IR' | 'INACTIVE' | 'INCUBATING';
-    wellnessHistory?: WellnessEntry[];
-    combineStats?: CombineStats;
-    program?: ProgramType;
-    stats?: { ovr: number; speed: number; strength: number; agility: number; tacticalIQ: number };
-    badges?: string[];
-    rosterCategory?: RosterCategory;
-    rosterHistory?: any[];
-    depthChartOrder?: number;
-    developmentPlans?: DevelopmentPlan[];
-    medicalExamExpiry?: Date;
-    cpf?: string;
     attendanceRate?: number;
-    category?: string;
-    birthDate?: Date;
-    nationality?: string;
+    stats?: { ovr: number; speed: number; strength: number; agility: number; tacticalIQ: number };
+    program?: ProgramType;
+    rosterCategory?: RosterCategory;
+    combineStats?: CombineStats;
+    badges?: string[];
     commitmentLevel?: number;
-    financialStatus?: 'OK' | 'PENDING' | 'DEBT';
-    documentStatus?: 'OK' | 'PENDING' | 'EXPIRED';
     incubation?: {
         cultureAccepted: boolean;
         fundamentalsProgress: number;
         fieldEvaluationScore: number;
         status: IncubationStatus;
     };
-    userId?: string;
+    medicalExamExpiry?: Date;
+    developmentPlans?: DevelopmentPlan[];
+    wellnessHistory?: WellnessEntry[];
 }
 
 export interface PracticeScriptItem {
@@ -119,12 +124,28 @@ export interface PracticeSession {
     focus: string;
     date: Date;
     attendees: string[];
-    script?: PracticeScriptItem[];
-    category?: 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
-    deadlineDate?: Date;
     checkedInAttendees?: string[];
-    performances?: any[];
-    program?: ProgramType;
+    script?: PracticeScriptItem[];
+}
+
+export interface GameScoutingReport {
+    offenseAnalysis: string;
+    defenseAnalysis: string;
+    keyPlayersToWatch: string;
+    lastUpdate: Date;
+    summary?: string;
+    keysToVictory?: string[];
+}
+
+export interface PlayerPerformance {
+    playerId: string | number;
+    grade: number;
+    notes: string;
+}
+
+export interface CallSheetSection {
+    title: string;
+    plays: string[];
 }
 
 export interface Game {
@@ -134,28 +155,16 @@ export interface Game {
     location: 'Home' | 'Away';
     status: 'SCHEDULED' | 'IN_PROGRESS' | 'FINAL' | 'HALFTIME';
     score?: string;
-    currentQuarter?: number;
-    clock?: string;
-    rotation?: any[];
     result?: 'W' | 'L' | 'T';
     opponentLogoUrl?: string;
-    timeline?: any[];
-    audioNotes?: any[];
     scoutingReport?: GameScoutingReport;
     playerGrades?: PlayerPerformance[];
     callSheet?: CallSheetSection[];
     homeTeamName?: string;
     officialReport?: any;
-}
-
-export interface Team {
-    id: string;
-    name: string;
-    logoUrl: string;
-    primaryColor: string;
-    secondaryColor: string;
-    rosterIds: string[];
-    coachIds: string[];
+    currentQuarter?: number;
+    clock?: string;
+    rotation?: any[];
 }
 
 export interface TeamSettings {
@@ -163,11 +172,11 @@ export interface TeamSettings {
     teamName: string;
     logoUrl: string;
     primaryColor: string;
-    sportType?: 'TACKLE' | 'FLAG' | 'BOTH';
     address?: string;
+    plan?: string;
+    sportType?: 'TACKLE' | 'FLAG' | 'BOTH';
     website?: string;
     contactEmail?: string;
-    plan?: 'ROOKIE' | 'STARTER' | 'ALL_PRO';
 }
 
 export interface AuditLog {
@@ -175,9 +184,9 @@ export interface AuditLog {
     action: string;
     details: string;
     timestamp: Date;
-    userId: string;
     userName: string;
-    role: string;
+    userId?: string;
+    role?: string;
     ipAddress?: string;
 }
 
@@ -189,10 +198,9 @@ export interface Transaction {
     category: string;
     date: Date;
     status: 'PAID' | 'PENDING';
+    description?: string;
     aiGenerated?: boolean;
     verifiedBy?: string;
-    description?: string;
-    approvedBy?: string;
 }
 
 export interface Subscription {
@@ -260,26 +268,6 @@ export interface TeamDocument {
     url: string;
 }
 
-export interface GameScoutingReport {
-    offenseAnalysis: string;
-    defenseAnalysis: string;
-    keyPlayersToWatch: string;
-    lastUpdate: Date;
-    summary?: string;
-    keysToVictory?: string[];
-}
-
-export interface PlayerPerformance {
-    playerId: string | number;
-    grade: number;
-    notes: string;
-}
-
-export interface CallSheetSection {
-    title: string;
-    plays: string[];
-}
-
 export interface TacticalPlay {
     id: string;
     name: string;
@@ -288,8 +276,28 @@ export interface TacticalPlay {
     frames?: TacticalFrame[];
     routes?: any[];
     aiAnalysis?: string;
-    createdAt?: Date;
     program?: string;
+    createdAt?: Date;
+}
+
+export interface PlayElement {
+    id: string;
+    type: 'OFFENSE' | 'DEFENSE';
+    label: string;
+    x: number;
+    y: number;
+}
+
+export interface TacticalFrame {
+    id: number;
+    elements: PlayElement[];
+}
+
+export interface InstallMatrixItem {
+    id: string;
+    day: string;
+    category: string;
+    concept: string;
 }
 
 export interface VideoClip {
@@ -318,24 +326,35 @@ export interface VideoTag {
     [key: string]: any;
 }
 
-export interface PlayElement {
+export interface Objective {
     id: string;
-    type: 'OFFENSE' | 'DEFENSE';
-    label: string;
-    x: number;
-    y: number;
-}
-
-export interface TacticalFrame {
-    id: number;
-    elements: PlayElement[];
-}
-
-export interface InstallMatrixItem {
-    id: string;
-    day: string;
+    title: string;
+    description?: string;
     category: string;
-    concept: string;
+    status: 'IN_PROGRESS' | 'COMPLETED' | 'ON_TRACK' | 'BEHIND';
+    progress: number;
+    deadline: Date;
+    ownerRole: UserRole;
+    keyResults: KeyResult[];
+}
+
+export interface KeyResult {
+    id: string;
+    title: string;
+    currentValue: number;
+    targetValue: number;
+    unit: string;
+    lastUpdated: Date;
+}
+
+export interface Team {
+    id: string;
+    name: string;
+    logoUrl: string;
+    primaryColor: string;
+    secondaryColor: string;
+    rosterIds: string[];
+    coachIds: string[];
 }
 
 export interface MarketplaceItem {
@@ -370,6 +389,15 @@ export interface SocialPost {
     scheduledDate: Date;
 }
 
+export interface Course {
+    id: string;
+    title: string;
+    description: string;
+    thumbnailUrl: string;
+    priority?: boolean;
+    level?: string;
+}
+
 export interface SponsorDeal {
     id: string;
     companyName: string;
@@ -388,18 +416,6 @@ export interface EventSale {
     timestamp: Date;
 }
 
-export interface PaymentTransaction {
-    id: string;
-    amount: number;
-    method: 'CREDIT_CARD' | 'PIX';
-    status: 'APPROVED' | 'PENDING';
-    createdAt: Date;
-    platformFee: number;
-    netAmount: number;
-}
-
-export type PaymentMethod = 'CREDIT_CARD' | 'PIX';
-
 export interface SocialFeedPost {
     id: string;
     authorName: string;
@@ -411,13 +427,6 @@ export interface SocialFeedPost {
     likes: number;
     comments: any[];
     timestamp: Date;
-}
-
-export interface LegalDocument {
-    id: string;
-    title: string;
-    content: string;
-    version: string;
 }
 
 export interface EquipmentItem {
@@ -529,52 +538,6 @@ export interface PlayerRotation {
     fatigueLevel: number;
 }
 
-export interface Course {
-    id: string;
-    title: string;
-    description: string;
-    thumbnailUrl: string;
-    priority?: boolean;
-    level?: string;
-}
-
-export interface CoachGameNote {
-    id: string;
-    gameId: string | number;
-    content: string;
-    timestamp: Date;
-}
-
-export interface GameReport {
-    infrastructure?: any;
-    officialReport?: any;
-    score?: string;
-    result?: string;
-    fouls?: any[];
-    ejections?: any[];
-    notes?: string;
-    crew?: string[];
-    isFinalized?: boolean;
-}
-
-export interface Championship {
-    id: string;
-    name: string;
-    year: number;
-    division: string;
-}
-
-export interface ObjectiveSignal {
-    id: string;
-    timestamp: Date;
-    fromRole: UserRole;
-    fromName: string;
-    type: 'MILESTONE_REACHED' | 'APPROVAL_REQUIRED' | 'STATUS_UPDATE' | 'ALERT';
-    message: string;
-    status: 'UNREAD' | 'READ' | 'ACTIONED';
-    data?: any;
-}
-
 export interface OKR {
     id: string;
     title: string;
@@ -651,23 +614,13 @@ export interface PlatformMetric {
     churnRate: number;
 }
 
-export interface Objective {
+export interface ObjectiveSignal {
     id: string;
-    title: string;
-    description?: string;
-    category: string;
-    status: 'IN_PROGRESS' | 'COMPLETED' | 'ON_TRACK' | 'BEHIND';
-    progress: number;
-    deadline: Date;
-    ownerRole: UserRole;
-    keyResults: KeyResult[];
-}
-
-export interface KeyResult {
-    id: string;
-    title: string;
-    currentValue: number;
-    targetValue: number;
-    unit: string;
-    lastUpdated: Date;
+    timestamp: Date;
+    fromRole: UserRole;
+    fromName: string;
+    type: 'MILESTONE_REACHED' | 'APPROVAL_REQUIRED' | 'STATUS_UPDATE' | 'ALERT';
+    message: string;
+    status: 'UNREAD' | 'READ' | 'ACTIONED';
+    data?: any;
 }

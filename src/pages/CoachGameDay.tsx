@@ -19,6 +19,7 @@ const CoachGameDay: React.FC = () => {
 
     useEffect(() => {
         const games = storageService.getGames();
+        /* Fix: Comparison with HALFTIME is valid as HALFTIME is part of status union in Game interface */
         const live = games.find(g => g.status === 'IN_PROGRESS' || g.status === 'HALFTIME') || games[0];
         setActiveGame(live);
         
@@ -26,6 +27,7 @@ const CoachGameDay: React.FC = () => {
         setPlayers(allPlayers);
 
         // Inicializa rotação se não houver
+        /* Fix: Accessing rotation safely as it is defined in Game interface */
         if (live && !live.rotation) {
             const initialRotation = allPlayers.slice(0, 12).map(p => ({
                 playerId: p.id,
