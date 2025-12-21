@@ -4,15 +4,9 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <link rel="manifest" href="/manifest.json" />
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#0B1120" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="FAHUB" />
-    
     <title>FAHUB MANAGER | O QG do Futebol Americano</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
@@ -22,74 +16,47 @@
             colors: {
               'primary': '#0f172a',
               'secondary': '#1e293b',
-              'tertiary': '#334155',
-              'accent': '#475569',
-              'highlight': 'var(--team-primary, #059669)',
-              'highlight-hover': 'var(--team-primary-hover, #047857)',
-              'success': '#10b981',
-              'warning': '#d97706',
-              'danger': '#dc2626',
+              'highlight': '#059669',
+              'highlight-hover': '#047857',
               'text-primary': '#f1f5f9',
               'text-secondary': '#cbd5e1',
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
-            boxShadow: {
-              'glow': '0 0 20px rgba(var(--team-primary-rgb, 5, 150, 105), 0.3)', 
             }
           }
         }
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
       :root {
         --team-primary: #059669;
-        --team-primary-hover: #047857;
-        --team-primary-rgb: 5, 150, 105;
       }
       body {
-        font-family: 'Inter', sans-serif;
         background-color: #0f172a;
         color: #f1f5f9;
-        user-select: none;
-        -webkit-font-smoothing: antialiased;
+        font-family: 'Inter', sans-serif;
         overscroll-behavior: none;
       }
-      ::-webkit-scrollbar { width: 4px; height: 4px; }
-      ::-webkit-scrollbar-track { background: #0f172a; }
-      ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-      
+      .shadow-glow { box-shadow: 0 0 20px rgba(5, 150, 105, 0.3); }
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
       .glass-panel { 
         background-color: rgba(30, 41, 59, 0.6); 
         border: 1px solid rgba(255, 255, 255, 0.05); 
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        backdrop-filter: blur(12px);
       }
-      
-      .page-transition {
-        animation: slideUp 0.4s cubic-bezier(0, 0, 0.2, 1) forwards;
+      .animate-marquee {
+        display: inline-block;
+        padding-left: 100%;
+        animation: marquee 30s linear infinite;
       }
-      
-      @keyframes slideUp {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
-      @keyframes shimmer {
-        0% { background-position: -200% 0; }
-        100% { background-position: 200% 0; }
-      }
-      .animate-shimmer {
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
+      @keyframes marquee {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(-100%, 0); }
       }
     </style>
 </head>
   <body class="bg-primary text-text-primary h-screen overflow-hidden">
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <!-- Alterado para caminho absoluto da raiz para garantir compatibilidade no build -->
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
