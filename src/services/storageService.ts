@@ -5,7 +5,7 @@ import {
     RecruitmentCandidate, Invoice, Subscription, Budget, Bill,
     SponsorDeal, MarketplaceItem, EventSale, ConfederationStats,
     NationalTeamCandidate, Affiliate, TransferRequest, League,
-    VideoClip, TacticalPlay, RoadmapItem, Entitlement, DigitalProduct, Course, StaffMember
+    VideoClip, TacticalPlay, RoadmapItem, Entitlement, DigitalProduct, Course, StaffMember, Game, EquipmentItem, KanbanTask, TeamDocument, Team, SocialFeedPost
 } from '../types';
 
 const get = <T>(key: string): T[] => {
@@ -28,6 +28,15 @@ export const storageService = {
                 { id: '2', title: 'Reduzir Inadimplência', description: 'Meta tática financeira', ownerRole: 'FINANCIAL_DIRECTOR', targetValue: 5, currentValue: 12, unit: '%', category: 'FINANCE', status: 'AT_RISK', parentOkrId: '1', subordinatesCheck: false }
             ];
             set('fahub_okrs', initialOkrs);
+        }
+        
+        if (!localStorage.getItem('fahub_roadmap')) {
+            const initialRoadmap: RoadmapItem[] = [
+                { id: '1', day: 15, title: 'Protocolo de Sinais', description: 'Geração de alertas automáticos da diretoria para presidência.', status: 'DONE' },
+                { id: '2', day: 16, title: 'Motor de OKRs', description: 'Hierarquia de metas e cascateamento base-topo.', status: 'DOING' },
+                { id: '3', day: 17, title: 'Modo Sideline High-Contrast', description: 'UI otimizada para sol e chuva no campo.', status: 'TODO' }
+            ];
+            set('fahub_roadmap', initialRoadmap);
         }
     },
 
@@ -95,19 +104,29 @@ export const storageService = {
         set('fahub_players', data);
         storageService.notify('players');
     },
-    saveAthlete: (athlete: Player) => {
-        const current = storageService.getPlayers();
-        storageService.savePlayers([...current, athlete]);
-    },
     registerAthlete: (athlete: Player) => {
         const current = storageService.getPlayers();
         storageService.savePlayers([...current, athlete]);
+    },
+    saveAthlete: (athlete: Player) => {
+        const current = storageService.getPlayers();
+        const updated = current.map(p => String(p.id) === String(athlete.id) ? athlete : p);
+        if (!updated.some(p => String(p.id) === String(athlete.id))) {
+            updated.push(athlete);
+        }
+        storageService.savePlayers(updated);
     },
     getAthleteByUserId: (userId: string) => {
         return storageService.getPlayers().find(p => String((p as any).userId) === userId || String(p.id) === userId);
     },
     getAthleteStatsHistory: (id: string | number) => {
-        return [];
+        // Mock data for athlete stats history
+        return [
+            { date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90), rating: 70 },
+            { date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 60), rating: 75 },
+            { date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30), rating: 82 },
+            { date: new Date(), rating: 88 }
+        ];
     },
 
     // RECRUITMENT / CANDIDATES
@@ -144,13 +163,35 @@ export const storageService = {
         storageService.notify('budgets');
     },
     getBills: () => get<Bill>('fahub_bills'),
-    generateMonthlyInvoices: () => {
-        console.log("Monthly invoices generated");
-    },
     getEventSales: () => get<EventSale>('fahub_event_sales'),
     saveEventSales: (data: EventSale[]) => {
         set('fahub_event_sales', data);
-        storageService.notify('eventSales');
+        storageService.notify('event_sales');
+    },
+    generateMonthlyInvoices: () => {
+        const subscriptions = storageService.getSubscriptions();
+        const players = storageService.getPlayers();
+        const invoices = storageService.getInvoices();
+        
+        const newInvoices: Invoice[] = [];
+        subscriptions.filter(s => s.active).forEach(sub => {
+            sub.assignedTo.forEach(pid => {
+                const player = players.find(p => String(p.id) === String(pid));
+                if (player) {
+                    newInvoices.push({
+                        id: `inv-${Date.now()}-${pid}`,
+                        playerId: pid,
+                        playerName: player.name,
+                        title: sub.title,
+                        amount: sub.amount,
+                        dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10),
+                        status: 'PENDING',
+                        category: 'TUITION'
+                    });
+                }
+            });
+        });
+        storageService.saveInvoices([...invoices, ...newInvoices]);
     },
 
     // SPONSORS & MARKETPLACE
@@ -183,6 +224,9 @@ export const storageService = {
         const updated = games.map(g => String(g.id) === String(gameId) ? { ...g, ...updates } : g);
         storageService.saveGames(updated);
     },
+    getPublicGameData: (id: string) => {
+        return storageService.getGames().find(g => String(g.id) === id) || null;
+    },
     getPracticeSessions: () => get<PracticeSession>('fahub_practice'),
     savePracticeSessions: (data: PracticeSession[]) => {
         set('fahub_practice', data);
@@ -194,8 +238,19 @@ export const storageService = {
         const data = localStorage.getItem('fahub_league');
         return data ? JSON.parse(data) : { id: '1', name: 'Liga Brasileira', season: '2025', teams: [] };
     },
-    getPublicLeagueStats: () => ({ name: 'BFA', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
-    getPublicGameData: (id: string) => null,
+    getPublicLeagueStats: () => {
+        const league = storageService.getLeague();
+        return {
+            leagueTable: league.teams || [],
+            name: league.name,
+            season: league.season,
+            leaders: {
+                passing: [],
+                rushing: [],
+                defense: []
+            }
+        };
+    },
     getConfederationStats: (): ConfederationStats => ({ totalAthletes: 4850, totalTeams: 18, totalGamesThisYear: 142, activeAffiliates: 8 }),
     getNationalTeamScouting: () => get<NationalTeamCandidate>('fahub_national_scouting'),
     getAffiliatesStatus: () => get<Affiliate>('fahub_affiliates'),
@@ -210,7 +265,7 @@ export const storageService = {
     getTacticalPlays: () => get<TacticalPlay>('fahub_tactical_plays'),
     saveTacticalPlays: (data: TacticalPlay[]) => {
         set('fahub_tactical_plays', data);
-        storageService.notify('tacticalPlays');
+        storageService.notify('tactical_plays');
     },
     getClips: () => get<VideoClip>('fahub_clips'),
 
@@ -226,19 +281,6 @@ export const storageService = {
     saveTeamSettings: (data: TeamSettings) => {
         set('fahub_settings', data);
         storageService.notify('settings');
-    },
-
-    // SOCIAL
-    getSocialFeed: () => get<SocialFeedPost>('fahub_social_feed'),
-    saveSocialFeedPost: (post: SocialFeedPost) => {
-        const current = storageService.getSocialFeed();
-        set('fahub_social_feed', [post, ...current]);
-        storageService.notify('socialFeed');
-    },
-    toggleLikePost: (postId: string) => {
-        const feed = storageService.getSocialFeed();
-        const updated = feed.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
-        set('fahub_social_feed', updated);
     },
 
     // ADM & STAFF
@@ -269,23 +311,9 @@ export const storageService = {
     },
     getStaff: () => get<StaffMember>('fahub_staff'),
     saveCoachProfile: (userId: string, profile: any) => {
-        console.log(`Coach profile saved for ${userId}`);
-    },
-
-    // ENTITLEMENTS & DIGITAL STORE
-    getEntitlements: () => get<Entitlement>('fahub_entitlements'),
-    purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
-        const current = storageService.getEntitlements();
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + product.durationHours);
-        const newEntitlement: Entitlement = {
-            id: `ent-${Date.now()}`,
-            userId,
-            productId: product.id,
-            expiresAt
-        };
-        set('fahub_entitlements', [...current, newEntitlement]);
-        storageService.notify('entitlements');
+        const profiles = JSON.parse(localStorage.getItem('fahub_coach_profiles') || '{}');
+        profiles[userId] = profile;
+        localStorage.setItem('fahub_coach_profiles', JSON.stringify(profiles));
     },
 
     // MISC
@@ -296,8 +324,46 @@ export const storageService = {
     },
     getTeams: () => get<Team>('fahub_teams'),
     saveTeam: (team: Team) => {
-        const current = storageService.getTeams();
-        set('fahub_teams', [...current, team]);
+        const teams = storageService.getTeams();
+        const updated = teams.map(t => t.id === team.id ? team : t);
+        if (!updated.some(t => t.id === team.id)) {
+            updated.push(team);
+        }
+        set('fahub_teams', updated);
+        storageService.notify('teams');
     },
+
+    // ACADEMY
     getCourses: () => get<Course>('fahub_courses'),
+
+    // DIGITAL PRODUCTS & ENTITLEMENTS
+    getEntitlements: () => get<Entitlement>('fahub_entitlements'),
+    purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
+        const entitlements = storageService.getEntitlements();
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + product.durationHours);
+        
+        const newEntitlement: Entitlement = {
+            id: `ent-${Date.now()}`,
+            userId,
+            productId: product.id,
+            expiresAt
+        };
+        set('fahub_entitlements', [...entitlements, newEntitlement]);
+        storageService.notify('entitlements');
+    },
+
+    // SOCIAL
+    getSocialFeed: () => get<SocialFeedPost>('fahub_social_feed'),
+    saveSocialFeedPost: (post: SocialFeedPost) => {
+        const feed = storageService.getSocialFeed();
+        set('fahub_social_feed', [post, ...feed]);
+        storageService.notify('social_feed');
+    },
+    toggleLikePost: (postId: string) => {
+        const feed = storageService.getSocialFeed();
+        const updated = feed.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
+        set('fahub_social_feed', updated);
+        storageService.notify('social_feed');
+    },
 };
