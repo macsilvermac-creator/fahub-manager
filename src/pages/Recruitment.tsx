@@ -127,7 +127,7 @@ const Recruitment: React.FC = () => {
                                 className={`w-72 h-72 rounded-[4rem] border-[12px] flex flex-col items-center justify-center shadow-2xl transition-all active:scale-95 cursor-pointer relative overflow-hidden ${isTimerRunning ? 'bg-red-600 border-white animate-pulse' : 'bg-secondary border-highlight/30 hover:border-highlight'}`}
                             >
                                 <span className="text-7xl font-mono font-black text-white tabular-nums drop-shadow-lg">{timer.toFixed(2)}</span>
-                                <span className="text-xs font-black uppercase mt-4 text-white/60 tracking-[0.2em]">{isTimerRunning ? 'PARAR (STOP)' : 'INICIAR (START)'}</span>
+                                <span className="text-xs font-black uppercase mt-4 text-white/60 tracking-[0.2em]">{isTimerRunning ? 'PARAR' : 'INICIAR'}</span>
                                 {isTimerRunning && <div className="absolute bottom-0 left-0 h-1 bg-white animate-timer-progress" style={{width: '100%'}}></div>}
                             </div>
                         </div>
