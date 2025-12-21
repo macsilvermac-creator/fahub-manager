@@ -14,6 +14,7 @@ const Finance = lazy(() => import('./pages/Finance'));
 const TrainingHub = lazy(() => import('./pages/TrainingHub'));
 const PracticeExecution = lazy(() => import('./pages/PracticeExecution'));
 const HelpCenter = lazy(() => import('./pages/HelpCenter'));
+const VideoAnalysis = lazy(() => import('./pages/VideoAnalysis'));
 
 const Main: React.FC = () => {
   return (
@@ -32,6 +33,7 @@ const Main: React.FC = () => {
                                         <Route path="/recruitment" element={<Recruitment />} />
                                         <Route path="/roster" element={<Roster />} />
                                         <Route path="/finance" element={<Finance />} />
+                                        <Route path="/intel" element={<VideoAnalysis />} />
                                         <Route path="/help" element={<HelpCenter />} />
                                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                                     </Routes>

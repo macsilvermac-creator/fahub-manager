@@ -167,6 +167,8 @@ export const storageService = {
     saveTacticalPlays: (data: TacticalPlay[]) => set('fahub_tactical', data),
 
     getClips: () => get<VideoClip>('fahub_clips'),
+    // Fix: Added missing saveClips method
+    saveClips: (data: VideoClip[]) => set('fahub_clips', data),
 
     getCourses: () => get<Course>('fahub_courses'),
 
