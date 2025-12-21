@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useContext } from 'react';
 import Card from '../components/Card';
-import { FlagIcon, WhistleIcon } from '../components/icons/NavIcons';
-// Added missing types and component imports
-import { CheckCircleIcon, PlayCircleIcon, MicIcon, StarIcon, AlertTriangleIcon, ScanIcon, CameraIcon, LockIcon } from '../components/icons/UiIcons';
+import { FlagIcon, WhistleIcon, StarIcon } from '../components/icons/NavIcons';
+/* Fix: Removed StarIcon from UiIcons import as it belongs to NavIcons */
+import { CheckCircleIcon, PlayCircleIcon, MicIcon, AlertTriangleIcon, ScanIcon, CameraIcon, LockIcon } from '../components/icons/UiIcons';
 import { Game, Player, TeamSettings } from '../types';
 import { storageService } from '../services/storageService';
 import { realtimeService } from '../services/realtimeService';

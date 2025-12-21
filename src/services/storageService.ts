@@ -1,9 +1,9 @@
 
-import { Player, Game, PracticeSession, TeamSettings, AuditLog, RecruitmentCandidate, Team, Transaction, Invoice, Subscription, Budget, Bill, Announcement, ChatMessage, TeamDocument, VideoClip, TacticalPlay, MarketplaceItem, KanbanTask, SocialPost, SponsorDeal, EventSale, SocialFeedPost, EquipmentItem, StaffMember, YouthClass, YouthStudent, ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest, League } from '../types';
+import { Player, Game, PracticeSession, TeamSettings, AuditLog, RecruitmentCandidate, Team, Transaction, Invoice, Subscription, Budget, Bill, Announcement, ChatMessage, TeamDocument, VideoClip, TacticalPlay, MarketplaceItem, KanbanTask, SocialPost, SponsorDeal, EventSale, SocialFeedPost, EquipmentItem, StaffMember, YouthClass, YouthStudent, ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest, League, Objective, Course } from '../types';
 
 const get = <T>(key: string): T[] => {
     const data = localStorage.getItem(key);
-    return data ? JSON.parse(data, (k, v) => (k === 'date' || k === 'timestamp' || k === 'birthDate') ? new Date(v) : v) : [];
+    return data ? JSON.parse(data, (k, v) => (k === 'date' || k === 'timestamp' || k === 'birthDate' || k === 'deadline') ? new Date(v) : v) : [];
 };
 
 const set = <T>(key: string, data: T) => {
@@ -33,6 +33,7 @@ export const storageService = {
 
     notify: (key: string) => {
         if (subscribers[key]) subscribers[key].forEach(cb => cb());
+        window.dispatchEvent(new CustomEvent('fahub_data_change', { detail: { key } }));
     },
 
     getCurrentUser: () => {
@@ -52,13 +53,19 @@ export const storageService = {
         storageService.notify('players');
     },
 
-    // Fix: Added registerAthlete method
     registerAthlete: (player: Player) => {
         const current = storageService.getPlayers();
         storageService.savePlayers([...current, player]);
     },
 
     getAthleteByUserId: (id: string) => storageService.getPlayers().find(p => p.id === id),
+
+    // OBJECTIVES (METAS E ESTATISTICAS)
+    getObjectives: () => get<Objective>('fahub_objectives'),
+    saveObjectives: (data: Objective[]) => {
+        set('fahub_objectives', data);
+        storageService.notify('objectives');
+    },
 
     // CANDIDATES (TRYOUT)
     getCandidates: () => get<RecruitmentCandidate>('fahub_candidates'),
@@ -90,7 +97,6 @@ export const storageService = {
         storageService.notify('practice');
     },
 
-    // Fix: Added togglePracticeAttendance method
     togglePracticeAttendance: (practiceId: string, playerId: string) => {
         const sessions = storageService.getPracticeSessions();
         const updated = sessions.map(s => {
@@ -106,7 +112,7 @@ export const storageService = {
         storageService.savePracticeSessions(updated);
     },
 
-    // AUDIT & SETTINGS
+    // AUDIT & LOGS
     getAuditLogs: () => get<AuditLog>('fahub_audit'),
     logAuditAction: (action: string, details: string) => {
         const user = storageService.getCurrentUser();
@@ -124,7 +130,7 @@ export const storageService = {
         storageService.notify('audit');
     },
 
-    // Fix: Added logAction for AdminPanel
+    /* Fix: Added logAction to support AdminPanel persona switching */
     logAction: (action: string, details: string, user: any) => {
         const logs = storageService.getAuditLogs();
         const newLog: AuditLog = {
@@ -140,16 +146,7 @@ export const storageService = {
         storageService.notify('audit');
     },
 
-    getTeamSettings: (): TeamSettings => {
-        const data = localStorage.getItem('fahub_settings');
-        return data ? JSON.parse(data) : { id: '1', teamName: 'FAHUB Stars', primaryColor: '#059669' };
-    },
-    saveTeamSettings: (data: TeamSettings) => set('fahub_settings', data),
-
-    getActiveProgram: () => localStorage.getItem('active_program') || 'TACKLE',
-    setActiveProgram: (p: string) => localStorage.setItem('active_program', p),
-
-    // Fix: Added missing finance methods
+    // FINANCE
     getTransactions: () => get<Transaction>('fahub_transactions'),
     saveTransactions: (data: Transaction[]) => set('fahub_transactions', data),
     getInvoices: () => get<Invoice>('fahub_invoices'),
@@ -158,97 +155,81 @@ export const storageService = {
     saveSubscriptions: (data: Subscription[]) => set('fahub_subscriptions', data),
     getBudgets: () => get<Budget>('fahub_budgets'),
     saveBudgets: (data: Budget[]) => set('fahub_budgets', data),
-    getInvoicesForMember: (id: string | number) => storageService.getInvoices().filter(i => i.playerId === id),
+    /* Fix: Added getBills */
     getBills: () => get<Bill>('fahub_bills'),
-    saveBills: (data: Bill[]) => set('fahub_bills', data),
 
-    // Fix: Added missing tactical methods
+    // SETTINGS
+    getTeamSettings: (): TeamSettings => {
+        const data = localStorage.getItem('fahub_settings');
+        return data ? JSON.parse(data) : { id: '1', teamName: 'FAHUB Stars', primaryColor: '#059669', logoUrl: '', address: '' };
+    },
+    saveTeamSettings: (data: TeamSettings) => set('fahub_settings', data),
+
+    /* Fix: Added uploadFile mock */
+    uploadFile: async (file: File, path: string) => URL.createObjectURL(file),
+
+    getActiveProgram: () => localStorage.getItem('active_program') || 'TACKLE',
+    setActiveProgram: (p: string) => localStorage.setItem('active_program', p),
+
+    // TACTICAL
     getTacticalPlays: () => get<TacticalPlay>('fahub_tactical_plays'),
     saveTacticalPlays: (data: TacticalPlay[]) => set('fahub_tactical_plays', data),
-
-    // Fix: Added missing communication methods
-    getAnnouncements: () => get<Announcement>('fahub_announcements'),
-    saveAnnouncements: (data: Announcement[]) => set('fahub_announcements', data),
-    getChatMessages: () => get<ChatMessage>('fahub_chat_messages'),
-    saveChatMessages: (data: ChatMessage[]) => set('fahub_chat_messages', data),
-
-    // Fix: Added missing document methods
-    getDocuments: () => get<TeamDocument>('fahub_documents'),
-    saveDocuments: (data: TeamDocument[]) => set('fahub_documents', data),
-
-    // Fix: Added missing clip methods
-    getClips: () => get<VideoClip>('fahub_clips'),
-    saveClips: (data: VideoClip[]) => set('fahub_clips', data),
-
-    // Fix: Added missing task methods
-    getTasks: () => get<KanbanTask>('fahub_tasks'),
-    saveTasks: (data: KanbanTask[]) => set('fahub_tasks', data),
-
-    // Fix: Added missing marketplace methods
-    getMarketplaceItems: () => get<MarketplaceItem>('fahub_marketplace'),
-    saveMarketplaceItems: (data: MarketplaceItem[]) => set('fahub_marketplace', data),
-
-    // Fix: Added missing marketing methods
-    getSocialPosts: () => get<SocialPost>('fahub_social_posts'),
-    saveSocialPosts: (data: SocialPost[]) => set('fahub_social_posts', data),
-
-    // Fix: Added missing commercial methods
-    getSponsors: () => get<SponsorDeal>('fahub_sponsors'),
-    saveSponsors: (data: SponsorDeal[]) => set('fahub_sponsors', data),
-    getEventSales: () => get<EventSale>('fahub_event_sales'),
-    saveEventSales: (data: EventSale[]) => set('fahub_event_sales', data),
-
-    // Fix: Added missing locker room methods
-    getSocialFeed: () => get<SocialFeedPost>('fahub_social_feed'),
-    saveSocialFeedPost: (post: SocialFeedPost) => {
-        const current = storageService.getSocialFeed();
-        set('fahub_social_feed', [post, ...current]);
-    },
-    toggleLikePost: (postId: string) => {
-        const current = storageService.getSocialFeed();
-        const updated = current.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
-        set('fahub_social_feed', updated);
-    },
-
-    // Fix: Added missing inventory methods
-    getInventory: () => get<EquipmentItem>('fahub_inventory'),
-    saveInventory: (data: EquipmentItem[]) => set('fahub_inventory', data),
-
-    // Fix: Added missing staff methods
-    getStaff: () => get<StaffMember>('fahub_staff'),
-    saveStaff: (data: StaffMember[]) => set('fahub_staff', data),
-
-    // Fix: Added missing youth methods
-    getYouthClasses: () => get<YouthClass>('fahub_youth_classes'),
-    saveYouthClasses: (data: YouthClass[]) => set('fahub_youth_classes', data),
-    getYouthStudents: () => get<YouthStudent>('fahub_youth_students'),
-
-    // Fix: Added missing confederation methods
-    getConfederationStats: (): ConfederationStats => ({ totalAthletes: 4850, totalTeams: 18, totalGamesThisYear: 142, activeAffiliates: 8 }),
+    
+    // PUBLIC / FAN
+    getPublicLeagueStats: () => ({ name: 'BFA', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
+    getPublicGameData: (id: string) => null,
+    
+    // ACADEMY
+    getCourses: () => get<Course>('fahub_courses'),
+    
+    // FEDERATION
+    getConfederationStats: () => ({ totalAthletes: 4850, totalTeams: 18, totalGamesThisYear: 142, activeAffiliates: 8 }),
     getNationalTeamScouting: () => get<NationalTeamCandidate>('fahub_national_team_scouting'),
     getAffiliatesStatus: () => get<Affiliate>('fahub_affiliates'),
     getTransferRequests: () => get<TransferRequest>('fahub_transfers'),
     processTransfer: (id: string, decision: string, user: string) => {
-        const current = storageService.getTransferRequests();
+        const current = get<TransferRequest>('fahub_transfers');
         const updated = current.map(t => t.id === id ? { ...t, status: decision === 'APPROVE' ? 'APPROVED' : 'REJECTED' } as TransferRequest : t);
         set('fahub_transfers', updated);
     },
 
-    // Fix: Added missing public methods
-    getPublicGameData: (id: string) => null,
-    getAthleteStatsHistory: (id: string | number) => [],
-    getPublicLeagueStats: () => null,
-
-    // Fix: Added missing academy methods
-    getCourses: () => [],
-
-    // Fix: Added missing league methods
+    /* Fix: Added missing storage methods for various pages */
+    getAnnouncements: () => get<Announcement>('fahub_announcements'),
+    saveAnnouncements: (data: Announcement[]) => set('fahub_announcements', data),
+    getChatMessages: () => get<ChatMessage>('fahub_chat_messages'),
+    saveChatMessages: (data: ChatMessage[]) => set('fahub_chat_messages', data),
+    getDocuments: () => get<TeamDocument>('fahub_documents'),
+    saveDocuments: (data: TeamDocument[]) => set('fahub_documents', data),
+    getClips: () => get<VideoClip>('fahub_clips'),
+    saveClips: (data: VideoClip[]) => set('fahub_clips', data),
     getLeague: (): League => ({ id: '1', name: 'Liga Brasileira', season: '2025', teams: [] }),
-
-    // Fix: Added missing onboarding methods
-    createChampionship: (name: string, year: number, div: string) => {},
-
-    // Fix: Added missing maintenance methods
-    seedDatabaseToCloud: async () => {},
-    uploadFile: async (f: File, p: string) => '',
+    getMarketplaceItems: () => get<MarketplaceItem>('fahub_marketplace'),
+    saveMarketplaceItems: (data: MarketplaceItem[]) => set('fahub_marketplace', data),
+    getTasks: () => get<KanbanTask>('fahub_tasks'),
+    saveTasks: (data: KanbanTask[]) => set('fahub_tasks', data),
+    getSocialPosts: () => get<SocialPost>('fahub_social_posts'),
+    saveSocialPosts: (data: SocialPost[]) => set('fahub_social_posts', data),
+    getSponsors: () => get<SponsorDeal>('fahub_sponsors'),
+    saveSponsors: (data: SponsorDeal[]) => set('fahub_sponsors', data),
+    getEventSales: () => get<EventSale>('fahub_event_sales'),
+    saveEventSales: (data: EventSale[]) => set('fahub_event_sales', data),
+    seedDatabaseToCloud: async () => true,
+    getSocialFeed: () => get<SocialFeedPost>('fahub_social_feed'),
+    saveSocialFeedPost: (p: SocialFeedPost) => set('fahub_social_feed', [p, ...storageService.getSocialFeed()]),
+    toggleLikePost: (id: string) => {
+        const feed = storageService.getSocialFeed();
+        const updated = feed.map(p => p.id === id ? { ...p, likes: p.likes + 1 } : p);
+        set('fahub_social_feed', updated);
+    },
+    getInventory: () => get<EquipmentItem>('fahub_inventory'),
+    saveInventory: (data: EquipmentItem[]) => set('fahub_inventory', data),
+    getStaff: () => get<StaffMember>('fahub_staff'),
+    saveStaff: (data: StaffMember[]) => set('fahub_staff', data),
+    getYouthClasses: () => get<YouthClass>('fahub_youth_classes'),
+    saveYouthClasses: (data: YouthClass[]) => set('fahub_youth_classes', data),
+    getYouthStudents: () => get<YouthStudent>('fahub_youth_students'),
+    getAthleteStatsHistory: (id: string | number) => [],
+    createChampionship: (name: string, year: number, division: string) => {
+        console.log(`Championship Created: ${name}`);
+    },
 };
