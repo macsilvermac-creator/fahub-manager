@@ -27,12 +27,17 @@ const set = <T>(key: string, data: T) => {
 
 const subscribers: Record<string, (() => void)[]> = {};
 
+const notifyInternal = (key: string) => {
+    if (subscribers[key]) subscribers[key].forEach(cb => cb());
+    window.dispatchEvent(new CustomEvent('fahub_data_change', { detail: { key } }));
+};
+
 export const storageService = {
     initializeRAM: () => {
         if (!localStorage.getItem('fahub_players')) {
             const mockPlayers: Player[] = [
                 { id: 'p1', name: 'Lucas "Thor"', position: 'QB', jerseyNumber: 12, height: '1.85m', weight: 92, class: 'Sênior', avatarUrl: '', level: 5, xp: 850, rating: 88, status: 'ACTIVE', stats: { ovr: 88, speed: 82, strength: 75, agility: 78, tacticalIQ: 95 }, financialStatus: 'OK', documentStatus: 'OK' },
-                { id: 'p2', name: 'Gabriel Silva', position: 'LB', jerseyNumber: 55, height: '1.82m', weight: 105, class: 'Veterano', avatarUrl: '', level: 7, xp: 2100, rating: 91, status: 'ACTIVE', stats: { ovr: 91, speed: 78, strength: 95, agility: 72, tacticalIQ: 88 }, financialStatus: 'OK', documentStatus: 'OK' }
+                { id: 'p2', name: Gabriel Silva, position: 'LB', jerseyNumber: 55, height: '1.82m', weight: 105, class: 'Veterano', avatarUrl: '', level: 7, xp: 2100, rating: 91, status: 'ACTIVE', stats: { ovr: 91, speed: 78, strength: 95, agility: 72, tacticalIQ: 88 }, financialStatus: 'OK', documentStatus: 'OK' }
             ];
             set('fahub_players', mockPlayers);
         }
@@ -51,10 +56,7 @@ export const storageService = {
         return () => { subscribers[key] = subscribers[key].filter(cb => cb !== callback); };
     },
 
-    notify: (key: string) => {
-        if (subscribers[key]) subscribers[key].forEach(cb => cb());
-        window.dispatchEvent(new CustomEvent('fahub_data_change', { detail: { key } }));
-    },
+    notify: notifyInternal,
 
     getCurrentUser: () => {
         const data = localStorage.getItem('gridiron_current_user');
@@ -67,7 +69,7 @@ export const storageService = {
     getPlayers: () => get<Player>('fahub_players'),
     savePlayers: (data: Player[]) => {
         set('fahub_players', data);
-        storageService.notify('players');
+        notifyInternal('players');
     },
     getAthleteByUserId: (id: string) => storageService.getPlayers().find(p => String(p.id) === id || (p as any).userId === id),
     saveAthlete: (athlete: Player) => {
@@ -88,13 +90,12 @@ export const storageService = {
     getOKRs: () => get<OKR>('fahub_okrs'),
     saveOKRs: (data: OKR[]) => {
         set('fahub_okrs', data);
-        storageService.notify('okrs');
+        notifyInternal('okrs');
     },
-    // Added missing getObjectives and saveObjectives methods to fix Dashboard.tsx errors
     getObjectives: () => get<Objective>('fahub_objectives'),
     saveObjectives: (data: Objective[]) => {
         set('fahub_objectives', data);
-        storageService.notify('objectives');
+        notifyInternal('objectives');
     },
     getSignals: () => get<ObjectiveSignal>('fahub_signals'),
     sendSignal: (signal: Omit<ObjectiveSignal, 'id' | 'timestamp' | 'status'>) => {
@@ -106,7 +107,7 @@ export const storageService = {
             status: 'UNREAD'
         };
         set('fahub_signals', [newSignal, ...current].slice(0, 50));
-        storageService.notify('signals');
+        notifyInternal('signals');
     },
     validateAthleteEligibility: (athleteId: string | number): { eligible: boolean, reasons: string[] } => {
         const athletes = get<Player>('fahub_players');
@@ -122,7 +123,7 @@ export const storageService = {
     getTransactions: () => get<Transaction>('fahub_transactions'),
     saveTransactions: (data: Transaction[]) => {
         set('fahub_transactions', data);
-        storageService.notify('transactions');
+        notifyInternal('transactions');
     },
     getInvoices: () => get<Invoice>('fahub_invoices'),
     saveInvoices: (data: Invoice[]) => set('fahub_invoices', data),
@@ -132,7 +133,6 @@ export const storageService = {
     saveBudgets: (data: Budget[]) => set('fahub_budgets', data),
     getBills: () => get<Bill>('fahub_bills'),
     saveBills: (data: Bill[]) => set('fahub_bills', data),
-    // Added missing generateMonthlyInvoices method to fix Finance.tsx error
     generateMonthlyInvoices: () => {
         console.log("Generating monthly invoices...");
     },
@@ -144,9 +144,8 @@ export const storageService = {
     },
     saveTeamSettings: (data: TeamSettings) => {
         localStorage.setItem('fahub_settings', JSON.stringify(data));
-        storageService.notify('settings');
+        notifyInternal('settings');
     },
-    // Added missing uploadFile method to fix TeamSettings.tsx error
     uploadFile: async (file: File, path: string): Promise<string> => {
         console.log(`Uploading file to ${path}`);
         return URL.createObjectURL(file);
@@ -167,9 +166,8 @@ export const storageService = {
             role: user.role
         };
         set('fahub_audit', [newLog, ...logs].slice(0, 100));
-        storageService.notify('audit');
+        notifyInternal('audit');
     },
-    // Added logAction method for compatibility with AdminPanel.tsx error
     logAction: (action: string, details: string) => {
         storageService.logAuditAction(action, details);
     },
@@ -178,7 +176,7 @@ export const storageService = {
     getGames: () => get<Game>('fahub_games'),
     saveGames: (data: Game[]) => {
         set('fahub_games', data);
-        storageService.notify('games');
+        notifyInternal('games');
     },
     updateLiveGame: (id: string | number, updates: Partial<Game>) => {
         const games = storageService.getGames().map(g => String(g.id) === String(id) ? { ...g, ...updates } : g);
@@ -187,9 +185,8 @@ export const storageService = {
     getPracticeSessions: () => get<PracticeSession>('fahub_practice'),
     savePracticeSessions: (data: PracticeSession[]) => {
         set('fahub_practice', data);
-        storageService.notify('practice');
+        notifyInternal('practice');
     },
-    // Added missing togglePracticeAttendance method to fix Schedule.tsx error
     togglePracticeAttendance: (practiceId: string, playerId: string) => {
         const sessions = storageService.getPracticeSessions();
         const updated = sessions.map(s => {
@@ -209,10 +206,9 @@ export const storageService = {
     getActiveProgram: () => (localStorage.getItem('active_program') || 'TACKLE') as ProgramType,
     setActiveProgram: (p: ProgramType) => {
         localStorage.setItem('active_program', p);
-        storageService.notify('activeProgram');
+        notifyInternal('activeProgram');
     },
     getTeams: () => get<Team>('fahub_teams'),
-    // Added missing saveTeam method to fix TeamManagement.tsx error
     saveTeam: (team: Team) => {
         const teams = storageService.getTeams();
         const idx = teams.findIndex(t => t.id === team.id);
@@ -222,22 +218,19 @@ export const storageService = {
     },
     getCandidates: () => get<RecruitmentCandidate>('fahub_candidates'),
     saveCandidates: (data: RecruitmentCandidate[]) => set('fahub_candidates', data),
-    // Added missing approveCandidate method to fix Recruitment.tsx error
     approveCandidate: (id: string) => {
         const candidates = storageService.getCandidates();
         const updated = candidates.map(c => c.id === id ? { ...c, status: 'SELECTED' as const } : c);
         storageService.saveCandidates(updated);
     },
     getStaff: () => get<StaffMember>('fahub_staff'),
-    // Added missing saveCoachProfile method to fix Onboarding.tsx error
     saveCoachProfile: (userId: string, profile: any) => {
         localStorage.setItem(`coach_profile_${userId}`, JSON.stringify(profile));
     },
     getDocuments: () => get<TeamDocument>('fahub_documents'),
-    // Added missing saveDocuments method to fix Resources.tsx errors
     saveDocuments: (data: TeamDocument[]) => {
         set('fahub_documents', data);
-        storageService.notify('documents');
+        notifyInternal('documents');
     },
     getTasks: () => get<KanbanTask>('fahub_tasks'),
     saveTasks: (data: KanbanTask[]) => set('fahub_tasks', data),
@@ -248,10 +241,9 @@ export const storageService = {
         set('fahub_social_feed', feed.map(p => p.id === id ? { ...p, likes: p.likes + 1 } : p));
     },
     getMarketplaceItems: () => get<MarketplaceItem>('fahub_marketplace'),
-    // Added missing saveMarketplaceItems method to fix Marketplace.tsx errors
     saveMarketplaceItems: (data: MarketplaceItem[]) => {
         set('fahub_marketplace', data);
-        storageService.notify('marketplace');
+        notifyInternal('marketplace');
     },
     getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
     getProjectCompletion: () => 75,
@@ -264,21 +256,20 @@ export const storageService = {
         const updated = current.map(t => t.id === id ? { ...t, status: (decision === 'APPROVE' ? 'APPROVED' : 'REJECTED') as any } : t);
         set('fahub_transfers', updated);
     },
-    // Added missing methods for multiple other components
     getAnnouncements: () => get<Announcement>('fahub_announcements'),
     saveAnnouncements: (data: Announcement[]) => {
         set('fahub_announcements', data);
-        storageService.notify('announcements');
+        notifyInternal('announcements');
     },
     getChatMessages: () => get<ChatMessage>('fahub_chat'),
     saveChatMessages: (data: ChatMessage[]) => {
         set('fahub_chat', data);
-        storageService.notify('chat');
+        notifyInternal('chat');
     },
     getTacticalPlays: () => get<TacticalPlay>('fahub_tactical_plays'),
     saveTacticalPlays: (data: TacticalPlay[]) => {
         set('fahub_tactical_plays', data);
-        storageService.notify('tactical');
+        notifyInternal('tactical');
     },
     getClips: () => get<VideoClip>('fahub_clips'),
     getCourses: () => get<Course>('fahub_courses'),
@@ -289,27 +280,31 @@ export const storageService = {
     getSocialPosts: () => get<SocialPost>('fahub_social_posts'),
     saveSocialPosts: (data: SocialPost[]) => {
         set('fahub_social_posts', data);
-        storageService.notify('social_posts');
+        notifyInternal('social_posts');
     },
     getSponsors: () => get<SponsorDeal>('fahub_sponsors'),
     saveSponsors: (data: SponsorDeal[]) => {
         set('fahub_sponsors', data);
-        storageService.notify('sponsors');
+        notifyInternal('sponsors');
     },
     getEventSales: () => get<EventSale>('fahub_event_sales'),
     saveEventSales: (data: EventSale[]) => {
         set('fahub_event_sales', data);
-        storageService.notify('event_sales');
+        notifyInternal('event_sales');
     },
     seedDatabaseToCloud: async () => {
         console.log("Seeding database...");
     },
     getInventory: () => get<EquipmentItem>('fahub_inventory'),
+    saveInventory: (data: EquipmentItem[]) => {
+        set('fahub_inventory', data);
+        notifyInternal('inventory');
+    },
     getYouthClasses: () => get<YouthClass>('fahub_youth_classes'),
     getYouthStudents: () => get<YouthStudent>('fahub_youth_students'),
     saveYouthClasses: (data: YouthClass[]) => {
         set('fahub_youth_classes', data);
-        storageService.notify('youth_classes');
+        notifyInternal('youth_classes');
     },
     getPublicGameData: (gameId: string) => {
         return storageService.getGames().find(g => String(g.id) === gameId);
