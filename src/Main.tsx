@@ -11,10 +11,9 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Roster = lazy(() => import('./pages/Roster'));
 const Recruitment = lazy(() => import('./pages/Recruitment'));
 const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const Finance = lazy(() => import('./pages/Finance'));
-const PracticePlan = lazy(() => import('./pages/PracticePlan'));
+const TrainingHub = lazy(() => import('./pages/TrainingHub'));
 const CoachGameDay = lazy(() => import('./pages/CoachGameDay'));
 const VideoAnalysis = lazy(() => import('./pages/VideoAnalysis'));
 const TacticalLab = lazy(() => import('./pages/TacticalLab'));
@@ -42,47 +41,20 @@ const Main: React.FC = () => {
                 <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
                     <Routes>
                         <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route path="/onboarding" element={<Onboarding />} />
                         <Route path="/*" element={
                             <Layout>
                                 <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LoadingScreen /></div>}>
                                     <Routes>
-                                        {/* Core */}
                                         <Route path="/dashboard" element={<Dashboard />} />
-                                        <Route path="/admin" element={<AdminPanel />} />
-                                        
-                                        {/* Gestão de Equipe */}
-                                        <Route path="/roster" element={<Roster />} />
-                                        <Route path="/staff" element={<Staff />} />
-                                        <Route path="/inventory" element={<Inventory />} />
-                                        <Route path="/goals" element={<Goals />} />
-                                        <Route path="/finance" element={<Finance />} />
-                                        <Route path="/marketplace" element={<Marketplace />} />
-                                        
-                                        {/* Técnico & Campo */}
-                                        <Route path="/practice" element={<PracticePlan />} />
-                                        <Route path="/tactical-lab" element={<TacticalLab />} />
-                                        <Route path="/gemini-playbook" element={<GeminiPlaybook />} />
-                                        <Route path="/video" element={<VideoAnalysis />} />
+                                        <Route path="/training-day" element={<TrainingHub />} />
                                         <Route path="/sideline" element={<CoachGameDay />} />
                                         <Route path="/recruitment" element={<Recruitment />} />
-                                        
-                                        {/* Atleta & Social */}
-                                        <Route path="/profile" element={<MyProfile />} />
-                                        <Route path="/academy" element={<Academy />} />
-                                        <Route path="/locker-room" element={<LockerRoom />} />
-                                        <Route path="/communications" element={<Marketing />} />
-                                        
-                                        {/* Governança & Oficiais */}
-                                        <Route path="/officiating" element={<Officiating />} />
-                                        <Route path="/league" element={<LeagueManager />} />
-                                        <Route path="/confederation" element={<Confederation />} />
-                                        
-                                        {/* Suporte & Arquivos */}
-                                        <Route path="/resources" element={<Resources />} />
-                                        <Route path="/help" element={<HelpCenter />} />
-                                        
+                                        <Route path="/intel" element={<VideoAnalysis />} />
+                                        <Route path="/roster" element={<Roster />} />
+                                        <Route path="/finance" element={<Finance />} />
+                                        <Route path="/inventory" element={<Inventory />} />
+                                        <Route path="/admin" element={<AdminPanel />} />
+                                        {/* Fallback */}
                                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                                     </Routes>
                                 </Suspense>
