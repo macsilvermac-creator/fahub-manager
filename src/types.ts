@@ -112,6 +112,7 @@ export interface Player {
     nationality?: string;
     rosterHistory?: any[];
     depthChartOrder?: number;
+    birthDate?: Date;
 }
 
 export interface PracticeScriptItem {
@@ -637,7 +638,6 @@ export interface ObjectiveSignal {
     data?: any;
 }
 
-// Fix: Added missing types
 export type PaymentMethod = 'PIX' | 'CREDIT_CARD';
 
 export interface PaymentTransaction {

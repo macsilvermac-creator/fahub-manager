@@ -18,7 +18,8 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
   const navLinkClasses = "flex items-center px-4 py-3 text-text-secondary rounded-xl hover:bg-white/5 hover:text-white transition-all text-xs font-bold mb-1 group";
   const activeNavLinkClasses = "bg-highlight/10 text-highlight border-l-4 border-highlight font-black";
 
-  const SectionLabel = ({ children }: { children: React.Node }) => (
+  // Fix: changed React.Node to React.ReactNode
+  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <p className="px-4 text-[9px] font-black text-text-secondary/30 uppercase tracking-widest mt-6 mb-2">{children}</p>
   );
 
