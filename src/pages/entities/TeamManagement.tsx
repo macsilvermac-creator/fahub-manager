@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/Card';
 import { storageService } from '../../services/storageService';
-import { Team, Athlete, User } from '../../types';
+import { Team, Player, User } from '../../types';
 import LazyImage from '../../components/LazyImage';
 // Fix: SettingsNavIcon is exported from NavIcons, not UiIcons
 import { UsersIcon, CheckCircleIcon, ShareIcon } from '../../components/icons/UiIcons';
@@ -12,7 +12,8 @@ import { useToast } from '../../contexts/ToastContext';
 const TeamManagement: React.FC = () => {
     const toast = useToast();
     const [teams, setTeams] = useState<Team[]>([]);
-    const [athletes, setAthletes] = useState<Athlete[]>([]);
+    // Fix: Updated state to Player[] as storageService.getAthletes() returns Player[]
+    const [athletes, setAthletes] = useState<Player[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     
     // Form State
@@ -21,12 +22,12 @@ const TeamManagement: React.FC = () => {
 
     useEffect(() => {
         setTeams(storageService.getTeams());
-        setAthletes(storageService.getAthletes());
+        // Fix: Casting to Player[] to ensure type safety
+        setAthletes(storageService.getAthletes() as Player[]);
     }, []);
 
     const handleCreateTeam = (e: React.FormEvent) => {
         e.preventDefault();
-        // Fix: Removed settings property from Team initialization as it's not strictly in types or handled elsewhere
         const team: Team = {
             id: `team-${Date.now()}`,
             name: newTeamName,
@@ -151,7 +152,8 @@ const TeamManagement: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="p-4 text-right">
-                                                <span className="font-black text-white bg-highlight/20 px-2 py-1 rounded border border-highlight/30 text-xs">{athlete.stats.ovr}</span>
+                                                {/* Fix: Safely accessing stats property which is optional in Player interface */}
+                                                <span className="font-black text-white bg-highlight/20 px-2 py-1 rounded border border-highlight/30 text-xs">{athlete.stats?.ovr || athlete.rating}</span>
                                             </td>
                                         </tr>
                                     ))}

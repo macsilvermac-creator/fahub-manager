@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../../components/Card';
 import { storageService } from '../../services/storageService';
-import { Athlete, Team } from '../../types';
+import { Player, Team } from '../../types';
 // Fix: WhistleIcon is exported from NavIcons, not UiIcons
 import { CheckCircleIcon, ActivityIcon, SparklesIcon } from '../../components/icons/UiIcons';
 import { WhistleIcon } from '../../components/icons/NavIcons';
@@ -10,7 +10,8 @@ import { useToast } from '../../contexts/ToastContext';
 
 const CoachPracticeControl: React.FC = () => {
     const toast = useToast();
-    const [athletes, setAthletes] = useState<Athlete[]>([]);
+    // Fix: Updated state to Player[] as storageService.getAthletes() returns Player[]
+    const [athletes, setAthletes] = useState<Player[]>([]);
     const [selectedTeamId, setSelectedTeamId] = useState<string>('');
     const [teams, setTeams] = useState<Team[]>([]);
 
@@ -18,10 +19,11 @@ const CoachPracticeControl: React.FC = () => {
         const t = storageService.getTeams();
         setTeams(t);
         if (t.length > 0) setSelectedTeamId(t[0].id);
-        setAthletes(storageService.getAthletes());
+        // Fix: Casting to Player[] to ensure type safety
+        setAthletes(storageService.getAthletes() as Player[]);
     }, []);
 
-    const handleAttendance = (id: string) => {
+    const handleAttendance = (id: string | number) => {
         toast.success("Presença registrada para o drill!");
     };
 
