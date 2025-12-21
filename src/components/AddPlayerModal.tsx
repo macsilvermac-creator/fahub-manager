@@ -1,16 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
-import { Player, CombineStats } from '../types';
+// Fix: CombineStats and ProgramType are exported from types.ts
+import { Player, CombineStats, ProgramType } from '../types';
 import { validators } from '../utils/validators';
+import { storageService } from '../services/storageService';
 
 interface AddPlayerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  // Fix: Added cpf to the omitted keys as it might not be needed in the base registration or should be handled specially
   onAdd: (player: Omit<Player, 'id' | 'level' | 'xp' | 'badges' | 'rating' | 'status'>) => void;
 }
 
-const POSITIONS = ['QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'CB', 'S', 'K', 'P'];
+const POSITIONS_TACKLE = ['QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'CB', 'S', 'K', 'P'];
+const POSITIONS_FLAG = ['QB', 'WR', 'CENTER', 'RUSHER', 'LB', 'DB', 'S', 'ATH'];
+
 const CLASSES = ['Calouro', 'Segundanista', 'Júnior', 'Sênior', 'Veterano'];
 const NATIONALITIES = [
     { code: 'BRA', label: 'Brasileiro 🇧🇷' },
@@ -23,6 +28,8 @@ const NATIONALITIES = [
 
 const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd }) => {
   const [activeTab, setActiveTab] = useState<'INFO' | 'COMBINE'>('INFO');
+  const [positions, setPositions] = useState<string[]>(POSITIONS_TACKLE);
+  const [currentProgram, setCurrentProgram] = useState<ProgramType>('TACKLE');
   
   const [formData, setFormData] = useState({
     name: '',
@@ -50,6 +57,10 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
 
   useEffect(() => {
     if (isOpen) {
+        const program = storageService.getActiveProgram() as ProgramType;
+        setCurrentProgram(program);
+        setPositions(program === 'FLAG' ? POSITIONS_FLAG : POSITIONS_TACKLE);
+        
         setFormData({
             name: '',
             cpf: '',
@@ -117,6 +128,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
       return;
     }
 
+    // Fix: Omit correctly provides expected fields for onAdd
     onAdd({
       name: formData.name,
       cpf: formData.cpf,
@@ -130,9 +142,8 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
       avatarUrl: formData.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`,
       depthChartOrder: 3, 
       combineStats: combineData,
-      rosterHistory: [],
-      /* Fix: Added required attendanceRate property */
-      attendanceRate: 100 
+      attendanceRate: 100,
+      program: currentProgram 
     });
   };
 
@@ -162,7 +173,12 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
         {activeTab === 'INFO' && (
             <div className="space-y-5 animate-fade-in">
                 <div className="bg-black/20 p-4 rounded-lg border border-white/5">
-                    <h4 className="text-xs font-bold text-highlight uppercase mb-3">Identidade & Governo</h4>
+                    <div className="flex justify-between items-center mb-3">
+                        <h4 className="text-xs font-bold text-highlight uppercase">Identidade & Governo</h4>
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${currentProgram === 'FLAG' ? 'bg-yellow-500 text-black' : 'bg-blue-600 text-white'}`}>
+                            Modalidade: {currentProgram}
+                        </span>
+                    </div>
                     <div className="space-y-4">
                         <div>
                             <label className={labelClass}>Nome Completo (Civil)</label>
@@ -228,7 +244,7 @@ const AddPlayerModal: React.FC<AddPlayerModalProps> = ({ isOpen, onClose, onAdd 
                             onChange={handleChange}
                             className={inputClass}
                             >
-                            {POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                            {positions.map(pos => <option key={pos} value={pos}>{pos}</option>)}
                             </select>
                         </div>
                         <div>

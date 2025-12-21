@@ -1,12 +1,10 @@
 
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import Card from '../components/Card';
-/* Fix: Ensuring correct type imports */
 import { Game, PlayElement, TacticalPlay, TacticalFrame, InstallMatrixItem } from '../types';
 import { storageService } from '../services/storageService';
-/* Fix: Updated imported functions */
 import { analyzePlayMatchup, generateInstallSchedule, importPlaybookFromImage } from '../services/geminiService';
-import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon, EyeIcon, ScanIcon, ImageIcon, EraserIcon } from '../components/icons/UiIcons';
+import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon, EyeIcon, ScanIcon, ImageIcon, EraserIcon, ShareIcon } from '../components/icons/UiIcons';
 import { WhistleIcon } from '../components/icons/NavIcons';
 import { UserContext } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext';
@@ -14,22 +12,21 @@ import { useToast } from '../contexts/ToastContext';
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 400;
 
-const DAYS = ['TUE', 'WED', 'THU', 'FRI', 'SAT'];
-const CATEGORIES = ['RUN', 'PASS', 'DEFENSE', 'SITUATION'];
-
 const TacticalLab: React.FC = () => {
-    const { currentRole } = useContext(UserContext) as any;
+    const { currentRole } = useContext(UserContext);
     const toast = useToast();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const traceInputRef = useRef<HTMLInputElement>(null); 
+    const importJsonRef = useRef<HTMLInputElement>(null);
     const [activeTab, setActiveTab] = useState<'PLAYBOOK' | 'INSTALL'>('PLAYBOOK');
     
+    // Playbook State
     const [games, setGames] = useState<Game[]>([]);
     const [selectedGameId, setSelectedGameId] = useState<string>('');
     const [playName, setPlayName] = useState('');
     const [conceptDescription, setConceptDescription] = useState('');
-    const [sportMode, setSportMode] = useState<'FLAG' | 'FULLPADS'>('FULLPADS');
+    const [sportMode, setSportMode] = useState<'FULLPADS' | 'FLAG'>('FULLPADS');
     const [elements, setElements] = useState<PlayElement[]>([]);
     const [draggingId, setDraggingId] = useState<string | null>(null);
     const [frames, setFrames] = useState<TacticalFrame[]>([]);
@@ -38,21 +35,23 @@ const TacticalLab: React.FC = () => {
     const [simulationResult, setSimulationResult] = useState('');
     const [isSimulating, setIsSimulating] = useState(false);
     const [savedPlays, setSavedPlays] = useState<TacticalPlay[]>([]);
+    
+    // Import State
     const [isImporting, setIsImporting] = useState(false);
+
+    // Tracing State
     const [traceImage, setTraceImage] = useState<HTMLImageElement | null>(null);
     const [traceOpacity, setTraceOpacity] = useState(0.5);
-    const [installItems, setInstallItems] = useState<InstallMatrixItem[]>([]);
-    const [coachContext, setCoachContext] = useState('');
-    const [isGeneratingInstall, setIsGeneratingInstall] = useState(false);
 
     const isPlayer = currentRole === 'PLAYER';
 
     useEffect(() => {
         setGames(storageService.getGames());
+        // Fix: getTacticalPlays now exists in storageService.ts
         setSavedPlays(storageService.getTacticalPlays());
-        const teamSettings = storageService.getTeamSettings();
-        /* Fix: Correct mapping for sportMode */
-        const initialMode: 'FLAG' | 'FULLPADS' = teamSettings.sportType === 'FLAG' ? 'FLAG' : 'FULLPADS';
+        
+        const activeProgram = storageService.getActiveProgram();
+        const initialMode: 'FLAG' | 'FULLPADS' = activeProgram === 'FLAG' ? 'FLAG' : 'FULLPADS';
         setSportMode(initialMode);
         resetTokens(initialMode);
     }, []);
@@ -203,7 +202,8 @@ const TacticalLab: React.FC = () => {
 
     const handleSimulate = async () => {
         if (!selectedGameId || !conceptDescription) return;
-        const game = games.find(g => g.id === Number(selectedGameId));
+        const game = games.find(g => String(g.id) === selectedGameId);
+        // Fix: scoutingReport is now valid in Game type
         if (!game || !game.scoutingReport) return;
 
         setIsSimulating(true);
@@ -221,21 +221,15 @@ const TacticalLab: React.FC = () => {
             frames: frames,
             routes: [],
             aiAnalysis: simulationResult,
+            program: sportMode === 'FULLPADS' ? 'TACKLE' : 'FLAG',
             createdAt: new Date()
         };
         const updated = [newPlay, ...savedPlays];
         setSavedPlays(updated);
+        // Fix: saveTacticalPlays now exists in storageService.ts
         storageService.saveTacticalPlays(updated);
         setPlayName('');
-        toast.success("Jogada salva!");
-    };
-
-    const loadPlay = (play: TacticalPlay) => {
-        setElements(play.elements);
-        if(play.frames) setFrames(play.frames);
-        setPlayName(play.name);
-        setConceptDescription(play.concept);
-        setActiveTab('PLAYBOOK');
+        toast.success("Jogada salva na biblioteca!");
     };
 
     const handleImportClick = () => {
@@ -306,6 +300,14 @@ const TacticalLab: React.FC = () => {
         win.document.close();
     };
 
+    const loadPlay = (play: TacticalPlay) => {
+        setElements(play.elements);
+        if(play.frames) setFrames(play.frames);
+        setPlayName(play.name);
+        setConceptDescription(play.concept);
+        setActiveTab('PLAYBOOK');
+    };
+
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -314,8 +316,8 @@ const TacticalLab: React.FC = () => {
                         <WhistleIcon className="text-highlight w-8 h-8" />
                     </div>
                     <div>
-                        <h2 className="text-3xl font-bold text-text-primary">Laboratório Tático</h2>
-                        <p className="text-text-secondary">{isPlayer ? 'Estudo de Playbook.' : 'Planejamento e Design.'}</p>
+                        <h2 className="text-3xl font-bold text-text-primary">Laboratório Tático <span className="text-sm font-normal text-text-secondary">({sportMode})</span></h2>
+                        <p className="text-text-secondary">{isPlayer ? 'Estudo de Playbook e Simulação.' : 'Planejamento, Design e Instalação.'}</p>
                     </div>
                 </div>
                 
@@ -331,60 +333,115 @@ const TacticalLab: React.FC = () => {
                             onClick={() => setActiveTab('INSTALL')}
                             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'INSTALL' ? 'bg-blue-600 text-white' : 'text-text-secondary hover:text-white'}`}
                         >
-                            <CalendarIcon className="w-4 h-4" /> Matriz
+                            <CalendarIcon className="w-4 h-4" /> Matriz de Instalação
                         </button>
                     )}
                 </div>
             </div>
 
             {activeTab === 'PLAYBOOK' && (
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <Card title="Configuração">
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-xs font-bold text-text-secondary block mb-2">Modalidade</label>
-                                <div className="flex bg-black/20 p-1 rounded-lg">
-                                    <button onClick={() => handleModeSwitch('FULLPADS')} className={`flex-1 py-2 text-xs font-bold rounded ${sportMode === 'FULLPADS' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>Tackle</button>
-                                    <button onClick={() => handleModeSwitch('FLAG')} className={`flex-1 py-2 text-xs font-bold rounded ${sportMode === 'FLAG' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>Flag</button>
+                <>
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div className="space-y-6">
+                            <Card title="Configuração">
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-text-secondary block mb-2">Modalidade</label>
+                                        <div className="flex bg-black/20 p-1 rounded-lg border border-white/10">
+                                            <button onClick={() => handleModeSwitch('FULLPADS')} className={`flex-1 py-2 text-xs font-bold rounded transition-colors ${sportMode === 'FULLPADS' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}>🏈 Full Pads</button>
+                                            <button onClick={() => handleModeSwitch('FLAG')} className={`flex-1 py-2 text-xs font-bold rounded transition-colors ${sportMode === 'FLAG' ? 'bg-yellow-600 text-white' : 'text-text-secondary hover:text-white'}`}>🚩 Flag</button>
+                                        </div>
+                                    </div>
+
+                                    {!isPlayer && (
+                                        <>
+                                            <input className="w-full bg-primary border border-tertiary rounded p-2 focus:border-highlight focus:outline-none text-white" placeholder="Nome da Jogada" value={playName} onChange={e => setPlayName(e.target.value)} />
+                                            <textarea className="w-full h-24 bg-primary border border-tertiary rounded p-2 focus:border-highlight focus:outline-none text-white text-sm" placeholder="Conceito Tático..." value={conceptDescription} onChange={e => setConceptDescription(e.target.value)} />
+                                            
+                                            <div className="pt-4 border-t border-white/10">
+                                                <h4 className="text-sm font-bold text-white mb-2">Simulação IA</h4>
+                                                <select className="w-full bg-primary border border-tertiary rounded p-2 text-white mb-2 text-sm" value={selectedGameId} onChange={e => setSelectedGameId(e.target.value)}>
+                                                    <option value="">Selecione Adversário...</option>
+                                                    {games.filter(g => new Date(g.date) > new Date()).map(g => (
+                                                        <option key={g.id} value={g.id}>vs {g.opponent}</option>
+                                                    ))}
+                                                </select>
+                                                <button onClick={handleSimulate} disabled={isSimulating || !selectedGameId} className="w-full bg-gradient-to-r from-highlight to-cyan-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-sm">
+                                                    {isSimulating ? 'Simulando...' : <><SparklesIcon className="w-4 h-4" /> Simular Matchup</>}
+                                                </button>
+                                                {simulationResult && (
+                                                    <div className="mt-2 bg-secondary/50 p-2 rounded text-xs text-text-secondary max-h-32 overflow-y-auto">
+                                                        {simulationResult}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button onClick={handleSavePlay} disabled={!playName} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded mt-2">Salvar na Biblioteca</button>
+                                        </>
+                                    )}
                                 </div>
-                            </div>
-                            <input className="w-full bg-primary border border-tertiary rounded p-2 text-white" placeholder="Nome" value={playName} onChange={e => setPlayName(e.target.value)} />
-                            
-                            <div className="flex flex-col gap-2">
-                                <button onClick={handleSavePlay} className="w-full bg-green-600 text-white py-2 rounded font-bold">Salvar</button>
-                                <button onClick={handleImportClick} className="w-full bg-purple-600/20 text-purple-400 border border-purple-500/50 py-2 rounded text-xs font-bold flex items-center justify-center gap-2">
-                                    <ScanIcon className="w-3 h-3"/> Importar (AI)
-                                </button>
-                                <button onClick={handleTraceClick} className="w-full bg-yellow-600/20 text-yellow-400 border border-yellow-500/50 py-2 rounded text-xs font-bold flex items-center justify-center gap-2">
-                                    <ImageIcon className="w-3 h-3"/> Decalque
-                                </button>
-                                <button onClick={handlePrintScoutCard} className="w-full bg-white/10 py-2 rounded text-xs font-bold text-white border border-white/10 flex items-center justify-center gap-2">
-                                    <EyeIcon className="w-3 h-3"/> Scout Card
-                                </button>
-                            </div>
-                            
-                            <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
-                            <input type="file" accept="image/*" className="hidden" ref={traceInputRef} onChange={handleTraceFileChange} />
+                            </Card>
                         </div>
-                    </Card>
-                    <div className="xl:col-span-2">
-                        <Card className="flex flex-col items-center">
-                            <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} className="border border-white/10 cursor-move" />
-                            <div className="flex gap-2 mt-4">
-                                <button onClick={captureFrame} className="bg-white/10 px-4 py-1 rounded text-xs">+ Frame</button>
-                                <button onClick={() => setIsPlaying(!isPlaying)} className="bg-highlight px-4 py-1 rounded text-xs">{isPlaying ? 'Stop' : 'Play'}</button>
-                                <button onClick={clearFrames} className="text-xs text-text-secondary">Reset</button>
-                            </div>
-                            {traceImage && (
-                                <div className="mt-4 w-full flex items-center gap-4 px-4">
-                                    <span className="text-xs text-text-secondary">Opacidade:</span>
-                                    <input type="range" min="0.1" max="1" step="0.1" value={traceOpacity} onChange={e => setTraceOpacity(Number(e.target.value))} className="accent-highlight w-32" />
-                                    <button onClick={() => setTraceImage(null)} className="text-xs text-red-400 hover:text-white ml-auto flex items-center gap-1"><EraserIcon className="w-3 h-3"/> Limpar</button>
+
+                        <div className="xl:col-span-2">
+                            <Card className="h-full flex flex-col">
+                                <div className="flex justify-between items-center mb-4 px-2">
+                                    <h3 className="font-bold text-white flex items-center gap-2">Prancheta Digital <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-text-secondary">{sportMode === 'FULLPADS' ? '11 vs 11' : '5 vs 5'}</span></h3>
+                                    <div className="flex gap-2">
+                                        {!isPlayer && (
+                                            <>
+                                                <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
+                                                <input type="file" accept="image/*" className="hidden" ref={traceInputRef} onChange={handleTraceFileChange} />
+                                                
+                                                <button onClick={handleTraceClick} className="bg-yellow-600/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-600 hover:text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-2 transition-colors">
+                                                    <ImageIcon className="w-3 h-3"/> Decalque
+                                                </button>
+
+                                                <button onClick={handleImportClick} disabled={isImporting} className="bg-purple-600/20 text-purple-400 border border-purple-500/50 hover:bg-purple-600 hover:text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-2 transition-colors">
+                                                    {isImporting ? 'Lendo...' : <><ScanIcon className="w-3 h-3"/> Importar (AI)</>}
+                                                </button>
+                                            </>
+                                        )}
+                                        {!isPlayer && <button onClick={handlePrintScoutCard} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold border border-white/20 flex items-center gap-2"><EyeIcon className="w-3 h-3"/> Scout Card</button>}
+                                        {!isPlayer && <button onClick={captureFrame} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold border border-white/20">+ Frame ({frames.length})</button>}
+                                        <button onClick={() => setIsPlaying(!isPlaying)} className={`px-3 py-1 rounded text-xs font-bold border ${isPlaying ? 'bg-red-500/20 text-red-400 border-red-500' : 'bg-green-500/20 text-green-400 border-green-500'}`}>{isPlaying ? 'Parar' : 'Play'}</button>
+                                        <button onClick={clearFrames} className="text-text-secondary hover:text-white px-2 text-xs">Reset</button>
+                                    </div>
                                 </div>
-                            )}
-                        </Card>
+                                <div className="flex-1 bg-black/50 rounded-lg overflow-hidden flex items-center justify-center border border-white/20 shadow-inner relative">
+                                    <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} className={`${isPlayer ? 'cursor-default' : 'cursor-move'} touch-none`} style={{ maxWidth: '100%', height: 'auto' }} />
+                                </div>
+                                {traceImage && (
+                                    <div className="px-4 py-2 border-t border-white/10 flex items-center gap-4">
+                                        <span className="text-xs text-text-secondary">Opacidade do Decalque:</span>
+                                        <input type="range" min="0.1" max="1" step="0.1" value={traceOpacity} onChange={e => setTraceOpacity(Number(e.target.value))} className="accent-highlight w-32" />
+                                        <button onClick={() => setTraceImage(null)} className="text-xs text-red-400 hover:text-white ml-auto flex items-center gap-1"><EraserIcon className="w-3 h-3"/> Limpar Imagem</button>
+                                    </div>
+                                )}
+                            </Card>
+                        </div>
                     </div>
-                </div>
+
+                    <div className="flex justify-between items-center mt-8">
+                        <h3 className="text-xl font-bold text-white">Biblioteca do Playbook ({savedPlays.length})</h3>
+                        <div className="flex gap-2">
+                             <button onClick={handleSavePlay} disabled={!playName} className="bg-secondary border border-white/10 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                                <ShareIcon className="w-4 h-4"/> Exportar JSON
+                            </button>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                        {savedPlays.map(play => (
+                            <div key={play.id} onClick={() => loadPlay(play)} className="bg-secondary p-4 rounded-xl border border-white/5 hover:border-highlight/30 transition-colors cursor-pointer group relative">
+                                <h4 className="font-bold text-white">{play.name}</h4>
+                                <p className="text-xs text-text-secondary mt-1 line-clamp-2">{play.concept}</p>
+                                <span className={`absolute bottom-2 right-2 text-[8px] px-1 rounded uppercase border ${play.program === 'FLAG' ? 'border-yellow-500 text-yellow-500' : 'border-blue-500 text-blue-500'}`}>
+                                    {play.program || 'TACKLE'}
+                                </span>
+                                {play.frames && play.frames.length > 0 && <span className="absolute top-2 right-2 text-[10px] bg-green-500/20 text-green-400 px-1 rounded">Animado</span>}
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
         </div>
     );

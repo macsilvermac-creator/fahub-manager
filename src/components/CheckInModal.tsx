@@ -20,6 +20,7 @@ const CheckInModal: React.FC<CheckInModalProps> = ({ isOpen, onClose, session, a
 
     useEffect(() => {
         if (isOpen) {
+            // Fix: checkedInAttendees is now valid in PracticeSession
             if (session.checkedInAttendees && session.checkedInAttendees.length > 0) {
                 setPresentIds(new Set(session.checkedInAttendees));
             } else {

@@ -1,11 +1,10 @@
 
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import Card from '../components/Card';
-/* Fix: Ensuring all types are imported from types.ts */
-import { Player, Transaction, Subscription, Budget, Bill, TransactionCategory, Invoice } from '../types';
+import { Invoice, Player, Transaction, EquipmentItem, TransactionCategory, Subscription, Budget, Bill } from '../types';
 import { storageService } from '../services/storageService';
 import { FinanceIcon } from '../components/icons/NavIcons';
-import { WalletIcon, PieChartIcon, ClockIcon, RefreshIcon, CheckCircleIcon, ScanIcon } from '../components/icons/UiIcons';
+import { WalletIcon, SparklesIcon, ScanIcon, RefreshIcon, PieChartIcon } from '../components/icons/UiIcons';
 import { UserContext, UserContextType } from '../components/Layout';
 import Modal from '../components/Modal';
 import { authService } from '../services/authService';
@@ -13,21 +12,26 @@ import { useToast } from '../contexts/ToastContext';
 import { scanFinancialDocument } from '../services/geminiService';
 
 const Finance: React.FC = () => {
-    const { currentRole } = useContext(UserContext) as any;
+    const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     
+    // Data State
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [players, setPlayers] = useState<Player[]>([]);
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [bills, setBills] = useState<Bill[]>([]);
+    
+    // View State
     const [viewMode, setViewMode] = useState<'OVERVIEW' | 'SUBSCRIPTIONS' | 'BILLS' | 'BUDGET' | 'RECOVERY'>('OVERVIEW');
     
+    // Transaction Modal State
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
     const [txType, setTxType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
     const [txTitle, setTxTitle] = useState('');
+    const [txDesc, setTxDesc] = useState('');
     const [txAmount, setTxAmount] = useState('');
     const [txCategory, setTxCategory] = useState<TransactionCategory>('OTHER');
     const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
@@ -38,16 +42,22 @@ const Finance: React.FC = () => {
 
     useEffect(() => {
         if (!isPlayer) {
-            setTransactions(storageService.getTransactions());
-            setInvoices(storageService.getInvoices());
-            setPlayers(storageService.getPlayers());
-            setSubscriptions(storageService.getSubscriptions());
-            setBudgets(storageService.getBudgets());
-            setBills(storageService.getBills());
+            // Fix: Ensured all methods now exist in updated storageService.ts
+            const loadData = () => {
+                setTransactions(storageService.getTransactions());
+                setInvoices(storageService.getInvoices());
+                setPlayers(storageService.getPlayers());
+                setSubscriptions(storageService.getSubscriptions());
+                setBudgets(storageService.getBudgets());
+                setBills(storageService.getBills());
+            };
+            loadData();
         }
     }, [isPlayer]);
 
-    const handleScanClick = () => fileInputRef.current?.click();
+    const handleScanClick = () => {
+        fileInputRef.current?.click();
+    };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -79,23 +89,51 @@ const Finance: React.FC = () => {
         const newTx: Transaction = {
             id: `tx-${Date.now()}`,
             title: txTitle,
+            // Fix: description is now a valid property in Transaction type
+            description: txDesc,
             amount: Number(txAmount),
             type: txType,
             category: txCategory,
             date: new Date(txDate),
             status: 'PAID',
-            /* Fix: aiGenerated is now a known property of Transaction */
             aiGenerated: isAiFilled,
             verifiedBy: user?.name || 'Sistema'
         };
         const updated = [newTx, ...transactions];
         setTransactions(updated);
         storageService.saveTransactions(updated);
+        
+        if (txType === 'EXPENSE') {
+            const updatedBudgets = budgets.map(b => b.category === txCategory ? { ...b, spent: b.spent + Number(txAmount) } : b);
+            setBudgets(updatedBudgets);
+            // Fix: saveBudgets exists in updated storageService.ts
+            storageService.saveBudgets(updatedBudgets);
+        }
+
         setIsTxModalOpen(false);
         toast.success("Transação registrada.");
     };
 
-    const { balance, projectedRevenue, delinquencyTotal, pendingBills } = useMemo(() => {
+    const handleCreateSubscription = () => {
+        // Mock simple subscription creation
+        const newSub: Subscription = {
+            id: `sub-${Date.now()}`,
+            title: "Mensalidade Atleta",
+            amount: 150,
+            active: true,
+            assignedTo: players.map(p => p.id),
+            frequency: 'MONTHLY',
+            nextBillingDate: new Date()
+        };
+        const updated = [...subscriptions, newSub];
+        setSubscriptions(updated);
+        // Fix: saveSubscriptions and generateMonthlyInvoices exist in updated storageService.ts
+        storageService.saveSubscriptions(updated);
+        storageService.generateMonthlyInvoices();
+        toast.success("Plano mensal ativado!");
+    };
+
+    const totals = useMemo(() => {
         const inc = transactions.filter(t => t.type === 'INCOME').reduce((acc, t) => acc + t.amount, 0);
         const exp = transactions.filter(t => t.type === 'EXPENSE').reduce((acc, t) => acc + t.amount, 0);
         const proj = subscriptions.filter(s => s.active).reduce((acc, s) => acc + (s.amount * s.assignedTo.length), 0);
@@ -122,27 +160,28 @@ const Finance: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="border-l-4 border-l-blue-500">
+                <Card className="bg-gradient-to-br from-blue-900/40 to-secondary border-l-4 border-l-blue-500">
                     <p className="text-xs text-text-secondary font-bold uppercase">Saldo</p>
-                    <p className="text-xl font-bold text-white">R$ {balance.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-white">R$ {totals.balance.toFixed(2)}</p>
                 </Card>
-                <Card className="border-l-4 border-l-green-500">
+                <Card className="bg-gradient-to-br from-green-900/40 to-secondary border-l-4 border-l-green-500">
                     <p className="text-xs text-text-secondary font-bold uppercase">Recorrência</p>
-                    <p className="text-xl font-bold text-green-400">R$ {projectedRevenue.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-green-400">R$ {totals.projectedRevenue.toFixed(2)}</p>
                 </Card>
-                <Card className="border-l-4 border-l-red-500">
+                <Card className="bg-gradient-to-br from-red-900/40 to-secondary border-l-4 border-l-red-500">
                     <p className="text-xs text-text-secondary font-bold uppercase">A Pagar</p>
-                    <p className="text-xl font-bold text-red-400">R$ {pendingBills.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-red-400">R$ {totals.pendingBills.toFixed(2)}</p>
                 </Card>
-                <Card className="border-l-4 border-l-yellow-500">
+                <Card className="bg-gradient-to-br from-yellow-900/40 to-secondary border-l-4 border-l-yellow-500">
                     <p className="text-xs text-text-secondary font-bold uppercase">Inadimplência</p>
-                    <p className="text-xl font-bold text-yellow-400">R$ {delinquencyTotal.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-yellow-400">R$ {totals.delinquencyTotal.toFixed(2)}</p>
                 </Card>
             </div>
 
             <div className="flex border-b border-white/10 overflow-x-auto">
                 <button onClick={() => setViewMode('OVERVIEW')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${viewMode === 'OVERVIEW' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary'}`}>Fluxo</button>
                 <button onClick={() => setViewMode('SUBSCRIPTIONS')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${viewMode === 'SUBSCRIPTIONS' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary'}`}>Assinaturas</button>
+                <button onClick={() => setViewMode('BUDGET')} className={`px-6 py-3 text-sm font-bold border-b-2 transition-colors ${viewMode === 'BUDGET' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary'}`}>Orçamento</button>
             </div>
 
             {viewMode === 'OVERVIEW' && (
@@ -176,10 +215,14 @@ const Finance: React.FC = () => {
                     </div>
                     <div onClick={handleScanClick} className="bg-secondary/50 border border-dashed border-white/20 p-4 rounded-xl text-center cursor-pointer hover:bg-white/5">
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-                        <p className="text-xs font-bold text-white">{isScanning ? 'Lendo...' : 'Escanear Recibo (IA)'}</p>
+                        <div className="flex flex-col items-center gap-2">
+                            {isScanning ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-highlight border-t-transparent"></div> : <ScanIcon className="text-highlight w-6 h-6" />}
+                            <p className="text-xs font-bold text-white">{isScanning ? 'Lendo...' : 'Escanear Recibo (IA)'}</p>
+                        </div>
                     </div>
                     <input className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Título" value={txTitle} onChange={e => setTxTitle(e.target.value)} required />
                     <input type="number" className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" placeholder="Valor" value={txAmount} onChange={e => setTxAmount(e.target.value)} required />
+                    <textarea className="w-full bg-black/20 border border-white/10 rounded p-2 text-white h-20" placeholder="Observações" value={txDesc} onChange={e => setTxDesc(e.target.value)} />
                     <button type="submit" className="w-full bg-highlight text-white py-2 rounded font-bold">Salvar</button>
                 </form>
             </Modal>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { UserContext } from '../components/Layout';
 import { storageService } from '../services/storageService';
+// Fix: Both now exported from types.ts
 import { SocialFeedPost, User } from '../types';
 import { authService } from '../services/authService';
 import { HeartIcon, MessageIcon, FireIcon, CheckCircleIcon } from '../components/icons/UiIcons';
@@ -15,6 +16,7 @@ const LockerRoom: React.FC = () => {
     const [isOfficialPost, setIsOfficialPost] = useState(false);
 
     useEffect(() => {
+        // Fix: getSocialFeed now exists in storageService.ts
         setFeed(storageService.getSocialFeed());
         setCurrentUser(authService.getCurrentUser());
     }, []);
@@ -38,6 +40,7 @@ const LockerRoom: React.FC = () => {
             timestamp: new Date()
         };
 
+        // Fix: saveSocialFeedPost now exists in storageService.ts
         storageService.saveSocialFeedPost(newPost);
         setFeed(storageService.getSocialFeed()); 
         setContent('');
@@ -45,6 +48,7 @@ const LockerRoom: React.FC = () => {
     };
 
     const handleReaction = (postId: string) => {
+        // Fix: toggleLikePost now exists in storageService.ts
         storageService.toggleLikePost(postId);
         setFeed(storageService.getSocialFeed());
     };
@@ -86,7 +90,7 @@ const LockerRoom: React.FC = () => {
                                 <button type="button" className="text-text-secondary hover:text-yellow-500 p-1">🏈</button>
                             </div>
                             <div className="flex items-center gap-3">
-                                {['MASTER', 'HEAD_COACH'].includes(currentRole) && (
+                                {currentUser && ['MASTER', 'HEAD_COACH'].includes(currentUser.role) && (
                                     <label className="flex items-center gap-2 cursor-pointer select-none">
                                         <input type="checkbox" checked={isOfficialPost} onChange={e => setIsOfficialPost(e.target.checked)} className="accent-highlight w-4 h-4" />
                                         <span className="text-[10px] font-black text-white uppercase">Comunicado Oficial</span>

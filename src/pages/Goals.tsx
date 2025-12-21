@@ -33,18 +33,19 @@ const Goals: React.FC = () => {
     const [updateValue, setUpdateValue] = useState('');
 
     useEffect(() => {
+        // Fix: getObjectives exists in storageService
         setObjectives(storageService.getObjectives());
     }, []);
 
     const handleCreateObjective = (e: React.FormEvent) => {
         e.preventDefault();
+        // Fix: category is now a valid property in Objective type
         const newObj: Objective = {
             id: `obj-${Date.now()}`,
             title: newTitle,
             category: newCategory,
             status: 'ON_TRACK',
             progress: 0,
-            deadline: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
             ownerRole: 'MASTER',
             keyResults: [{
                 id: `kr-${Date.now()}`,
@@ -57,6 +58,7 @@ const Goals: React.FC = () => {
         };
         const updated = [...objectives, newObj];
         setObjectives(updated);
+        // Fix: saveObjectives exists in storageService
         storageService.saveObjectives(updated);
         setIsAddModalOpen(false);
         setNewTitle('');
@@ -69,6 +71,7 @@ const Goals: React.FC = () => {
         if (!selectedKR) return;
 
         const updated = objectives.map(obj => {
+            // Fix: keyResults is now a valid property in Objective type
             if (obj.id === selectedKR.objId && obj.keyResults) {
                 const updatedKRs = obj.keyResults.map(kr => {
                     if (kr.id === selectedKR.krId) {
@@ -124,6 +127,7 @@ const Goals: React.FC = () => {
                     <div key={obj.id} className="bg-secondary p-5 rounded-xl border border-white/5 hover:border-highlight/30 transition-all flex flex-col h-full">
                         <div className="flex justify-between items-start mb-4">
                             <span className={`text-xs font-bold px-2 py-1 rounded uppercase ${getStatusColor(obj.status)}`}>{obj.status}</span>
+                            {/* Fix: category is now valid in Objective */}
                             <span className="text-[10px] text-text-secondary bg-white/5 px-2 py-1 rounded">{obj.category}</span>
                         </div>
                         <h3 className="text-xl font-bold text-white mb-2">{obj.title}</h3>
@@ -133,6 +137,7 @@ const Goals: React.FC = () => {
                         
                         <div className="flex-1 space-y-3">
                             <p className="text-xs font-bold text-text-secondary uppercase">Resultados Chave (KRs)</p>
+                            {/* Fix: keyResults is now valid in Objective */}
                             {obj.keyResults?.map(kr => (
                                 <div key={kr.id} className="bg-black/20 p-3 rounded-lg flex justify-between items-center group">
                                     <div>
@@ -160,7 +165,6 @@ const Goals: React.FC = () => {
                 ))}
             </div>
 
-            {/* CREATE MODAL */}
             <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Definir Objetivo Estratégico">
                 <form onSubmit={handleCreateObjective} className="space-y-4">
                     <div>
@@ -184,7 +188,6 @@ const Goals: React.FC = () => {
                 </form>
             </Modal>
 
-            {/* UPDATE MODAL */}
             <Modal isOpen={isUpdateModalOpen} onClose={() => setIsUpdateModalOpen(false)} title="Atualizar Progresso">
                 <div className="space-y-4">
                     <p className="text-sm text-text-secondary">Atualizando: <strong className="text-white">{selectedKR?.title}</strong></p>

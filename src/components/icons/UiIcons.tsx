@@ -41,6 +41,7 @@ export const ShieldCheckIcon = (props: any) => <svg {...iconProps} {...props} vi
 export const TargetIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
 export const UsersIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
 export const SparklesIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>;
+// Fix: Added ActivityIcon
 export const ActivityIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>;
 export const DumbbellIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 1 1 0 8h-1"></path><path d="M6 8H5a4 4 0 1 0 0 8h1"></path><line x1="8" y1="12" x2="16" y2="12"></line><rect x="6" y="7" width="2" height="10"></rect><rect x="16" y="7" width="2" height="10"></rect></svg>;
 export const TrendingUpIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;

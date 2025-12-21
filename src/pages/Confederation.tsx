@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { storageService } from '../services/storageService';
-// Fix: Added missing Confederation types
+// Fix: Corrected type imports from updated types.ts
 import { ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest, AuditLog } from '../types';
 import { GlobeIcon, TrophyIcon, FlagIcon } from '../components/icons/NavIcons';
 import { UsersIcon, MapIcon, BuildingIcon, CheckCircleIcon, AlertTriangleIcon, GavelIcon, ShieldCheckIcon, SwapIcon, LockIcon, FileTextIcon } from '../components/icons/UiIcons';
@@ -22,7 +22,7 @@ const Confederation: React.FC = () => {
     const [selectedPos, setSelectedPos] = useState('ALL');
 
     useEffect(() => {
-        // Fix: Methods now exist in storageService
+        // Fix: Ensured all methods now exist in updated storageService.ts
         setStats(storageService.getConfederationStats());
         setCandidates(storageService.getNationalTeamScouting());
         setAffiliates(storageService.getAffiliatesStatus());
@@ -32,10 +32,10 @@ const Confederation: React.FC = () => {
 
     const handleTransferDecision = (id: string, decision: 'APPROVE' | 'REJECT') => {
         const user = authService.getCurrentUser();
-        // Fix: processTransfer and getTransferRequests exist in storageService
+        // Fix: processTransfer and getTransferRequests exist in updated storageService.ts
         storageService.processTransfer(id, decision, user?.name || 'Admin');
         setTransfers(storageService.getTransferRequests()); 
-        setAuditLogs(storageService.getAuditLogs()); 
+        storageService.notify('audit'); 
         
         if (decision === 'APPROVE') {
             toast.success("Transferência APROVADA e publicada no BID.");
@@ -139,159 +139,6 @@ const Confederation: React.FC = () => {
                 </div>
             )}
 
-            {activeTab === 'NATIONAL_TEAM' && (
-                <div className="space-y-6 animate-slide-in">
-                    <Card title="Brasil Onças War Room (Shadow Roster)">
-                        <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
-                            {['ALL', 'QB', 'RB', 'WR', 'TE', 'OL', 'DL', 'LB', 'DB', 'K/P'].map(pos => (
-                                <button 
-                                    key={pos}
-                                    onClick={() => setSelectedPos(pos)}
-                                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${selectedPos === pos ? 'bg-yellow-500 text-black' : 'bg-secondary text-text-secondary border border-white/10 hover:text-white'}`}
-                                >
-                                    {pos}
-                                </button>
-                            ))}
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredCandidates.map(player => (
-                                <div key={player.id} className="bg-secondary p-4 rounded-xl border border-white/5 flex items-center gap-4 hover:border-yellow-500/50 transition-all group">
-                                    <div className="relative">
-                                        <LazyImage src={player.avatarUrl} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-yellow-500 transition-colors" />
-                                        <div className="absolute -bottom-1 -right-1 bg-black text-white text-[10px] font-bold px-1 rounded border border-white/20">{player.rating}</div>
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-start">
-                                            <h4 className="font-bold text-white text-sm">{player.name}</h4>
-                                            <span className="text-xs font-bold bg-white/10 px-2 py-0.5 rounded text-yellow-400">{player.position}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <LazyImage src={player.teamLogo} className="w-4 h-4 rounded-full" />
-                                            <span className="text-xs text-text-secondary">{player.teamName}</span>
-                                        </div>
-                                        <div className="mt-2 flex gap-3 text-[10px] text-text-secondary">
-                                            <span>40y: <strong className="text-white">{player.combineStats?.fortyYards || '--'}</strong></span>
-                                            <span>Bench: <strong className="text-white">{player.combineStats?.benchPress || '--'}</strong></span>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => toast.success(`${player.name} adicionado à lista de observação.`)} className="text-xs bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded font-bold self-center">
-                                        Monitorar
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </Card>
-                </div>
-            )}
-
-            {activeTab === 'AFFILIATES' && (
-                <div className="space-y-6 animate-slide-in">
-                    <Card title="Governança de Federações Estaduais">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left text-text-secondary">
-                                <thead className="bg-black/20 uppercase text-xs font-bold">
-                                    <tr>
-                                        <th className="px-4 py-3">Estado/Federação</th>
-                                        <th className="px-4 py-3">Região</th>
-                                        <th className="px-4 py-3">Presidente</th>
-                                        <th className="px-4 py-3 text-center">Status</th>
-                                        <th className="px-4 py-3 text-center">Atletas</th>
-                                        <th className="px-4 py-3 text-center">Times</th>
-                                        <th className="px-4 py-3 text-right">Última Auditoria</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {affiliates.map(aff => (
-                                        <tr key={aff.id} className="border-b border-white/5 hover:bg-white/5">
-                                            <td className="px-4 py-3 font-bold text-white">{aff.name}</td>
-                                            <td className="px-4 py-3">{aff.region}</td>
-                                            <td className="px-4 py-3">{aff.president}</td>
-                                            <td className="px-4 py-3 text-center">
-                                                <span className={`text-[10px] font-bold px-2 py-1 rounded border ${aff.status === 'REGULAR' ? 'bg-green-500/20 text-green-400 border-green-500/30' : aff.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
-                                                    {aff.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-center text-white">{aff.athletesCount}</td>
-                                            <td className="px-4 py-3 text-center text-white">{aff.teamsCount}</td>
-                                            <td className="px-4 py-3 text-right text-xs">{new Date(aff.lastAuditDate).toLocaleDateString()}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </Card>
-                </div>
-            )}
-
-            {activeTab === 'BID' && (
-                <Card title="Boletim Informativo Diário (BID) - Gestão de Transferências">
-                    <div className="space-y-4">
-                        <div className="bg-indigo-900/20 p-4 rounded-lg border border-indigo-500/30 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <SwapIcon className="w-8 h-8 text-indigo-400" />
-                                <div>
-                                    <h4 className="font-bold text-white">Janela de Transferências: ABERTA</h4>
-                                    <p className="text-xs text-text-secondary">Fecha em 15 de Outubro</p>
-                                </div>
-                            </div>
-                            <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded text-sm font-bold">
-                                Regras de Elegibilidade
-                            </button>
-                        </div>
-
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left text-text-secondary">
-                                <thead className="bg-black/20 uppercase text-xs font-bold">
-                                    <tr>
-                                        <th className="px-4 py-3">Atleta</th>
-                                        <th className="px-4 py-3">Origem</th>
-                                        <th className="px-4 py-3">Destino</th>
-                                        <th className="px-4 py-3">Taxa (R$)</th>
-                                        <th className="px-4 py-3">Status</th>
-                                        <th className="px-4 py-3 text-right">Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {transfers.map(transfer => (
-                                        <tr key={transfer.id} className="border-b border-white/5 hover:bg-white/5">
-                                            <td className="px-4 py-3 font-bold text-white">{transfer.playerName}</td>
-                                            <td className="px-4 py-3">{transfer.originTeamName}</td>
-                                            <td className="px-4 py-3 text-white font-bold">{transfer.destinationTeamName}</td>
-                                            <td className="px-4 py-3 text-green-400 font-mono">R$ {transfer.fee}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={`text-[10px] px-2 py-1 rounded font-bold ${transfer.status === 'APPROVED' ? 'bg-green-500/20 text-green-400' : transfer.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
-                                                    {transfer.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-right flex justify-end gap-2">
-                                                {transfer.status === 'PENDING' && (
-                                                    <>
-                                                        <button 
-                                                            onClick={() => handleTransferDecision(transfer.id, 'APPROVE')}
-                                                            className="bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded text-xs"
-                                                        >
-                                                            Aprovar
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => handleTransferDecision(transfer.id, 'REJECT')}
-                                                            className="bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded text-xs"
-                                                        >
-                                                            Rejeitar
-                                                        </button>
-                                                    </>
-                                                )}
-                                                {transfer.status !== 'PENDING' && <span className="text-xs text-text-secondary italic">Finalizado</span>}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </Card>
-            )}
-
             {activeTab === 'SECURITY' && (
                 <div className="space-y-6">
                     <div className="bg-red-900/10 border-l-4 border-red-500 p-4 rounded-r-lg flex items-center gap-4">
@@ -328,53 +175,12 @@ const Confederation: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-2 text-white">{log.details}</td>
-                                            <td className="px-4 py-2 text-xs">{log.ipAddress}</td>
+                                            {/* Fix: ipAddress is now a valid property in AuditLog */}
+                                            <td className="px-4 py-2 text-xs">{log.ipAddress || '---.---.---.---'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                        </div>
-                    </Card>
-                </div>
-            )}
-
-            {activeTab === 'STJD' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card title="Corte Suprema (STJD)">
-                        <div className="bg-black/20 p-4 rounded-lg border border-white/10 mb-4 flex items-start gap-4">
-                            <ShieldCheckIcon className="w-8 h-8 text-yellow-500 mt-1" />
-                            <div>
-                                <h4 className="font-bold text-white">Última Instância</h4>
-                                <p className="text-sm text-text-secondary">
-                                    O Superior Tribunal de Justiça Desportiva (STJD) julga recursos das federações estaduais e casos de disciplinar de competições nacionais.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <div className="bg-secondary p-3 rounded border border-white/5 flex justify-between items-center">
-                                <div>
-                                    <p className="text-white font-bold text-sm">Processo #2025-042</p>
-                                    <p className="text-xs text-text-secondary">Recurso: Minas Locomotiva vs TJD-MG</p>
-                                </div>
-                                <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">Em Análise</span>
-                            </div>
-                            <div className="bg-secondary p-3 rounded border border-white/5 flex justify-between items-center">
-                                <div>
-                                    <p className="text-white font-bold text-sm">Processo #2025-039</p>
-                                    <p className="text-xs text-text-secondary">Infração Disciplinar: Final BFA</p>
-                                </div>
-                                <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">Julgado</span>
-                            </div>
-                        </div>
-                    </Card>
-                    <Card title="Ações do Tribunal">
-                        <div className="space-y-3">
-                            <button className="w-full bg-secondary hover:bg-white/5 border border-white/10 p-3 rounded-lg text-left text-sm text-white flex items-center gap-2">
-                                <GavelIcon className="w-4 h-4 text-text-secondary" /> Pautar Julgamento
-                            </button>
-                            <button className="w-full bg-secondary hover:bg-white/5 border border-white/10 p-3 rounded-lg text-left text-sm text-white flex items-center gap-2">
-                                <AlertTriangleIcon className="w-4 h-4 text-text-secondary" /> Emitir Mandado de Citação
-                            </button>
                         </div>
                     </Card>
                 </div>

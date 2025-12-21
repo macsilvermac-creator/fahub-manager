@@ -22,6 +22,7 @@ const TeamTasks: React.FC = () => {
     const isPlayer = currentRole === 'PLAYER';
 
     useEffect(() => {
+        // Fix: getTasks now exists in storageService.ts
         setTasks(storageService.getTasks());
     }, []);
 
@@ -37,9 +38,12 @@ const TeamTasks: React.FC = () => {
     const openEditModal = (task: KanbanTask) => {
         setEditingTask(task);
         setTaskTitle(task.title);
+        // Fix: description is now valid in KanbanTask
         setTaskDesc(task.description || '');
-        setTaskDept(task.assignedToDepartment);
-        setTaskPriority(task.priority);
+        // Fix: assignedToDepartment is now valid in KanbanTask
+        setTaskDept(task.assignedToDepartment || 'GENERAL');
+        // Fix: priority is now valid in KanbanTask
+        setTaskPriority(task.priority || 'MEDIUM');
         setIsModalOpen(true);
     };
 
@@ -62,6 +66,7 @@ const TeamTasks: React.FC = () => {
             const newTask: KanbanTask = {
                 id: Date.now().toString(),
                 title: taskTitle,
+                // Fix: description, assignedToDepartment, priority now valid in KanbanTask
                 description: taskDesc,
                 status: 'TODO',
                 assignedToDepartment: taskDept,
@@ -97,7 +102,9 @@ const TeamTasks: React.FC = () => {
                         <div key={task.id} className="bg-secondary p-4 rounded-lg border border-white/5 shadow-sm hover:border-white/20 transition-all group relative">
                             <div className="flex justify-between items-start mb-2">
                                 <div className="flex gap-2">
+                                    {/* Fix: assignedToDepartment is now valid in KanbanTask */}
                                     <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-text-secondary font-bold">{task.assignedToDepartment}</span>
+                                    {/* Fix: priority is now valid in KanbanTask */}
                                     {task.priority === 'HIGH' && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold">ALTA</span>}
                                 </div>
                                 {!isPlayer && (
@@ -112,6 +119,7 @@ const TeamTasks: React.FC = () => {
                                 )}
                             </div>
                             <p className="text-white font-medium text-sm mb-1">{task.title}</p>
+                            {/* Fix: description is now valid in KanbanTask */}
                             {task.description && <p className="text-xs text-text-secondary line-clamp-2 mb-3">{task.description}</p>}
                             
                             {/* Controls to move tasks */}
