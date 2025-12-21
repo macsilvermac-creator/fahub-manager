@@ -16,6 +16,7 @@ const TeamTasks: React.FC = () => {
     // Form State
     const [taskTitle, setTaskTitle] = useState('');
     const [taskDesc, setTaskDesc] = useState('');
+    // Changed state types to string to accommodates assignedToDepartment and priority from KanbanTask interface
     const [taskDept, setTaskDept] = useState<string>('GENERAL');
     const [taskPriority, setTaskPriority] = useState<string>('MEDIUM');
 
@@ -38,8 +39,9 @@ const TeamTasks: React.FC = () => {
         setEditingTask(task);
         setTaskTitle(task.title);
         setTaskDesc(task.description || '');
-        setTaskDept(task.assignedToDepartment || 'GENERAL');
-        setTaskPriority(task.priority || 'MEDIUM');
+        // Fix: assignedToDepartment and priority are string in interface, which is compatible with string state
+        setTaskDept(task.assignedToDepartment);
+        setTaskPriority(task.priority);
         setIsModalOpen(true);
     };
 
@@ -51,8 +53,8 @@ const TeamTasks: React.FC = () => {
                 ...t,
                 title: taskTitle,
                 description: taskDesc,
-                assignedToDepartment: taskDept,
-                priority: taskPriority
+                assignedToDepartment: taskDept as any,
+                priority: taskPriority as any
             } : t);
             setTasks(updatedTasks);
             storageService.saveTasks(updatedTasks);
@@ -62,8 +64,8 @@ const TeamTasks: React.FC = () => {
                 title: taskTitle,
                 description: taskDesc,
                 status: 'TODO',
-                assignedToDepartment: taskDept,
-                priority: taskPriority,
+                assignedToDepartment: taskDept as any,
+                priority: taskPriority as any,
                 dueDate: new Date()
             };
             const updated = [...tasks, newTask];
