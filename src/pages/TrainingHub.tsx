@@ -2,117 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { storageService } from '../services/storageService';
-import { PracticeSession, Player } from '../types';
-import { generatePracticeScript } from '../services/geminiService';
-import { 
-    WhistleIcon, SparklesIcon, ClockIcon, CheckCircleIcon, 
-    ActivityIcon, ClipboardIcon, UsersIcon, TrashIcon 
-} from '../components/icons/UiIcons';
-import { useToast } from '../contexts/ToastContext';
-import Modal from '../components/Modal';
-import LazyImage from '../components/LazyImage';
-
-const TrainingHub: React.FC = () => {
-    const toast = useToast();
-    const [practices, setPractices] = useState<PracticeSession[]>([]);
-    const [players, setPlayers] = useState<Player[]>([]);
-    const [activeView, setActiveView] = useState<'HUBS' | 'FIELD' | 'FEEDBACK' | 'WIZARD'>('HUBS');
-    
-    // Timer State
-    const [activePractice, setActivePractice] = useState<PracticeSession | null>(null);
-    const [timerSeconds, setTimerSeconds] = useState(0);
-    const [isTimerRunning, setIsTimerRunning] = useState(false);
-
-    // Feedback State
-    const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-
-    useEffect(() => {
-        setPractices(storageService.getPracticeSessions());
-        setPlayers(storageService.getPlayers());
-    }, []);
-
-    const handleCreatePracticeIA = async () => {
-        const focus = prompt("Qual o foco técnico de hoje? (Ex: Blitz & Cover 3)");
-        if (!focus) return;
-
-        toast.info("IA escrevendo roteiro minuto-a-minuto...");
-        try {
-            const script = await generatePracticeScript(focus, 120, "High");
-            const newPrac: PracticeSession = {
-                id: `pr-${Date.now()}`,
-                title: `Sessão: ${focus}`,
-                focus,
-                date: new Date(),
-                attendees: [],
-                script: script
-            };
-            const updated = [newPrac, ...practices];
-            setPractices(updated);
-            storageService.savePracticeSessions(updated);
-            toast.success("Treino gerado e agendado!");
-            setActiveView('HUBS');
-        } catch (e) {
-            toast.error("IA falhou na estratégia.");
-        }
-    };
-
-    const handleSaveFeedback = (p: Player, field: string, delta: number) => {
-        // Logica para atualizar OVR baseado nas valências (+/-)
-        toast.success(`${p.name}: ${field} atualizado!`);
-    };
-
-    const HubButton = ({ icon: Icon, title, sub, onClick, color = 'highlight' }: any) => (
-        <button 
-            onClick={onClick}
-            className={`glass-panel bg-secondary border border-white/5 rounded-3xl p-8 flex flex-col items-center justify-center text-center group active:scale-95 transition-all hover:border-${color} h-64`}
-        >
-            <div className={`p-5 bg-${color}/10 rounded-2xl mb-4 group-hover:scale-110 transition-transform`}>
-                <Icon className={`w-12 h-12 text-${color}`} />
-            </div>
-            <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">{title}</h3>
-            <p className="text-[10px] text-text-secondary font-bold uppercase tracking-widest mt-2 opacity-60">{sub}</p>
-        </button>
-    );
-
-    return (
-        <div className="space-y-6 pb-24 animate-fade-in">
-            <header className="flex justify-between items-center px-2">
-                <div>
-                    <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Training Day</h2>
-                    <p className="text-highlight text-[10px] font-bold uppercase tracking-widest">Unidade Técnica Operacional</p>
-                </div>
-                {activeView !== 'HUBS' && (
-                    <button onClick={() => setActiveView('HUBS')} className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-xs font-bold text-text-secondary">Voltar ao HUB</button>
-                )}
-            </header>
-
-            {activeView === 'HUBS' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                    <HubButton 
-                        icon={SparklesIcon} 
-                        title="Mago de Treino" 
-                        sub="Gerar roteiro via IA" 
-                        onClick={() => setActiveView('WIZARD')} 
-                        color="purple-500" 
-                    />
-                    <HubButton 
-                        icon={WhistleIcon} 
-                        title="Dia de Treino" 
-                        sub="Lista, Script e Cronômetro" 
-                        onClick={() => setActiveView('FIELD')} 
-                        color="blue-400" 
-                    />
-                    <HubButton 
-                        icon={ActivityIcon} 
-                        title="Feedback Pro" 
-                        sub="Avaliar Atletas em Campo" 
-                        onClick={() => setActiveView('FEEDBACK')} 
-                        color="green-500" 
-                    />
-
-import React, { useState, useEffect } from 'react';
-import Card from '../components/Card';
-import { storageService } from '../services/storageService';
 import { PracticeSession, Player, PracticeScriptItem } from '../types';
 import { generatePracticeScript } from '../services/geminiService';
 import { 
@@ -122,14 +11,14 @@ import {
 import { useToast } from '../contexts/ToastContext';
 import LazyImage from '../components/LazyImage';
 
-// Blocos pré-definidos para o modo manual
+// Chaves em ASCII puro para evitar erros de compilação no esbuild/Vercel
 const QUICK_BLOCKS = [
-    { name: 'Alongamento / Warmup', duration: 15, type: 'WARMUP' },
+    { name: 'Alongamento / Aquecimento', duration: 15, type: 'WARMUP' },
     { name: 'Drills de Posição (Indy)', duration: 25, type: 'TECHNICAL' },
-    { name: '7 on 7 / Skelly', duration: 20, type: 'TACTICAL' },
-    { name: 'Inside Run / 9 on 7', duration: 15, type: 'TACTICAL' },
-    { name: 'Team Period (11 on 11)', duration: 30, type: 'LIVE' },
-    { name: 'Conditioning / Gassers', duration: 10, type: 'PHYSICAL' },
+    { name: '7 contra 7 / Skelly', duration: 20, type: 'TACTICAL' },
+    { name: 'Inside Run / 9 contra 7', duration: 15, type: 'TACTICAL' },
+    { name: 'Período de Time (11 contra 11)', duration: 30, type: 'LIVE' },
+    { name: 'Condicionamento / Sprints', duration: 10, type: 'PHYSICAL' },
 ];
 
 const TrainingHub: React.FC = () => {
@@ -138,7 +27,7 @@ const TrainingHub: React.FC = () => {
     const [players, setPlayers] = useState<Player[]>([]);
     const [activeView, setActiveView] = useState<'HUBS' | 'FIELD' | 'BUILDER'>('HUBS');
     
-    // Builder State (Manual ou IA)
+    // Builder State
     const [currentScript, setCurrentScript] = useState<PracticeScriptItem[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [practiceTitle, setPracticeTitle] = useState('Sessão Técnica');
@@ -181,7 +70,7 @@ const TrainingHub: React.FC = () => {
             startTime,
             durationMinutes: block.duration,
             activityName: block.name,
-            description: 'Manual entry',
+            description: 'Entrada manual',
             type: block.type as any
         };
         setCurrentScript([...currentScript, newItem]);
@@ -202,7 +91,6 @@ const TrainingHub: React.FC = () => {
             focus: "Customizado",
             date: new Date(),
             attendees: [],
-            // Fix: Added required program property
             program: activeProg,
             script: currentScript
         };
@@ -272,7 +160,6 @@ const TrainingHub: React.FC = () => {
 
             {activeView === 'BUILDER' && (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-slide-in">
-                    {/* Lista de Blocos Editáveis */}
                     <div className="lg:col-span-8 space-y-4">
                         <Card title="Roteiro em Construção">
                             <div className="mb-6">
@@ -335,7 +222,6 @@ const TrainingHub: React.FC = () => {
                         </Card>
                     </div>
 
-                    {/* Blocos Rápidos */}
                     <div className="lg:col-span-4 space-y-4">
                         <Card title="Peças do Quebra-Cabeça">
                             <p className="text-[10px] text-text-secondary uppercase mb-4 font-bold">Clique para adicionar ao script</p>
