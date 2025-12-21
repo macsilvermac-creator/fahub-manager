@@ -1,9 +1,8 @@
-// Fix: Removing failing reference to vite/client and providing explicit types for import.meta and process.env
+
+/// <reference types="vite/client" />
+
 interface ImportMetaEnv {
   readonly API_KEY: string;
-  readonly MODE: string;
-  readonly PROD: boolean;
-  readonly DEV: boolean;
 }
 
 interface ImportMeta {
