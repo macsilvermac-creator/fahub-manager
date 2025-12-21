@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import Card from '../components/Card';
 import { generatePracticePlan, analyzeOpponentTendencies, suggestPlayConcepts, explainPlayImage } from '../services/geminiService';
-import { SparklesIcon, KeyIcon, SearchIcon, ImageIcon, CheckCircleIcon, EyeIcon } from '../components/icons/UiIcons';
+import { SparklesIcon, SearchIcon, ImageIcon, CheckCircleIcon, EyeIcon } from '../components/icons/UiIcons';
 import { useToast } from '../contexts/ToastContext';
 
 // --- FEATURE FLAG ---

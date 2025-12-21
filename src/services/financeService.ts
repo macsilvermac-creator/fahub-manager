@@ -54,7 +54,7 @@ export const financeService = {
                 amount,
                 dueDate,
                 status: 'PENDING',
-                // Fix: Correctly handled category property for Invoice
+                // Fix: Ensuring category property is correctly typed
                 category: category as any,
                 inventoryItemId
             };
@@ -75,7 +75,7 @@ export const financeService = {
             title: `Recebimento: ${targetInv.title}`,
             amount: targetInv.amount,
             type: 'INCOME',
-            // Fix: Ensuring category safety
+            // Fix: category check from Invoice
             category: targetInv.category || 'TUITION',
             date: new Date(),
             status: 'PAID'

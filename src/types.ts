@@ -86,6 +86,9 @@ export interface Player {
     cpf?: string;
     attendanceRate?: number;
     category?: string;
+    // Added birthDate and nationality
+    birthDate?: Date;
+    nationality?: string;
 }
 
 export interface PracticeScriptItem {
@@ -209,6 +212,10 @@ export interface Invoice {
     dueDate: Date;
     playerName: string;
     title: string;
+    // Added missing category and other props
+    category?: TransactionCategory;
+    playerId?: string | number;
+    inventoryItemId?: string;
 }
 
 export interface Announcement {
@@ -493,4 +500,61 @@ export interface PlayerRotation {
     status: 'ON_FIELD' | 'BENCH';
     minutesPlayed: number;
     fatigueLevel: number;
+}
+
+// Added missing Course, CoachGameNote, GameReport, Championship
+export interface Course {
+    id: string;
+    title: string;
+    description: string;
+    thumbnailUrl: string;
+    priority?: boolean;
+    level?: string;
+}
+
+export interface CoachGameNote {
+    id: string;
+    gameId: string | number;
+    content: string;
+    timestamp: Date;
+}
+
+export interface GameReport {
+    infrastructure?: any;
+    officialReport?: any;
+    score?: string;
+    result?: string;
+    fouls?: any[];
+    ejections?: any[];
+    notes?: string;
+    crew?: string[];
+    isFinalized?: boolean;
+}
+
+export interface Championship {
+    id: string;
+    name: string;
+    year: number;
+    division: string;
+}
+
+export interface Objective {
+    id: string;
+    title: string;
+    description?: string;
+    category: string;
+    status: 'IN_PROGRESS' | 'COMPLETED' | 'ON_TRACK' | 'BEHIND';
+    progress: number;
+    deadline: Date;
+    ownerRole: UserRole;
+    keyResults: KeyResult[];
+}
+
+export interface KeyResult {
+    id: string;
+    title: string;
+    currentValue: number;
+    targetValue: number;
+    unit: string;
+    lastUpdated: Date;
 }

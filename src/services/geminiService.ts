@@ -36,7 +36,7 @@ export async function analyzeTryoutPerformance(candidate: RecruitmentCandidate) 
 export async function generatePracticeScript(focus: string, duration: number, intensity: string) {
     const ai = getAI();
     const prompt = `
-        Gere um roteiro de treino de ${duration}min para Futebol Americano focado em: ${focus}.
+        Gere um roteiro de treino de ${duration}min for Futebol Americano focado em: ${focus}.
         INTENSIDADE: ${intensity}. 
         Retorne um array JSON de objetos: { "id": "string", "startTime": "HH:MM", "durationMinutes": number, "activityName": "string", "type": "string" }
     `;
@@ -53,8 +53,15 @@ export async function generatePracticeScript(focus: string, duration: number, in
     return JSON.parse(cleanJson(response.text || "[]"));
 }
 
-// Fix: Rename to match usage in pages/PracticePlan.tsx if needed, or add alias
-export const generatePracticePlan = generatePracticeScript;
+// Fix: redefine generatePracticePlan to take 1 arg as prompt
+export async function generatePracticePlan(prompt: string) {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt
+    });
+    return response.text || "";
+}
 
 export async function generatePlayerAnalysis(player: Player, context: string) {
     const ai = getAI();

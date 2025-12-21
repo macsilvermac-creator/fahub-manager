@@ -1,5 +1,5 @@
 
-import { Player, Game, PracticeSession, TeamSettings, AuditLog, RecruitmentCandidate, Team, Transaction, Invoice, Subscription, Budget, Bill, Announcement, ChatMessage, TeamDocument, VideoClip, TacticalPlay, MarketplaceItem, KanbanTask, SocialPost, SponsorDeal, EventSale, SocialFeedPost, EquipmentItem, StaffMember, YouthClass, YouthStudent, ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest } from '../types';
+import { Player, Game, PracticeSession, TeamSettings, AuditLog, RecruitmentCandidate, Team, Transaction, Invoice, Subscription, Budget, Bill, Announcement, ChatMessage, TeamDocument, VideoClip, TacticalPlay, MarketplaceItem, KanbanTask, SocialPost, SponsorDeal, EventSale, SocialFeedPost, EquipmentItem, StaffMember, YouthClass, YouthStudent, ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest, League } from '../types';
 
 const get = <T>(key: string): T[] => {
     const data = localStorage.getItem(key);
@@ -158,6 +158,7 @@ export const storageService = {
     saveSubscriptions: (data: Subscription[]) => set('fahub_subscriptions', data),
     getBudgets: () => get<Budget>('fahub_budgets'),
     saveBudgets: (data: Budget[]) => set('fahub_budgets', data),
+    getInvoicesForMember: (id: string | number) => storageService.getInvoices().filter(i => i.playerId === id),
     getBills: () => get<Bill>('fahub_bills'),
     saveBills: (data: Bill[]) => set('fahub_bills', data),
 
