@@ -18,7 +18,8 @@ const AdminPanel: React.FC = () => {
         if (current) {
             const updated = { ...current, role };
             storageService.setCurrentUser(updated);
-            storageService.logAction('PERSONA_SWITCH', `Admin mudou visualização para ${role}`, current);
+            // Fix: removed the third argument 'current' as logAction only accepts 2 arguments
+            storageService.logAction('PERSONA_SWITCH', `Admin mudou visualização para ${role}`);
             window.location.reload(); // Recarrega com o novo contexto de permissões
         }
     };
