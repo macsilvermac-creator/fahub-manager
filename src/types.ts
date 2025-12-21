@@ -63,6 +63,8 @@ export interface RecruitmentCandidate {
 
 export interface Player {
     id: string | number;
+    // Fix: Added userId to handle Login.tsx requirements
+    userId?: string;
     name: string;
     position: string;
     jerseyNumber: number;
@@ -77,6 +79,8 @@ export interface Player {
     attendanceRate: number;
     // Fix: Added missing optional properties requested by components
     medicalExamExpiry?: Date;
+    // Fix: Added combineStats to resolve AddPlayerModal Omit error
+    combineStats?: CombineStats;
     stats?: { ovr: number; speed: number; strength: number; agility: number; tacticalIQ: number };
     badges?: string[];
     rosterCategory?: RosterCategory;
@@ -564,4 +568,55 @@ export interface LegalDocument {
     title: string;
     content: string;
     version: string;
+}
+
+// Added missing members to resolve storageService and other component imports
+export interface MarketplaceItem {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    category: string;
+    sellerType: 'TEAM_STORE' | 'PLAYER';
+    sellerName: string;
+    imageUrl: string;
+    isSold: boolean;
+    qrCodeDelivery?: string;
+}
+
+export interface KanbanTask {
+    id: string;
+    title: string;
+    description?: string;
+    status: 'TODO' | 'DOING' | 'DONE';
+    assignedToDepartment: 'MARKETING' | 'COMMERCIAL' | 'TECHNICAL' | 'FINANCE' | 'GENERAL';
+    priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    dueDate: Date;
+}
+
+export interface SponsorDeal {
+    id: string;
+    companyName: string;
+    contactPerson: string;
+    status: 'PROSPECT' | 'NEGOTIATION' | 'CLOSED_WON' | 'REJECTED';
+    value: number;
+    lastInteraction: Date;
+}
+
+export interface EventSale {
+    id: string;
+    type: 'TICKET' | 'BAR';
+    itemName: string;
+    quantity: number;
+    totalAmount: number;
+    timestamp: Date;
+}
+
+export interface ChatMessage {
+    id: string;
+    senderName: string;
+    senderRole: string;
+    content: string;
+    timestamp: Date;
+    channel?: 'GENERAL' | 'OFFENSE' | 'DEFENSE';
 }
