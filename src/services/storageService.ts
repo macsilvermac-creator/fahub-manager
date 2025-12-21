@@ -13,7 +13,7 @@ import {
 // Função utilitária de busca - Corrigida para sintaxe padrão return/data
 const get = <T>(key: string): T[] => {
     const data = localStorage.getItem(key);
-    // JavaScript exige 'return' e 'data'. 
+    // Vercel build fix: Changed 'retornar dados' to 'return data'
     return data ? JSON.parse(data, (k, v) => {
         if (typeof v === 'string' && (k.toLowerCase().includes('date') || k === 'timestamp' || k === 'expiresat' || k === 'birthdate' || k === 'deadline')) {
             return new Date(v);
@@ -49,6 +49,14 @@ export const storageService = {
                 { id: '2', title: 'Reduzir Inadimplência', description: 'Meta tática financeira', ownerRole: 'FINANCIAL_DIRECTOR', targetValue: 5, currentValue: 12, unit: '%', category: 'FINANCE', status: 'AT_RISK', parentOkrId: '1', subordinatesCheck: false }
             ];
             set('fahub_okrs', initialOkrs);
+        }
+        if (!localStorage.getItem('fahub_roadmap')) {
+            const initialRoadmap: RoadmapItem[] = [
+                { id: '1', day: 1, title: 'Setup Inicial', description: 'Configuração do ambiente de desenvolvimento', status: 'DONE' },
+                { id: '2', day: 2, title: 'Módulo de Elenco', description: 'Desenvolvimento do cadastro de atletas', status: 'DONE' },
+                { id: '3', day: 3, title: 'IA Analytics', description: 'Integração com Gemini para análise de performance', status: 'DOING' }
+            ];
+            set('fahub_roadmap', initialRoadmap);
         }
     },
 
@@ -184,6 +192,15 @@ export const storageService = {
         storageService.savePracticeSessions(updated as any);
     },
 
+    // ROADMAP & PROJETO
+    getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
+    getProjectCompletion: () => {
+        const roadmap = storageService.getRoadmap();
+        if (roadmap.length === 0) return 0;
+        const done = roadmap.filter(i => i.status === 'DONE').length;
+        return Math.round((done / roadmap.length) * 100);
+    },
+
     // DIVERSOS
     getActiveProgram: () => (localStorage.getItem('active_program') || 'TACKLE') as ProgramType,
     setActiveProgram: (p: ProgramType) => {
@@ -256,8 +273,6 @@ export const storageService = {
         set('fahub_marketplace', data);
         notifyInternal('marketplace');
     },
-    getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
-    getProjectCompletion: () => 75,
     getConfederationStats: () => ({ totalAthletes: 4850, totalTeams: 18, totalGamesThisYear: 142, activeAffiliates: 8 }),
     getNationalTeamScouting: () => get<NationalTeamCandidate>('fahub_national_team_scouting'),
     getAffiliatesStatus: () => get<Affiliate>('fahub_affiliates'),
