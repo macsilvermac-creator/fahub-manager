@@ -1,57 +1,41 @@
 
-import { UserRole, User } from '../types';
+import { UserRole } from '../types';
 
 export type Permission = 
-    | 'MANAGE_ROSTER'       
-    | 'MANAGE_FINANCE'      
-    | 'VIEW_FINANCE'        
-    | 'MANAGE_TACTICS'      
-    | 'MANAGE_STAFF'        
-    | 'EDIT_SETTINGS'       
-    | 'VIEW_SENSITIVE_DOCS' 
-    | 'OFFICIATE_GAME';     
+    | 'ACCESS_WAR_ROOM'      // Presidente/Vice
+    | 'MANAGE_FINANCES'      // Financeiro
+    | 'MANAGE_COMMERCIAL'    // Comercial
+    | 'MANAGE_MARKETING'     // Marketing
+    | 'MANAGE_SPORTS'        // Diretor de Esportes
+    | 'OPERATE_FIELD'        // Coaches
+    | 'VIEW_HEALTH'          // Medicina/Coach
+    | 'EDIT_PLAYBOOK'        // Coordenadores/HC
+    | 'BUY_IN_STORE'         // Atleta/Fã
+    | 'ADMIN_SYSTEM';        // Master
 
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
-    'PLATFORM_OWNER': ['MANAGE_ROSTER', 'MANAGE_FINANCE', 'VIEW_FINANCE', 'MANAGE_TACTICS', 'MANAGE_STAFF', 'EDIT_SETTINGS', 'VIEW_SENSITIVE_DOCS', 'OFFICIATE_GAME'],
-    'MASTER': ['MANAGE_ROSTER', 'MANAGE_FINANCE', 'VIEW_FINANCE', 'MANAGE_TACTICS', 'MANAGE_STAFF', 'EDIT_SETTINGS', 'VIEW_SENSITIVE_DOCS', 'OFFICIATE_GAME'],
-    'HEAD_COACH': ['MANAGE_ROSTER', 'MANAGE_TACTICS', 'VIEW_SENSITIVE_DOCS'],
-    'OFFENSIVE_COORD': ['MANAGE_TACTICS'],
-    'DEFENSIVE_COORD': ['MANAGE_TACTICS'],
-    'FINANCIAL_MANAGER': ['MANAGE_FINANCE', 'VIEW_FINANCE', 'VIEW_SENSITIVE_DOCS'],
-    'MARKETING_MANAGER': [], 
-    'COMMERCIAL_MANAGER': [],
-    'MEDICAL_STAFF': ['VIEW_SENSITIVE_DOCS'],
-    'SPORTS_DIRECTOR': ['MANAGE_ROSTER', 'MANAGE_STAFF'],
-    'EQUIPMENT_MANAGER': [],
-    'PLAYER': [], 
-    'REFEREE': ['OFFICIATE_GAME'],
-    'CANDIDATE': [],
-    'BROADCASTER': [],
-    'FAN': [],
-    // Fix: Added missing ADMIN and STUDENT roles to satisfy type checker
-    'ADMIN': ['MANAGE_ROSTER', 'MANAGE_FINANCE', 'VIEW_FINANCE', 'MANAGE_TACTICS', 'MANAGE_STAFF', 'EDIT_SETTINGS', 'VIEW_SENSITIVE_DOCS', 'OFFICIATE_GAME'],
-    'STUDENT': [],
-    'SYSTEM': ['MANAGE_ROSTER', 'MANAGE_FINANCE', 'MANAGE_TACTICS', 'MANAGE_STAFF']
+    'MASTER': ['ACCESS_WAR_ROOM', 'MANAGE_FINANCES', 'MANAGE_COMMERCIAL', 'MANAGE_MARKETING', 'MANAGE_SPORTS', 'OPERATE_FIELD', 'VIEW_HEALTH', 'EDIT_PLAYBOOK', 'ADMIN_SYSTEM'],
+    'PRESIDENT': ['ACCESS_WAR_ROOM', 'MANAGE_FINANCES', 'MANAGE_COMMERCIAL', 'MANAGE_MARKETING', 'MANAGE_SPORTS', 'OPERATE_FIELD', 'VIEW_HEALTH', 'EDIT_PLAYBOOK'],
+    'VICE_PRESIDENT': ['ACCESS_WAR_ROOM', 'MANAGE_FINANCES', 'MANAGE_COMMERCIAL', 'MANAGE_MARKETING', 'MANAGE_SPORTS', 'OPERATE_FIELD', 'VIEW_HEALTH', 'EDIT_PLAYBOOK'],
+    'FINANCIAL_DIRECTOR': ['MANAGE_FINANCES', 'VIEW_HEALTH'],
+    'COMMERCIAL_DIRECTOR': ['MANAGE_COMMERCIAL'],
+    'MARKETING_DIRECTOR': ['MANAGE_MARKETING'],
+    'SPORTS_DIRECTOR': ['MANAGE_SPORTS', 'VIEW_HEALTH', 'OPERATE_FIELD'],
+    'HEAD_COACH': ['OPERATE_FIELD', 'VIEW_HEALTH', 'EDIT_PLAYBOOK'],
+    'OFFENSIVE_COORD': ['OPERATE_FIELD', 'EDIT_PLAYBOOK'],
+    'DEFENSIVE_COORD': ['OPERATE_FIELD', 'EDIT_PLAYBOOK'],
+    'POSITION_COACH': ['OPERATE_FIELD'],
+    'PHYSICAL_TRAINER': ['OPERATE_FIELD', 'VIEW_HEALTH'],
+    'MEDICAL_STAFF': ['VIEW_HEALTH'],
+    'PLAYER': ['BUY_IN_STORE'],
+    'STUDENT': ['BUY_IN_STORE'],
+    'FAN': ['BUY_IN_STORE'],
+    'STAFF': ['OPERATE_FIELD'],
+    'SYSTEM': ['ADMIN_SYSTEM']
 };
 
 export const securityService = {
-    can: (action: Permission): boolean => {
-        const stored = localStorage.getItem('gridiron_current_user');
-        if (!stored) return false;
-        
-        try {
-            const user: User = JSON.parse(stored);
-            const permissions = ROLE_PERMISSIONS[user.role] || [];
-            return permissions.includes(action);
-        } catch {
-            return false;
-        }
-    },
-
-    enforce: (action: Permission) => {
-        if (!securityService.can(action)) {
-            console.error(`🚨 SECURITY ALERT: Acesso negado para ação ${action}`);
-            throw new Error(`Acesso Negado: Você não tem permissão para [${action}].`);
-        }
+    hasPermission: (role: UserRole, permission: Permission): boolean => {
+        return ROLE_PERMISSIONS[role]?.includes(permission) || false;
     }
 };

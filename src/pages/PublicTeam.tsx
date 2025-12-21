@@ -1,124 +1,137 @@
 
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storageService';
-import { TeamSettings, Player, Game } from '../types';
+import { TeamSettings, Player, Game, SponsorDeal } from '../types';
 import LazyImage from '../components/LazyImage';
-import { CalendarIcon, FireIcon, CheckCircleIcon } from '../components/icons/UiIcons';
-import { GlobeIcon, TrophyIcon, ShopIcon } from '../components/icons/NavIcons';
+import { CalendarIcon, MapPinIcon, UsersIcon } from '../components/icons/UiIcons';
+import { GlobeIcon, TrophyIcon } from '../components/icons/NavIcons';
+
+const Countdown: React.FC<{ targetDate: Date }> = ({ targetDate }) => {
+    const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = targetDate.getTime() - now;
+
+            if (distance < 0) {
+                clearInterval(interval);
+                return;
+            }
+
+            setTimeLeft({
+                days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+                hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+                seconds: Math.floor((distance % (1000 * 60)) / 1000)
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [targetDate]);
+
+    return (
+        <div className="grid grid-cols-4 gap-2 md:gap-4 text-center">
+            <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-2 md:p-3">
+                <span className="block text-2xl md:text-4xl font-black text-white">{String(timeLeft.days).padStart(2, '0')}</span>
+                <span className="text-[8px] md:text-xs text-text-secondary uppercase tracking-widest">Dias</span>
+            </div>
+            <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-2 md:p-3">
+                <span className="block text-2xl md:text-4xl font-black text-white">{String(timeLeft.hours).padStart(2, '0')}</span>
+                <span className="text-[8px] md:text-xs text-text-secondary uppercase tracking-widest">Horas</span>
+            </div>
+            <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-2 md:p-3">
+                <span className="block text-2xl md:text-4xl font-black text-white">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                <span className="text-[8px] md:text-xs text-text-secondary uppercase tracking-widest">Min</span>
+            </div>
+            <div className="bg-black/40 backdrop-blur-md border border-white/10 rounded-lg p-2 md:p-3">
+                <span className="block text-2xl md:text-4xl font-black text-highlight animate-pulse">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                <span className="text-[8px] md:text-xs text-text-secondary uppercase tracking-widest">Seg</span>
+            </div>
+        </div>
+    );
+};
 
 const PublicTeam: React.FC = () => {
     const [settings, setSettings] = useState<TeamSettings | null>(null);
     const [players, setPlayers] = useState<Player[]>([]);
     const [games, setGames] = useState<Game[]>([]);
-    const [fanXP, setFanXP] = useState(0);
+    const [sponsors, setSponsors] = useState<SponsorDeal[]>([]);
+    const [activeTab, setActiveTab] = useState<'ROSTER' | 'SCHEDULE'>('ROSTER');
 
     useEffect(() => {
         setSettings(storageService.getTeamSettings());
-        setPlayers(storageService.getPlayers().filter(p => p.status === 'ACTIVE').slice(0, 8));
+        setPlayers(storageService.getPlayers().filter(p => p.status === 'ACTIVE'));
         setGames(storageService.getGames());
+        setSponsors(storageService.getSponsors().filter(s => s.status === 'CLOSED_WON'));
     }, []);
 
-    if (!settings) return <div className="text-white text-center py-20">Carregando Estádio Digital...</div>;
+    if (!settings) return <div className="min-h-screen bg-[#0B1120] flex items-center justify-center text-white">Carregando...</div>;
 
-    const activeGame = games.find(g => g.status === 'IN_PROGRESS');
+    const nextGame = games
+        .filter(g => g.status === 'SCHEDULED' && new Date(g.date) > new Date())
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
     return (
-        <div className="min-h-screen bg-[#0B1120] text-white font-sans overflow-x-hidden animate-fade-in">
-            {/* Header Hero */}
-            <div className="relative bg-gradient-to-b from-gray-900 to-[#0B1120] pb-24 pt-16 px-6 border-b border-white/10">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                <div className="max-w-6xl mx-auto flex flex-col items-center text-center relative z-10">
-                    <div className="w-32 h-32 md:w-40 md:h-40 bg-white/5 rounded-full p-2 border-4 border-white/10 shadow-2xl mb-8 backdrop-blur-sm">
+        <div className="min-h-screen bg-[#0B1120] text-white font-sans overflow-x-hidden">
+            <div className="relative bg-gradient-to-b from-gray-900 to-[#0B1120] pb-12 pt-20 px-6 border-b border-white/10">
+                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
+                    <div className="w-32 h-32 md:w-48 md:h-48 bg-white/5 rounded-full p-2 border-4 border-white/10 shadow-2xl backdrop-blur-sm">
                         <LazyImage src={settings.logoUrl} className="w-full h-full object-contain" />
                     </div>
-                    <h1 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-4 italic">{settings.teamName}</h1>
-                    <p className="text-gray-400 font-bold uppercase tracking-[0.3em] text-sm">{settings.address}</p>
-                    
-                    <div className="mt-10 flex gap-4">
-                        <div className="bg-white/5 px-8 py-3 rounded-2xl border border-white/10 flex items-center gap-3 shadow-xl">
-                             <FireIcon className="text-orange-500 w-6 h-6 animate-bounce" />
-                             <div>
-                                 <span className="text-[10px] text-gray-500 font-black uppercase block leading-none">Seu Nível de Fã</span>
-                                 <span className="text-xl font-black text-white">FAN XP: {fanXP}</span>
-                             </div>
+                    <div className="flex-1 w-full">
+                        <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest text-white/80 mb-4 border border-white/10">
+                            <GlobeIcon className="w-4 h-4" /> Página Oficial
                         </div>
+                        <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-2">{settings.teamName}</h1>
+                        {/* Fix: Property address is now valid in TeamSettings */}
+                        <p className="text-xl text-gray-400 max-w-2xl mx-auto md:mx-0">{settings.address} • Futebol Americano</p>
+                        
+                        {nextGame && (
+                             <div className="mt-8 bg-gradient-to-r from-blue-900/60 to-blue-800/40 p-6 rounded-2xl border border-blue-500/30 w-full max-w-2xl mx-auto md:mx-0">
+                                <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                                    <div className="text-center md:text-left">
+                                        <p className="text-xs text-blue-300 font-bold uppercase tracking-widest mb-1">Próximo Confronto</p>
+                                        <h3 className="text-2xl md:text-3xl font-black text-white">VS {nextGame.opponent.toUpperCase()}</h3>
+                                        <div className="flex items-center justify-center md:justify-start gap-2 mt-2 text-sm text-gray-300">
+                                            <CalendarIcon className="w-4 h-4" />
+                                            {new Date(nextGame.date).toLocaleDateString()}
+                                        </div>
+                                    </div>
+                                    <div className="w-full md:w-auto">
+                                        <Countdown targetDate={new Date(nextGame.date)} />
+                                    </div>
+                                </div>
+                             </div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-6xl mx-auto px-6 -mt-16 grid grid-cols-1 lg:grid-cols-3 gap-8 pb-20 relative z-20">
-                {/* Coluna Principal: Live e Roster */}
-                <div className="lg:col-span-2 space-y-8">
-                    {activeGame ? (
-                        <div className="bg-red-600 rounded-[2rem] p-10 shadow-2xl relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                                <TrophyIcon className="w-32 h-32 text-white" />
-                            </div>
-                            <div className="relative z-10">
-                                <div className="flex justify-between items-center mb-8">
-                                    <span className="text-xs font-black bg-white text-red-600 px-4 py-1.5 rounded-full shadow-lg animate-pulse">AO VIVO AGORA</span>
-                                    <span className="font-mono text-3xl font-black">{activeGame.clock}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-center">
-                                    <div className="flex-1">
-                                        <h4 className="text-2xl font-black opacity-60 uppercase">HOME</h4>
-                                        <p className="text-8xl font-black mt-2 drop-shadow-2xl">{activeGame.score?.split('-')[0]}</p>
-                                    </div>
-                                    <div className="text-3xl font-black px-6 opacity-30 italic">VS</div>
-                                    <div className="flex-1">
-                                        <h4 className="text-2xl font-black opacity-60 uppercase">{activeGame.opponent.substring(0,3)}</h4>
-                                        <p className="text-8xl font-black mt-2 drop-shadow-2xl">{activeGame.score?.split('-')[1]}</p>
-                                    </div>
-                                </div>
-                                <button onClick={() => { setFanXP(prev => prev + 50); }} className="w-full mt-10 bg-white text-red-600 font-black py-5 rounded-2xl uppercase shadow-2xl hover:scale-[1.02] active:scale-95 transition-all text-xl tracking-widest">Gritar TOUCHDOWN! (+50 XP)</button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="bg-secondary/80 backdrop-blur rounded-[2rem] p-12 border border-white/10 text-center opacity-60">
-                            <CalendarIcon className="w-16 h-16 mx-auto mb-6 opacity-20 text-highlight" />
-                            <p className="font-black text-2xl uppercase italic tracking-tighter">Nenhum jogo ao vivo no momento</p>
-                            <p className="text-text-secondary mt-2">Acompanhe as redes sociais para o próximo Kickoff.</p>
-                        </div>
-                    )}
-
-                    <div className="space-y-6">
-                        <h3 className="text-2xl font-black uppercase italic tracking-widest flex items-center gap-3">
-                             <CheckCircleIcon className="text-highlight w-6 h-6" /> Lineup de Elite
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {players.map(p => (
-                                <div key={p.id} className="bg-secondary/40 rounded-3xl border border-white/5 p-6 text-center hover:border-highlight transition-all group">
-                                    <LazyImage src={p.avatarUrl} className="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-white/10 grayscale group-hover:grayscale-0 transition-all" />
-                                    <p className="font-black text-sm truncate uppercase italic tracking-tighter">{p.name}</p>
-                                    <p className="text-[10px] text-highlight font-black uppercase mt-1">#{p.jerseyNumber} • {p.position}</p>
-                                </div>
-                            ))}
-                        </div>
+            <div className="max-w-6xl mx-auto px-6 py-12">
+                <div className="flex justify-center mb-10">
+                    <div className="bg-white/5 p-1 rounded-xl flex">
+                        <button onClick={() => setActiveTab('ROSTER')} className={`px-8 py-3 rounded-lg font-bold transition-all ${activeTab === 'ROSTER' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}>Elenco</button>
+                        <button onClick={() => setActiveTab('SCHEDULE')} className={`px-8 py-3 rounded-lg font-bold transition-all ${activeTab === 'SCHEDULE' ? 'bg-white text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}>Calendário</button>
                     </div>
                 </div>
 
-                {/* Coluna Lateral: Loja e Patrocinadores */}
-                <div className="space-y-6">
-                    <div className="bg-gradient-to-br from-secondary to-black rounded-[2rem] border border-white/10 p-8 shadow-2xl">
-                         <div className="flex items-center gap-3 mb-8">
-                             <div className="p-3 bg-highlight/20 rounded-2xl"><ShopIcon className="w-6 h-6 text-highlight" /></div>
-                             <h3 className="text-xl font-black uppercase italic">Oficial Store</h3>
-                         </div>
-                         <div className="space-y-4">
-                             <div className="bg-black/40 p-4 rounded-3xl border border-white/5 group cursor-pointer hover:border-highlight transition-all">
-                                 <div className="aspect-square bg-gray-800 rounded-2xl mb-4 overflow-hidden">
-                                     <div className="w-full h-full bg-gradient-to-tr from-highlight/10 to-transparent"></div>
-                                 </div>
-                                 <p className="font-black text-white uppercase italic tracking-tighter">Jersey Oficial 2025</p>
-                                 <div className="flex justify-between items-center mt-2">
-                                     <span className="text-highlight font-black text-xl">R$ 219,90</span>
-                                     <button className="bg-white text-black p-2 rounded-xl"><ShopIcon className="w-4 h-4"/></button>
-                                 </div>
-                             </div>
-                             <button className="w-full bg-white/5 hover:bg-white/10 border border-white/10 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all">Ver Coleção Completa</button>
-                         </div>
+                {activeTab === 'ROSTER' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-fade-in">
+                        {players.map(player => (
+                            <div key={player.id} className="group bg-white/5 rounded-2xl overflow-hidden border border-white/5 hover:border-white/20 transition-all hover:-translate-y-1">
+                                <div className="aspect-square bg-gray-800 relative">
+                                    <LazyImage src={player.avatarUrl} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
+                                        <p className="text-white font-bold text-lg">{player.name}</p>
+                                        <p className="text-gray-400 text-xs font-bold uppercase">{player.position} #{player.jerseyNumber}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

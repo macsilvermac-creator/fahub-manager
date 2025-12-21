@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import { storageService } from '../services/storageService';
-// Fix: Corrected type imports from updated types.ts
 import { ConfederationStats, NationalTeamCandidate, Affiliate, TransferRequest, AuditLog } from '../types';
 import { GlobeIcon, TrophyIcon, FlagIcon } from '../components/icons/NavIcons';
 import { UsersIcon, MapIcon, BuildingIcon, CheckCircleIcon, AlertTriangleIcon, GavelIcon, ShieldCheckIcon, SwapIcon, LockIcon, FileTextIcon } from '../components/icons/UiIcons';
@@ -22,7 +21,6 @@ const Confederation: React.FC = () => {
     const [selectedPos, setSelectedPos] = useState('ALL');
 
     useEffect(() => {
-        // Fix: Ensured all methods now exist in updated storageService.ts
         setStats(storageService.getConfederationStats());
         setCandidates(storageService.getNationalTeamScouting());
         setAffiliates(storageService.getAffiliatesStatus());
@@ -32,7 +30,6 @@ const Confederation: React.FC = () => {
 
     const handleTransferDecision = (id: string, decision: 'APPROVE' | 'REJECT') => {
         const user = authService.getCurrentUser();
-        // Fix: processTransfer and getTransferRequests exist in updated storageService.ts
         storageService.processTransfer(id, decision, user?.name || 'Admin');
         setTransfers(storageService.getTransferRequests()); 
         storageService.notify('audit'); 

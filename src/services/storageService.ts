@@ -1,21 +1,16 @@
 
 import { 
-    Player, PracticeSession, RoadmapItem, RecruitmentCandidate, 
-    ProgramType, TeamSettings, AuditLog, ConfederationStats, NationalTeamCandidate,
-    Affiliate, TransferRequest, VideoClip, DigitalProduct, Entitlement, Team,
-    TeamDocument, Invoice, Subscription, Budget, Bill, Transaction, KanbanTask,
-    SponsorDeal, EventSale, SocialPost, Objective, TacticalPlay, League
+    Player, PracticeSession, OKR, ObjectiveSignal, 
+    UserRole, ProgramType, Transaction, TeamSettings, AuditLog,
+    RecruitmentCandidate, Invoice, Subscription, Budget, Bill,
+    SponsorDeal, MarketplaceItem, EventSale, ConfederationStats,
+    NationalTeamCandidate, Affiliate, TransferRequest, League,
+    VideoClip, TacticalPlay, RoadmapItem, Entitlement, DigitalProduct, Course, StaffMember
 } from '../types';
 
 const get = <T>(key: string): T[] => {
-    try {
-        const data = localStorage.getItem(key);
-        if (!data) return [];
-        return JSON.parse(data, (k, v) => {
-            if (['date', 'timestamp', 'birthDate', 'deadline', 'expiryDate', 'lastAuditDate', 'expiresAt'].includes(k)) return new Date(v);
-            return v;
-        });
-    } catch { return []; }
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data, (k, v) => (k.toLowerCase().includes('date') || k === 'timestamp' || k === 'expiresat') ? new Date(v) : v) : [];
 };
 
 const set = <T>(key: string, data: T) => {
@@ -27,32 +22,19 @@ const subscribers: Record<string, (() => void)[]> = {};
 
 export const storageService = {
     initializeRAM: () => {
-        if (!localStorage.getItem('fahub_active_program')) {
-            localStorage.setItem('fahub_active_program', 'TACKLE');
-        }
-        
-        if (!localStorage.getItem('fahub_roadmap')) {
-            const roadmap: RoadmapItem[] = [
-                { id: 'r1', day: 16, title: 'Estabilização Core', description: 'Isolamento de modalidades e fluxo de novatos', category: 'CORE', status: 'DONE', percentageWeight: 10 },
-                { id: 'r2', day: 17, title: 'Portal do Novato', description: 'Incubação 0 a 100% e check de cultura', category: 'FIELD', status: 'DOING', percentageWeight: 15 },
-                { id: 'r3', day: 18, title: 'Command Switcher', description: 'Troca rápida entre unidades Gladiators', category: 'CORE', status: 'TODO', percentageWeight: 15 },
+        if (!localStorage.getItem('fahub_okrs')) {
+            const initialOkrs: OKR[] = [
+                { id: '1', title: 'Sustentabilidade Financeira', description: 'Meta macro da presidência', ownerRole: 'PRESIDENT', targetValue: 100, currentValue: 45, unit: '%', category: 'FINANCE', status: 'ON_TRACK', subordinatesCheck: true },
+                { id: '2', title: 'Reduzir Inadimplência', description: 'Meta tática financeira', ownerRole: 'FINANCIAL_DIRECTOR', targetValue: 5, currentValue: 12, unit: '%', category: 'FINANCE', status: 'AT_RISK', parentOkrId: '1', subordinatesCheck: false }
             ];
-            set('fahub_roadmap', roadmap);
+            set('fahub_okrs', initialOkrs);
         }
     },
 
     subscribe: (key: string, callback: () => void) => {
         if (!subscribers[key]) subscribers[key] = [];
         subscribers[key].push(callback);
-        
-        const handler = (e: any) => { if (!key || e.detail?.key === key) callback(); };
-        window.addEventListener('storage_update', callback);
-        window.addEventListener('fahub_data_change', handler);
-        return () => {
-            subscribers[key] = (subscribers[key] || []).filter(cb => cb !== callback);
-            window.removeEventListener('storage_update', callback);
-            window.removeEventListener('fahub_data_change', handler);
-        };
+        return () => { subscribers[key] = subscribers[key].filter(cb => cb !== callback); };
     },
 
     notify: (key: string) => {
@@ -60,234 +42,262 @@ export const storageService = {
         window.dispatchEvent(new CustomEvent('fahub_data_change', { detail: { key } }));
     },
 
-    // CONTEXTO DE MODALIDADE
-    getActiveProgram: (): ProgramType => (localStorage.getItem('fahub_active_program') as ProgramType) || 'TACKLE',
-    setActiveProgram: (p: ProgramType) => {
-        localStorage.setItem('fahub_active_program', p);
-        storageService.notify('activeProgram');
-        window.dispatchEvent(new Event('storage_update'));
+    getCurrentUser: () => {
+        const data = localStorage.getItem('gridiron_current_user');
+        return data ? JSON.parse(data) : { id: 'dev', name: 'Master Admin', role: 'MASTER' };
     },
 
-    // ATLETAS (FILTRADOS POR CONTEXTO)
-    getPlayers: () => {
-        const prog = storageService.getActiveProgram();
-        const all = get<Player>('fahub_players');
-        if (prog === 'BOTH') return all;
-        return all.filter(p => p.program === prog || p.program === 'BOTH');
+    setCurrentUser: (user: any) => {
+        set('gridiron_current_user', user);
+        storageService.notify('currentUser');
     },
-    savePlayers: (data: Player[]) => { set('fahub_players', data); storageService.notify('players'); },
 
-    // Fix: Added getAthletes for TeamManagement compatibility
-    getAthletes: () => get<Player>('fahub_players'),
-
-    // CONVERSÃO CANDIDATO -> NOVATO
-    approveCandidate: (candidateId: string) => {
-        const candidates = get<RecruitmentCandidate>('fahub_candidates');
-        const cand = candidates.find(c => c.id === candidateId);
-        if (!cand) return;
-
-        const newPlayer: Player = {
-            id: `ath-${Date.now()}`,
-            name: cand.name,
-            position: cand.position,
-            jerseyNumber: 0,
-            height: cand.height || 'N/A',
-            weight: cand.weight,
-            class: 'ROOKIE',
-            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(cand.name)}&background=random`,
-            level: 1,
-            xp: 0,
-            rating: cand.rating || 70,
-            status: 'INCUBATING',
-            program: cand.program,
-            attendanceRate: 100,
-            incubation: {
-                cultureAccepted: false,
-                fundamentalsProgress: 0,
-                fieldEvaluationScore: cand.rating || 0,
-                status: 'CULTURE'
-            }
+    // OKRS & GOVERNANÇA
+    getOKRs: () => get<OKR>('fahub_okrs'),
+    saveOKRs: (data: OKR[]) => {
+        set('fahub_okrs', data);
+        storageService.notify('okrs');
+    },
+    
+    getSignals: () => get<ObjectiveSignal>('fahub_signals'),
+    sendSignal: (signal: Omit<ObjectiveSignal, 'id' | 'timestamp' | 'status'>) => {
+        const current = get<ObjectiveSignal>('fahub_signals');
+        const newSignal: ObjectiveSignal = {
+            ...signal,
+            id: `sig-${Date.now()}`,
+            timestamp: new Date(),
+            status: 'UNREAD'
         };
+        set('fahub_signals', [newSignal, ...current].slice(0, 50));
+        storageService.notify('signals');
+    },
 
-        const currentPlayers = get<Player>('fahub_players');
-        storageService.savePlayers([...currentPlayers, newPlayer]);
+    // TRAVAS DE PROTOCOLO
+    validateAthleteEligibility: (athleteId: string | number): { eligible: boolean, reasons: string[] } => {
+        const athletes = get<Player>('fahub_players');
+        const athlete = athletes.find(a => String(a.id) === String(athleteId));
+        if (!athlete) return { eligible: false, reasons: ['Atleta não encontrado'] };
 
-        const updatedCands = candidates.map(c => c.id === candidateId ? { ...c, status: 'SELECTED' as const } : c);
-        set('fahub_candidates', updatedCands);
+        const reasons: string[] = [];
+        if (athlete.financialStatus !== 'OK') reasons.push('Pendência Financeira');
+        if (athlete.documentStatus !== 'OK') reasons.push('Documentação Vencida/Ausente (BID)');
+        
+        return {
+            eligible: reasons.length === 0,
+            reasons
+        };
+    },
+
+    // PLAYERS / ATHLETES
+    getPlayers: () => get<Player>('fahub_players'),
+    getAthletes: () => get<Player>('fahub_players'),
+    savePlayers: (data: Player[]) => {
+        set('fahub_players', data);
+        storageService.notify('players');
+    },
+    saveAthlete: (athlete: Player) => {
+        const current = storageService.getPlayers();
+        storageService.savePlayers([...current, athlete]);
+    },
+    registerAthlete: (athlete: Player) => {
+        const current = storageService.getPlayers();
+        storageService.savePlayers([...current, athlete]);
+    },
+    getAthleteByUserId: (userId: string) => {
+        return storageService.getPlayers().find(p => String((p as any).userId) === userId || String(p.id) === userId);
+    },
+    getAthleteStatsHistory: (id: string | number) => {
+        return [];
+    },
+
+    // RECRUITMENT / CANDIDATES
+    getCandidates: () => get<RecruitmentCandidate>('fahub_candidates'),
+    saveCandidates: (data: RecruitmentCandidate[]) => {
+        set('fahub_candidates', data);
         storageService.notify('candidates');
     },
-
-    // RECRUTAMENTO
-    getCandidates: () => {
-        const prog = storageService.getActiveProgram();
-        const all = get<RecruitmentCandidate>('fahub_candidates');
-        if (prog === 'BOTH') return all;
-        return all.filter(c => c.program === prog);
+    approveCandidate: (id: string) => {
+        const candidates = storageService.getCandidates();
+        const updated = candidates.map(c => c.id === id ? { ...c, status: 'SELECTED' as const } : c);
+        storageService.saveCandidates(updated);
     },
-    saveCandidates: (data: RecruitmentCandidate[]) => { set('fahub_candidates', data); storageService.notify('candidates'); },
 
-    // FEDERATION
-    // Fix: Added missing methods
+    // FINANCE
+    getTransactions: () => get<Transaction>('fahub_transactions'),
+    saveTransactions: (data: Transaction[]) => {
+        set('fahub_transactions', data);
+        storageService.notify('transactions');
+    },
+    getInvoices: () => get<Invoice>('fahub_invoices'),
+    saveInvoices: (data: Invoice[]) => {
+        set('fahub_invoices', data);
+        storageService.notify('invoices');
+    },
+    getSubscriptions: () => get<Subscription>('fahub_subscriptions'),
+    saveSubscriptions: (data: Subscription[]) => {
+        set('fahub_subscriptions', data);
+        storageService.notify('subscriptions');
+    },
+    getBudgets: () => get<Budget>('fahub_budgets'),
+    saveBudgets: (data: Budget[]) => {
+        set('fahub_budgets', data);
+        storageService.notify('budgets');
+    },
+    getBills: () => get<Bill>('fahub_bills'),
+    generateMonthlyInvoices: () => {
+        console.log("Monthly invoices generated");
+    },
+    getEventSales: () => get<EventSale>('fahub_event_sales'),
+    saveEventSales: (data: EventSale[]) => {
+        set('fahub_event_sales', data);
+        storageService.notify('eventSales');
+    },
+
+    // SPONSORS & MARKETPLACE
+    getSponsors: () => get<SponsorDeal>('fahub_sponsors'),
+    saveSponsors: (data: SponsorDeal[]) => {
+        set('fahub_sponsors', data);
+        storageService.notify('sponsors');
+    },
+    getMarketplaceItems: () => get<MarketplaceItem>('fahub_marketplace'),
+    saveMarketplaceItems: (data: MarketplaceItem[]) => {
+        set('fahub_marketplace', data);
+        storageService.notify('marketplace');
+    },
+
+    // INVENTORY
+    getInventory: () => get<EquipmentItem>('fahub_inventory'),
+    saveInventory: (data: EquipmentItem[]) => {
+        set('fahub_inventory', data);
+        storageService.notify('inventory');
+    },
+
+    // GAMES & PRACTICE
+    getGames: () => get<Game>('fahub_games'),
+    saveGames: (data: Game[]) => {
+        set('fahub_games', data);
+        storageService.notify('games');
+    },
+    updateLiveGame: (gameId: string | number, updates: Partial<Game>) => {
+        const games = storageService.getGames();
+        const updated = games.map(g => String(g.id) === String(gameId) ? { ...g, ...updates } : g);
+        storageService.saveGames(updated);
+    },
+    getPracticeSessions: () => get<PracticeSession>('fahub_practice'),
+    savePracticeSessions: (data: PracticeSession[]) => {
+        set('fahub_practice', data);
+        storageService.notify('practice');
+    },
+
+    // FEDERATION / LEAGUE
+    getLeague: (): League => {
+        const data = localStorage.getItem('fahub_league');
+        return data ? JSON.parse(data) : { id: '1', name: 'Liga Brasileira', season: '2025', teams: [] };
+    },
+    getPublicLeagueStats: () => ({ name: 'BFA', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
+    getPublicGameData: (id: string) => null,
     getConfederationStats: (): ConfederationStats => ({ totalAthletes: 4850, totalTeams: 18, totalGamesThisYear: 142, activeAffiliates: 8 }),
-    getNationalTeamScouting: (): NationalTeamCandidate[] => get<NationalTeamCandidate>('fahub_national_scouting'),
-    getAffiliatesStatus: (): Affiliate[] => get<Affiliate>('fahub_affiliates'),
-    getTransferRequests: (): TransferRequest[] => get<TransferRequest>('fahub_transfers'),
+    getNationalTeamScouting: () => get<NationalTeamCandidate>('fahub_national_scouting'),
+    getAffiliatesStatus: () => get<Affiliate>('fahub_affiliates'),
+    getTransferRequests: () => get<TransferRequest>('fahub_transfers'),
     processTransfer: (id: string, decision: string, user: string) => {
         const current = get<TransferRequest>('fahub_transfers');
-        const updated = current.map(t => t.id === id ? { ...t, status: decision === 'APPROVE' ? 'APPROVED' : 'REJECTED' } : t);
+        const updated = current.map(t => t.id === id ? { ...t, status: decision === 'APPROVE' ? 'APPROVED' : 'REJECTED' } as TransferRequest : t);
         set('fahub_transfers', updated);
     },
 
-    // VIDEO
-    // Fix: Added missing methods
-    getClips: (): VideoClip[] => get<VideoClip>('fahub_clips'),
-    saveClips: (data: VideoClip[]) => set('fahub_clips', data),
+    // TACTICAL & VIDEO
+    getTacticalPlays: () => get<TacticalPlay>('fahub_tactical_plays'),
+    saveTacticalPlays: (data: TacticalPlay[]) => {
+        set('fahub_tactical_plays', data);
+        storageService.notify('tacticalPlays');
+    },
+    getClips: () => get<VideoClip>('fahub_clips'),
 
-    // DIGITAL PRODUCTS
-    // Fix: Added missing methods
-    getEntitlements: (): Entitlement[] => get<Entitlement>('fahub_entitlements'),
+    // ROADMAP & COMPLETION
+    getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
+    getProjectCompletion: () => 75,
+
+    // SETTINGS
+    getTeamSettings: (): TeamSettings => {
+        const data = localStorage.getItem('fahub_settings');
+        return data ? JSON.parse(data) : { id: '1', teamName: 'Gladiators FA', primaryColor: '#059669', plan: 'ALL_PRO' };
+    },
+    saveTeamSettings: (data: TeamSettings) => {
+        set('fahub_settings', data);
+        storageService.notify('settings');
+    },
+
+    // SOCIAL
+    getSocialFeed: () => get<SocialFeedPost>('fahub_social_feed'),
+    saveSocialFeedPost: (post: SocialFeedPost) => {
+        const current = storageService.getSocialFeed();
+        set('fahub_social_feed', [post, ...current]);
+        storageService.notify('socialFeed');
+    },
+    toggleLikePost: (postId: string) => {
+        const feed = storageService.getSocialFeed();
+        const updated = feed.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p);
+        set('fahub_social_feed', updated);
+    },
+
+    // ADM & STAFF
+    getAuditLogs: () => get<AuditLog>('fahub_audit'),
+    logAuditAction: (action: string, details: string) => {
+        const user = storageService.getCurrentUser();
+        const logs = get<AuditLog>('fahub_audit');
+        const newLog: AuditLog = {
+            id: `log-${Date.now()}`,
+            action,
+            details,
+            timestamp: new Date(),
+            userId: user.id,
+            userName: user.name,
+            role: user.role
+        };
+        set('fahub_audit', [newLog, ...logs].slice(0, 100));
+    },
+    getTasks: () => get<KanbanTask>('fahub_tasks'),
+    saveTasks: (data: KanbanTask[]) => {
+        set('fahub_tasks', data);
+        storageService.notify('tasks');
+    },
+    getDocuments: () => get<TeamDocument>('fahub_documents'),
+    saveDocuments: (data: TeamDocument[]) => {
+        set('fahub_documents', data);
+        storageService.notify('documents');
+    },
+    getStaff: () => get<StaffMember>('fahub_staff'),
+    saveCoachProfile: (userId: string, profile: any) => {
+        console.log(`Coach profile saved for ${userId}`);
+    },
+
+    // ENTITLEMENTS & DIGITAL STORE
+    getEntitlements: () => get<Entitlement>('fahub_entitlements'),
     purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
         const current = storageService.getEntitlements();
-        const expiry = new Date();
-        expiry.setHours(expiry.getHours() + (product.durationHours || 720));
-        const newEnt: Entitlement = {
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + product.durationHours);
+        const newEntitlement: Entitlement = {
             id: `ent-${Date.now()}`,
             userId,
             productId: product.id,
-            expiresAt: expiry
+            expiresAt
         };
-        set('fahub_entitlements', [...current, newEnt]);
+        set('fahub_entitlements', [...current, newEntitlement]);
+        storageService.notify('entitlements');
     },
 
-    // TEAMS
-    // Fix: Added missing methods
-    getTeams: (): Team[] => get<Team>('fahub_teams'),
-    saveTeam: (t: Team) => set('fahub_teams', [...storageService.getTeams(), t]),
-
-    // DOCUMENTS
-    // Fix: Added missing methods
-    getDocuments: (): TeamDocument[] => get<TeamDocument>('fahub_documents'),
-    saveDocuments: (data: TeamDocument[]) => set('fahub_documents', data),
-
-    // COACH
-    // Fix: Added missing methods
-    saveCoachProfile: (userId: string, profile: any) => set(`coach_profile_${userId}`, profile),
-
-    // FINANCE
-    // Fix: Added missing methods
-    getInvoices: (): Invoice[] => get<Invoice>('fahub_invoices'),
-    saveInvoices: (data: Invoice[]) => set('fahub_invoices', data),
-    getSubscriptions: (): Subscription[] => get<Subscription>('fahub_subscriptions'),
-    saveSubscriptions: (data: Subscription[]) => set('fahub_subscriptions', data),
-    getBudgets: (): Budget[] => get<Budget>('fahub_budgets'),
-    saveBudgets: (data: Budget[]) => set('fahub_budgets', data),
-    getBills: (): Bill[] => get<Bill>('fahub_bills'),
-    saveBills: (data: Bill[]) => set('fahub_bills', data),
-    getTransactions: (): Transaction[] => get<Transaction>('fahub_transactions'),
-    saveTransactions: (data: Transaction[]) => set('fahub_transactions', data),
-    generateMonthlyInvoices: () => {
-        console.log("Monthly invoices generated locally.");
+    // MISC
+    getActiveProgram: () => (localStorage.getItem('active_program') || 'TACKLE') as ProgramType,
+    setActiveProgram: (p: ProgramType) => {
+        localStorage.setItem('active_program', p);
+        storageService.notify('activeProgram');
     },
-
-    // TASKS
-    // Fix: Added missing methods
-    getTasks: (): KanbanTask[] => get<KanbanTask>('fahub_tasks'),
-    saveTasks: (data: KanbanTask[]) => set('fahub_tasks', data),
-
-    // SPONSORS & SALES
-    // Fix: Added missing methods
-    getSponsors: (): SponsorDeal[] => get<SponsorDeal>('fahub_sponsors'),
-    saveSponsors: (data: SponsorDeal[]) => set('fahub_sponsors', data),
-    getEventSales: (): EventSale[] => get<EventSale>('fahub_event_sales'),
-    saveEventSales: (data: EventSale[]) => set('fahub_event_sales', data),
-
-    // MARKETING
-    // Fix: Added missing methods
-    getSocialPosts: (): SocialPost[] => get<SocialPost>('fahub_social_posts'),
-    saveSocialPosts: (data: SocialPost[]) => set('fahub_social_posts', data),
-
-    // GOALS
-    // Fix: Added missing methods
-    getObjectives: (): Objective[] => get<Objective>('fahub_objectives'),
-    saveObjectives: (data: Objective[]) => { set('fahub_objectives', data); storageService.notify('objectives'); },
-
-    // TACTICAL
-    // Fix: Added missing methods
-    getTacticalPlays: (): TacticalPlay[] => get<TacticalPlay>('fahub_tactical_plays'),
-    saveTacticalPlays: (data: TacticalPlay[]) => set('fahub_tactical_plays', data),
-
-    // LEAGUE
-    // Fix: Added missing methods
-    getLeague: (): League => {
-        const stored = localStorage.getItem('fahub_league');
-        return stored ? JSON.parse(stored) : { id: 'l1', name: 'FCFA', season: '2025', teams: [] };
+    getTeams: () => get<Team>('fahub_teams'),
+    saveTeam: (team: Team) => {
+        const current = storageService.getTeams();
+        set('fahub_teams', [...current, team]);
     },
-
-    // OTHER METHODS
-    getPracticeSessions: () => get<PracticeSession>('fahub_practice'),
-    savePracticeSessions: (data: PracticeSession[]) => { set('fahub_practice', data); storageService.notify('gridiron_practice'); },
-    getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
-    getProjectCompletion: () => {
-        const roadmap = get<RoadmapItem>('fahub_roadmap');
-        return roadmap.filter(i => i.status === 'DONE').reduce((acc, i) => acc + i.percentageWeight, 0);
-    },
-    getAuditLogs: () => get<AuditLog>('fahub_audit'),
-    logAuditAction: (action: string, details: string) => {
-        const user = JSON.parse(localStorage.getItem('gridiron_current_user') || '{"name":"System","id":"sys","role":"SYSTEM"}');
-        const logs = get<AuditLog>('fahub_audit');
-        const newLog: AuditLog = { id: `log-${Date.now()}`, action, details, timestamp: new Date(), userId: user.id, userName: user.name, role: user.role };
-        set('fahub_audit', [newLog, ...logs].slice(0, 50));
-        storageService.notify('audit');
-    },
-    getTeamSettings: (): TeamSettings => {
-        const data = localStorage.getItem('fahub_settings');
-        return data ? JSON.parse(data) : { id: '1', teamName: 'Gladiators', primaryColor: '#000' };
-    },
-    saveTeamSettings: (d: TeamSettings) => set('fahub_settings', d),
-    getCourses: () => get<any>('fahub_courses'),
-    getSocialFeed: () => get<any>('fahub_social_feed'),
-    saveSocialFeedPost: (p: any) => set('fahub_social_feed', [p, ...get<any>('fahub_social_feed')]),
-    toggleLikePost: (id: string) => {
-        const feed = storageService.getSocialFeed();
-        const updated = feed.map((p: any) => p.id === id ? { ...p, likes: p.likes + 1 } : p);
-        set('fahub_social_feed', updated);
-    },
-    getInventory: () => get<any>('fahub_inventory'),
-    saveInventory: (d: any) => set('fahub_inventory', d),
-    getStaff: () => get<any>('fahub_staff'),
-    saveStaff: (d: any) => set('fahub_staff', d),
-    getYouthClasses: () => get<any>('fahub_youth_classes'),
-    saveYouthClasses: (d: any) => set('fahub_youth_classes', d),
-    getYouthStudents: () => get<any>('fahub_youth_students'),
-    getAthleteStatsHistory: (id: any) => [],
-    getCurrentUser: () => JSON.parse(localStorage.getItem('gridiron_current_user') || 'null'),
-    setCurrentUser: (u: any) => { localStorage.setItem('gridiron_current_user', JSON.stringify(u)); window.dispatchEvent(new Event('storage_update')); },
-    registerAthlete: (p: any) => { const c = get<any>('fahub_players'); set('fahub_players', [...c, p]); },
-    saveAthlete: (p: any) => {
-        const current = get<Player>('fahub_players');
-        const updated = current.map(pl => pl.id === p.id ? p : pl);
-        if (!current.some(pl => pl.id === p.id)) updated.push(p);
-        set('fahub_players', updated);
-    },
-    getAthleteByUserId: (id: string) => get<Player>('fahub_players').find(p => p.userId === id),
-    updateLiveGame: (id: any, u: any) => {
-        const games = storageService.getGames();
-        const updated = games.map((g: any) => String(g.id) === String(id) ? { ...g, ...u } : g);
-        storageService.saveGames(updated);
-    },
-    saveGames: (d: any) => set('fahub_games', d),
-    getGames: () => get<any>('fahub_games'),
-    getAuditLogsByAction: (a: string) => [],
-    uploadFile: async (f: any, p: any) => "",
-    getPublicLeagueStats: () => ({ name: 'FCFA', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
-    getPublicGameData: (id: string) => {
-        const games = storageService.getGames();
-        return games.find((g: any) => String(g.id) === id) || null;
-    },
-    createChampionship: (n: any, y: any, d: any) => {},
-    seedDatabaseToCloud: async () => true,
-    getMarketplaceItems: () => get<any>('fahub_marketplace'),
-    saveMarketplaceItems: (d: any) => set('fahub_marketplace', d),
-    getAnnouncements: () => get<any>('fahub_announcements'),
-    saveAnnouncements: (d: any) => set('fahub_announcements', d),
+    getCourses: () => get<Course>('fahub_courses'),
 };

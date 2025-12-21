@@ -1,205 +1,187 @@
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useMemo } from 'react';
 import { UserContext, UserContextType } from '../components/Layout';
 import { storageService } from '../services/storageService';
 import Card from '../components/Card';
 import { 
     ActivityIcon, UsersIcon, CheckCircleIcon, ClockIcon, 
-    WalletIcon, SparklesIcon
+    WalletIcon, SparklesIcon, TargetIcon, AlertTriangleIcon,
+    TrendingUpIcon, ShieldCheckIcon
 } from '../components/icons/UiIcons';
-import { TrophyIcon, WhistleIcon } from '../components/icons/NavIcons';
+import { TrophyIcon, WhistleIcon, BriefcaseIcon } from '../components/icons/NavIcons';
 import { useToast } from '../contexts/ToastContext';
 import LazyImage from '../components/LazyImage';
 
 const Dashboard: React.FC = () => {
     const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
-    const [objectives, setObjectives] = useState<any[]>([]);
-    const [auditLogs, setAuditLogs] = useState<any[]>([]);
-    const [stats, setStats] = useState({ revenue: 0, players: 0, attendance: 0 });
-    const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const [okrs, setOkrs] = useState<any[]>([]);
+    const [signals, setSignals] = useState<any[]>([]);
+    const [stats, setStats] = useState({ revenue: 0, athletes: 0, compliance: 0 });
 
     useEffect(() => {
-        const loadDashboardData = () => {
-            setObjectives(storageService.getObjectives());
-            setAuditLogs(storageService.getAuditLogs().slice(0, 10));
+        const load = () => {
+            const allOkrs = storageService.getOKRs();
+            setOkrs(allOkrs);
+            setSignals(storageService.getSignals());
             
             const players = storageService.getPlayers();
+            const eligible = players.filter(p => storageService.validateAthleteEligibility(p.id).eligible).length;
+            
             setStats({
-                revenue: 12500,
-                players: players.length,
-                attendance: 82
+                revenue: 45800,
+                athletes: players.length,
+                compliance: players.length > 0 ? Math.round((eligible / players.length) * 100) : 0
             });
-            setIsInitialLoad(false);
         };
+        load();
+        window.addEventListener('storage_update', load);
+        return () => window.removeEventListener('storage_update', load);
+    }, []);
 
-        loadDashboardData();
-        const unsub = storageService.subscribe('objectives', loadDashboardData);
-        const unsubAudit = storageService.subscribe('audit', loadDashboardData);
-        return () => { unsub(); unsubAudit(); };
-    }, [currentRole]);
+    const isPresidentOrVP = ['PRESIDENT', 'VICE_PRESIDENT', 'MASTER'].includes(currentRole);
+    const isTechnical = ['HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD'].includes(currentRole);
 
-    const handleCreateObjective = () => {
-        const title = prompt("Título da Meta Estratégica:");
-        if (!title) return;
-        
-        const newObj = {
-            id: `obj-${Date.now()}`,
-            title,
-            description: "Nova meta definida pelo gestor da plataforma.",
-            category: 'SPORTING',
-            status: 'IN_PROGRESS',
-            progress: 10,
-            deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
-            ownerRole: 'HEAD_COACH',
-            keyResults: []
-        };
-        
-        storageService.saveObjectives([...objectives, newObj]);
-        storageService.logAuditAction('GOAL_CREATED', `Meta global "${title}" criada para teste de fluxo.`);
-        toast.success("Meta criada!");
-    };
-
-    if (isInitialLoad) {
-        return <div className="h-full w-full flex items-center justify-center text-text-secondary font-black animate-pulse uppercase tracking-[0.3em]">Carregando Command Center...</div>;
-    }
-
-    // VISÃO MASTER: CENTRO DE COMANDO
-    const renderMaster = () => (
+    const renderWarRoom = () => (
         <div className="space-y-6 animate-fade-in pb-20">
+            {/* KPI Macro - O Pulso do Presidente */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-secondary/50 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[10px] font-black text-text-secondary uppercase">Caixa Atual</p>
-                    <p className="text-2xl font-black text-green-400">R$ {stats.revenue.toLocaleString()}</p>
-                </div>
-                <div className="bg-secondary/50 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[10px] font-black text-text-secondary uppercase">Frequência</p>
-                    <p className="text-2xl font-black text-blue-400">{stats.attendance}%</p>
-                </div>
-                <div className="bg-secondary/50 p-4 rounded-2xl border border-white/5">
-                    <p className="text-[10px] font-black text-text-secondary uppercase">Elenco</p>
-                    <p className="text-2xl font-black text-white">{stats.players} Atletas</p>
-                </div>
-                <div className="bg-highlight/10 p-4 rounded-2xl border border-highlight/20 flex items-center justify-between">
-                    <span className="text-xs font-black text-highlight uppercase">Status IA</span>
-                    <SparklesIcon className="text-highlight animate-pulse" />
+                <Card className="bg-gradient-to-br from-green-900/20 to-secondary border-l-4 border-l-green-500">
+                    <p className="text-[10px] font-black text-text-secondary uppercase">Ebitda Estimado</p>
+                    <p className="text-2xl font-black text-white">R$ {stats.revenue.toLocaleString()}</p>
+                </Card>
+                <Card className="bg-gradient-to-br from-blue-900/20 to-secondary border-l-4 border-l-blue-500">
+                    <p className="text-[10px] font-black text-text-secondary uppercase">Prontidão de Elenco</p>
+                    <p className="text-2xl font-black text-white">{stats.compliance}% <span className="text-xs font-normal opacity-50">Elegível</span></p>
+                </Card>
+                <Card className="bg-gradient-to-br from-purple-900/20 to-secondary border-l-4 border-l-purple-500">
+                    <p className="text-[10px] font-black text-text-secondary uppercase">Market Share Local</p>
+                    <p className="text-2xl font-black text-white">High</p>
+                </Card>
+                <div className="bg-highlight/10 p-4 rounded-2xl border border-highlight/20 flex flex-col justify-center items-center shadow-glow">
+                    <SparklesIcon className="text-highlight mb-1 animate-pulse" />
+                    <span className="text-[10px] font-black text-highlight uppercase">IA Governance On</span>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card title="Estratégia Global (OKRs)" className="lg:col-span-2">
-                    <div className="space-y-4">
-                        {objectives.map(obj => (
-                            <div key={obj.id} className="bg-black/20 p-4 rounded-xl border border-white/5 group hover:border-highlight/50 transition-all">
+                {/* Metas Hierárquicas (OKRs) */}
+                <Card title="FAHUB OKRs (Cascateamento)" className="lg:col-span-2">
+                    <div className="space-y-6">
+                        {okrs.map(okr => (
+                            <div key={okr.id} className="group relative">
                                 <div className="flex justify-between items-center mb-2">
-                                    <h4 className="text-white font-bold uppercase italic text-sm">{obj.title}</h4>
-                                    <span className="text-[10px] font-black text-text-secondary uppercase">{obj.status}</span>
+                                    <div>
+                                        <h4 className="text-white font-bold text-sm uppercase italic">{okr.title}</h4>
+                                        <p className="text-[10px] text-text-secondary uppercase tracking-widest">{okr.ownerRole}</p>
+                                    </div>
+                                    <span className={`text-xs font-black ${okr.status === 'AT_RISK' ? 'text-red-400' : 'text-highlight'}`}>
+                                        {okr.currentValue}{okr.unit} / {okr.targetValue}{okr.unit}
+                                    </span>
                                 </div>
-                                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-highlight shadow-glow" style={{width: `${obj.progress}%`}}></div>
+                                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/10">
+                                    <div 
+                                        className={`h-full transition-all duration-1000 ${okr.status === 'AT_RISK' ? 'bg-red-500' : 'bg-highlight shadow-glow'}`} 
+                                        style={{ width: `${(okr.currentValue / okr.targetValue) * 100}%` }}
+                                    ></div>
                                 </div>
+                                {okr.parentOkrId && (
+                                    <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-8 bg-white/10 rounded-full"></div>
+                                )}
                             </div>
                         ))}
-                        <button onClick={handleCreateObjective} className="w-full py-4 border-2 border-dashed border-white/10 rounded-xl text-xs font-black text-text-secondary uppercase hover:border-highlight hover:text-white transition-all">
-                            + Lançar Meta para o Time
-                        </button>
                     </div>
                 </Card>
 
-                <Card title="Atividade Recente">
-                    <div className="space-y-4">
-                        {auditLogs.map(log => (
-                            <div key={log.id} className="flex gap-3">
-                                <div className="w-1 h-8 bg-highlight/30 rounded-full"></div>
-                                <div>
-                                    <p className="text-[10px] text-white font-bold uppercase leading-none">{log.userName}</p>
-                                    <p className="text-[10px] text-text-secondary mt-1">{log.details}</p>
+                {/* Timeline de Sinais Críticos */}
+                <Card title="Pulso do Clube (Sinais)">
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                        {signals.length > 0 ? (
+                            signals.map(sig => (
+                                <div key={sig.id} className="p-3 bg-black/20 rounded-xl border border-white/5 flex gap-3 items-start animate-slide-in">
+                                    <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${sig.type === 'ALERT' ? 'bg-red-500 shadow-[0_0_8px_red]' : 'bg-highlight'}`}></div>
+                                    <div>
+                                        <p className="text-[10px] text-white font-bold leading-tight">
+                                            <span className="text-highlight uppercase">{sig.fromRole}</span>: {sig.message}
+                                        </p>
+                                        <p className="text-[8px] text-text-secondary mt-1">{new Date(sig.timestamp).toLocaleTimeString()}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        ) : (
+                            <div className="text-center py-10 opacity-30 italic text-xs uppercase">Aguardando sinais das diretorias...</div>
+                        )}
                     </div>
                 </Card>
             </div>
         </div>
     );
 
-    // VISÃO COACH: TÉCNICA E EXECUÇÃO
-    const renderCoach = () => (
+    const renderTechnical = () => (
         <div className="space-y-6 animate-fade-in pb-20">
-            <header className="bg-blue-600 p-6 rounded-2xl shadow-xl flex justify-between items-center">
-                <div>
-                    <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter">Painel do Treinador</h3>
-                    <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mt-1">Pronto para a Sideline</p>
+             <header className="bg-gradient-to-r from-blue-700 to-blue-900 p-6 rounded-3xl shadow-xl flex justify-between items-center relative overflow-hidden">
+                <div className="absolute right-0 top-0 p-4 opacity-10">
+                    <WhistleIcon className="w-32 h-32 text-white" />
                 </div>
-                <div className="bg-white/10 p-3 rounded-xl border border-white/20">
-                    <WhistleIcon className="text-white w-8 h-8" />
+                <div className="relative z-10">
+                    <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter">Campo de Batalha</h3>
+                    <p className="text-blue-200 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">Status: Modo Sideline Ativo</p>
+                </div>
+                <div className="bg-white/10 p-4 rounded-2xl border border-white/20 backdrop-blur-md">
+                    <span className="text-[10px] font-black text-white uppercase block mb-1">Próximo Kickoff</span>
+                    <span className="text-xl font-mono font-bold text-white">14:20:05</span>
                 </div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card title="Próximos Treinos">
-                     <div className="text-center py-10 opacity-50 italic">Nenhum treino hoje.</div>
-                </Card>
+                <button onClick={() => window.location.href='#/training-day'} className="glass-panel bg-secondary/40 border-2 border-blue-500/30 p-8 rounded-3xl flex flex-col items-center justify-center gap-4 hover:border-blue-400 transition-all group active:scale-95">
+                    <div className="p-5 bg-blue-500/20 rounded-2xl group-hover:scale-110 transition-transform">
+                        <WhistleIcon className="w-12 h-12 text-blue-400" />
+                    </div>
+                    <span className="text-xl font-black text-white uppercase italic">Iniciar Sessão de Treino</span>
+                    <span className="text-[10px] text-blue-300 font-bold uppercase tracking-widest">Acesso ao Script & RPE</span>
+                </button>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <button className="bg-secondary p-6 rounded-2xl border border-white/5 flex flex-col items-center gap-3 hover:border-highlight transition-all group">
-                         <WhistleIcon className="w-10 h-10 text-highlight group-hover:scale-110 transition-transform" />
-                         <span className="text-xs font-black text-white uppercase italic">Novo Treino</span>
-                    </button>
-                    <button className="bg-secondary p-6 rounded-2xl border border-white/5 flex flex-col items-center gap-3 hover:border-purple-500 transition-all group">
-                         <ActivityIcon className="w-10 h-10 text-purple-400 group-hover:scale-110 transition-transform" />
-                         <span className="text-xs font-black text-white uppercase italic">Playbook</span>
-                    </button>
+                <button onClick={() => window.location.href='#/tactical-lab'} className="glass-panel bg-secondary/40 border-2 border-purple-500/30 p-8 rounded-3xl flex flex-col items-center justify-center gap-4 hover:border-purple-400 transition-all group active:scale-95">
+                    <div className="p-5 bg-purple-500/20 rounded-2xl group-hover:scale-110 transition-transform">
+                        <TargetIcon className="w-12 h-12 text-purple-400" />
+                    </div>
+                    <span className="text-xl font-black text-white uppercase italic">Playbook & Simulação</span>
+                    <span className="text-[10px] text-purple-300 font-bold uppercase tracking-widest">Estudo de formação IA</span>
+                </button>
+            </div>
+
+            <Card title="Alertas do Diretor de Esportes">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-4 p-4 bg-red-900/10 border border-red-500/20 rounded-2xl">
+                        <AlertTriangleIcon className="w-6 h-6 text-red-500 animate-pulse" />
+                        <div>
+                            <p className="text-sm font-bold text-white uppercase">Atleta Suspenso (Financeiro)</p>
+                            <p className="text-xs text-text-secondary">#12 Lucas "Thor" não pode participar do treino coletivo hoje.</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4 p-4 bg-yellow-900/10 border border-yellow-500/20 rounded-2xl">
+                        <ClockIcon className="w-6 h-6 text-yellow-500" />
+                        <div>
+                            <p className="text-sm font-bold text-white uppercase">Atestado Vencido</p>
+                            <p className="text-xs text-text-secondary">5 atletas precisam de reavaliação médica para o próximo jogo.</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    );
-
-    // VISÃO ATLETA: CARREIRA E GAMIFICAÇÃO
-    const renderPlayer = () => (
-        <div className="space-y-6 animate-fade-in pb-20">
-            <div className="relative bg-gradient-to-br from-gray-900 to-black rounded-3xl p-6 border border-white/10 overflow-hidden shadow-2xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-highlight/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-                    <div className="w-24 h-24 rounded-full p-1 bg-gradient-to-br from-highlight to-cyan-400">
-                        <LazyImage src="" className="w-full h-full rounded-full object-cover border-4 border-black" fallbackText="Atleta" />
-                    </div>
-                    <div className="flex-1 text-center md:text-left">
-                        <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none">Minha Carreira</h1>
-                        <p className="text-highlight font-black text-[10px] uppercase tracking-widest mt-1">Nível 5 • QB • FAHUB STARS</p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card title="Minhas Skills" className="md:col-span-2">
-                    <div className="grid grid-cols-2 gap-4">
-                        {['Velocidade', 'Força', 'Tática', 'Frequência'].map(skill => (
-                            <div key={skill} className="space-y-1">
-                                <div className="flex justify-between text-[9px] font-black text-text-secondary uppercase">
-                                    <span>{skill}</span>
-                                    <span>88</span>
-                                </div>
-                                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-blue-500" style={{width: '88%'}}></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-                <Card title="Combine">
-                    <p className="text-sm font-bold text-white uppercase italic">40 Yard Dash</p>
-                    <p className="text-3xl font-black text-highlight">4.52s</p>
-                </Card>
-            </div>
+            </Card>
         </div>
     );
 
     return (
         <div className="h-full">
-            {currentRole === 'MASTER' && renderMaster()}
-            {currentRole === 'HEAD_COACH' && renderCoach()}
-            {currentRole === 'PLAYER' && renderPlayer()}
+            {isPresidentOrVP && renderWarRoom()}
+            {isTechnical && renderTechnical()}
+            {!isPresidentOrVP && !isTechnical && (
+                <div className="flex flex-col items-center justify-center h-[70vh] opacity-30 italic font-black uppercase">
+                    <ShieldCheckIcon className="w-20 h-20 mb-4" />
+                    Selecione sua Persona no Menu para Testar o Fluxo
+                </div>
+            )}
         </div>
     );
 };
