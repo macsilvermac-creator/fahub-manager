@@ -63,6 +63,8 @@ export interface Player {
     developmentPlans?: DevelopmentPlan[];
     nationality?: string;
     depthChartOrder?: number;
+    // Added combineStats property
+    combineStats?: CombineStats;
 }
 
 export interface User {
