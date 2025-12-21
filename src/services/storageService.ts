@@ -10,10 +10,10 @@ import {
     ProgramType, Championship 
 } from '../types';
 
-// Função utilitária de busca - Corrigida para sintaxe padrão JavaScript/TypeScript
+// Helper de persistência - Corrigido para sintaxe padrão JS (return/data)
 const get = <T>(key: string): T[] => {
     const data = localStorage.getItem(key);
-    // Vercel build fix: Changed 'retornar dados' to 'return data'
+    // Vercel fix: 'return' and 'data' are reserved keywords
     return data ? JSON.parse(data, (k, v) => {
         if (typeof v === 'string' && (k.toLowerCase().includes('date') || k === 'timestamp' || k === 'expiresat' || k === 'birthdate' || k === 'deadline')) {
             return new Date(v);
@@ -67,7 +67,7 @@ export const storageService = {
 
     setCurrentUser: (user: any) => set('gridiron_current_user', user),
 
-    // ATLETAS
+    // ATLETAS & ROSTER
     getPlayers: () => get<Player>('fahub_players'),
     savePlayers: (data: Player[]) => {
         set('fahub_players', data);
@@ -88,6 +88,29 @@ export const storageService = {
     getAthletes: () => get<Player>('fahub_players'),
     getAthleteStatsHistory: (id: string | number) => [],
 
+    // GOVERNANÇA (OKR & SINAIS)
+    getOKRs: () => get<OKR>('fahub_okrs'),
+    saveOKRs: (data: OKR[]) => {
+        set('fahub_okrs', data);
+        notifyInternal('okrs');
+    },
+    getObjectives: () => get<Objective>('fahub_objectives'),
+    saveObjectives: (data: Objective[]) => {
+        set('fahub_objectives', data);
+        notifyInternal('objectives');
+    },
+    sendSignal: (signal: Omit<ObjectiveSignal, 'id' | 'timestamp' | 'status'>) => {
+        const current = get<ObjectiveSignal>('fahub_signals');
+        const newSignal: ObjectiveSignal = {
+            ...signal,
+            id: `sig-${Date.now()}`,
+            timestamp: new Date(),
+            status: 'UNREAD'
+        };
+        set('fahub_signals', [newSignal, ...current].slice(0, 50));
+        notifyInternal('signals');
+    },
+
     // FINANCEIRO
     getTransactions: () => get<Transaction>('fahub_transactions'),
     saveTransactions: (data: Transaction[]) => {
@@ -103,35 +126,7 @@ export const storageService = {
     getBills: () => get<Bill>('fahub_bills'),
     saveBills: (data: Bill[]) => set('fahub_bills', data),
 
-    // CONFIGURAÇÕES
-    getTeamSettings: (): TeamSettings => {
-        const data = localStorage.getItem('fahub_settings');
-        return data ? JSON.parse(data) : { id: '1', teamName: 'Gladiators FA', primaryColor: '#059669', plan: 'ALL_PRO' };
-    },
-    saveTeamSettings: (data: TeamSettings) => {
-        localStorage.setItem('fahub_settings', JSON.stringify(data));
-        notifyInternal('settings');
-    },
-
-    // AUDITORIA
-    getAuditLogs: () => get<AuditLog>('fahub_audit'),
-    logAuditAction: (action: string, details: string) => {
-        const user = storageService.getCurrentUser();
-        const logs = get<AuditLog>('fahub_audit');
-        const newLog: AuditLog = {
-            id: `log-${Date.now()}`,
-            action,
-            details,
-            timestamp: new Date(),
-            userId: user.id,
-            userName: user.name,
-            role: user.role
-        };
-        set('fahub_audit', [newLog, ...logs].slice(0, 100));
-        notifyInternal('audit');
-    },
-
-    // OPERACIONAL
+    // OPERACIONAL & TREINO
     getGames: () => get<Game>('fahub_games'),
     saveGames: (data: Game[]) => {
         set('fahub_games', data);
@@ -161,22 +156,54 @@ export const storageService = {
         storageService.savePracticeSessions(updated as any);
     },
 
-    // GOVERNANÇA (Metas e OKRs)
-    getOKRs: () => get<OKR>('fahub_okrs'),
-    saveOKRs: (data: OKR[]) => {
-        set('fahub_okrs', data);
-        notifyInternal('okrs');
+    // RECRUTAMENTO & INCUBADORA
+    getCandidates: () => get<RecruitmentCandidate>('fahub_candidates'),
+    saveCandidates: (data: RecruitmentCandidate[]) => set('fahub_candidates', data),
+    approveCandidate: (id: string) => {
+        const candidates = storageService.getCandidates();
+        const candidate = candidates.find(c => c.id === id);
+        if (candidate) {
+            const players = storageService.getPlayers();
+            const newPlayer: Player = {
+                id: `p-${Date.now()}`,
+                name: candidate.name,
+                position: candidate.position,
+                jerseyNumber: 0,
+                height: candidate.height || '0.00m',
+                weight: candidate.weight,
+                class: 'Rookie',
+                avatarUrl: '',
+                level: 1,
+                xp: 0,
+                rating: candidate.rating || 70,
+                status: 'INCUBATING',
+                program: storageService.getActiveProgram(),
+                incubation: {
+                    cultureAccepted: false,
+                    fundamentalsProgress: 0,
+                    fieldEvaluationScore: 0,
+                    status: 'CULTURE'
+                },
+                attendanceRate: 100
+            };
+            storageService.savePlayers([...players, newPlayer]);
+            storageService.saveCandidates(candidates.filter(c => c.id !== id));
+        }
     },
-    getObjectives: () => get<Objective>('fahub_objectives'),
-    saveObjectives: (data: Objective[]) => {
-        set('fahub_objectives', data);
-        notifyInternal('objectives');
+
+    // CONFIGURAÇÕES
+    getTeamSettings: (): TeamSettings => {
+        const data = localStorage.getItem('fahub_settings');
+        return data ? JSON.parse(data) : { id: '1', teamName: 'Gladiators FA', primaryColor: '#059669', plan: 'ALL_PRO' };
     },
-    sendSignal: (signal: any) => {
-        const current = get<ObjectiveSignal>('fahub_signals');
-        set('fahub_signals', [{...signal, id: Date.now(), timestamp: new Date(), status: 'UNREAD'}, ...current]);
-        notifyInternal('signals');
+    saveTeamSettings: (data: TeamSettings) => {
+        localStorage.setItem('fahub_settings', JSON.stringify(data));
+        notifyInternal('settings');
     },
+
+    // ROADMAP & PROJETO
+    getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
+    getProjectCompletion: () => 75,
 
     // DIVERSOS
     getActiveProgram: () => (localStorage.getItem('active_program') || 'TACKLE') as ProgramType,
@@ -185,18 +212,6 @@ export const storageService = {
         notifyInternal('activeProgram');
     },
     getTeams: () => get<Team>('fahub_teams'),
-    getCandidates: () => get<RecruitmentCandidate>('fahub_candidates'),
-    saveCandidates: (data: RecruitmentCandidate[]) => set('fahub_candidates', data),
-    approveCandidate: (id: string) => {
-        const candidates = storageService.getCandidates();
-        const candidate = candidates.find(c => c.id === id);
-        if (candidate) {
-            const players = storageService.getPlayers();
-            const newPlayer: Player = { id: `p-${Date.now()}`, name: candidate.name, position: candidate.position, jerseyNumber: 0, height: candidate.height || '0.00m', weight: candidate.weight, class: 'Rookie', avatarUrl: '', level: 1, xp: 0, rating: candidate.rating || 70, status: 'INCUBATING', program: storageService.getActiveProgram(), incubation: { cultureAccepted: false, fundamentalsProgress: 0, fieldEvaluationScore: 0, status: 'CULTURE' }, attendanceRate: 100 };
-            storageService.savePlayers([...players, newPlayer]);
-            storageService.saveCandidates(candidates.filter(c => c.id !== id));
-        }
-    },
     getStaff: () => get<StaffMember>('fahub_staff'),
     getDocuments: () => get<TeamDocument>('fahub_documents'),
     saveDocuments: (data: TeamDocument[]) => {
@@ -215,6 +230,31 @@ export const storageService = {
     saveMarketplaceItems: (data: MarketplaceItem[]) => {
         set('fahub_marketplace', data);
         notifyInternal('marketplace');
+    },
+    getAuditLogs: () => get<AuditLog>('fahub_audit'),
+    logAuditAction: (action: string, details: string) => {
+        const user = storageService.getCurrentUser();
+        const logs = get<AuditLog>('fahub_audit');
+        const newLog: AuditLog = {
+            id: `log-${Date.now()}`,
+            action,
+            details,
+            timestamp: new Date(),
+            userId: user.id,
+            userName: user.name,
+            role: user.role
+        };
+        set('fahub_audit', [newLog, ...logs].slice(0, 100));
+        notifyInternal('audit');
+    },
+    getConfederationStats: () => ({ totalAthletes: 4850, totalTeams: 18, totalGamesThisYear: 142, activeAffiliates: 8 }),
+    getNationalTeamScouting: () => get<NationalTeamCandidate>('fahub_national_team_scouting'),
+    getAffiliatesStatus: () => get<Affiliate>('fahub_affiliates'),
+    getTransferRequests: () => get<TransferRequest>('fahub_transfers'),
+    processTransfer: (id: string, decision: string, user: string) => {
+        const current = get<TransferRequest>('fahub_transfers');
+        const updated = current.map(t => t.id === id ? { ...t, status: (decision === 'APPROVE' ? 'APPROVED' : 'REJECTED') as any } : t);
+        set('fahub_transfers', updated);
     },
     getAnnouncements: () => get<Announcement>('fahub_announcements'),
     saveAnnouncements: (data: Announcement[]) => {
@@ -262,17 +302,6 @@ export const storageService = {
     saveYouthClasses: (data: YouthClass[]) => {
         set('fahub_youth_classes', data);
         notifyInternal('youth_classes');
-    },
-    getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
-    getProjectCompletion: () => 75,
-    getConfederationStats: () => ({ totalAthletes: 4850, totalTeams: 18, totalGamesThisYear: 142, activeAffiliates: 8 }),
-    getNationalTeamScouting: () => get<NationalTeamCandidate>('fahub_national_team_scouting'),
-    getAffiliatesStatus: () => get<Affiliate>('fahub_affiliates'),
-    getTransferRequests: () => get<TransferRequest>('fahub_transfers'),
-    processTransfer: (id: string, decision: string, user: string) => {
-        const current = get<TransferRequest>('fahub_transfers');
-        const updated = current.map(t => t.id === id ? { ...t, status: (decision === 'APPROVE' ? 'APPROVED' : 'REJECTED') as any } : t);
-        set('fahub_transfers', updated);
     },
     getPublicGameData: (gameId: string) => storageService.getGames().find(g => String(g.id) === gameId),
     getPublicLeagueStats: () => ({ name: "Liga Brasileira", season: "2025", leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
