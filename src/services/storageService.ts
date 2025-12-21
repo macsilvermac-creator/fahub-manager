@@ -12,6 +12,7 @@ import {
 
 const get = <T>(key: string): T[] => {
     const data = localStorage.getItem(key);
+    // CRITICAL: Use standard JavaScript 'return' and 'data'
     return data ? JSON.parse(data, (k, v) => {
         if (typeof v === 'string' && (k.toLowerCase().includes('date') || k === 'timestamp' || k === 'expiresat' || k === 'birthdate' || k === 'deadline')) {
             return new Date(v);
@@ -37,7 +38,7 @@ export const storageService = {
         if (!localStorage.getItem('fahub_players')) {
             const mockPlayers: Player[] = [
                 { id: 'p1', name: 'Lucas "Thor"', position: 'QB', jerseyNumber: 12, height: '1.85m', weight: 92, class: 'Sênior', avatarUrl: '', level: 5, xp: 850, rating: 88, status: 'ACTIVE', stats: { ovr: 88, speed: 82, strength: 75, agility: 78, tacticalIQ: 95 }, financialStatus: 'OK', documentStatus: 'OK' },
-                { id: 'p2', name: Gabriel Silva, position: 'LB', jerseyNumber: 55, height: '1.82m', weight: 105, class: 'Veterano', avatarUrl: '', level: 7, xp: 2100, rating: 91, status: 'ACTIVE', stats: { ovr: 91, speed: 78, strength: 95, agility: 72, tacticalIQ: 88 }, financialStatus: 'OK', documentStatus: 'OK' }
+                { id: 'p2', name: 'Gabriel Silva', position: 'LB', jerseyNumber: 55, height: '1.82m', weight: 105, class: 'Veterano', avatarUrl: '', level: 7, xp: 2100, rating: 91, status: 'ACTIVE', stats: { ovr: 91, speed: 78, strength: 95, agility: 72, tacticalIQ: 88 }, financialStatus: 'OK', documentStatus: 'OK' }
             ];
             set('fahub_players', mockPlayers);
         }
@@ -86,7 +87,7 @@ export const storageService = {
     getAthletes: () => get<Player>('fahub_players'),
     getAthleteStatsHistory: (id: string | number) => [],
 
-    // GOVERNANCE & OKRS & OBJECTIVES
+    // GOVERNANCE & OKRS
     getOKRs: () => get<OKR>('fahub_okrs'),
     saveOKRs: (data: OKR[]) => {
         set('fahub_okrs', data);
@@ -133,9 +134,7 @@ export const storageService = {
     saveBudgets: (data: Budget[]) => set('fahub_budgets', data),
     getBills: () => get<Bill>('fahub_bills'),
     saveBills: (data: Bill[]) => set('fahub_bills', data),
-    generateMonthlyInvoices: () => {
-        console.log("Generating monthly invoices...");
-    },
+    generateMonthlyInvoices: () => {},
 
     // SETTINGS
     getTeamSettings: (): TeamSettings => {
@@ -147,7 +146,6 @@ export const storageService = {
         notifyInternal('settings');
     },
     uploadFile: async (file: File, path: string): Promise<string> => {
-        console.log(`Uploading file to ${path}`);
         return URL.createObjectURL(file);
     },
 
@@ -292,9 +290,7 @@ export const storageService = {
         set('fahub_event_sales', data);
         notifyInternal('event_sales');
     },
-    seedDatabaseToCloud: async () => {
-        console.log("Seeding database...");
-    },
+    seedDatabaseToCloud: async () => {},
     getInventory: () => get<EquipmentItem>('fahub_inventory'),
     saveInventory: (data: EquipmentItem[]) => {
         set('fahub_inventory', data);
@@ -317,9 +313,7 @@ export const storageService = {
             leaders: { passing: [], rushing: [], defense: [] }
         };
     },
-    createChampionship: (name: string, year: number, division: string) => {
-        console.log(`Championship ${name} created for ${year} division ${division}`);
-    },
+    createChampionship: (name: string, year: number, division: string) => {},
     getEntitlements: () => get<Entitlement>('fahub_entitlements'),
     purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
         const current = storageService.getEntitlements();
@@ -327,7 +321,7 @@ export const storageService = {
             id: `ent-${Date.now()}`,
             userId,
             productId: product.id,
-            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) // 30 days
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
         };
         set('fahub_entitlements', [...current, newEnt]);
     }

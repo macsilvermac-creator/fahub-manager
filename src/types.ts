@@ -1,339 +1,673 @@
 
-import { 
-    Player, Game, PracticeSession, TeamSettings, AuditLog, RecruitmentCandidate, 
-    Team, Transaction, Invoice, Subscription, Budget, Bill, Announcement, 
-    ChatMessage, TeamDocument, VideoClip, TacticalPlay, MarketplaceItem, 
-    KanbanTask, SocialPost, SponsorDeal, EventSale, SocialFeedPost, 
-    EquipmentItem, StaffMember, YouthClass, YouthStudent, ConfederationStats, 
-    NationalTeamCandidate, Affiliate, TransferRequest, League, Objective, 
-    Course, DigitalProduct, Entitlement, RoadmapItem, OKR, ObjectiveSignal, 
-    ProgramType 
-} from '../types';
+export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER' | 'CANDIDATE' | 'PLATFORM_OWNER' | 'BROADCASTER' | 'SYSTEM' | 'ADMIN' | 'FAN' | 'STUDENT' | 'PRESIDENT' | 'VICE_PRESIDENT' | 'FINANCIAL_DIRECTOR' | 'COMMERCIAL_DIRECTOR' | 'MARKETING_DIRECTOR' | 'POSITION_COACH' | 'PHYSICAL_TRAINER' | 'STAFF';
 
-const get = <T>(key: string): T[] => {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data, (k, v) => {
-        if (typeof v === 'string' && (k.toLowerCase().includes('date') || k === 'timestamp' || k === 'expiresat' || k === 'birthdate' || k === 'deadline')) {
-            return new Date(v);
-        }
-        return v;
-    }) : [];
-};
+export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
+export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH' | 'YOUTH';
 
-const set = <T>(key: string, data: T) => {
-    localStorage.setItem(key, JSON.stringify(data));
-    window.dispatchEvent(new Event('storage_update'));
-};
+export interface CombineStats {
+    date: Date;
+    fortyYards?: number;
+    benchPress?: number;
+    verticalJump?: number;
+    broadJump?: number;
+    shuttle?: number;
+    lDrill?: number;
+}
 
-const subscribers: Record<string, (() => void)[]> = {};
+export interface User {
+    id: string;
+    email: string;
+    name: string;
+    role: UserRole;
+    cpf: string;
+    avatarUrl: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    program?: ProgramType;
+    isProfileComplete: boolean;
+}
 
-export const storageService = {
-    initializeRAM: () => {
-        if (!localStorage.getItem('fahub_players')) {
-            const mockPlayers: Player[] = [
-                { id: 'p1', name: 'Lucas "Thor"', position: 'QB', jerseyNumber: 12, height: '1.85m', weight: 92, class: 'Sênior', avatarUrl: '', level: 5, xp: 850, rating: 88, status: 'ACTIVE', stats: { ovr: 88, speed: 82, strength: 75, agility: 78, tacticalIQ: 95 }, financialStatus: 'OK', documentStatus: 'OK' },
-                { id: 'p2', name: 'Gabriel Silva', position: 'LB', jerseyNumber: 55, height: '1.82m', weight: 105, class: 'Veterano', avatarUrl: '', level: 7, xp: 2100, rating: 91, status: 'ACTIVE', stats: { ovr: 91, speed: 78, strength: 95, agility: 72, tacticalIQ: 88 }, financialStatus: 'OK', documentStatus: 'OK' }
-            ];
-            set('fahub_players', mockPlayers);
-        }
-        if (!localStorage.getItem('fahub_okrs')) {
-            const initialOkrs: OKR[] = [
-                { id: '1', title: 'Sustentabilidade Financeira', description: 'Meta macro da presidência', ownerRole: 'PRESIDENT', targetValue: 100, currentValue: 45, unit: '%', category: 'FINANCE', status: 'ON_TRACK', subordinatesCheck: true },
-                { id: '2', title: 'Reduzir Inadimplência', description: 'Meta tática financeira', ownerRole: 'FINANCIAL_DIRECTOR', targetValue: 5, currentValue: 12, unit: '%', category: 'FINANCE', status: 'AT_RISK', parentOkrId: '1', subordinatesCheck: false }
-            ];
-            set('fahub_okrs', initialOkrs);
-        }
-    },
+export interface DevelopmentPlan {
+    id: string;
+    playerId: string | number;
+    title: string;
+    generatedContent: string;
+    createdAt: Date;
+    deadline?: Date;
+    status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+}
 
-    subscribe: (key: string, callback: () => void) => {
-        if (!subscribers[key]) subscribers[key] = [];
-        subscribers[key].push(callback);
-        return () => { subscribers[key] = subscribers[key].filter(cb => cb !== callback); };
-    },
+export interface WellnessEntry {
+    date: string;
+    sleepQuality: number;
+    fatigue: number;
+    soreness: number;
+    stress: number;
+    rpe: number;
+}
 
-    notify: (key: string) => {
-        if (subscribers[key]) subscribers[key].forEach(cb => cb());
-        window.dispatchEvent(new CustomEvent('fahub_data_change', { detail: { key } }));
-    },
+export interface RecruitmentCandidate {
+    id: string;
+    name: string;
+    position: string;
+    weight: number;
+    height?: string;
+    age?: number;
+    experience?: string;
+    bibNumber?: number;
+    status: 'NEW' | 'TESTING' | 'EVALUATED' | 'SELECTED';
+    combineStats?: CombineStats;
+    aiAnalysis?: string;
+    rating?: number;
+    behaviorTags?: string[];
+    notes?: string;
+}
 
-    getCurrentUser: () => {
-        const data = localStorage.getItem('gridiron_current_user');
-        return data ? JSON.parse(data) : { id: 'dev', name: 'Master Admin', role: 'MASTER' };
-    },
+export type IncubationStatus = 'CULTURE' | 'FUNDAMENTALS' | 'EVALUATION' | 'GRADUATED';
 
-    setCurrentUser: (user: any) => set('gridiron_current_user', user),
+export interface Player {
+    id: string | number;
+    name: string;
+    position: string;
+    jerseyNumber: number;
+    height: string;
+    weight: number;
+    class: string;
+    avatarUrl: string;
+    level: number;
+    xp: number;
+    rating: number;
+    status: 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'IR' | 'INACTIVE' | 'INCUBATING';
+    wellnessHistory?: WellnessEntry[];
+    combineStats?: CombineStats;
+    program?: ProgramType;
+    stats?: { ovr: number; speed: number; strength: number; agility: number; tacticalIQ: number };
+    badges?: string[];
+    rosterCategory?: RosterCategory;
+    rosterHistory?: any[];
+    depthChartOrder?: number;
+    developmentPlans?: DevelopmentPlan[];
+    medicalExamExpiry?: Date;
+    cpf?: string;
+    attendanceRate?: number;
+    category?: string;
+    birthDate?: Date;
+    nationality?: string;
+    commitmentLevel?: number;
+    financialStatus?: 'OK' | 'PENDING' | 'DEBT';
+    documentStatus?: 'OK' | 'PENDING' | 'EXPIRED';
+    incubation?: {
+        cultureAccepted: boolean;
+        fundamentalsProgress: number;
+        fieldEvaluationScore: number;
+        status: IncubationStatus;
+    };
+    userId?: string;
+}
 
-    // PLAYERS
-    getPlayers: () => get<Player>('fahub_players'),
-    savePlayers: (data: Player[]) => {
-        set('fahub_players', data);
-        storageService.notify('players');
-    },
-    getAthleteByUserId: (id: string) => storageService.getPlayers().find(p => String(p.id) === id || (p as any).userId === id),
-    saveAthlete: (athlete: Player) => {
-        const current = storageService.getPlayers();
-        const exists = current.findIndex(a => String(a.id) === String(athlete.id));
-        if (exists >= 0) current[exists] = athlete;
-        else current.push(athlete);
-        storageService.savePlayers(current);
-    },
-    registerAthlete: (player: Player) => {
-        const current = storageService.getPlayers();
-        storageService.savePlayers([...current, player]);
-    },
-    getAthletes: () => get<Player>('fahub_players'),
-    getAthleteStatsHistory: (id: string | number) => [],
+export interface PracticeScriptItem {
+    id: string;
+    startTime: string;
+    durationMinutes: number;
+    activityName: string;
+    type: 'WARMUP' | 'INDY' | 'GROUP' | 'TEAM' | 'CONDITIONING' | 'TECHNICAL' | 'TACTICAL' | 'LIVE' | 'PHYSICAL';
+    description?: string;
+}
 
-    // GOVERNANCE & OKRS & OBJECTIVES
-    getOKRs: () => get<OKR>('fahub_okrs'),
-    saveOKRs: (data: OKR[]) => {
-        set('fahub_okrs', data);
-        storageService.notify('okrs');
-    },
-    // Added missing getObjectives and saveObjectives methods to fix Dashboard.tsx errors
-    getObjectives: () => get<Objective>('fahub_objectives'),
-    saveObjectives: (data: Objective[]) => {
-        set('fahub_objectives', data);
-        storageService.notify('objectives');
-    },
-    getSignals: () => get<ObjectiveSignal>('fahub_signals'),
-    sendSignal: (signal: Omit<ObjectiveSignal, 'id' | 'timestamp' | 'status'>) => {
-        const current = get<ObjectiveSignal>('fahub_signals');
-        const newSignal: ObjectiveSignal = {
-            ...signal,
-            id: `sig-${Date.now()}`,
-            timestamp: new Date(),
-            status: 'UNREAD'
-        };
-        set('fahub_signals', [newSignal, ...current].slice(0, 50));
-        storageService.notify('signals');
-    },
-    validateAthleteEligibility: (athleteId: string | number): { eligible: boolean, reasons: string[] } => {
-        const athletes = get<Player>('fahub_players');
-        const athlete = athletes.find(a => String(a.id) === String(athleteId));
-        if (!athlete) return { eligible: false, reasons: ['Atleta não encontrado'] };
-        const reasons: string[] = [];
-        if (athlete.financialStatus !== 'OK' && athlete.financialStatus) reasons.push('Pendência Financeira');
-        if (athlete.documentStatus !== 'OK' && athlete.documentStatus) reasons.push('Documentação Vencida/Ausente (BID)');
-        return { eligible: reasons.length === 0, reasons };
-    },
+export interface PracticeSession {
+    id: string | number;
+    title: string;
+    focus: string;
+    date: Date;
+    attendees: string[];
+    script?: PracticeScriptItem[];
+    category?: 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
+    deadlineDate?: Date;
+    checkedInAttendees?: string[];
+    performances?: any[];
+    program?: ProgramType;
+}
 
-    // FINANCE
-    getTransactions: () => get<Transaction>('fahub_transactions'),
-    saveTransactions: (data: Transaction[]) => {
-        set('fahub_transactions', data);
-        storageService.notify('transactions');
-    },
-    getInvoices: () => get<Invoice>('fahub_invoices'),
-    saveInvoices: (data: Invoice[]) => set('fahub_invoices', data),
-    getSubscriptions: () => get<Subscription>('fahub_subscriptions'),
-    saveSubscriptions: (data: Subscription[]) => set('fahub_subscriptions', data),
-    getBudgets: () => get<Budget>('fahub_budgets'),
-    saveBudgets: (data: Budget[]) => set('fahub_budgets', data),
-    getBills: () => get<Bill>('fahub_bills'),
-    saveBills: (data: Bill[]) => set('fahub_bills', data),
-    // Added missing generateMonthlyInvoices method to fix Finance.tsx error
-    generateMonthlyInvoices: () => {
-        console.log("Generating monthly invoices...");
-    },
+export interface Game {
+    id: string | number;
+    opponent: string;
+    date: Date;
+    location: 'Home' | 'Away';
+    status: 'SCHEDULED' | 'IN_PROGRESS' | 'FINAL' | 'HALFTIME';
+    score?: string;
+    currentQuarter?: number;
+    clock?: string;
+    rotation?: any[];
+    result?: 'W' | 'L' | 'T';
+    opponentLogoUrl?: string;
+    timeline?: any[];
+    audioNotes?: any[];
+    scoutingReport?: GameScoutingReport;
+    playerGrades?: PlayerPerformance[];
+    callSheet?: CallSheetSection[];
+    homeTeamName?: string;
+    officialReport?: any;
+}
 
-    // SETTINGS
-    getTeamSettings: (): TeamSettings => {
-        const data = localStorage.getItem('fahub_settings');
-        return data ? JSON.parse(data) : { id: '1', teamName: 'Gladiators FA', primaryColor: '#059669', plan: 'ALL_PRO' };
-    },
-    saveTeamSettings: (data: TeamSettings) => {
-        localStorage.setItem('fahub_settings', JSON.stringify(data));
-        storageService.notify('settings');
-    },
-    // Added missing uploadFile method to fix TeamSettings.tsx error
-    uploadFile: async (file: File, path: string): Promise<string> => {
-        console.log(`Uploading file to ${path}`);
-        return URL.createObjectURL(file);
-    },
+export interface Team {
+    id: string;
+    name: string;
+    logoUrl: string;
+    primaryColor: string;
+    secondaryColor: string;
+    rosterIds: string[];
+    coachIds: string[];
+}
 
-    // AUDIT
-    getAuditLogs: () => get<AuditLog>('fahub_audit'),
-    logAuditAction: (action: string, details: string) => {
-        const user = storageService.getCurrentUser();
-        const logs = get<AuditLog>('fahub_audit');
-        const newLog: AuditLog = {
-            id: `log-${Date.now()}`,
-            action,
-            details,
-            timestamp: new Date(),
-            userId: user.id,
-            userName: user.name,
-            role: user.role
-        };
-        set('fahub_audit', [newLog, ...logs].slice(0, 100));
-        storageService.notify('audit');
-    },
-    // Added logAction method for compatibility with AdminPanel.tsx error
-    logAction: (action: string, details: string) => {
-        storageService.logAuditAction(action, details);
-    },
+export interface TeamSettings {
+    id: string;
+    teamName: string;
+    logoUrl: string;
+    primaryColor: string;
+    sportType?: 'TACKLE' | 'FLAG' | 'BOTH';
+    address?: string;
+    website?: string;
+    contactEmail?: string;
+    plan?: 'ROOKIE' | 'STARTER' | 'ALL_PRO';
+}
 
-    // GAMES & PRACTICE
-    getGames: () => get<Game>('fahub_games'),
-    saveGames: (data: Game[]) => {
-        set('fahub_games', data);
-        storageService.notify('games');
-    },
-    updateLiveGame: (id: string | number, updates: Partial<Game>) => {
-        const games = storageService.getGames().map(g => String(g.id) === String(id) ? { ...g, ...updates } : g);
-        storageService.saveGames(games);
-    },
-    getPracticeSessions: () => get<PracticeSession>('fahub_practice'),
-    savePracticeSessions: (data: PracticeSession[]) => {
-        set('fahub_practice', data);
-        storageService.notify('practice');
-    },
-    // Added missing togglePracticeAttendance method to fix Schedule.tsx error
-    togglePracticeAttendance: (practiceId: string, playerId: string) => {
-        const sessions = storageService.getPracticeSessions();
-        const updated = sessions.map(s => {
-            if (String(s.id) === practiceId) {
-                const attendees = s.attendees || [];
-                if (attendees.includes(playerId)) {
-                    return { ...s, attendees: attendees.filter(a => a !== playerId) };
-                }
-                return { ...s, attendees: [...attendees, playerId] };
-            }
-            return s;
-        });
-        storageService.savePracticeSessions(updated);
-    },
+export interface AuditLog {
+    id: string;
+    action: string;
+    details: string;
+    timestamp: Date;
+    userId: string;
+    userName: string;
+    role: string;
+    ipAddress?: string;
+}
 
-    // MISC
-    getActiveProgram: () => (localStorage.getItem('active_program') || 'TACKLE') as ProgramType,
-    setActiveProgram: (p: ProgramType) => {
-        localStorage.setItem('active_program', p);
-        storageService.notify('activeProgram');
-    },
-    getTeams: () => get<Team>('fahub_teams'),
-    // Added missing saveTeam method to fix TeamManagement.tsx error
-    saveTeam: (team: Team) => {
-        const teams = storageService.getTeams();
-        const idx = teams.findIndex(t => t.id === team.id);
-        if (idx >= 0) teams[idx] = team;
-        else teams.push(team);
-        set('fahub_teams', teams);
-    },
-    getCandidates: () => get<RecruitmentCandidate>('fahub_candidates'),
-    saveCandidates: (data: RecruitmentCandidate[]) => set('fahub_candidates', data),
-    // Added missing approveCandidate method to fix Recruitment.tsx error
-    approveCandidate: (id: string) => {
-        const candidates = storageService.getCandidates();
-        const updated = candidates.map(c => c.id === id ? { ...c, status: 'SELECTED' as const } : c);
-        storageService.saveCandidates(updated);
-    },
-    getStaff: () => get<StaffMember>('fahub_staff'),
-    // Added missing saveCoachProfile method to fix Onboarding.tsx error
-    saveCoachProfile: (userId: string, profile: any) => {
-        localStorage.setItem(`coach_profile_${userId}`, JSON.stringify(profile));
-    },
-    getDocuments: () => get<TeamDocument>('fahub_documents'),
-    // Added missing saveDocuments method to fix Resources.tsx errors
-    saveDocuments: (data: TeamDocument[]) => {
-        set('fahub_documents', data);
-        storageService.notify('documents');
-    },
-    getTasks: () => get<KanbanTask>('fahub_tasks'),
-    saveTasks: (data: KanbanTask[]) => set('fahub_tasks', data),
-    getSocialFeed: () => get<SocialFeedPost>('fahub_social_feed'),
-    saveSocialFeedPost: (post: SocialFeedPost) => set('fahub_social_feed', [post, ...get<SocialFeedPost>('fahub_social_feed')]),
-    toggleLikePost: (id: string) => {
-        const feed = get<SocialFeedPost>('fahub_social_feed');
-        set('fahub_social_feed', feed.map(p => p.id === id ? { ...p, likes: p.likes + 1 } : p));
-    },
-    getMarketplaceItems: () => get<MarketplaceItem>('fahub_marketplace'),
-    // Added missing saveMarketplaceItems method to fix Marketplace.tsx errors
-    saveMarketplaceItems: (data: MarketplaceItem[]) => {
-        set('fahub_marketplace', data);
-        storageService.notify('marketplace');
-    },
-    getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
-    getProjectCompletion: () => 75,
-    getConfederationStats: () => ({ totalAthletes: 4850, totalTeams: 18, totalGamesThisYear: 142, activeAffiliates: 8 }),
-    getNationalTeamScouting: () => get<NationalTeamCandidate>('fahub_national_team_scouting'),
-    getAffiliatesStatus: () => get<Affiliate>('fahub_affiliates'),
-    getTransferRequests: () => get<TransferRequest>('fahub_transfers'),
-    processTransfer: (id: string, decision: string, user: string) => {
-        const current = get<TransferRequest>('fahub_transfers');
-        const updated = current.map(t => t.id === id ? { ...t, status: (decision === 'APPROVE' ? 'APPROVED' : 'REJECTED') as any } : t);
-        set('fahub_transfers', updated);
-    },
-    // Added missing methods for multiple other components
-    getAnnouncements: () => get<Announcement>('fahub_announcements'),
-    saveAnnouncements: (data: Announcement[]) => {
-        set('fahub_announcements', data);
-        storageService.notify('announcements');
-    },
-    getChatMessages: () => get<ChatMessage>('fahub_chat'),
-    saveChatMessages: (data: ChatMessage[]) => {
-        set('fahub_chat', data);
-        storageService.notify('chat');
-    },
-    getTacticalPlays: () => get<TacticalPlay>('fahub_tactical_plays'),
-    saveTacticalPlays: (data: TacticalPlay[]) => {
-        set('fahub_tactical_plays', data);
-        storageService.notify('tactical');
-    },
-    getClips: () => get<VideoClip>('fahub_clips'),
-    getCourses: () => get<Course>('fahub_courses'),
-    getLeague: () => {
-        const data = localStorage.getItem('fahub_league');
-        return data ? JSON.parse(data) : { id: '1', name: 'Liga Brasileira', season: '2025', teams: [] };
-    },
-    getSocialPosts: () => get<SocialPost>('fahub_social_posts'),
-    saveSocialPosts: (data: SocialPost[]) => {
-        set('fahub_social_posts', data);
-        storageService.notify('social_posts');
-    },
-    getSponsors: () => get<SponsorDeal>('fahub_sponsors'),
-    saveSponsors: (data: SponsorDeal[]) => {
-        set('fahub_sponsors', data);
-        storageService.notify('sponsors');
-    },
-    getEventSales: () => get<EventSale>('fahub_event_sales'),
-    saveEventSales: (data: EventSale[]) => {
-        set('fahub_event_sales', data);
-        storageService.notify('event_sales');
-    },
-    seedDatabaseToCloud: async () => {
-        console.log("Seeding database...");
-    },
-    getInventory: () => get<EquipmentItem>('fahub_inventory'),
-    getYouthClasses: () => get<YouthClass>('fahub_youth_classes'),
-    getYouthStudents: () => get<YouthStudent>('fahub_youth_students'),
-    saveYouthClasses: (data: YouthClass[]) => {
-        set('fahub_youth_classes', data);
-        storageService.notify('youth_classes');
-    },
-    getPublicGameData: (gameId: string) => {
-        return storageService.getGames().find(g => String(g.id) === gameId);
-    },
-    getPublicLeagueStats: () => {
-        return {
-            name: "Liga Brasileira",
-            season: "2025",
-            leagueTable: [],
-            leaders: { passing: [], rushing: [], defense: [] }
-        };
-    },
-    createChampionship: (name: string, year: number, division: string) => {
-        console.log(`Championship ${name} created for ${year} division ${division}`);
-    },
-    getEntitlements: () => get<Entitlement>('fahub_entitlements'),
-    purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
-        const current = storageService.getEntitlements();
-        const newEnt: Entitlement = {
-            id: `ent-${Date.now()}`,
-            userId,
-            productId: product.id,
-            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) // 30 days
-        };
-        set('fahub_entitlements', [...current, newEnt]);
-    }
-};
+export interface Transaction {
+    id: string;
+    title: string;
+    amount: number;
+    type: 'INCOME' | 'EXPENSE';
+    category: string;
+    date: Date;
+    status: 'PAID' | 'PENDING';
+    aiGenerated?: boolean;
+    verifiedBy?: string;
+    description?: string;
+    approvedBy?: string;
+}
+
+export interface Subscription {
+    id: string;
+    title: string;
+    amount: number;
+    active: boolean;
+    assignedTo: (string | number)[];
+    frequency?: 'MONTHLY' | 'YEARLY';
+    nextBillingDate?: Date;
+}
+
+export interface Budget {
+    category: string;
+    spent: number;
+    limit: number;
+}
+
+export interface Bill {
+    id: string;
+    status: 'PENDING' | 'PAID';
+    amount: number;
+}
+
+export type TransactionCategory = 'TRANSPORT' | 'EQUIPMENT' | 'REFEREE' | 'FIELD_RENTAL' | 'EVENT' | 'SPONSORSHIP' | 'TUITION' | 'STORE' | 'OTHER';
+
+export interface Invoice {
+    id: string;
+    status: 'PENDING' | 'PAID' | 'OVERDUE';
+    amount: number;
+    dueDate: Date;
+    playerName: string;
+    title: string;
+    category?: TransactionCategory;
+    playerId?: string | number;
+    inventoryItemId?: string;
+}
+
+export interface Announcement {
+    id: string;
+    title: string;
+    content: string;
+    priority: 'NORMAL' | 'HIGH' | 'URGENT';
+    date: Date;
+    authorRole: UserRole;
+    readBy?: string[];
+}
+
+export interface ChatMessage {
+    id: string;
+    senderName: string;
+    senderRole: string;
+    content: string;
+    timestamp: Date;
+    channel?: 'GENERAL' | 'OFFENSE' | 'DEFENSE';
+}
+
+export interface TeamDocument {
+    id: string;
+    title: string;
+    type: 'PDF' | 'DOC' | 'IMG';
+    category: 'CONTRACTS' | 'PLAYBOOK' | 'MEDICAL' | 'ADMIN' | 'SCOUT';
+    uploadDate: Date;
+    size: string;
+    url: string;
+}
+
+export interface GameScoutingReport {
+    offenseAnalysis: string;
+    defenseAnalysis: string;
+    keyPlayersToWatch: string;
+    lastUpdate: Date;
+    summary?: string;
+    keysToVictory?: string[];
+}
+
+export interface PlayerPerformance {
+    playerId: string | number;
+    grade: number;
+    notes: string;
+}
+
+export interface CallSheetSection {
+    title: string;
+    plays: string[];
+}
+
+export interface TacticalPlay {
+    id: string;
+    name: string;
+    concept: string;
+    elements: PlayElement[];
+    frames?: TacticalFrame[];
+    routes?: any[];
+    aiAnalysis?: string;
+    createdAt?: Date;
+    program?: string;
+}
+
+export interface VideoClip {
+    id: string;
+    title: string;
+    videoUrl: string;
+    startTime: number;
+    tags: VideoTag;
+}
+
+export interface VideoTag {
+    down: number;
+    distance: number;
+    offensivePlayCall: string;
+    result: string;
+    yardLine?: number;
+    hash?: string;
+    offensiveFormation?: string;
+    defensiveFormation?: string;
+    defensivePlayCall?: string;
+    personnel?: string;
+    gain?: number;
+    involvedPlayerIds?: string[];
+    startX?: number;
+    startY?: number;
+    [key: string]: any;
+}
+
+export interface PlayElement {
+    id: string;
+    type: 'OFFENSE' | 'DEFENSE';
+    label: string;
+    x: number;
+    y: number;
+}
+
+export interface TacticalFrame {
+    id: number;
+    elements: PlayElement[];
+}
+
+export interface InstallMatrixItem {
+    id: string;
+    day: string;
+    category: string;
+    concept: string;
+}
+
+export interface MarketplaceItem {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    category: string;
+    sellerType: 'TEAM_STORE' | 'PLAYER';
+    sellerName: string;
+    imageUrl: string;
+    isSold: boolean;
+    qrCodeDelivery?: string;
+}
+
+export interface KanbanTask {
+    id: string;
+    title: string;
+    description?: string;
+    status: 'TODO' | 'DOING' | 'DONE';
+    assignedToDepartment: 'MARKETING' | 'COMMERCIAL' | 'TECHNICAL' | 'FINANCE' | 'GENERAL';
+    priority: 'HIGH' | 'LOW' | 'MEDIUM';
+    dueDate: Date;
+}
+
+export interface SocialPost {
+    id: string;
+    platform: 'INSTAGRAM' | 'TIKTOK' | 'WEBSITE' | 'WHATSAPP';
+    topic: string;
+    content: string;
+    status: 'SCHEDULED' | 'POSTED';
+    scheduledDate: Date;
+}
+
+export interface SponsorDeal {
+    id: string;
+    companyName: string;
+    contactPerson: string;
+    status: 'PROSPECT' | 'NEGOTIATION' | 'CLOSED_WON' | 'REJECTED';
+    value: number;
+    lastInteraction: Date;
+}
+
+export interface EventSale {
+    id: string;
+    type: 'TICKET' | 'BAR';
+    itemName: string;
+    quantity: number;
+    totalAmount: number;
+    timestamp: Date;
+}
+
+export interface PaymentTransaction {
+    id: string;
+    amount: number;
+    method: 'CREDIT_CARD' | 'PIX';
+    status: 'APPROVED' | 'PENDING';
+    createdAt: Date;
+    platformFee: number;
+    netAmount: number;
+}
+
+export type PaymentMethod = 'CREDIT_CARD' | 'PIX';
+
+export interface SocialFeedPost {
+    id: string;
+    authorName: string;
+    authorAvatar: string;
+    authorRole: string;
+    isOfficialTeamPost: boolean;
+    isPinned: boolean;
+    content: string;
+    likes: number;
+    comments: any[];
+    timestamp: Date;
+}
+
+export interface LegalDocument {
+    id: string;
+    title: string;
+    content: string;
+    version: string;
+}
+
+export interface EquipmentItem {
+    id: string;
+    name: string;
+    brand?: string;
+    size?: string;
+    category: 'HELMET' | 'PADS' | 'JERSEY' | 'BALL' | 'DRINK' | 'FOOD' | 'MERCH' | 'CLEATS' | 'ACCESSORIES';
+    quantity: number;
+    condition: 'NEW' | 'USED' | 'DAMAGED';
+    forSale: boolean;
+    salePrice?: number;
+    assignedToPlayerId?: number | string;
+    expiryDate?: Date;
+    cost?: number;
+    acquisitionDate: Date;
+    qrCodeUrl?: string;
+}
+
+export interface StaffMember {
+    id: string;
+    name: string;
+    role: string;
+    email: string;
+    phone: string;
+    contract: {
+        active: boolean;
+        type: 'VOLUNTEER' | 'PAID';
+        value: number;
+        signed: boolean;
+    };
+    documentsPending: boolean;
+}
+
+export interface YouthClass {
+    id: string;
+    name: string;
+    ageGroup: string;
+    schedule: string;
+    coachId: string;
+    students: string[];
+    maxCapacity: number;
+}
+
+export interface YouthStudent {
+    id: string;
+    name: string;
+    isSocialProject: boolean;
+}
+
+export interface ConfederationStats {
+    totalAthletes: number;
+    totalTeams: number;
+    totalGamesThisYear: number;
+    activeAffiliates: number;
+}
+
+export interface NationalTeamCandidate {
+    id: number;
+    name: string;
+    position: string;
+    rating: number;
+    avatarUrl: string;
+    teamName: string;
+    teamLogo: string;
+    combineStats: CombineStats;
+}
+
+export interface Affiliate {
+    id: string;
+    name: string;
+    region: string;
+    president: string;
+    status: 'REGULAR' | 'PENDING' | 'IRREGULAR';
+    athletesCount: number;
+    teamsCount: number;
+    lastAuditDate: Date;
+}
+
+export interface TransferRequest {
+    id: string;
+    playerName: string;
+    originTeamName: string;
+    destinationTeamName: string;
+    fee: number;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+}
+
+export interface League {
+    id: string;
+    name: string;
+    season: string;
+    teams: {
+        teamId: string;
+        teamName: string;
+        wins: number;
+        losses: number;
+        pointsFor: number;
+        pointsAgainst: number;
+        draws?: number;
+        logoUrl?: string;
+    }[];
+}
+
+export interface PlayerRotation {
+    playerId: string | number;
+    status: 'ON_FIELD' | 'BENCH';
+    minutesPlayed: number;
+    fatigueLevel: number;
+}
+
+export interface Course {
+    id: string;
+    title: string;
+    description: string;
+    thumbnailUrl: string;
+    priority?: boolean;
+    level?: string;
+}
+
+export interface CoachGameNote {
+    id: string;
+    gameId: string | number;
+    content: string;
+    timestamp: Date;
+}
+
+export interface GameReport {
+    infrastructure?: any;
+    officialReport?: any;
+    score?: string;
+    result?: string;
+    fouls?: any[];
+    ejections?: any[];
+    notes?: string;
+    crew?: string[];
+    isFinalized?: boolean;
+}
+
+export interface Championship {
+    id: string;
+    name: string;
+    year: number;
+    division: string;
+}
+
+export interface ObjectiveSignal {
+    id: string;
+    timestamp: Date;
+    fromRole: UserRole;
+    fromName: string;
+    type: 'MILESTONE_REACHED' | 'APPROVAL_REQUIRED' | 'STATUS_UPDATE' | 'ALERT';
+    message: string;
+    status: 'UNREAD' | 'READ' | 'ACTIONED';
+    data?: any;
+}
+
+export interface OKR {
+    id: string;
+    title: string;
+    description: string;
+    ownerRole: UserRole;
+    targetValue: number;
+    currentValue: number;
+    unit: string;
+    category: 'ADMIN' | 'FINANCE' | 'COMMERCIAL' | 'MARKETING' | 'SPORTS' | 'TECHNICAL';
+    status: 'ON_TRACK' | 'AT_RISK' | 'BEHIND' | 'COMPLETED';
+    parentOkrId?: string;
+    subordinatesCheck: boolean;
+}
+
+export interface RoadmapItem {
+    id: string;
+    day: number;
+    title: string;
+    description: string;
+    status: 'DONE' | 'DOING' | 'TODO';
+}
+
+export interface Drill {
+    id: string;
+    name: string;
+    description: string;
+    durationMinutes: number;
+    videoSearchTerm?: string;
+}
+
+export interface DigitalProduct {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+    type: 'SCOUT_REPORT' | 'GAME_VIDEO' | 'DOCUMENT' | 'COURSE';
+    durationHours: number;
+    coverUrl: string;
+}
+
+export interface Entitlement {
+    id: string;
+    userId: string;
+    productId: string;
+    expiresAt: Date;
+}
+
+export interface Tenant {
+    id: string;
+    name: string;
+    plan: 'ROOKIE' | 'STARTER' | 'ALL_PRO';
+    status: 'ACTIVE' | 'DELINQUENT' | 'SUSPENDED';
+    mrr: number;
+    joinedAt: Date;
+    logoUrl: string;
+    contactEmail: string;
+}
+
+export interface ServiceTicket {
+    id: string;
+    tenantId: string;
+    tenantName: string;
+    serviceName: string;
+    status: 'PENDING' | 'IN_PROGRESS' | 'DELIVERED';
+    purchasedAt: Date;
+    assignedTo?: string;
+    deliverableUrl?: string;
+}
+
+export interface PlatformMetric {
+    totalRevenue: number;
+    activeTeams: number;
+    pendingServices: number;
+    churnRate: number;
+}
+
+export interface Objective {
+    id: string;
+    title: string;
+    description?: string;
+    category: string;
+    status: 'IN_PROGRESS' | 'COMPLETED' | 'ON_TRACK' | 'BEHIND';
+    progress: number;
+    deadline: Date;
+    ownerRole: UserRole;
+    keyResults: KeyResult[];
+}
+
+export interface KeyResult {
+    id: string;
+    title: string;
+    currentValue: number;
+    targetValue: number;
+    unit: string;
+    lastUpdated: Date;
+}
