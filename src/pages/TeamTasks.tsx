@@ -16,13 +16,12 @@ const TeamTasks: React.FC = () => {
     // Form State
     const [taskTitle, setTaskTitle] = useState('');
     const [taskDesc, setTaskDesc] = useState('');
-    const [taskDept, setTaskDept] = useState<'MARKETING' | 'COMMERCIAL' | 'TECHNICAL' | 'FINANCE' | 'GENERAL'>('GENERAL');
-    const [taskPriority, setTaskPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
+    const [taskDept, setTaskDept] = useState<string>('GENERAL');
+    const [taskPriority, setTaskPriority] = useState<string>('MEDIUM');
 
     const isPlayer = currentRole === 'PLAYER';
 
     useEffect(() => {
-        // Fix: getTasks now exists in storageService.ts
         setTasks(storageService.getTasks());
     }, []);
 
@@ -38,11 +37,8 @@ const TeamTasks: React.FC = () => {
     const openEditModal = (task: KanbanTask) => {
         setEditingTask(task);
         setTaskTitle(task.title);
-        // Fix: description is now valid in KanbanTask
         setTaskDesc(task.description || '');
-        // Fix: assignedToDepartment is now valid in KanbanTask
         setTaskDept(task.assignedToDepartment || 'GENERAL');
-        // Fix: priority is now valid in KanbanTask
         setTaskPriority(task.priority || 'MEDIUM');
         setIsModalOpen(true);
     };
@@ -51,7 +47,6 @@ const TeamTasks: React.FC = () => {
         e.preventDefault();
         
         if (editingTask) {
-            // Update Existing
             const updatedTasks = tasks.map(t => t.id === editingTask.id ? {
                 ...t,
                 title: taskTitle,
@@ -62,11 +57,9 @@ const TeamTasks: React.FC = () => {
             setTasks(updatedTasks);
             storageService.saveTasks(updatedTasks);
         } else {
-            // Create New
             const newTask: KanbanTask = {
                 id: Date.now().toString(),
                 title: taskTitle,
-                // Fix: description, assignedToDepartment, priority now valid in KanbanTask
                 description: taskDesc,
                 status: 'TODO',
                 assignedToDepartment: taskDept,
@@ -102,9 +95,7 @@ const TeamTasks: React.FC = () => {
                         <div key={task.id} className="bg-secondary p-4 rounded-lg border border-white/5 shadow-sm hover:border-white/20 transition-all group relative">
                             <div className="flex justify-between items-start mb-2">
                                 <div className="flex gap-2">
-                                    {/* Fix: assignedToDepartment is now valid in KanbanTask */}
                                     <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-text-secondary font-bold">{task.assignedToDepartment}</span>
-                                    {/* Fix: priority is now valid in KanbanTask */}
                                     {task.priority === 'HIGH' && <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold">ALTA</span>}
                                 </div>
                                 {!isPlayer && (
@@ -119,10 +110,8 @@ const TeamTasks: React.FC = () => {
                                 )}
                             </div>
                             <p className="text-white font-medium text-sm mb-1">{task.title}</p>
-                            {/* Fix: description is now valid in KanbanTask */}
                             {task.description && <p className="text-xs text-text-secondary line-clamp-2 mb-3">{task.description}</p>}
                             
-                            {/* Controls to move tasks */}
                             <div className="flex justify-between items-center pt-2 border-t border-white/5">
                                 {status !== 'TODO' && (
                                     <button onClick={() => updateTaskStatus(task.id, status === 'DONE' ? 'DOING' : 'TODO')} className="text-xs text-text-secondary hover:text-white">
@@ -180,7 +169,7 @@ const TeamTasks: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-bold text-text-secondary block mb-1">Departamento</label>
-                            <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={taskDept} onChange={e => setTaskDept(e.target.value as any)}>
+                            <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={taskDept} onChange={e => setTaskDept(e.target.value)}>
                                 <option value="GENERAL">Geral</option>
                                 <option value="MARKETING">Marketing</option>
                                 <option value="COMMERCIAL">Comercial</option>
@@ -190,7 +179,7 @@ const TeamTasks: React.FC = () => {
                         </div>
                         <div>
                             <label className="text-xs font-bold text-text-secondary block mb-1">Prioridade</label>
-                            <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={taskPriority} onChange={e => setTaskPriority(e.target.value as any)}>
+                            <select className="w-full bg-black/20 border border-white/10 rounded p-2 text-white" value={taskPriority} onChange={e => setTaskPriority(e.target.value)}>
                                 <option value="LOW">Baixa</option>
                                 <option value="MEDIUM">Média</option>
                                 <option value="HIGH">Alta</option>

@@ -13,9 +13,14 @@ const LeagueManager: React.FC = () => {
 
     useEffect(() => {
         const loadData = () => {
-            // Fix: Ensured getLeague returns full object in storageService.ts
             const leagueData = storageService.getLeague();
-            setLeague(leagueData);
+            // Fix: Ensuring leagueData has required id property
+            setLeague({
+                id: leagueData.id || 'default-league-id',
+                name: leagueData.name || 'Liga Brasileira',
+                season: leagueData.season || '2025',
+                teams: leagueData.teams || []
+            });
             setGames(storageService.getGames());
         };
         loadData();
@@ -54,7 +59,6 @@ const LeagueManager: React.FC = () => {
                         <GlobeIcon className="text-white w-8 h-8" />
                     </div>
                     <div>
-                        {/* Fix: Directly accessing properties now safe due to storageService fix */}
                         <h2 className="text-2xl font-black text-white uppercase tracking-tight">{league.name}</h2>
                         <p className="text-purple-300 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
                             Temporada {league.season}
