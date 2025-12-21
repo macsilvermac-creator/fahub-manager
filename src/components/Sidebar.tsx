@@ -4,7 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   DashboardIcon, RosterIcon, WhistleIcon, FinanceIcon, 
   TrophyIcon, TargetIcon, VideoIcon, UsersIcon, ShieldCheckIcon, 
-  SparklesIcon, BriefcaseIcon, MegaphoneIcon, ActivityIcon
+  SparklesIcon, BriefcaseIcon, MegaphoneIcon, ActivityIcon, BusIcon
 } from './icons/UiIcons';
 import { UserRole } from '../types';
 import { storageService } from '../services/storageService';
@@ -51,7 +51,31 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
         <nav className="flex-1">
           <NavLink to="/dashboard" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
             <DashboardIcon className="w-4 h-4 mr-3" />
-            <span>War Room (Master)</span>
+            <span>War Room</span>
+          </NavLink>
+
+          <SectionLabel>Esportivo</SectionLabel>
+          <NavLink to="/training-day" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <WhistleIcon className="w-4 h-4 mr-3 text-blue-400" />
+            <span>Treinamento</span>
+          </NavLink>
+          <NavLink to="/roster" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <UsersIcon className="w-4 h-4 mr-3 text-indigo-400" />
+            <span>Elenco & Roster</span>
+          </NavLink>
+          <NavLink to="/recruitment" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <TargetIcon className="w-4 h-4 mr-3 text-red-500" />
+            <span>Tryout Hub</span>
+          </NavLink>
+
+          <SectionLabel>Operações</SectionLabel>
+          <NavLink to="/logistics" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <BusIcon className="w-4 h-4 mr-3 text-yellow-500" />
+            <span>Logística</span>
+          </NavLink>
+          <NavLink to="/marketing" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <MegaphoneIcon className="w-4 h-4 mr-3 text-pink-400" />
+            <span>Marketing (IA)</span>
           </NavLink>
 
           <SectionLabel>Administrativo</SectionLabel>
@@ -59,38 +83,13 @@ const Sidebar: React.FC<SidebarProps> = memo(({ isOpen, setIsOpen, currentRole, 
             <FinanceIcon className="w-4 h-4 mr-3 text-green-400" />
             <span>Financeiro (CFO)</span>
           </NavLink>
-          <NavLink to="/commercial" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <BriefcaseIcon className="w-4 h-4 mr-3 text-blue-400" />
-            <span>Comercial</span>
-          </NavLink>
-          <NavLink to="/marketing" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <MegaphoneIcon className="w-4 h-4 mr-3 text-pink-400" />
-            <span>Marketing</span>
-          </NavLink>
-
-          <SectionLabel>Esportivo (Campo)</SectionLabel>
-          <NavLink to="/training-day" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <WhistleIcon className="w-4 h-4 mr-3 text-blue-400" />
-            <span>Treinamento</span>
-          </NavLink>
-          <NavLink to="/roster" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <UsersIcon className="w-4 h-4 mr-3 text-indigo-400" />
-            <span>Gestão de Elenco</span>
-          </NavLink>
-          <NavLink to="/tactical-lab" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <TargetIcon className="w-4 h-4 mr-3 text-purple-400" />
-            <span>Tactical Lab (IA)</span>
-          </NavLink>
-
-          <SectionLabel>Saúde & Performance</SectionLabel>
-          <NavLink to="/performance-lab" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <ActivityIcon className="w-4 h-4 mr-3 text-red-500" />
-            <span>Iron Lab / Saúde</span>
+          <NavLink to="/roadmap" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <ActivityIcon className="w-4 h-4 mr-3 text-gray-400" />
+            <span>Project Stats</span>
           </NavLink>
         </nav>
       </div>
 
-      {/* Persona Matrix (Switch de Governança) */}
       <div className="p-3 bg-black/50 border-t border-white/10 shrink-0">
           <p className="text-[8px] font-black text-highlight uppercase mb-2 text-center tracking-[0.2em]">Persona Matrix</p>
           <div className="grid grid-cols-3 gap-1">

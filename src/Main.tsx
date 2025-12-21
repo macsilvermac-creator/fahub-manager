@@ -6,32 +6,19 @@ import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 
-// Lazy Loading das páginas para performance extrema
+// Lazy Loading para performance extrema em mobile (Protocolo FAHUB)
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Roster = lazy(() => import('./pages/Roster'));
 const Recruitment = lazy(() => import('./pages/Recruitment'));
-const Login = lazy(() => import('./pages/Login'));
-const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const RookiePortal = lazy(() => import('./pages/RookiePortal'));
 const Finance = lazy(() => import('./pages/Finance'));
 const TrainingHub = lazy(() => import('./pages/TrainingHub'));
-const CoachGameDay = lazy(() => import('./pages/CoachGameDay'));
-const VideoAnalysis = lazy(() => import('./pages/VideoAnalysis'));
-const TacticalLab = lazy(() => import('./pages/TacticalLab'));
-const Marketing = lazy(() => import('./pages/Marketing'));
-const MyProfile = lazy(() => import('./pages/MyProfile'));
-const Academy = lazy(() => import('./pages/Academy'));
-const Marketplace = lazy(() => import('./pages/Marketplace'));
-const LockerRoom = lazy(() => import('./pages/LockerRoom'));
-const Officiating = lazy(() => import('./pages/Officiating'));
-const Resources = lazy(() => import('./pages/Resources'));
-const Staff = lazy(() => import('./pages/Staff'));
-const Inventory = lazy(() => import('./pages/Inventory'));
-const Confederation = lazy(() => import('./pages/Confederation'));
-const LeagueManager = lazy(() => import('./pages/LeagueManager'));
-const Goals = lazy(() => import('./pages/Goals'));
 const HelpCenter = lazy(() => import('./pages/HelpCenter'));
-const GeminiPlaybook = lazy(() => import('./pages/GeminiPlaybook'));
-const Onboarding = lazy(() => import('./pages/Onboarding'));
+const Roadmap = lazy(() => import('./pages/Roadmap'));
+const Logistics = lazy(() => import('./pages/Logistics'));
+const Marketing = lazy(() => import('./pages/Marketing'));
+const BroadcastBooth = lazy(() => import('./pages/BroadcastBooth'));
+const PublicTeam = lazy(() => import('./pages/PublicTeam'));
 
 const Main: React.FC = () => {
   return (
@@ -40,21 +27,25 @@ const Main: React.FC = () => {
             <HashRouter>
                 <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
                     <Routes>
-                        <Route path="/login" element={<Login />} />
+                        {/* Rota Pública (Sem Layout de Admin) */}
+                        <Route path="/public/team" element={<PublicTeam />} />
+                        
+                        {/* Rotas Administrativas */}
                         <Route path="/*" element={
                             <Layout>
                                 <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LoadingScreen /></div>}>
                                     <Routes>
                                         <Route path="/dashboard" element={<Dashboard />} />
+                                        <Route path="/roadmap" element={<Roadmap />} />
                                         <Route path="/training-day" element={<TrainingHub />} />
-                                        <Route path="/sideline" element={<CoachGameDay />} />
                                         <Route path="/recruitment" element={<Recruitment />} />
-                                        <Route path="/intel" element={<VideoAnalysis />} />
+                                        <Route path="/rookie-portal" element={<RookiePortal />} />
                                         <Route path="/roster" element={<Roster />} />
                                         <Route path="/finance" element={<Finance />} />
-                                        <Route path="/inventory" element={<Inventory />} />
-                                        <Route path="/admin" element={<AdminPanel />} />
-                                        {/* Fallback */}
+                                        <Route path="/marketing" element={<Marketing />} />
+                                        <Route path="/logistics" element={<Logistics />} />
+                                        <Route path="/broadcast-booth" element={<BroadcastBooth />} />
+                                        <Route path="/help" element={<HelpCenter />} />
                                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                                     </Routes>
                                 </Suspense>

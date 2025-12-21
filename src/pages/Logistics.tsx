@@ -24,8 +24,7 @@ const Logistics: React.FC = () => {
         setManifest(prev => prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]);
     };
 
-    // Fix: Corrected type comparison (string vs string)
-    const activeGame = games.find(g => g.id === selectedGameId);
+    const activeGame = games.find(g => String(g.id) === selectedGameId);
 
     return (
         <div className="space-y-6 pb-12 animate-fade-in">
