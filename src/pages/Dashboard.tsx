@@ -7,7 +7,8 @@ import { ClockIcon, WhistleIcon, TrophyIcon, UsersIcon, ActivityIcon, CheckCircl
 
 const Dashboard: React.FC = () => {
     const [rankings, setRankings] = useState<LeagueRanking[]>([]);
-    const [tasks, setTasks] = useState<CoordinatorTask[]>([]);
+    // Fix: Updated to any[] to support KanbanTask objects returned by getTasks
+    const [tasks, setTasks] = useState<any[]>([]);
     const [practices, setPractices] = useState<PracticeSession[]>([]);
 
     useEffect(() => {
@@ -164,7 +165,7 @@ const Dashboard: React.FC = () => {
                                     {dept} COORDINATOR
                                 </h4>
                                 <div className="space-y-2">
-                                    {tasks.filter(t => t.assignedTo === dept).map(task => (
+                                    {tasks.filter(t => (t.assignedTo === dept || (t.assignedToDepartment === 'TECHNICAL' && dept === 'OFFENSE'))).map(task => (
                                         <div key={task.id} className="bg-secondary p-3 rounded-xl border border-white/5 text-xs flex justify-between items-center group">
                                             <div>
                                                 <p className="text-white font-bold">{task.title}</p>

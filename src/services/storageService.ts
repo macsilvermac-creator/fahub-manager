@@ -9,7 +9,7 @@ import {
     StaffMember, YouthClass, YouthStudent, ConfederationStats,
     NationalTeamCandidate, Affiliate, TransferRequest,
     League, OKR, RoadmapItem, Entitlement, DigitalProduct,
-    ObjectiveSignal, Team
+    ObjectiveSignal, Team, SocialFeedPost, EquipmentItem
 } from '../types';
 
 const set = (key: string, data: any) => {
@@ -43,9 +43,24 @@ export const storageService = {
 
         if (!localStorage.getItem('hc_tasks')) {
             set('hc_tasks', [
-                { id: '1', title: 'Ajustar Blitz Protection', description: 'Trabalhar slide protection com OL', assignedTo: 'OFFENSE', status: 'TODO' },
-                { id: '2', title: 'Estudo de Video: Rex', description: 'Analisar tendências de 3rd down', assignedTo: 'DEFENSE', status: 'DOING' },
-                { id: '3', title: 'Checklist Kicker', description: 'Validar range de 40+ jardas', assignedTo: 'ST', status: 'DONE' }
+                { 
+                    id: '1', 
+                    title: 'Ajustar Blitz Protection', 
+                    description: 'Trabalhar slide protection com OL', 
+                    status: 'TODO',
+                    assignedToDepartment: 'TECHNICAL',
+                    priority: 'HIGH',
+                    dueDate: new Date()
+                },
+                { 
+                    id: '2', 
+                    title: 'Estudo de Video: Rex', 
+                    description: 'Analisar tendências de 3rd down', 
+                    status: 'DOING',
+                    assignedToDepartment: 'TECHNICAL',
+                    priority: 'MEDIUM',
+                    dueDate: new Date()
+                }
             ]);
         }
 
@@ -66,18 +81,9 @@ export const storageService = {
     getCurrentUser: () => JSON.parse(localStorage.getItem('gridiron_current_user') || '{"role":"HEAD_COACH","name":"Coach Guto", "id": "user-123"}'),
     setCurrentUser: (u: any) => localStorage.setItem('gridiron_current_user', JSON.stringify(u)),
     
-    getTasks: () => get<CoordinatorTask>('hc_tasks'),
-    saveTasks: (data: KanbanTask[]) => {
-        // Map KanbanTask to CoordinatorTask for the simple storage
-        const coordinatorTasks: CoordinatorTask[] = data.map(t => ({
-            id: t.id,
-            title: t.title,
-            description: t.description || '',
-            assignedTo: t.assignedToDepartment === 'TECHNICAL' ? 'OFFENSE' : 'ST',
-            status: t.status
-        }));
-        set('hc_tasks', coordinatorTasks);
-    },
+    // Fix: Return type aligned with KanbanTask structure used in task pages
+    getTasks: () => get<any>('hc_tasks'),
+    saveTasks: (data: KanbanTask[]) => set('hc_tasks', data),
 
     getRankings: () => get<LeagueRanking>('league_rankings'),
     

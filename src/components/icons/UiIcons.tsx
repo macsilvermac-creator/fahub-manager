@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 const iconProps = {
@@ -131,7 +132,7 @@ export const FileTextIcon = (props: any) => <svg {...iconProps} {...props} viewB
 export const CreditCardIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>;
 export const ScissorsIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>;
 export const PlayCircleIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>;
-export const BrainIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path></svg>;
+export const BrainIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path></svg>;
 export const DumbbellIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 1 1 0 8h-1"></path><path d="M6 8H5a4 4 0 1 0 0 8h1"></path><line x1="8" y1="12" x2="16" y2="12"></line><rect x="6" y="7" width="2" height="10"></rect><rect x="16" y="7" width="2" height="10"></rect></svg>;
 export const SaveIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 export const ShoppingBagIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg>;
@@ -141,3 +142,11 @@ export const HeartIcon = (props: any) => <svg {...iconProps} {...props} viewBox=
 export const MessageIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>;
 export const FireIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>;
 export const FileSignatureIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M20 7h-9"></path><path d="M14 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2"></path><path d="M15 22v-4a2 2 0 0 1 2-2h4"></path></svg>;
+
+// Fix: Added missing PlusIcon
+export const PlusIcon = (props: any) => (
+  <svg {...iconProps} {...props} viewBox="0 0 24 24">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <line x1="5" y1="12" x2="19" y2="12"></line>
+  </svg>
+);

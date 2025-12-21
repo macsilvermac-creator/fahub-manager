@@ -16,14 +16,15 @@ const TeamTasks: React.FC = () => {
     // Form State
     const [taskTitle, setTaskTitle] = useState('');
     const [taskDesc, setTaskDesc] = useState('');
-    // Changed state types to string to accommodates assignedToDepartment and priority from KanbanTask interface
+    // Changed state types to string to accommodate assignedToDepartment and priority from KanbanTask interface
     const [taskDept, setTaskDept] = useState<string>('GENERAL');
     const [taskPriority, setTaskPriority] = useState<string>('MEDIUM');
 
     const isPlayer = currentRole === 'PLAYER';
 
     useEffect(() => {
-        setTasks(storageService.getTasks());
+        // Fix: Casting to any to allow CoordinatorTask structures
+        setTasks(storageService.getTasks() as any);
     }, []);
 
     const openAddModal = () => {
@@ -49,6 +50,7 @@ const TeamTasks: React.FC = () => {
         e.preventDefault();
         
         if (editingTask) {
+            // Update Existing
             const updatedTasks = tasks.map(t => t.id === editingTask.id ? {
                 ...t,
                 title: taskTitle,
@@ -59,6 +61,7 @@ const TeamTasks: React.FC = () => {
             setTasks(updatedTasks);
             storageService.saveTasks(updatedTasks);
         } else {
+            // Create New
             const newTask: KanbanTask = {
                 id: Date.now().toString(),
                 title: taskTitle,
@@ -114,6 +117,7 @@ const TeamTasks: React.FC = () => {
                             <p className="text-white font-medium text-sm mb-1">{task.title}</p>
                             {task.description && <p className="text-xs text-text-secondary line-clamp-2 mb-3">{task.description}</p>}
                             
+                            {/* Controls to move tasks */}
                             <div className="flex justify-between items-center pt-2 border-t border-white/5">
                                 {status !== 'TODO' && (
                                     <button onClick={() => updateTaskStatus(task.id, status === 'DONE' ? 'DOING' : 'TODO')} className="text-xs text-text-secondary hover:text-white">

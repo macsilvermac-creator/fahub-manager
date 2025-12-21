@@ -107,6 +107,11 @@ export interface Player {
     medicalExamExpiry?: Date;
     developmentPlans?: DevelopmentPlan[];
     wellnessHistory?: WellnessEntry[];
+    // Fix: Added missing properties to Player interface
+    cpf?: string;
+    nationality?: string;
+    rosterHistory?: any[];
+    depthChartOrder?: number;
 }
 
 export interface PracticeScriptItem {
@@ -126,6 +131,10 @@ export interface PracticeSession {
     attendees: string[];
     checkedInAttendees?: string[];
     script?: PracticeScriptItem[];
+    // Fix: Added missing properties to PracticeSession interface
+    deadlineDate?: Date;
+    category?: 'PHYSICAL' | 'TACTICAL' | 'MENTAL';
+    performances?: any[];
 }
 
 export interface GameScoutingReport {
@@ -165,6 +174,9 @@ export interface Game {
     currentQuarter?: number;
     clock?: string;
     rotation?: any[];
+    // Fix: Added missing properties to Game interface
+    timeline?: any[];
+    audioNotes?: any[];
 }
 
 export interface TeamSettings {
@@ -623,4 +635,50 @@ export interface ObjectiveSignal {
     message: string;
     status: 'UNREAD' | 'READ' | 'ACTIONED';
     data?: any;
+}
+
+// Fix: Added missing types
+export type PaymentMethod = 'PIX' | 'CREDIT_CARD';
+
+export interface PaymentTransaction {
+    id: string;
+    amount: number;
+    method: PaymentMethod;
+    status: 'APPROVED' | 'PENDING' | 'REJECTED';
+    createdAt: Date;
+    platformFee: number;
+    netAmount: number;
+}
+
+export interface LegalDocument {
+    id: string;
+    title: string;
+    content: string;
+    version: string;
+    lastUpdated: Date;
+}
+
+export interface CoachGameNote {
+    id: string;
+    gameId: string | number;
+    coachId: string;
+    content: string;
+    timestamp: Date;
+}
+
+export interface GameReport {
+    gameId: string | number;
+    officialId: string;
+    infrastructure: {
+        ambulancePresent: boolean;
+        fieldCondition: string;
+    };
+    incidents: any[];
+}
+
+export interface Championship {
+    id: string;
+    name: string;
+    year: number;
+    division: string;
 }
