@@ -1,9 +1,9 @@
 
-// Fix: Removed reference to vite/client that failed to be found and manually defined env properties
+/// <reference types="vite/client" />
+
+// Fix: Merging with standard Vite types to avoid "identical modifiers" errors for MODE and PROD
 interface ImportMetaEnv {
   readonly API_KEY: string;
-  readonly MODE: string;
-  readonly PROD: boolean;
 }
 
 interface ImportMeta {
