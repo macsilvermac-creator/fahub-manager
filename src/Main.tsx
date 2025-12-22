@@ -5,44 +5,44 @@ import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 
-// Módulos especializados
+// Importações Lazy - Caminhos relativos diretos sem prefixos complexos
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const TrainingHub = lazy(() => import('./pages/TrainingHub'));
-const VisionLab = lazy(() => import('./pages/VisionLab'));
 const Roster = lazy(() => import('./pages/Roster'));
 const Recruitment = lazy(() => import('./pages/Recruitment'));
 const Finance = lazy(() => import('./pages/Finance'));
-const HelpCenter = lazy(() => import('./pages/HelpCenter'));
+const TrainingHub = lazy(() => import('./pages/TrainingHub'));
 const PracticeExecution = lazy(() => import('./pages/PracticeExecution'));
+const HelpCenter = lazy(() => import('./pages/HelpCenter'));
+const Login = lazy(() => import('./pages/Login'));
 
 const Main: React.FC = () => {
   return (
     <ErrorBoundary>
-        <ToastProvider>
-            <HashRouter>
-                <Suspense fallback={<LoadingScreen />}>
+      <ToastProvider>
+        <HashRouter>
+          <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/*" element={
+                <Layout>
+                  <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><LoadingScreen /></div>}>
                     <Routes>
-                        <Route path="/*" element={
-                            <Layout>
-                                <Suspense fallback={<LoadingScreen />}>
-                                    <Routes>
-                                        <Route path="/dashboard" element={<Dashboard />} />
-                                        <Route path="/training-day" element={<TrainingHub />} />
-                                        <Route path="/practice-execution/:id" element={<PracticeExecution />} />
-                                        <Route path="/intel" element={<VisionLab />} />
-                                        <Route path="/roster" element={<Roster />} />
-                                        <Route path="/recruitment" element={<Recruitment />} />
-                                        <Route path="/finance" element={<Finance />} />
-                                        <Route path="/help" element={<HelpCenter />} />
-                                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                                    </Routes>
-                                </Suspense>
-                            </Layout>
-                        } />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/training-day" element={<TrainingHub />} />
+                      <Route path="/practice-execution/:id" element={<PracticeExecution />} />
+                      <Route path="/recruitment" element={<Recruitment />} />
+                      <Route path="/roster" element={<Roster />} />
+                      <Route path="/finance" element={<Finance />} />
+                      <Route path="/help" element={<HelpCenter />} />
+                      <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
-                </Suspense>
-            </HashRouter>
-        </ToastProvider>
+                  </Suspense>
+                </Layout>
+              } />
+            </Routes>
+          </Suspense>
+        </HashRouter>
+      </ToastProvider>
     </ErrorBoundary>
   );
 };
