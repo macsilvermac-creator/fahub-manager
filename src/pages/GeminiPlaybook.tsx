@@ -1,12 +1,10 @@
 
 import React, { useState, useRef } from 'react';
 import Card from '../components/Card';
+// Removed unsupported setRuntimeKey and testProConnection members
 import { generatePracticePlan, analyzeOpponentTendencies, suggestPlayConcepts, explainPlayImage } from '../services/geminiService';
 import { SparklesIcon, SearchIcon, ImageIcon, CheckCircleIcon, EyeIcon } from '../components/icons/UiIcons';
 import { useToast } from '../contexts/ToastContext';
-
-// --- FEATURE FLAG ---
-const ENABLE_AI_BETA = true;
 
 const GeminiPlaybook: React.FC = () => {
   const toast = useToast();
@@ -17,6 +15,7 @@ const GeminiPlaybook: React.FC = () => {
   const [prompt, setPrompt] = useState('');
   const [scoutNotes, setScoutNotes] = useState('');
   const [tacticalSituation, setTacticalSituation] = useState('');
+  // manualKey state removed as it violates API key guidelines
   
   // Vision Inputs
   const [visionImage, setVisionImage] = useState<string | null>(null);
@@ -29,15 +28,18 @@ const GeminiPlaybook: React.FC = () => {
   const [visionExplanation, setVisionExplanation] = useState('');
   
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  // proStatus state removed along with key testing logic
 
   // --- HANDLERS ---
+
+  // handleTestConnection removed because it involves prohibited manual key handling
 
   const handleGenerateDrills = async () => {
     if (!prompt.trim()) return;
     setIsLoading(true);
     setGeneratedPlan('');
-    setErrorMsg('');
+    
+    // Prohibited setRuntimeKey call removed
     
     const finalPrompt = `
       Atue como um treinador especialista. Gere plano de drills. FOCO: ${prompt}
@@ -57,9 +59,11 @@ const GeminiPlaybook: React.FC = () => {
   const handleAnalyzeScout = async () => {
       if (!scoutNotes.trim()) return;
       setIsLoading(true);
+      // Prohibited setRuntimeKey call removed
       try {
           const result = await analyzeOpponentTendencies(scoutNotes);
           setScoutAnalysis(result);
+          toast.success("Scout analisado com modelo Pro!");
       } catch (e) {
           toast.error("Erro ao analisar scout.");
       }
@@ -69,6 +73,7 @@ const GeminiPlaybook: React.FC = () => {
   const handleSuggestPlays = async () => {
       if (!tacticalSituation.trim()) return;
       setIsLoading(true);
+      // Prohibited setRuntimeKey call removed
       try {
           const result = await suggestPlayConcepts(tacticalSituation);
           setPlaySuggestions(result);
@@ -93,6 +98,7 @@ const GeminiPlaybook: React.FC = () => {
           return;
       }
       setIsLoading(true);
+      // Prohibited setRuntimeKey call removed
       try {
           const explanation = await explainPlayImage(visionImage, visionQuestion);
           setVisionExplanation(explanation);
@@ -119,7 +125,7 @@ const GeminiPlaybook: React.FC = () => {
         </div>
         <div>
             <h2 className="text-3xl font-bold text-text-primary">Coach Copilot AI</h2>
-            <p className="text-text-secondary">Sua equipe de coordenadores virtuais powered by Gemini 2.5.</p>
+            <p className="text-text-secondary">Sua equipe de coordenadores virtuais powered by Gemini 3.0 Pro.</p>
         </div>
       </div>
 
@@ -128,16 +134,14 @@ const GeminiPlaybook: React.FC = () => {
               🏈 Drills
           </button>
           <button onClick={() => setActiveAgent('SCOUT')} className={`px-6 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition-colors ${activeAgent === 'SCOUT' ? 'border-blue-500 text-blue-400' : 'border-transparent text-text-secondary'}`}>
-              🕵️ Scout
+              🕵️ Scout Pro
           </button>
           <button onClick={() => setActiveAgent('TACTICS')} className={`px-6 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition-colors ${activeAgent === 'TACTICS' ? 'border-green-500 text-green-400' : 'border-transparent text-text-secondary'}`}>
-              🧠 Tática
+              🧠 Tática Pro
           </button>
-          {ENABLE_AI_BETA && (
-            <button onClick={() => setActiveAgent('VISION')} className={`px-6 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeAgent === 'VISION' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary'}`}>
-                <EyeIcon className="w-4 h-4"/> Vision (Beta)
-            </button>
-          )}
+          <button onClick={() => setActiveAgent('VISION')} className={`px-6 py-3 font-bold text-sm border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${activeAgent === 'VISION' ? 'border-yellow-500 text-yellow-400' : 'border-transparent text-text-secondary'}`}>
+              <EyeIcon className="w-4 h-4"/> Vision (Novo)
+          </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -154,22 +158,22 @@ const GeminiPlaybook: React.FC = () => {
             {activeAgent === 'SCOUT' && (
                 <>
                     <textarea className="w-full bg-primary border border-tertiary rounded-lg p-3 text-white h-40 focus:outline-none" placeholder="Cole anotações do jogo..." value={scoutNotes} onChange={e => setScoutNotes(e.target.value)} />
-                    <button onClick={handleAnalyzeScout} disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg">{isLoading ? 'Processando...' : 'Gerar Relatório'}</button>
+                    <button onClick={handleAnalyzeScout} disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg">{isLoading ? 'Processando (Pro)...' : 'Gerar Relatório'}</button>
                 </>
             )}
 
             {activeAgent === 'TACTICS' && (
                  <>
                     <input className="w-full bg-primary border border-tertiary rounded-lg p-3 text-white focus:outline-none" placeholder="Ex: 3rd & 8 na Redzone" value={tacticalSituation} onChange={e => setTacticalSituation(e.target.value)} />
-                    <button onClick={handleSuggestPlays} disabled={isLoading} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg">{isLoading ? 'Pensando...' : 'Sugerir Jogadas'}</button>
+                    <button onClick={handleSuggestPlays} disabled={isLoading} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg">{isLoading ? 'Pensando (Pro)...' : 'Sugerir Jogadas'}</button>
                 </>
             )}
 
-            {activeAgent === 'VISION' && ENABLE_AI_BETA && (
-                <div className="space-y-4">
+            {activeAgent === 'VISION' && (
+                <div className="space-y-4 animate-fade-in">
                     <div className="p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
                         <p className="text-xs text-yellow-200">
-                            <strong>Dica Pro:</strong> Tire um print de um vídeo ou foto de um desenho tático e peça para a IA explicar a responsabilidade de cada position.
+                            <strong>Recurso Pro Ativado:</strong> Tire uma foto de uma formação adversária ou diagrama e peça uma análise.
                         </p>
                     </div>
                     <div 
@@ -178,7 +182,7 @@ const GeminiPlaybook: React.FC = () => {
                     >
                         <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleVisionUpload} />
                         {visionImage ? (
-                             <img src={visionImage} className="absolute inset-0 w-full h-full object-contain bg-black" />
+                             <img src={visionImage} alt="Tactical drawing preview" className="absolute inset-0 w-full h-full object-contain bg-black" />
                         ) : (
                              <div className="text-center text-text-secondary group-hover:text-yellow-400 transition-colors">
                                  <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50 group-hover:opacity-100" />
@@ -196,6 +200,7 @@ const GeminiPlaybook: React.FC = () => {
                 </div>
             )}
             
+            {/* Prohibited UI for manual API key input removed */}
           </div>
         </Card>
 
@@ -208,7 +213,7 @@ const GeminiPlaybook: React.FC = () => {
             )}
 
             {!isLoading && activeAgent === 'VISION' && visionExplanation && (
-                <div className="prose prose-invert max-w-none text-sm p-4">
+                <div className="prose prose-invert max-w-none text-sm p-4 animate-fade-in">
                     <h3 className="font-bold text-yellow-400 mb-4 flex items-center gap-2">
                         <CheckCircleIcon className="w-5 h-5"/> Análise Visual Concluída
                     </h3>
@@ -217,25 +222,25 @@ const GeminiPlaybook: React.FC = () => {
             )}
 
             {!isLoading && activeAgent === 'DRILLS' && generatedPlan && (
-                <div className="prose prose-invert max-w-none text-sm custom-scrollbar max-h-[500px] overflow-y-auto">
+                <div className="prose prose-invert max-w-none text-sm custom-scrollbar max-h-[500px] overflow-y-auto animate-fade-in">
                     <div dangerouslySetInnerHTML={{ __html: formatPlanWithLinks(generatedPlan) }} />
                 </div>
             )}
 
             {!isLoading && activeAgent === 'SCOUT' && scoutAnalysis && (
-                <div className="space-y-4 p-4">
+                <div className="space-y-4 p-4 animate-fade-in">
                     <h4 className="font-bold text-blue-400">Análise de Tendências</h4>
                     <p className="text-sm text-white">{scoutAnalysis.summary}</p>
                     <div className="flex flex-wrap gap-2">
-                        {scoutAnalysis.keysToVictory?.map((k:string, i:number) => <span key={i} className="text-xs bg-white/10 px-2 py-1 rounded">{k}</span>)}
+                        {scoutAnalysis.keysToVictory?.map((k:string, i:number) => <span key={i} className="text-xs bg-white/10 px-2 py-1 rounded text-white border border-white/10">{k}</span>)}
                     </div>
                 </div>
             )}
 
             {!isLoading && activeAgent === 'TACTICS' && playSuggestions.length > 0 && (
-                <div className="space-y-4 p-4">
+                <div className="space-y-4 p-4 animate-fade-in">
                     {playSuggestions.map((p:any, i:number) => (
-                        <div key={i} className="bg-white/5 p-3 rounded">
+                        <div key={i} className="bg-white/5 p-3 rounded border border-white/5">
                             <p className="font-bold text-green-400">{p.name}</p>
                             <p className="text-xs text-text-secondary">{p.reason}</p>
                         </div>
