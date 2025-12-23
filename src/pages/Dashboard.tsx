@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { LeagueRanking, PracticeSession } from '../types';
 import Card from '../components/Card';
-import { ClockIcon, WhistleIcon, ActivityIcon, TrophyIcon } from '../components/icons/UiIcons';
+import { ClockIcon, WhistleIcon, ActivityIcon, TrophyIcon, CheckCircleIcon } from '../components/icons/UiIcons';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -21,11 +21,9 @@ const Dashboard: React.FC = () => {
         return storageService.subscribe('storage_update', load);
     }, []);
 
-    // Busca o treino de hoje ou o mais recente agendado
     const activePractice = useMemo(() => {
         if (!practices.length) return null;
         const today = new Date().toISOString().split('T')[0];
-        // Tenta achar um treino de hoje, se não pega o primeiro da lista (mais recente criado)
         return practices.find(p => new Date(p.date).toISOString().split('T')[0] === today) || practices[0];
     }, [practices]);
 
@@ -52,6 +50,11 @@ const Dashboard: React.FC = () => {
                             <span className="text-text-secondary text-[10px] font-mono">({r.record})</span>
                         </div>
                     ))}
+                </div>
+                <div className="bg-[#0f172a] px-4 h-full flex items-center shrink-0 border-l border-white/10">
+                    <span className="text-[10px] font-black text-green-400 uppercase tracking-widest flex items-center gap-2">
+                        <CheckCircleIcon className="w-3 h-3" /> Sistema: ONLINE
+                    </span>
                 </div>
             </div>
 
