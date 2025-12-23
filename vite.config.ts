@@ -1,8 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  base: './',
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
   define: {
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY || '')
   },
@@ -10,7 +17,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -24,6 +31,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    strictPort: true
+    strictPort: true,
+    host: true
   }
 });
