@@ -44,8 +44,9 @@ export const storageService = {
     },
 
     subscribe: (key: string, callback: () => void) => {
-        window.addEventListener('storage_update', callback);
-        return () => window.removeEventListener('storage_update', callback);
+        const handler = () => callback();
+        window.addEventListener('storage_update', handler);
+        return () => window.removeEventListener('storage_update', handler);
     },
 
     getCurrentUser: () => JSON.parse(localStorage.getItem('gridiron_current_user') || '{"role":"HEAD_COACH","name":"Coach Guto", "id": "user-123", "program": "TACKLE"}'),
