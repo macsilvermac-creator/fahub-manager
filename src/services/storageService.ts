@@ -68,7 +68,9 @@ export const storageService = {
     savePlayers: (data: Player[]) => set('fahub_players', data),
     getAthletes: () => get<Player>('fahub_players'),
     
-    // Fix: Completed the registerAthlete function to prevent syntax errors
+    /**
+     * Fix: Finalized registerAthlete function to ensure correct object structure and persistence.
+     */
     registerAthlete: (player: Player) => {
         const players = get<Player>('fahub_players');
         set('fahub_players', [...players, player]);

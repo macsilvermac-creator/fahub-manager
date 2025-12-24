@@ -181,6 +181,13 @@ export interface GameSponsor {
     logoUrl?: string;
 }
 
+export interface PlayerRotation {
+    playerId: string | number;
+    status: 'ON_FIELD' | 'BENCH';
+    minutesPlayed: number;
+    fatigueLevel: number;
+}
+
 export interface Game {
     id: string | number;
     opponent: string;
@@ -567,13 +574,6 @@ export interface League {
         draws?: number;
         logoUrl?: string;
     }[];
-}
-
-export interface PlayerRotation {
-    playerId: string | number;
-    status: 'ON_FIELD' | 'BENCH';
-    minutesPlayed: number;
-    fatigueLevel: number;
 }
 
 export interface OKR {

@@ -80,12 +80,15 @@ export async function generatePlayerAnalysis(player: Player, context: string) {
     }
 }
 
+/**
+ * Fix: Changed model to gemini-3-flash-preview for multimodal extraction reasoning.
+ */
 export async function importPlaybookFromImage(base64: string) {
     const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
     
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-image",
+            model: "gemini-3-flash-preview",
             contents: {
                 parts: [
                     { text: "Identifique os jogadores e rotas no diagrama tático e converta para JSON array de {id, type, label, x, y}." },
@@ -100,12 +103,15 @@ export async function importPlaybookFromImage(base64: string) {
     }
 }
 
+/**
+ * Fix: Changed model to gemini-3-flash-preview for multimodal data extraction.
+ */
 export async function scanFinancialDocument(base64: string) {
     const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
 
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-image",
+            model: "gemini-3-flash-preview",
             contents: {
                 parts: [
                     { text: "Extraia os dados deste recibo para JSON: {title, amount, date, category}." },
@@ -149,12 +155,15 @@ export async function suggestPlayConcepts(situation: string) {
     }
 }
 
+/**
+ * Fix: Changed model to gemini-3-flash-preview for multimodal image explanation reasoning.
+ */
 export async function explainPlayImage(base64: string, question: string) {
     const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
 
     try {
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-image",
+            model: "gemini-3-flash-preview",
             contents: {
                 parts: [
                     { text: `Explique este diagrama tático. Pergunta: ${question}` },
