@@ -7,10 +7,7 @@ export default defineConfig({
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY || '')
   },
   build: {
-    rollupOptions: {
-      input: {
-        main: './index.html'
-      }
-    }
+    outDir: 'dist',
+    emptyOutDir: true
   }
 });

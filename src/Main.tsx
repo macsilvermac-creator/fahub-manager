@@ -1,2 +1,2 @@
-// Arquivo migrado para index.tsx
+// Neutralizado para build na raiz
 export {};
