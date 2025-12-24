@@ -4,8 +4,9 @@ import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
-// Importações Lazy
+// Importações Lazy das Páginas
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Roster = lazy(() => import('./pages/Roster'));
 const Recruitment = lazy(() => import('./pages/Recruitment'));
@@ -20,6 +21,7 @@ const Marketplace = lazy(() => import('./pages/Marketplace'));
 const VideoAnalysis = lazy(() => import('./pages/VideoAnalysis'));
 const TacticalLab = lazy(() => import('./pages/TacticalLab'));
 const Schedule = lazy(() => import('./pages/Schedule'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 
 const App: React.FC = () => {
   return (
@@ -46,6 +48,7 @@ const App: React.FC = () => {
                       <Route path="/tactical-lab" element={<TacticalLab />} />
                       <Route path="/schedule" element={<Schedule />} />
                       <Route path="/help" element={<HelpCenter />} />
+                      <Route path="/admin" element={<AdminPanel />} />
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                   </Suspense>
