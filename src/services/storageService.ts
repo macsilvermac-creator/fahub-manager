@@ -1,10 +1,8 @@
 import { 
     Player, Game, PracticeSession, TeamSettings, 
-    AuditLog, Objective, RecruitmentCandidate, Transaction, 
-    Subscription, Budget, Bill, Invoice, Announcement, ChatMessage, 
-    TeamDocument, TacticalPlay, VideoClip, Course, MarketplaceItem,
-    KanbanTask, SponsorDeal, EventSale,
-    StaffMember, YouthClass, Affiliate, TransferRequest,
+    AuditLog, Objective, Transaction, Invoice, MarketplaceItem,
+    TacticalPlay, VideoClip, Course, SponsorDeal, EventSale,
+    StaffMember, YouthClass, YouthStudent, Affiliate, TransferRequest,
     League, OKR, RoadmapItem, Entitlement, DigitalProduct,
     SocialFeedPost, EquipmentItem, NationalTeamCandidate, ConfederationStats
 } from '../types';

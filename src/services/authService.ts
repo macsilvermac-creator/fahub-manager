@@ -81,5 +81,10 @@ export const authService = {
       const users = authService.getUsers();
       const updated = users.map(u => u.id === userId ? { ...u, isProfileComplete: true } : u);
       localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updated));
+      
+      const current = authService.getCurrentUser();
+      if (current && current.id === userId) {
+          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...current, isProfileComplete: true }));
+      }
   }
 };
