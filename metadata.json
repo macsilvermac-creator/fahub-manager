@@ -1,10 +1,13 @@
-
 {
+  "name": "FAHUB MANAGER",
+  "short_name": "FAHUB",
+  "description": "Ecossistema de Gestão de Futebol Americano em Tempo Real.",
   "requestFramePermissions": [
     "camera",
     "microphone",
     "geolocation"
   ],
-  "name": "FAHUB MANAGER",
-  "description": "Ecossistema de Gestão de Futebol Americano em Tempo Real."
+  "orientation": "portrait",
+  "display": "standalone",
+  "theme_color": "#0B1120"
 }
