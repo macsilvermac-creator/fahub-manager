@@ -1,11 +1,9 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { RecruitmentCandidate, Player } from "../types";
 
 const getAI = () => {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) throw new Error("Chave API do Gemini não configurada.");
-    return new GoogleGenAI({ apiKey });
+    // A API KEY é injetada via processo de build (Vite define)
+    return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 };
 
 const cleanJson = (text: string) => {
@@ -14,15 +12,12 @@ const cleanJson = (text: string) => {
 
 export async function analyzeTryoutPerformance(candidate: RecruitmentCandidate) {
     const ai = getAI();
-    const prompt = `Analise este candidato de Futebol Americano: ${JSON.stringify(candidate)}. Retorne JSON: { "potentialRating": number, "technicalAnalysis": "string" }`;
+    const prompt = `Analise tecnicamente o atleta: ${JSON.stringify(candidate)}. Retorne JSON: { "potentialRating": number, "technicalAnalysis": "string" }`;
     
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
-        config: { 
-            responseMimeType: "application/json",
-            thinkingConfig: { thinkingBudget: 1024 } 
-        }
+        config: { responseMimeType: "application/json" }
     });
 
     return JSON.parse(cleanJson(response.text || "{}"));
@@ -30,15 +25,12 @@ export async function analyzeTryoutPerformance(candidate: RecruitmentCandidate) 
 
 export async function generatePracticeScript(focus: string, duration: number, intensity: string) {
     const ai = getAI();
-    const prompt = `Gere treino de ${duration}min focado em: ${focus}. Intensidade: ${intensity}. Retorne array JSON de { id, startTime, durationMinutes, activityName, type }`;
+    const prompt = `Gere roteiro de treino de ${duration}min focado em: ${focus}. Retorne array JSON de { id, startTime, durationMinutes, activityName, type }`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
-        config: { 
-            responseMimeType: "application/json",
-            thinkingConfig: { thinkingBudget: 1024 } 
-        }
+        config: { responseMimeType: "application/json" }
     });
 
     return JSON.parse(cleanJson(response.text || "[]"));
@@ -81,8 +73,8 @@ export async function analyzeOpponentTendencies(notes: string) {
     const ai = getAI();
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Analise as tendências: ${notes}`,
-        config: { responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 1024 } }
+        contents: `Analise taticamente estas tendências: ${notes}`,
+        config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJson(response.text || "{}"));
 }
@@ -91,8 +83,8 @@ export async function suggestPlayConcepts(situation: string) {
     const ai = getAI();
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Sugira jogadas para: ${situation}`,
-        config: { responseMimeType: "application/json", thinkingConfig: { thinkingBudget: 1024 } }
+        contents: `Sugira conceitos de jogadas para: ${situation}`,
+        config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJson(response.text || "[]"));
 }
@@ -103,7 +95,7 @@ export async function explainPlayImage(base64: string, question: string) {
         model: "gemini-2.5-flash-image",
         contents: {
             parts: [
-                { text: `Explique: ${question}` },
+                { text: `Explique este diagrama: ${question}` },
                 { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
             ]
         }
@@ -113,7 +105,7 @@ export async function explainPlayImage(base64: string, question: string) {
 
 export async function analyzePlayMatchup(concept: string, scouting: any, opponent: string) {
     const ai = getAI();
-    const prompt = `Analise ${concept} contra ${opponent}: ${JSON.stringify(scouting)}`;
+    const prompt = `Analise a jogada ${concept} contra o scout de ${opponent}: ${JSON.stringify(scouting)}`;
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt
@@ -127,7 +119,7 @@ export async function importPlaybookFromImage(base64: string) {
         model: "gemini-2.5-flash-image",
         contents: {
             parts: [
-                { text: "Converta diagrama para JSON array de {id, type, label, x, y}." },
+                { text: "Converta este diagrama em um array JSON de objetos {id, type, label, x, y}." },
                 { inlineData: { mimeType: "image/jpeg", data: base64.split(',')[1] } }
             ]
         }
@@ -139,7 +131,7 @@ export async function generateMarketingContent(topic: string, platform: string) 
     const ai = getAI();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Copy de marketing para ${platform}: ${topic}`
+        contents: `Escreva um post de marketing para ${platform} sobre: ${topic}`
     });
     return response.text || "";
 }
@@ -148,7 +140,7 @@ export async function generateSponsorshipProposal(company: string, amount: numbe
     const ai = getAI();
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Proposta para ${company} de R$ ${amount}`
+        contents: `Escreva uma proposta formal para ${company} no valor de R$ ${amount}`
     });
     return response.text || "";
 }
@@ -157,31 +149,26 @@ export async function generateColorCommentary(home: string, away: string, contex
     const ai = getAI();
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Narrador: ${home} vs ${away}. Contexto: ${context}`,
+        contents: `Gere comentários de narração para ${home} vs ${away}. Contexto: ${context}`,
         config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJson(response.text || "{}"));
 }
 
-/* Fix: Added missing generateInstallSchedule export */
 export async function generateInstallSchedule(context: string) {
     const ai = getAI();
-    const prompt = `Gere um cronograma de instalação tática baseado neste contexto: ${context}. Retorne array JSON de { id, day, category, concept }`;
+    const prompt = `Gere um cronograma de instalação tática em JSON array de { id, day, category, concept } baseado em: ${context}`;
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt,
-        config: { 
-            responseMimeType: "application/json",
-            thinkingConfig: { thinkingBudget: 1024 } 
-        }
+        config: { responseMimeType: "application/json" }
     });
     return JSON.parse(cleanJson(response.text || "[]"));
 }
 
-/* Fix: Added missing generateGymPlan export */
 export async function generateGymPlan(goal: string, equipment: string, program: string) {
     const ai = getAI();
-    const prompt = `Gere um plano de treinamento de força focado em ${goal} para a modalidade ${program} com os seguintes equipamentos: ${equipment}. Retorne HTML formatado.`;
+    const prompt = `Crie um plano de treino focado em ${goal} para um atleta de ${program}. Equipamento: ${equipment}. Formate em HTML.`;
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: prompt
