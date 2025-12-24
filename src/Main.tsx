@@ -1,2 +1,2 @@
-// Arquivo movido para index.tsx e App.tsx
+// Redirecionado para a raiz.
 export {};
