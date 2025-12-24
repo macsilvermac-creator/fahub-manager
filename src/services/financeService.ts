@@ -54,7 +54,6 @@ export const financeService = {
                 amount,
                 dueDate,
                 status: 'PENDING',
-                // Fix: Ensuring category property is correctly typed
                 category: category as any,
                 inventoryItemId
             };
@@ -64,7 +63,10 @@ export const financeService = {
 
     processInvoicePayment: (invoiceId: string) => {
         const invoices = financeService.getInvoices();
-        const targetInv = invoices.find(i => i.id === invoiceId);
+        // Fix: Changed .find to .filter()[0] to resolve compatibility issues where find is not recognized
+        const found = invoices.filter(i => i.id === invoiceId);
+        const targetInv = found.length > 0 ? found[0] : null;
+        
         if (!targetInv || targetInv.status === 'PAID') return;
 
         const updatedInvoices = invoices.map(i => i.id === invoiceId ? { ...i, status: 'PAID' as const } : i);
@@ -75,8 +77,7 @@ export const financeService = {
             title: `Recebimento: ${targetInv.title}`,
             amount: targetInv.amount,
             type: 'INCOME',
-            // Fix: category check from Invoice
-            category: targetInv.category || 'TUITION',
+            category: (targetInv.category as string) || 'TUITION',
             date: new Date(),
             status: 'PAID'
         };

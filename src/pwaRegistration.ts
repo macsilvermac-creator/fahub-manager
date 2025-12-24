@@ -1,4 +1,6 @@
 
+/// <reference types="vite/client" />
+
 // This optional code is used to register a service worker.
 // register() is not called by default.
 
@@ -18,8 +20,10 @@ type Config = {
 };
 
 export function register(config?: Config) {
-  // Fix: Ensured metadata check is robust using defined types
-  const isProd = import.meta.env.PROD || import.meta.env.MODE === 'production';
+  // Fix: Explicitly cast import.meta to any to resolve build-time property access errors
+  const meta = (import.meta as any);
+  const isProd = meta.env?.PROD || meta.env?.MODE === 'production';
+  
   if (isProd && 'serviceWorker' in navigator) {
     const publicUrl = new URL(window.location.href);
     if (publicUrl.origin !== window.location.origin) {

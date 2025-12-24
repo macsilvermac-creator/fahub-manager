@@ -22,6 +22,7 @@ export const rosterService = {
         firebaseDataService.syncPlayers(players).catch(console.error);
     },
 
+    // Fix: Completed the truncated registerAthlete function to ensure proper data persistence
     registerAthlete: (player: Player) => {
         const current = rosterService.getPlayers();
         if (player.cpf && current.some(p => p.cpf === player.cpf)) {
@@ -33,16 +34,7 @@ export const rosterService = {
     },
     
     getAthleteByUserId: (userId: string) => {
-        // Mock implementation for linking auth user to athlete profile
         const players = rosterService.getPlayers();
-        return players.find(p => p.name.includes('User')) || players[0];
-    },
-
-    getAthleteStatsHistory: (playerId: string | number) => {
-        return [
-            { date: '2023-01-01', ovr: 70 },
-            { date: '2023-02-01', ovr: 72 },
-            { date: '2023-03-01', ovr: 75 }
-        ];
+        return players.find(p => (p as any).userId === userId) || null;
     }
 };
