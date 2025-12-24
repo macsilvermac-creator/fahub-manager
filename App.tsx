@@ -16,6 +16,7 @@ const Recruitment = lazy(() => import('./pages/Recruitment'));
 const Finance = lazy(() => import('./pages/Finance'));
 const TrainingHub = lazy(() => import('./pages/TrainingHub'));
 const PracticeExecution = lazy(() => import('./pages/PracticeExecution'));
+const PracticeDetail = lazy(() => import('./pages/PracticeDetail')); // Nova tela do Atleta
 const HelpCenter = lazy(() => import('./pages/HelpCenter'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
@@ -48,7 +49,6 @@ const App: React.FC = () => {
         <HashRouter>
           <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
             <Routes>
-              {/* Rota Raiz agora aponta para o Login para forçar o Identity Gateway */}
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -64,6 +64,7 @@ const App: React.FC = () => {
                       <Route path="/onboarding" element={<Onboarding />} />
                       <Route path="/training-day" element={<TrainingHub />} />
                       <Route path="/practice-execution/:id" element={<PracticeExecution />} />
+                      <Route path="/practice-detail/:id" element={<PracticeDetail />} />
                       <Route path="/roster" element={<Roster />} />
                       <Route path="/recruitment" element={<Recruitment />} />
                       <Route path="/finance" element={<Finance />} />
