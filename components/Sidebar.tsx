@@ -1,9 +1,8 @@
-
 import * as React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   DashboardIcon, RosterIcon, WhistleIcon, FinanceIcon, 
-  TrophyIcon, TargetIcon, VideoIcon, UsersIcon, ShieldCheckIcon, SparklesIcon
+  TrophyIcon, TargetIcon, VideoIcon, UsersIcon, ShieldCheckIcon, GlobeIcon
 } from './icons/UiIcons';
 import { UserRole } from '../types';
 import { storageService } from '../services/storageService';
@@ -31,7 +30,6 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, current
     navigate('/dashboard');
   };
 
-  /* Fix: Added explicit React.FC typing to SectionLabel to correctly handle children and intrinsic elements */
   const SectionLabel: React.FC<React.PropsWithChildren<{}>> = ({ children }) => (
     <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mt-6 mb-2 border-b border-white/5 pb-1">{children}</p>
   );
@@ -86,6 +84,17 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, current
             <FinanceIcon className="w-4 h-4 mr-3 text-green-400" />
             <span>Financeiro</span>
           </NavLink>
+
+          {/* SaaS Admin Section */}
+          {(currentRole === 'MASTER' || currentRole === 'PLATFORM_OWNER') && (
+            <>
+              <SectionLabel>SaaS HQ</SectionLabel>
+              <NavLink to="/hq" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <GlobeIcon className="w-4 h-4 mr-3 text-purple-500" />
+                <span>Platform HQ</span>
+              </NavLink>
+            </>
+          )}
         </nav>
       </div>
 

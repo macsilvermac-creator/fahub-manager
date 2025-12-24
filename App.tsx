@@ -2,13 +2,13 @@ import * as React from 'react';
 import { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-// Importações Estáticas (Síncronas) - Sem extensão conforme padrão ESM/Vite
+// Importações Estáticas
 import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 
-// Importações Lazy das páginas - Sem extensão
+// Importações Lazy - Todas apontando para a raiz /pages
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Roster = lazy(() => import('./pages/Roster'));
 const Recruitment = lazy(() => import('./pages/Recruitment'));
@@ -38,6 +38,7 @@ const PublicTeam = lazy(() => import('./pages/PublicTeam'));
 const BroadcastBooth = lazy(() => import('./pages/BroadcastBooth'));
 const BroadcastOverlay = lazy(() => import('./pages/BroadcastOverlay'));
 const MyProfile = lazy(() => import('./pages/MyProfile'));
+const PlatformHQ = lazy(() => import('./pages/PlatformHQ')); // Ativando PlatformHQ
 
 const App: React.FC = () => {
   return (
@@ -71,6 +72,7 @@ const App: React.FC = () => {
                       <Route path="/marketplace" element={<Marketplace />} />
                       <Route path="/locker-room" element={<LockerRoom />} />
                       <Route path="/admin" element={<AdminPanel />} />
+                      <Route path="/hq" element={<PlatformHQ />} />
                       <Route path="/goals" element={<Goals />} />
                       <Route path="/academy" element={<Academy />} />
                       <Route path="/logistics" element={<Logistics />} />

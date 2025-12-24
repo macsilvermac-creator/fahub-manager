@@ -94,3 +94,6 @@ export const PlusIcon = (props: any) => (
     <line x1="5" y1="12" x2="19" y2="12"></line>
   </svg>
 );
+
+// Fix: Added missing GlobeIcon export
+export const GlobeIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>;
