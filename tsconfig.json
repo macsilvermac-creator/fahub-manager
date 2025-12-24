@@ -17,20 +17,12 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "./*": ["./*"]
+      "*": ["./*"]
     }
   },
   "include": [
-    "./index.tsx", 
-    "./App.tsx", 
-    "./types.ts", 
-    "./vite-env.d.ts",
-    "./pages/**/*.tsx", 
-    "./components/**/*.tsx", 
-    "./services/**/*.ts", 
-    "./contexts/**/*.tsx", 
-    "./utils/**/*.ts",
-    "./features/**/*.tsx"
+    "./**/*.ts",
+    "./**/*.tsx"
   ],
   "exclude": ["node_modules", "dist", "src"]
 }
