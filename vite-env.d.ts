@@ -1,10 +1,4 @@
 declare global {
-  /* Moved AIStudio interface inside declare global to ensure it is part of the global namespace for interface merging */
-  interface AIStudio {
-    hasSelectedApiKey(): Promise<boolean>;
-    openSelectKey(): Promise<void>;
-  }
-
   namespace JSX {
     interface IntrinsicElements {
       [elemName: string]: any;
@@ -14,8 +8,11 @@ declare global {
   interface Window {
     YT: any;
     onYouTubeIframeAPIReady: () => void;
-    /* Made optional to match the modifiers of existing declarations in the environment and resolve type mismatch errors */
-    aistudio?: AIStudio;
+    /* Fix: Define aistudio properties inline to avoid Duplicate identifier errors with global AIStudio interface */
+    aistudio?: {
+      hasSelectedApiKey(): Promise<boolean>;
+      openSelectKey(): Promise<void>;
+    };
   }
 
   namespace NodeJS {

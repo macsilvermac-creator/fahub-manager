@@ -1,41 +1,43 @@
 import * as React from 'react';
 import { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
-import LoadingScreen from './components/LoadingScreen';
-import ErrorBoundary from './components/ErrorBoundary';
-import { ToastProvider } from './contexts/ToastContext';
 
-// Importações Lazy das páginas - Caminhos relativos à raiz do projeto
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Roster = lazy(() => import('./pages/Roster'));
-const Recruitment = lazy(() => import('./pages/Recruitment'));
-const Finance = lazy(() => import('./pages/Finance'));
-const TrainingHub = lazy(() => import('./pages/TrainingHub'));
-const PracticeExecution = lazy(() => import('./pages/PracticeExecution'));
-const HelpCenter = lazy(() => import('./pages/HelpCenter'));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
-const Onboarding = lazy(() => import('./pages/Onboarding'));
-const VideoAnalysis = lazy(() => import('./pages/VideoAnalysis'));
-const TacticalLab = lazy(() => import('./pages/TacticalLab'));
-const Inventory = lazy(() => import('./pages/Inventory'));
-const Staff = lazy(() => import('./pages/Staff'));
-const YouthProgram = lazy(() => import('./pages/YouthProgram'));
-const LeagueManager = lazy(() => import('./pages/LeagueManager'));
-const Marketplace = lazy(() => import('./pages/Marketplace'));
-const LockerRoom = lazy(() => import('./pages/LockerRoom'));
-const PublicLeague = lazy(() => import('./pages/PublicLeague'));
-const AdminPanel = lazy(() => import('./pages/AdminPanel'));
-const Goals = lazy(() => import('./pages/Goals'));
-const Academy = lazy(() => import('./pages/Academy'));
-const Logistics = lazy(() => import('./pages/Logistics'));
-const Confederation = lazy(() => import('./pages/Confederation'));
-const DigitalStore = lazy(() => import('./pages/DigitalStore'));
-const PublicTeam = lazy(() => import('./pages/PublicTeam'));
-const BroadcastBooth = lazy(() => import('./pages/BroadcastBooth'));
-const BroadcastOverlay = lazy(() => import('./pages/BroadcastOverlay'));
-const MyProfile = lazy(() => import('./pages/MyProfile'));
+// Importações Estáticas (Síncronas) - Caminhos relativos à raiz
+import Layout from './components/Layout.tsx';
+import LoadingScreen from './components/LoadingScreen.tsx';
+import ErrorBoundary from './components/ErrorBoundary.tsx';
+import { ToastProvider } from './contexts/ToastContext.tsx';
+
+// Importações Lazy das páginas - Caminhos explícitos com extensão para o Rollup
+const Dashboard = lazy(() => import('./pages/Dashboard.tsx'));
+const Roster = lazy(() => import('./pages/Roster.tsx'));
+const Recruitment = lazy(() => import('./pages/Recruitment.tsx'));
+const Finance = lazy(() => import('./pages/Finance.tsx'));
+const TrainingHub = lazy(() => import('./pages/TrainingHub.tsx'));
+const PracticeExecution = lazy(() => import('./pages/PracticeExecution.tsx'));
+const HelpCenter = lazy(() => import('./pages/HelpCenter.tsx'));
+const Login = lazy(() => import('./pages/Login.tsx'));
+const Register = lazy(() => import('./pages/Register.tsx'));
+const Onboarding = lazy(() => import('./pages/Onboarding.tsx'));
+const VideoAnalysis = lazy(() => import('./pages/VideoAnalysis.tsx'));
+const TacticalLab = lazy(() => import('./pages/TacticalLab.tsx'));
+const Inventory = lazy(() => import('./pages/Inventory.tsx'));
+const Staff = lazy(() => import('./pages/Staff.tsx'));
+const YouthProgram = lazy(() => import('./pages/YouthProgram.tsx'));
+const LeagueManager = lazy(() => import('./pages/LeagueManager.tsx'));
+const Marketplace = lazy(() => import('./pages/Marketplace.tsx'));
+const LockerRoom = lazy(() => import('./pages/LockerRoom.tsx'));
+const PublicLeague = lazy(() => import('./pages/PublicLeague.tsx'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel.tsx'));
+const Goals = lazy(() => import('./pages/Goals.tsx'));
+const Academy = lazy(() => import('./pages/Academy.tsx'));
+const Logistics = lazy(() => import('./pages/Logistics.tsx'));
+const Confederation = lazy(() => import('./pages/Confederation.tsx'));
+const DigitalStore = lazy(() => import('./pages/DigitalStore.tsx'));
+const PublicTeam = lazy(() => import('./pages/PublicTeam.tsx'));
+const BroadcastBooth = lazy(() => import('./pages/BroadcastBooth.tsx'));
+const BroadcastOverlay = lazy(() => import('./pages/BroadcastOverlay.tsx'));
+const MyProfile = lazy(() => import('./pages/MyProfile.tsx'));
 
 const App: React.FC = () => {
   return (
