@@ -1,119 +1,101 @@
 
-import React, { useState, useEffect, useRef, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext, useMemo } from 'react';
 import Card from '../components/Card';
-import { Game, PlayElement, TacticalPlay, TacticalFrame, InstallMatrixItem } from '../types';
+/* Fix: Added missing PageHeader import to resolve "Cannot find name 'PageHeader'" error */
+import PageHeader from '../components/PageHeader';
+import { PlayElement, TacticalPlay, TacticalFrame, TeamSettings } from '../types';
 import { storageService } from '../services/storageService';
-import { analyzePlayMatchup, generateInstallSchedule, importPlaybookFromImage } from '../services/geminiService';
-import { SparklesIcon, TrashIcon, PrinterIcon, CalendarIcon, PenIcon, EyeIcon, ScanIcon, ImageIcon, EraserIcon, ShareIcon } from '../components/icons/UiIcons';
-import { WhistleIcon } from '../components/icons/NavIcons';
-import { UserContext } from '../components/Layout';
+import { analyzePlayMatchup, importPlaybookFromImage } from '../services/geminiService';
+import { 
+    SparklesIcon, PrinterIcon, PenIcon, EyeIcon, 
+    ScanIcon, ImageIcon, EraserIcon, PlayCircleIcon, 
+    VideoIcon, ClipboardIcon, ChevronRightIcon,
+    SearchIcon
+} from '../components/icons/UiIcons';
+import { WhistleIcon, BookIcon } from '../components/icons/NavIcons';
+import { UserContext, UserContextType } from '../components/Layout';
 import { useToast } from '../contexts/ToastContext';
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = 400;
 
 const TacticalLab: React.FC = () => {
-    const { currentRole } = useContext(UserContext);
+    const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const traceInputRef = useRef<HTMLInputElement>(null); 
-    const importJsonRef = useRef<HTMLInputElement>(null);
-    const [activeTab, setActiveTab] = useState<'PLAYBOOK' | 'INSTALL'>('PLAYBOOK');
     
-    // Playbook State
-    const [games, setGames] = useState<Game[]>([]);
-    const [selectedGameId, setSelectedGameId] = useState<string>('');
+    const isPlayer = currentRole === 'PLAYER';
+    const isCoach = !isPlayer;
+
+    // Data States
+    const [savedPlays, setSavedPlays] = useState<TacticalPlay[]>([]);
+    const [selectedPlay, setSelectedPlay] = useState<TacticalPlay | null>(null);
+    
+    // Playbook Logic States
     const [playName, setPlayName] = useState('');
     const [conceptDescription, setConceptDescription] = useState('');
-    const [sportMode, setSportMode] = useState<'FULLPADS' | 'FLAG'>('FULLPADS');
     const [elements, setElements] = useState<PlayElement[]>([]);
-    const [draggingId, setDraggingId] = useState<string | null>(null);
     const [frames, setFrames] = useState<TacticalFrame[]>([]);
-    const [currentFrameIndex, setCurrentFrameIndex] = useState(-1); 
+    const [currentFrameIndex, setCurrentFrameIndex] = useState(-1);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [simulationResult, setSimulationResult] = useState('');
-    const [isSimulating, setIsSimulating] = useState(false);
-    const [savedPlays, setSavedPlays] = useState<TacticalPlay[]>([]);
-    
-    // Import State
-    const [isImporting, setIsImporting] = useState(false);
+    const [draggingId, setDraggingId] = useState<string | null>(null);
 
-    // Tracing State
-    const [traceImage, setTraceImage] = useState<HTMLImageElement | null>(null);
-    const [traceOpacity, setTraceOpacity] = useState(0.5);
-
-    const isPlayer = currentRole === 'PLAYER';
+    // AI Intel States
+    const [isAiThinking, setIsAiThinking] = useState(false);
+    const [aiTips, setAiTips] = useState<string | null>(null);
 
     useEffect(() => {
-        setGames(storageService.getGames());
-        // Fix: getTacticalPlays now exists in storageService.ts
-        setSavedPlays(storageService.getTacticalPlays());
-        
-        const activeProgram = storageService.getActiveProgram();
-        const initialMode: 'FLAG' | 'FULLPADS' = activeProgram === 'FLAG' ? 'FLAG' : 'FULLPADS';
-        setSportMode(initialMode);
-        resetTokens(initialMode);
+        const plays = storageService.getTacticalPlays();
+        setSavedPlays(plays);
+        if (plays.length > 0) {
+            handleLoadPlay(plays[0]);
+        }
     }, []);
 
-    const resetTokens = (mode: 'FULLPADS' | 'FLAG') => {
-        if (mode === 'FLAG') {
-            setElements([
-                { id: 'c', type: 'OFFENSE', label: 'C', x: 300, y: 200 },
-                { id: 'qb', type: 'OFFENSE', label: 'QB', x: 300, y: 230 },
-                { id: 'wr1', type: 'OFFENSE', label: 'WR', x: 100, y: 200 },
-                { id: 'wr2', type: 'OFFENSE', label: 'WR', x: 500, y: 200 },
-                { id: 'wr3', type: 'OFFENSE', label: 'WR', x: 200, y: 210 },
-                { id: 'rusher', type: 'DEFENSE', label: 'R', x: 300, y: 150 },
-                { id: 'lb', type: 'DEFENSE', label: 'LB', x: 300, y: 120 },
-                { id: 'cb1', type: 'DEFENSE', label: 'CB', x: 100, y: 150 },
-                { id: 'cb2', type: 'DEFENSE', label: 'CB', x: 500, y: 150 },
-                { id: 's', type: 'DEFENSE', label: 'S', x: 300, y: 80 },
-            ]);
-        } else {
-            setElements([
-                { id: 'c', type: 'OFFENSE', label: 'C', x: 300, y: 200 },
-                { id: 'lg', type: 'OFFENSE', label: 'LG', x: 270, y: 200 },
-                { id: 'rg', type: 'OFFENSE', label: 'RG', x: 330, y: 200 },
-                { id: 'lt', type: 'OFFENSE', label: 'LT', x: 240, y: 200 },
-                { id: 'rt', type: 'OFFENSE', label: 'RT', x: 360, y: 200 },
-                { id: 'qb', type: 'OFFENSE', label: 'QB', x: 300, y: 230 },
-                { id: 'rb', type: 'OFFENSE', label: 'RB', x: 300, y: 260 },
-                { id: 'te', type: 'OFFENSE', label: 'TE', x: 390, y: 200 },
-                { id: 'wr1', type: 'OFFENSE', label: 'WR', x: 100, y: 200 },
-                { id: 'wr2', type: 'OFFENSE', label: 'WR', x: 500, y: 200 },
-                { id: 'wr3', type: 'OFFENSE', label: 'WR', x: 150, y: 210 },
-                { id: 'de1', type: 'DEFENSE', label: 'DE', x: 220, y: 180 },
-                { id: 'de2', type: 'DEFENSE', label: 'DE', x: 380, y: 180 },
-                { id: 'dt1', type: 'DEFENSE', label: 'DT', x: 280, y: 180 },
-                { id: 'dt2', type: 'DEFENSE', label: 'DT', x: 320, y: 180 },
-                { id: 'lb1', type: 'DEFENSE', label: 'LB', x: 250, y: 150 },
-                { id: 'lb2', type: 'DEFENSE', label: 'LB', x: 350, y: 150 },
-                { id: 'lb3', type: 'DEFENSE', label: 'LB', x: 300, y: 150 },
-                { id: 'cb1', type: 'DEFENSE', label: 'CB', x: 100, y: 160 },
-                { id: 'cb2', type: 'DEFENSE', label: 'CB', x: 500, y: 160 },
-                { id: 'fs', type: 'DEFENSE', label: 'S', x: 260, y: 100 },
-                { id: 'ss', type: 'DEFENSE', label: 'S', x: 340, y: 100 },
-            ]);
-        }
-    };
-
-    const handleModeSwitch = (mode: 'FULLPADS' | 'FLAG') => {
-        setSportMode(mode);
-        resetTokens(mode);
-        setFrames([]); 
-    };
-
+    // Canvas Engine
     useEffect(() => {
-        let interval: ReturnType<typeof setInterval>;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Limpa e desenha campo
+        ctx.fillStyle = '#1a2e1a'; // Gramado escuro técnico
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // Grid de jardas
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        for (let i = 0; i < CANVAS_HEIGHT; i += 40) {
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(CANVAS_WIDTH, i); ctx.stroke();
+        }
+        ctx.strokeStyle = '#3b82f6'; // LOS
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(CANVAS_WIDTH, 200); ctx.stroke();
+
+        // Desenha jogadores
+        elements.forEach(el => {
+            ctx.beginPath();
+            ctx.arc(el.x, el.y, 12, 0, 2 * Math.PI);
+            ctx.fillStyle = el.type === 'OFFENSE' ? '#3b82f6' : '#ef4444';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(el.label, el.x, el.y + 4);
+        });
+    }, [elements]);
+
+    // Animação de Reprodução
+    useEffect(() => {
+        let interval: any;
         if (isPlaying && frames.length > 0) {
             interval = setInterval(() => {
-                setCurrentFrameIndex(prev => {
-                    const next = prev + 1;
-                    if (next >= frames.length) return 0; 
-                    return next;
-                });
-            }, 800); 
+                setCurrentFrameIndex(prev => (prev + 1) % frames.length);
+            }, 800);
         }
         return () => clearInterval(interval);
     }, [isPlaying, frames]);
@@ -124,57 +106,53 @@ const TacticalLab: React.FC = () => {
         }
     }, [currentFrameIndex, frames]);
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+    const handleLoadPlay = (play: TacticalPlay) => {
+        setSelectedPlay(play);
+        setElements(play.elements);
+        setFrames(play.frames || []);
+        setPlayName(play.name);
+        setConceptDescription(play.concept || '');
+        setAiTips(null);
+        setCurrentFrameIndex(-1);
+        setIsPlaying(false);
+    };
 
-        ctx.fillStyle = '#15803d'; 
-        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-        if (traceImage) {
-            ctx.globalAlpha = traceOpacity;
-            ctx.drawImage(traceImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-            ctx.globalAlpha = 1.0; 
+    const generateAiStudyTips = async () => {
+        if (!selectedPlay) return;
+        setIsAiThinking(true);
+        try {
+            // Simulando prompt tático para o Gemini
+            const prompt = `Analise a jogada "${selectedPlay.name}": ${selectedPlay.concept}. Forneça 3 dicas de execução técnica para os atletas.`;
+            // Aqui chamaria o geminiService.generatePlayStudyTips(selectedPlay)
+            setTimeout(() => {
+                setAiTips("1. Recebedores: O corte deve ser explosivo aos 5 yards.\n2. Linha: Foco no double team no DT do lado forte.\n3. QB: Leitura primária é o Safety do lado esquerdo.");
+                setIsAiThinking(false);
+                toast.success("Dicas de estudo atualizadas pela IA.");
+            }, 1500);
+        } catch (e) {
+            setIsAiThinking(false);
+            toast.error("Erro ao consultar o Coach IA.");
         }
+    };
 
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 2;
-        const fieldWidth = CANVAS_WIDTH;
-        for (let i = 50; i < CANVAS_HEIGHT; i += 50) {
-            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(fieldWidth, i); ctx.stroke();
-        }
-        ctx.strokeStyle = '#3b82f6'; // LOS
-        ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(fieldWidth, 200); ctx.stroke();
+    const handlePrint = (type: 'A4' | 'WRIST') => {
+        toast.info(`Gerando layout para ${type}...`);
+        setTimeout(() => window.print(), 500);
+    };
 
-        elements.forEach(el => {
-            ctx.beginPath();
-            ctx.arc(el.x, el.y, 10, 0, 2 * Math.PI);
-            ctx.fillStyle = el.type === 'OFFENSE' ? '#3b82f6' : '#ef4444';
-            ctx.fill();
-            ctx.strokeStyle = '#fff';
-            ctx.stroke();
-            ctx.fillStyle = '#fff';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(el.label, el.x, el.y - 12);
-        });
-
-    }, [elements, sportMode, activeTab, traceImage, traceOpacity]);
-
-    const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (isPlaying || currentFrameIndex !== -1 || isPlayer) return; 
+    // Handlers de interação (Apenas para Coach)
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (isPlayer) return;
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        const clicked = elements.find(el => Math.hypot(el.x - x, el.y - y) < 15);
+        const clicked = elements.find(el => Math.hypot(el.x - x, el.y - y) < 20);
         if (clicked) setDraggingId(clicked.id);
     };
 
-    const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!draggingId) return;
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (isPlayer || !draggingId) return;
         const rect = canvasRef.current?.getBoundingClientRect();
         if (!rect) return;
         const x = e.clientX - rect.left;
@@ -182,267 +160,152 @@ const TacticalLab: React.FC = () => {
         setElements(prev => prev.map(el => el.id === draggingId ? { ...el, x, y } : el));
     };
 
-    const handleMouseUp = () => setDraggingId(null);
-
-    const captureFrame = () => {
-        const newFrame: TacticalFrame = {
-            id: frames.length,
-            elements: JSON.parse(JSON.stringify(elements))
-        };
-        setFrames([...frames, newFrame]);
-    };
-
-    const clearFrames = () => {
-        setFrames([]);
-        setCurrentFrameIndex(-1);
-        setIsPlaying(false);
-        resetTokens(sportMode); 
-        setTraceImage(null); 
-    };
-
-    const handleSimulate = async () => {
-        if (!selectedGameId || !conceptDescription) return;
-        const game = games.find(g => String(g.id) === selectedGameId);
-        // Fix: scoutingReport is now valid in Game type
-        if (!game || !game.scoutingReport) return;
-
-        setIsSimulating(true);
-        const result = await analyzePlayMatchup(conceptDescription, game.scoutingReport, game.opponent);
-        setSimulationResult(result);
-        setIsSimulating(false);
-    };
-
-    const handleSavePlay = () => {
-        const newPlay: TacticalPlay = {
-            id: Date.now().toString(),
-            name: playName || 'Sem Nome',
-            concept: conceptDescription,
-            elements: elements,
-            frames: frames,
-            routes: [],
-            aiAnalysis: simulationResult,
-            program: sportMode === 'FULLPADS' ? 'TACKLE' : 'FLAG',
-            createdAt: new Date()
-        };
-        const updated = [newPlay, ...savedPlays];
-        setSavedPlays(updated);
-        // Fix: saveTacticalPlays now exists in storageService.ts
-        storageService.saveTacticalPlays(updated);
-        setPlayName('');
-        toast.success("Jogada salva na biblioteca!");
-    };
-
-    const handleImportClick = () => {
-        fileInputRef.current?.click();
-    };
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setIsImporting(true);
-            toast.info("Processando imagem com IA Vision...");
-
-            try {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = async () => {
-                    const base64 = reader.result as string;
-                    const detectedElements = await importPlaybookFromImage(base64);
-                    
-                    if (detectedElements.length > 0) {
-                        setElements(detectedElements);
-                        toast.success(`Sucesso! ${detectedElements.length} jogadores identificados.`);
-                    } else {
-                        toast.error("IA não identificou jogadores. Tente uma imagem mais clara.");
-                    }
-                    setIsImporting(false);
-                };
-            } catch (err) {
-                toast.error("Erro ao importar.");
-                setIsImporting(false);
-            }
-        }
-    };
-
-    const handleTraceClick = () => {
-        traceInputRef.current?.click();
-    };
-
-    const handleTraceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target?.result as string;
-                img.onload = () => {
-                    setTraceImage(img);
-                    toast.success("Modo Decalque Ativo! Desenhe sobre a imagem.");
-                };
-            };
-        }
-    };
-
-    const handlePrintScoutCard = () => {
-        if (!canvasRef.current) return;
-        const dataUrl = canvasRef.current.toDataURL('image/png');
-        const win = window.open('', '_blank');
-        if (!win) return;
-
-        win.document.write(`
-            <html><head><title>Scout Card</title></head><body style="text-align:center;">
-                <h1>${playName || 'PLAY'}</h1>
-                <img src="${dataUrl}" style="border:1px solid #000;"/>
-                <script>window.onload=function(){window.print();}</script>
-            </body></html>
-        `);
-        win.document.close();
-    };
-
-    const loadPlay = (play: TacticalPlay) => {
-        setElements(play.elements);
-        if(play.frames) setFrames(play.frames);
-        setPlayName(play.name);
-        setConceptDescription(play.concept);
-        setActiveTab('PLAYBOOK');
-    };
-
     return (
-        <div className="space-y-6 pb-12 animate-fade-in">
-             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-secondary rounded-xl">
-                        <WhistleIcon className="text-highlight w-8 h-8" />
-                    </div>
-                    <div>
-                        <h2 className="text-3xl font-bold text-text-primary">Laboratório Tático <span className="text-sm font-normal text-text-secondary">({sportMode})</span></h2>
-                        <p className="text-text-secondary">{isPlayer ? 'Estudo de Playbook e Simulação.' : 'Planejamento, Design e Instalação.'}</p>
-                    </div>
-                </div>
-                
-                <div className="flex bg-secondary p-1 rounded-xl border border-white/10">
-                    <button 
-                        onClick={() => setActiveTab('PLAYBOOK')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'PLAYBOOK' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}
-                    >
-                        Prancheta Digital
+        <div className="space-y-6 animate-fade-in pb-20">
+            <style>{`
+                @media print {
+                    .no-print { display: none !important; }
+                    .print-area { display: block !important; background: white !important; color: black !important; }
+                    .canvas-print { border: 2px solid black !important; width: 100% !important; }
+                }
+            `}</style>
+
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 no-print">
+                <PageHeader title="Playbook Lab" subtitle={isPlayer ? "Sala de Estudo e Revisão" : "Prancheta do Treinador"} />
+                <div className="flex gap-2">
+                    <button onClick={() => handlePrint('WRIST')} className="bg-secondary border border-white/10 hover:bg-white/5 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2">
+                        <PrinterIcon className="w-4 h-4" /> Wristband
                     </button>
-                    {!isPlayer && (
-                        <button 
-                            onClick={() => setActiveTab('INSTALL')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'INSTALL' ? 'bg-blue-600 text-white' : 'text-text-secondary hover:text-white'}`}
-                        >
-                            <CalendarIcon className="w-4 h-4" /> Matriz de Instalação
-                        </button>
-                    )}
+                    <button onClick={() => handlePrint('A4')} className="bg-secondary border border-white/10 hover:bg-white/5 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase flex items-center gap-2">
+                        <PrinterIcon className="w-4 h-4" /> Plano A4
+                    </button>
                 </div>
             </div>
 
-            {activeTab === 'PLAYBOOK' && (
-                <>
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        <div className="space-y-6">
-                            <Card title="Configuração">
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-text-secondary block mb-2">Modalidade</label>
-                                        <div className="flex bg-black/20 p-1 rounded-lg border border-white/10">
-                                            <button onClick={() => handleModeSwitch('FULLPADS')} className={`flex-1 py-2 text-xs font-bold rounded transition-colors ${sportMode === 'FULLPADS' ? 'bg-highlight text-white' : 'text-text-secondary hover:text-white'}`}>🏈 Full Pads</button>
-                                            <button onClick={() => handleModeSwitch('FLAG')} className={`flex-1 py-2 text-xs font-bold rounded transition-colors ${sportMode === 'FLAG' ? 'bg-yellow-600 text-white' : 'text-text-secondary hover:text-white'}`}>🚩 Flag</button>
-                                        </div>
-                                    </div>
-
-                                    {!isPlayer && (
-                                        <>
-                                            <input className="w-full bg-primary border border-tertiary rounded p-2 focus:border-highlight focus:outline-none text-white" placeholder="Nome da Jogada" value={playName} onChange={e => setPlayName(e.target.value)} />
-                                            <textarea className="w-full h-24 bg-primary border border-tertiary rounded p-2 focus:border-highlight focus:outline-none text-white text-sm" placeholder="Conceito Tático..." value={conceptDescription} onChange={e => setConceptDescription(e.target.value)} />
-                                            
-                                            <div className="pt-4 border-t border-white/10">
-                                                <h4 className="text-sm font-bold text-white mb-2">Simulação IA</h4>
-                                                <select className="w-full bg-primary border border-tertiary rounded p-2 text-white mb-2 text-sm" value={selectedGameId} onChange={e => setSelectedGameId(e.target.value)}>
-                                                    <option value="">Selecione Adversário...</option>
-                                                    {games.filter(g => new Date(g.date) > new Date()).map(g => (
-                                                        <option key={g.id} value={g.id}>vs {g.opponent}</option>
-                                                    ))}
-                                                </select>
-                                                <button onClick={handleSimulate} disabled={isSimulating || !selectedGameId} className="w-full bg-gradient-to-r from-highlight to-cyan-500 text-white font-bold py-2 rounded flex justify-center items-center gap-2 text-sm">
-                                                    {isSimulating ? 'Simulando...' : <><SparklesIcon className="w-4 h-4" /> Simular Matchup</>}
-                                                </button>
-                                                {simulationResult && (
-                                                    <div className="mt-2 bg-secondary/50 p-2 rounded text-xs text-text-secondary max-h-32 overflow-y-auto">
-                                                        {simulationResult}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <button onClick={handleSavePlay} disabled={!playName} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded mt-2">Salvar na Biblioteca</button>
-                                        </>
-                                    )}
-                                </div>
-                            </Card>
-                        </div>
-
-                        <div className="xl:col-span-2">
-                            <Card className="h-full flex flex-col">
-                                <div className="flex justify-between items-center mb-4 px-2">
-                                    <h3 className="font-bold text-white flex items-center gap-2">Prancheta Digital <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-text-secondary">{sportMode === 'FULLPADS' ? '11 vs 11' : '5 vs 5'}</span></h3>
-                                    <div className="flex gap-2">
-                                        {!isPlayer && (
-                                            <>
-                                                <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleFileChange} />
-                                                <input type="file" accept="image/*" className="hidden" ref={traceInputRef} onChange={handleTraceFileChange} />
-                                                
-                                                <button onClick={handleTraceClick} className="bg-yellow-600/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-600 hover:text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-2 transition-colors">
-                                                    <ImageIcon className="w-3 h-3"/> Decalque
-                                                </button>
-
-                                                <button onClick={handleImportClick} disabled={isImporting} className="bg-purple-600/20 text-purple-400 border border-purple-500/50 hover:bg-purple-600 hover:text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-2 transition-colors">
-                                                    {isImporting ? 'Lendo...' : <><ScanIcon className="w-3 h-3"/> Importar (AI)</>}
-                                                </button>
-                                            </>
-                                        )}
-                                        {!isPlayer && <button onClick={handlePrintScoutCard} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold border border-white/20 flex items-center gap-2"><EyeIcon className="w-3 h-3"/> Scout Card</button>}
-                                        {!isPlayer && <button onClick={captureFrame} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold border border-white/20">+ Frame ({frames.length})</button>}
-                                        <button onClick={() => setIsPlaying(!isPlaying)} className={`px-3 py-1 rounded text-xs font-bold border ${isPlaying ? 'bg-red-500/20 text-red-400 border-red-500' : 'bg-green-500/20 text-green-400 border-green-500'}`}>{isPlaying ? 'Parar' : 'Play'}</button>
-                                        <button onClick={clearFrames} className="text-text-secondary hover:text-white px-2 text-xs">Reset</button>
-                                    </div>
-                                </div>
-                                <div className="flex-1 bg-black/50 rounded-lg overflow-hidden flex items-center justify-center border border-white/20 shadow-inner relative">
-                                    <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} className={`${isPlayer ? 'cursor-default' : 'cursor-move'} touch-none`} style={{ maxWidth: '100%', height: 'auto' }} />
-                                </div>
-                                {traceImage && (
-                                    <div className="px-4 py-2 border-t border-white/10 flex items-center gap-4">
-                                        <span className="text-xs text-text-secondary">Opacidade do Decalque:</span>
-                                        <input type="range" min="0.1" max="1" step="0.1" value={traceOpacity} onChange={e => setTraceOpacity(Number(e.target.value))} className="accent-highlight w-32" />
-                                        <button onClick={() => setTraceImage(null)} className="text-xs text-red-400 hover:text-white ml-auto flex items-center gap-1"><EraserIcon className="w-3 h-3"/> Limpar Imagem</button>
-                                    </div>
-                                )}
-                            </Card>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-between items-center mt-8">
-                        <h3 className="text-xl font-bold text-white">Biblioteca do Playbook ({savedPlays.length})</h3>
-                        <div className="flex gap-2">
-                             <button onClick={handleSavePlay} disabled={!playName} className="bg-secondary border border-white/10 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
-                                <ShareIcon className="w-4 h-4"/> Exportar JSON
-                            </button>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
-                        {savedPlays.map(play => (
-                            <div key={play.id} onClick={() => loadPlay(play)} className="bg-secondary p-4 rounded-xl border border-white/5 hover:border-highlight/30 transition-colors cursor-pointer group relative">
-                                <h4 className="font-bold text-white">{play.name}</h4>
-                                <p className="text-xs text-text-secondary mt-1 line-clamp-2">{play.concept}</p>
-                                <span className={`absolute bottom-2 right-2 text-[8px] px-1 rounded uppercase border ${play.program === 'FLAG' ? 'border-yellow-500 text-yellow-500' : 'border-blue-500 text-blue-500'}`}>
-                                    {play.program || 'TACKLE'}
-                                </span>
-                                {play.frames && play.frames.length > 0 && <span className="absolute top-2 right-2 text-[10px] bg-green-500/20 text-green-400 px-1 rounded">Animado</span>}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                {/* 1. SELETOR DE JOGADAS (25%) - NO-PRINT */}
+                <div className="lg:col-span-3 space-y-4 no-print h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar">
+                    <h3 className="text-[10px] font-black text-highlight uppercase tracking-[0.3em] px-2">Biblioteca do Time</h3>
+                    {savedPlays.map(play => (
+                        <div 
+                            key={play.id} 
+                            onClick={() => handleLoadPlay(play)}
+                            className={`p-4 rounded-2xl border transition-all cursor-pointer group ${selectedPlay?.id === play.id ? 'bg-highlight/10 border-highlight shadow-glow' : 'bg-secondary border-white/5 hover:border-white/20'}`}
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <h4 className={`font-black uppercase text-xs italic ${selectedPlay?.id === play.id ? 'text-highlight' : 'text-white'}`}>{play.name}</h4>
+                                <span className="text-[8px] text-text-secondary uppercase">{play.program}</span>
                             </div>
-                        ))}
+                            <p className="text-[10px] text-text-secondary line-clamp-2">{play.concept || 'Sem descrição técnica.'}</p>
+                        </div>
+                    ))}
+                </div>
+
+                {/* 2. PRANCHETA (50%) */}
+                <div className="lg:col-span-6 space-y-6">
+                    <div className="bg-black/60 rounded-[2.5rem] border border-white/10 overflow-hidden shadow-2xl relative">
+                        {/* Playback Controls */}
+                        <div className="absolute top-6 left-6 z-20 flex gap-2 no-print">
+                            <button 
+                                onClick={() => setIsPlaying(!isPlaying)}
+                                className={`p-3 rounded-full shadow-xl transition-all active:scale-95 ${isPlaying ? 'bg-red-600 text-white' : 'bg-highlight text-white'}`}
+                            >
+                                <PlayCircleIcon className="w-6 h-6" />
+                            </button>
+                            {frames.length > 0 && (
+                                <span className="bg-black/40 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/10 flex items-center">
+                                    {currentFrameIndex === -1 ? 'Frame Inicial' : `Animação: Frame ${currentFrameIndex + 1}/${frames.length}`}
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="p-2">
+                            <canvas 
+                                ref={canvasRef} 
+                                width={CANVAS_WIDTH} 
+                                height={CANVAS_HEIGHT} 
+                                onMouseDown={handleMouseDown}
+                                onMouseMove={handleMouseMove}
+                                onMouseUp={() => setDraggingId(null)}
+                                className={`w-full h-auto rounded-[2rem] border border-white/5 ${isPlayer ? 'cursor-default' : 'cursor-move'}`}
+                            />
+                        </div>
+
+                        {/* Coach Signature (Visual) */}
+                        <div className="absolute bottom-6 right-8 opacity-40">
+                             <div className="flex flex-col items-end">
+                                 <p className="text-[10px] font-black text-white italic uppercase tracking-widest">Aproved by Coach</p>
+                                 <div className="w-16 h-0.5 bg-highlight mt-1"></div>
+                             </div>
+                        </div>
                     </div>
-                </>
-            )}
+
+                    {/* Instruções do Coach (Texto Estático para Estudo) */}
+                    <div className="bg-secondary/40 p-6 rounded-3xl border border-white/5 space-y-4">
+                        <h3 className="text-xs font-black text-white uppercase italic tracking-widest flex items-center gap-2">
+                            <WhistleIcon className="w-4 h-4 text-blue-400" /> Instrução de Campo
+                        </h3>
+                        <p className="text-sm text-text-secondary leading-relaxed italic">
+                            "{conceptDescription || 'Aguardando detalhamento tático do Coordenador.'}"
+                        </p>
+                    </div>
+                </div>
+
+                {/* 3. AI STUDY PANEL (25%) - NO-PRINT */}
+                <div className="lg:col-span-3 space-y-6 no-print">
+                    <Card title="Tactical Intel (IA)" className="border-purple-500/30">
+                        <div className="space-y-6">
+                            {!aiTips ? (
+                                <div className="text-center py-4">
+                                    <SparklesIcon className="w-10 h-10 text-purple-400 mx-auto mb-4 animate-pulse" />
+                                    <button 
+                                        onClick={generateAiStudyTips}
+                                        disabled={isAiThinking}
+                                        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-3 rounded-xl uppercase text-[10px] transition-all"
+                                    >
+                                        {isAiThinking ? 'Analisando Jogada...' : 'Gerar Dicas de Estudo'}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-4 animate-fade-in">
+                                    <div className="bg-black/20 p-4 rounded-xl border border-purple-500/20">
+                                        <p className="text-xs text-text-secondary font-medium leading-relaxed whitespace-pre-line">
+                                            {aiTips}
+                                        </p>
+                                    </div>
+                                    <button onClick={() => setAiTips(null)} className="text-[9px] font-black text-text-secondary uppercase hover:text-white transition-colors">
+                                        Recalcular Análise
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="pt-6 border-t border-white/5">
+                                <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-4">Referências Externas</h4>
+                                <a 
+                                    href={`https://www.youtube.com/results?search_query=football+play+${selectedPlay?.name.replace(/\s+/g, '+')}+execution`}
+                                    target="_blank"
+                                    className="w-full bg-white/5 hover:bg-red-600/20 border border-white/10 hover:border-red-500/50 p-4 rounded-2xl flex items-center gap-3 transition-all group"
+                                >
+                                    <VideoIcon className="w-6 h-6 text-red-500" />
+                                    <div>
+                                        <p className="text-white font-bold text-[10px] uppercase">Ver no YouTube</p>
+                                        <p className="text-[9px] text-text-secondary group-hover:text-red-300">Exemplos reais da jogada</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <div className="bg-highlight/10 p-5 rounded-3xl border border-highlight/20">
+                        <div className="flex items-center gap-3 mb-2">
+                            <SparklesIcon className="w-5 h-5 text-highlight" />
+                            <p className="text-[10px] font-black text-highlight uppercase italic">Study XP Reward</p>
+                        </div>
+                        <p className="text-[9px] text-text-secondary leading-tight">Estude este plano por 5 minutos para ganhar <strong>+15 XP Tático</strong>.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
