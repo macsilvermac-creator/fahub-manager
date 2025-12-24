@@ -23,13 +23,6 @@ class ErrorBoundary extends React.Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
-    
-    if (error.message && (
-      error.message.includes('Loading chunk') || 
-      error.message.includes('dynamically imported module')
-    )) {
-      window.location.reload();
-    }
   }
 
   private handleReload = () => {
