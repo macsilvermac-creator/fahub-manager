@@ -1,5 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
@@ -8,10 +12,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // Força o Vite a resolver services de qualquer lugar para a pasta raiz/services
-      'services': '/services',
-      'components': '/components',
-      'pages': '/pages'
+      // Define caminhos absolutos para as pastas na raiz
+      'services': path.resolve(__dirname, './services'),
+      'components': path.resolve(__dirname, './components'),
+      'pages': path.resolve(__dirname, './pages'),
+      '@': path.resolve(__dirname, './')
     }
   },
   build: {
@@ -19,7 +24,7 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: './index.html',
+        main: path.resolve(__dirname, 'index.html'),
       },
     },
   },

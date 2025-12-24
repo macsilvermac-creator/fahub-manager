@@ -19,7 +19,8 @@
     "paths": {
       "services/*": ["services/*"],
       "components/*": ["components/*"],
-      "pages/*": ["pages/*"]
+      "pages/*": ["pages/*"],
+      "@/*": ["*"]
     }
   },
   "include": [
