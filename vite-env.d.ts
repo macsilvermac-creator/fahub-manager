@@ -1,10 +1,10 @@
-// Fix: Defined AIStudio interface as it is referenced in global window declarations
-interface AIStudio {
-  hasSelectedApiKey(): Promise<boolean>;
-  openSelectKey(): Promise<void>;
-}
-
 declare global {
+  /* Moved AIStudio interface inside declare global to ensure it is part of the global namespace for interface merging */
+  interface AIStudio {
+    hasSelectedApiKey(): Promise<boolean>;
+    openSelectKey(): Promise<void>;
+  }
+
   namespace JSX {
     interface IntrinsicElements {
       [elemName: string]: any;
@@ -14,8 +14,8 @@ declare global {
   interface Window {
     YT: any;
     onYouTubeIframeAPIReady: () => void;
-    // Fix: Removed 'readonly' modifier and changed type from 'any' to 'AIStudio' to match external declarations and fix identical modifier/type errors
-    aistudio: AIStudio;
+    /* Made optional to match the modifiers of existing declarations in the environment and resolve type mismatch errors */
+    aistudio?: AIStudio;
   }
 
   namespace NodeJS {
