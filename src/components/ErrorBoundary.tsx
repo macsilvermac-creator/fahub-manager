@@ -1,4 +1,3 @@
-
 import React, { ErrorInfo, ReactNode, Component } from 'react';
 import { AlertTriangleIcon, RefreshIcon } from './icons/UiIcons';
 
@@ -12,7 +11,7 @@ interface State {
 }
 
 /* Fix: Explicitly declare state and props in ErrorBoundary class to satisfy TS */
-class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundary extends React.Component<Props, State> {
   public state: State = { hasError: false };
 
   constructor(props: Props) {
@@ -84,8 +83,9 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    // Fix: Explicitly accessing children via cast to avoid TS property check failure
+    return (this.props as any).children;
   }
 }
 
-export default ErrorBoundary;
+export default ErrorBoundary

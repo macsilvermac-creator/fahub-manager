@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      // Fix: Use process.cwd() instead of __dirname for ESM compatibility
+      '@': path.resolve(process.cwd(), './src'),
     },
   },
   define: {
