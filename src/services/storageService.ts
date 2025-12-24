@@ -1,4 +1,3 @@
-
 import { 
     Player, Game, PracticeSession, TeamSettings, 
     AuditLog, LeagueRanking, Objective,
@@ -9,8 +8,7 @@ import {
     StaffMember, YouthClass, YouthStudent, Affiliate, TransferRequest,
     League, OKR, RoadmapItem, Entitlement, DigitalProduct,
     ObjectiveSignal, Team, SocialFeedPost, EquipmentItem,
-    Championship,
-    NationalTeamCandidate
+    Championship, NationalTeamCandidate
 } from '../types';
 
 const set = (key: string, data: any) => {
@@ -49,52 +47,53 @@ export const storageService = {
         return () => window.removeEventListener('storage_update', handler);
     },
 
-    getCurrentUser: () => JSON.parse(localStorage.getItem('gridiron_current_user') || '{"role":"HEAD_COACH","name":"Coach Guto", "id": "user-123", "program": "TACKLE"}'),
-    setCurrentUser: (u: any) => localStorage.setItem('gridiron_current_user', JSON.stringify(u)),
+    getCurrentUser: () => {
+        const user = localStorage.getItem('gridiron_current_user');
+        return user ? JSON.parse(user) : { role: 'MASTER', name: 'Diretor Geral', id: 'master-01', program: 'TACKLE' };
+    },
     
-    getTasks: () => get<KanbanTask>('hc_tasks'),
-    saveTasks: (data: KanbanTask[]) => set('hc_tasks', data),
-
-    getRankings: () => [
-        { position: 1, teamName: 'Gladiators', record: '4-0' },
-        { position: 2, teamName: 'Istepôs', record: '3-1' },
-        { position: 3, teamName: 'Timbó Rex', record: '3-1' }
-    ],
+    setCurrentUser: (u: any) => set('gridiron_current_user', u),
     
     getPracticeSessions: () => get<PracticeSession>('fahub_practice'),
     savePracticeSessions: (data: PracticeSession[]) => set('fahub_practice', data),
 
     getPlayers: () => get<Player>('fahub_players'),
     savePlayers: (data: Player[]) => set('fahub_players', data),
-    getAthletes: () => get<Player>('fahub_players'),
     registerAthlete: (player: Player) => {
-        const players = get<Player>('fahub_players');
-        set('fahub_players', [...players, player]);
+        const current = get<Player>('fahub_players');
+        set('fahub_players', [...current, player]);
     },
-    getAthleteByUserId: (userId: string) => get<Player>('fahub_players').find(p => (p as any).userId === userId),
-    getAthleteStatsHistory: (playerId: string | number) => [],
 
     getGames: () => get<Game>('fahub_games'),
     saveGames: (data: Game[]) => set('fahub_games', data),
-    updateLiveGame: (gameId: string | number, updates: Partial<Game>) => {
+    updateLiveGame: (id: any, updates: any) => {
         const games = get<Game>('fahub_games');
-        const updated = games.map(g => String(g.id) === String(gameId) ? { ...g, ...updates } : g);
-        set('fahub_games', updated);
+        set('fahub_games', games.map(g => String(g.id) === String(id) ? { ...g, ...updates } : g));
     },
 
-    getTeamSettings: () => getSingle<TeamSettings>('fahub_settings') || { id: '1', teamName: 'JG', logoUrl: '', primaryColor: '#059669', sportType: 'TACKLE' },
+    getRankings: () => [
+        { position: 1, teamName: 'Gladiators', record: '4-0' },
+        { position: 2, teamName: 'Istepôs', record: '3-1' },
+        { position: 3, teamName: 'Timbó Rex', record: '3-1' }
+    ],
+
+    getTeamSettings: () => getSingle<TeamSettings>('fahub_settings') || { teamName: 'Novo Time', primaryColor: '#059669', logoUrl: '' },
     saveTeamSettings: (data: TeamSettings) => set('fahub_settings', data),
     
     getAuditLogs: () => get<AuditLog>('fahub_audit'),
     logAuditAction: (action: string, details: string) => {
         const logs = get<AuditLog>('fahub_audit');
         const user = storageService.getCurrentUser();
-        set('fahub_audit', [{ id: Date.now().toString(), action, details, timestamp: new Date(), userName: user.name, role: user.role }, ...logs]);
+        set('fahub_audit', [{ 
+            id: Date.now().toString(), 
+            action, 
+            details, 
+            timestamp: new Date(), 
+            userName: user.name, 
+            role: user.role,
+            ipAddress: '127.0.0.1' 
+        }, ...logs]);
     },
-    logAction: (action: string, details: string) => storageService.logAuditAction(action, details),
-
-    getObjectives: () => get<Objective>('fahub_objectives'),
-    saveObjectives: (data: Objective[]) => set('fahub_objectives', data),
 
     getClips: () => get<VideoClip>('fahub_clips'),
     saveClips: (data: VideoClip[]) => set('fahub_clips', data),
@@ -125,115 +124,78 @@ export const storageService = {
 
     getStaff: () => get<StaffMember>('fahub_staff'),
     saveStaff: (data: StaffMember[]) => set('fahub_staff', data),
-    
-    getActiveProgram: () => (getSingle<TeamSettings>('fahub_settings')?.sportType || 'TACKLE') as any,
-    notify: (channel: string) => { window.dispatchEvent(new Event('storage_update')); },
-    
+
+    getInventory: () => get<EquipmentItem>('fahub_inventory'),
+    saveInventory: (data: EquipmentItem[]) => set('fahub_inventory', data),
+
+    getOKRs: () => get<OKR>('fahub_okrs'),
+    saveOKRs: (data: OKR[]) => set('fahub_okrs', data),
+
+    getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
+    getProjectCompletion: () => 85,
+
+    getEntitlements: () => get<Entitlement>('fahub_entitlements'),
+    purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
+        const entitlements = get<Entitlement>('fahub_entitlements');
+        const exp = new Date();
+        exp.setHours(exp.getHours() + product.durationHours);
+        const newEnt: Entitlement = { id: `ent-${Date.now()}`, userId, productId: product.id, expiresAt: exp };
+        set('fahub_entitlements', [...entitlements, newEnt]);
+    },
+
+    getPublicGameData: (gameId: string) => ({ 
+        id: gameId, 
+        opponent: 'Adversário', 
+        score: '0-0', 
+        clock: '12:00', 
+        currentQuarter: 1,
+        sponsors: []
+    }),
+
+    getPublicLeagueStats: () => ({ 
+        name: 'Liga Catarinense', 
+        season: '2025', 
+        leagueTable: [], 
+        leaders: { passing: [], rushing: [], defense: [] } 
+    }),
+
+    getAthleteStatsHistory: (id: any) => [],
     getTacticalPlays: () => get<TacticalPlay>('fahub_tactical'),
     saveTacticalPlays: (data: TacticalPlay[]) => set('fahub_tactical', data),
 
     getCandidates: () => get<RecruitmentCandidate>('fahub_candidates'),
     saveCandidates: (data: RecruitmentCandidate[]) => set('fahub_candidates', data),
 
-    togglePracticeAttendance: (practiceId: string, playerId: string) => {
-        const practices = get<PracticeSession>('fahub_practice');
-        const updated = practices.map(p => {
-            if (String(p.id) === practiceId) {
-                const attendees = p.attendees || [];
-                if (attendees.includes(playerId)) {
-                    return { ...p, attendees: attendees.filter(id => id !== playerId) };
-                }
-                return { ...p, attendees: [...attendees, playerId] };
-            }
-            return p;
-        });
-        set('fahub_practice', updated);
-    },
-
+    getYouthClasses: () => get<YouthClass>('fahub_youth'),
+    saveYouthClasses: (data: YouthClass[]) => set('fahub_youth', data),
+    
+    getTransferRequests: () => get<TransferRequest>('fahub_transfers'),
+    
+    getLeague: () => getSingle<League>('fahub_league') || { id: '1', name: 'Liga Catarinense', season: '2025', teams: [] },
+    
+    getActiveProgram: () => (getSingle<TeamSettings>('fahub_settings')?.sportType || 'TACKLE') as any,
+    
+    notify: (channel: string) => { window.dispatchEvent(new Event('storage_update')); },
+    sendSignal: (s: any) => {},
+    processTransfer: (id: any, d: any, a: any) => {},
+    createChampionship: (n: any, y: any, d: any) => {},
+    saveCoachProfile: (u: any, p: any) => {},
+    getSocialPosts: () => [],
+    saveSocialPosts: (d: any) => {},
+    getSocialFeed: () => get<SocialFeedPost>('fahub_feed'),
+    saveSocialFeedPost: (p: any) => set('fahub_feed', [p, ...get<SocialFeedPost>('fahub_feed')]),
+    toggleLikePost: (id: string) => {},
     getAnnouncements: () => get<Announcement>('fahub_announcements'),
     saveAnnouncements: (data: Announcement[]) => set('fahub_announcements', data),
-
     getChatMessages: () => get<ChatMessage>('fahub_chat'),
     saveChatMessages: (data: ChatMessage[]) => set('fahub_chat', data),
-
     getDocuments: () => get<TeamDocument>('fahub_docs'),
     saveDocuments: (data: TeamDocument[]) => set('fahub_docs', data),
-
     getCourses: () => get<Course>('fahub_courses'),
     saveCourses: (data: Course[]) => set('fahub_courses', data),
-
-    getLeague: () => getSingle<League>('fahub_league') || { id: '1', name: 'Liga Brasileira', season: '2025', teams: [] },
-    saveLeague: (data: League) => set('fahub_league', data),
-
-    seedDatabaseToCloud: async () => {
-        console.log('Seeding database to cloud (mock)...');
-        return Promise.resolve();
-    },
-
-    uploadFile: async (file: File, path: string): Promise<string> => {
-        console.log(`Uploading file ${file.name} to ${path} (mock)`);
-        return Promise.resolve("https://ui-avatars.com/api/?name=Logo");
-    },
-
-    getSocialFeed: () => get<SocialFeedPost>('fahub_feed'),
-    saveSocialFeedPost: (post: SocialFeedPost) => set('fahub_feed', [post, ...get<SocialFeedPost>('fahub_feed')]),
-    toggleLikePost: (postId: string) => {
-        const feed = get<SocialFeedPost>('fahub_feed');
-        set('fahub_feed', feed.map(p => p.id === postId ? { ...p, likes: p.likes + 1 } : p));
-    },
-
-    getInventory: () => get<EquipmentItem>('fahub_inventory'),
-    saveInventory: (data: EquipmentItem[]) => set('fahub_inventory', data),
-
-    getYouthClasses: () => get<YouthClass>('fahub_youth_classes'),
-    saveYouthClasses: (data: YouthClass[]) => set('fahub_youth_classes', data),
-    getYouthStudents: () => get<YouthStudent>('fahub_youth_students'),
-
-    getConfederationStats: () => ({ totalAthletes: 4850, totalTeams: 142, totalGamesThisYear: 320, activeAffiliates: 18 }),
-    getNationalTeamScouting: () => get<NationalTeamCandidate>('fahub_national_scout'),
-    getAffiliatesStatus: () => get<Affiliate>('fahub_affiliates'),
-    getTransferRequests: () => get<TransferRequest>('fahub_transfers'),
-    processTransfer: (id: string, decision: string, actor: string) => {
-        console.log(`Transfer ${id} ${decision} by ${actor}`);
-    },
-
-    getPublicGameData: (gameId: string) => ({ 
-        id: gameId, 
-        opponent: 'Raptors', 
-        score: '14-7', 
-        clock: '10:00', 
-        currentQuarter: 2,
-        sponsors: [
-            { companyName: 'Padaria Central' },
-            { companyName: 'Academia Iron' }
-        ]
-    }),
-    getPublicLeagueStats: () => ({ name: 'Liga Brasileira', season: '2025', leagueTable: [], leaders: { passing: [], rushing: [], defense: [] } }),
-
-    createChampionship: (name: string, year: number, division: string) => {
-        console.log(`Championship Created: ${name}`);
-    },
-
-    getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),
-    getProjectCompletion: () => 85,
-
-    getOKRs: () => get<OKR>('fahub_okrs'),
-    saveOKRs: (data: OKR[]) => set('fahub_okrs', data),
-    sendSignal: (signal: Partial<ObjectiveSignal>) => {},
-
-    getEntitlements: () => get<Entitlement>('fahub_entitlements'),
-    purchaseDigitalProduct: (userId: string, product: DigitalProduct) => {
-        const exp = new Date();
-        exp.setHours(exp.getHours() + product.durationHours);
-        const e: Entitlement = { id: `ent-${Date.now()}`, userId, productId: product.id, expiresAt: exp };
-        set('fahub_entitlements', [...get<Entitlement>('fahub_entitlements'), e]);
-    },
-
-    generateMonthlyInvoices: () => {},
-    saveCoachProfile: (userId: string, profile: any) => {},
-
-    getSocialPosts: () => get<SocialPost>('fahub_social_posts'),
-    saveSocialPosts: (data: SocialPost[]) => set('fahub_social_posts', data),
-    saveTeam: (t: Team) => set('fahub_teams', [...get<Team>('fahub_teams'), t]),
-    getTeams: () => get<Team>('fahub_teams'),
+    getTasks: () => get<KanbanTask>('fahub_tasks'),
+    saveTasks: (data: KanbanTask[]) => set('fahub_tasks', data),
+    saveTeam: (t: any) => {},
+    getTeams: () => [],
+    getAthletes: () => get<Player>('fahub_players'),
 };
