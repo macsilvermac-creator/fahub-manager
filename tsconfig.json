@@ -8,7 +8,6 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": false,
-    "noImplicitAny": false,
     "module": "ESNext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
@@ -17,12 +16,19 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["*"],
-      "services/*": ["services/*"],
-      "components/*": ["components/*"],
-      "pages/*": ["pages/*"]
+      "*": ["*", "node_modules/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "vite-env.d.ts"],
+  "include": [
+    "./**/*.ts", 
+    "./**/*.tsx",
+    "components",
+    "contexts",
+    "features",
+    "hooks",
+    "pages",
+    "services",
+    "utils"
+  ],
   "exclude": ["node_modules", "dist"]
 }
