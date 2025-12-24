@@ -1,5 +1,5 @@
-import { db } from './firebaseConfig';
-import { doc, getDocs, setDoc, collection } from 'firebase/firestore';
+import { db, storage } from './firebaseConfig';
+import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
 import { Player, Game, TeamSettings, Transaction } from '../types';
 
 export const firebaseDataService = {
