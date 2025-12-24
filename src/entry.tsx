@@ -1,2 +1,2 @@
-// Arquivo movido para a raiz como index.tsx.
-export default function Ghost() { return null; }
+// Arquivo movido para index.tsx
+export {};
