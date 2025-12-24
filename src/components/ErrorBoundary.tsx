@@ -1,5 +1,5 @@
 
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode, Component } from 'react';
 import { AlertTriangleIcon, RefreshIcon } from './icons/UiIcons';
 
 interface Props {
@@ -11,10 +11,12 @@ interface State {
   error?: Error;
 }
 
-class ErrorBoundary extends React.Component<Props, State> {
+/* Fix: Explicitly declare state and props in ErrorBoundary class to satisfy TS */
+class ErrorBoundary extends Component<Props, State> {
+  public state: State = { hasError: false };
+
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
   }
 
   public static getDerivedStateFromError(error: Error): State {

@@ -1,128 +1,91 @@
-import { db, storage } from './apiConnection';
-import { collection, doc, getDocs, setDoc, query, orderBy, limit, getDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Player, Game, TeamSettings, Transaction } from '../types';
-import { cacheService } from './cacheService';
-import { compressImage } from '../utils/imageOptimizer';
 
-const mapDocs = (snapshot: any) => snapshot.docs.map((d: any) => ({ ...d.data(), id: d.id }));
+import React, { ErrorInfo, ReactNode, Component } from 'react';
+import { AlertTriangleIcon, RefreshIcon } from './icons/UiIcons';
 
-export const firebaseDataService = {
-    uploadFile: async (file: File, path: string): Promise<string> => {
-        try {
-            const optimizedFile = await compressImage(file);
-            const storageRef = ref(storage, `${path}/${Date.now()}_${optimizedFile.name}`);
-            const snapshot = await uploadBytes(storageRef, optimizedFile);
-            const downloadURL = await getDownloadURL(snapshot.ref);
-            return downloadURL;
-        } catch (e) {
-            console.error("Erro no upload:", e);
-            throw new Error("Falha ao enviar arquivo para a nuvem.");
-        }
-    },
+interface Props {
+  children?: ReactNode;
+}
 
-    syncPlayers: async (players: Player[]) => {
-        try {
-            const batch = players.map(p => setDoc(doc(db, 'players', String(p.id)), p));
-            await Promise.all(batch);
-            cacheService.invalidate('players'); 
-        } catch (e) {
-            console.error("Erro ao sincronizar players:", e);
-        }
-    },
+interface State {
+  hasError: boolean;
+  error?: Error;
+}
+
+/* Fix: Explicitly declare state and props in ErrorBoundary class to satisfy TS */
+class ErrorBoundary extends Component<Props, State> {
+  public state: State = { hasError: false };
+
+  constructor(props: Props) {
+    super(props);
+  }
+
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
     
-    getPlayers: async (): Promise<Player[]> => {
-        const cached = cacheService.get<Player[]>('players_all');
-        if (cached) return cached;
-
-        try {
-            const snapshot = await getDocs(collection(db, 'players'));
-            const data = mapDocs(snapshot);
-            cacheService.set('players_all', data);
-            return data;
-        } catch (e) {
-            console.warn("Firestore offline, usando local.", e);
-            return [];
-        }
-    },
+    // AUTO-CURA: Erros de Chunk (comum em SPAs após deploy)
+    const chunkFailedMessage = /Loading chunk [\d]+ failed/;
+    const importFailedMessage = /Importing a module script failed/;
     
-    savePlayer: async (player: Player) => {
-        await setDoc(doc(db, 'players', String(player.id)), player);
-        cacheService.invalidate('players'); 
-    },
-
-    syncGames: async (games: Game[]) => {
-        const batch = games.map(g => setDoc(doc(db, 'games', String(g.id)), g));
-        await Promise.all(batch);
-        cacheService.invalidate('games');
-    },
-    
-    getGames: async (): Promise<Game[]> => {
-        const cached = cacheService.get<Game[]>('games_all');
-        if (cached) return cached;
-
-        try {
-            const q = query(collection(db, 'games'), orderBy('date', 'desc'));
-            const snapshot = await getDocs(q);
-            const data = mapDocs(snapshot).map((g: any) => ({
-                ...g,
-                date: new Date(g.date.seconds ? g.date.seconds * 1000 : g.date)
-            }));
-            cacheService.set('games_all', data);
-            return data;
-        } catch (e) {
-            return [];
-        }
-    },
-    
-    saveGame: async (game: Game) => {
-        await setDoc(doc(db, 'games', String(game.id)), game);
-        cacheService.invalidate('games');
-    },
-
-    syncTransactions: async (transactions: Transaction[]) => {
-        const batch = transactions.map(t => setDoc(doc(db, 'transactions', String(t.id)), t));
-        await Promise.all(batch);
-        cacheService.invalidate('transactions');
-    },
-    
-    getTransactions: async (): Promise<Transaction[]> => {
-        const cached = cacheService.get<Transaction[]>('transactions_all');
-        if (cached) return cached;
-
-        try {
-            const q = query(collection(db, 'transactions'), orderBy('date', 'desc'), limit(100));
-            const snapshot = await getDocs(q);
-            const data = mapDocs(snapshot).map((t: any) => ({
-                ...t,
-                date: new Date(t.date.seconds ? t.date.seconds * 1000 : t.date)
-            }));
-            cacheService.set('transactions_all', data);
-            return data;
-        } catch(e) {
-            return [];
-        }
-    },
-
-    saveTeamSettings: async (settings: TeamSettings) => {
-        await setDoc(doc(db, 'settings', 'team_config'), settings);
-        cacheService.invalidate('settings');
-    },
-    
-    getTeamSettings: async (): Promise<TeamSettings | null> => {
-        const cached = cacheService.get<TeamSettings>('settings_config');
-        if (cached) return cached;
-
-        try {
-            const snap = await getDoc(doc(db, 'settings', 'team_config'));
-            if (snap.exists()) {
-                const data = snap.data() as TeamSettings;
-                cacheService.set('settings_config', data, 10 * 60 * 1000); 
-                return data;
-            }
-            return null;
-        } catch (e) {
-            return null;
-        }
+    if (
+        error.message && (
+            chunkFailedMessage.test(error.message) || 
+            importFailedMessage.test(error.message) ||
+            error.message.includes('dynamically imported module')
+        )
+    ) {
+        console.warn("⚠️ Erro de versão detectado. Atualizando sistema automaticamente...");
+        // Pequeno delay para evitar loop infinito se o servidor estiver realmente fora
+        setTimeout(() => {
+             window.location.reload();
+        }, 1000);
     }
-};
+  }
+
+  private handleReload = () => {
+      // Limpa caches agressivos antes de recarregar
+      if ('caches' in window) {
+          caches.keys().then((names) => {
+              names.forEach((name) => caches.delete(name));
+          });
+      }
+      window.location.reload();
+  };
+
+  public render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#0B1120] text-white p-6 animate-fade-in">
+          <div className="bg-[#1e293b] p-8 rounded-2xl border border-red-500/20 shadow-2xl max-w-md w-full text-center">
+            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                <AlertTriangleIcon className="w-8 h-8 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Instabilidade Detectada</h2>
+            <p className="text-[#cbd5e1] text-sm mb-6">
+                O sistema encontrou um erro inesperado ou sua conexão foi interrompida durante uma atualização.
+            </p>
+            
+            <div className="bg-black/30 p-3 rounded-lg text-[10px] font-mono text-left text-red-300 mb-6 overflow-auto max-h-32 border border-white/5 custom-scrollbar">
+                {this.state.error?.message || "Erro desconhecido no renderizador React."}
+            </div>
+
+            <button
+              className="bg-highlight hover:bg-highlight-hover text-white px-6 py-3 rounded-xl font-bold w-full transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95"
+              onClick={this.handleReload}
+            >
+              <RefreshIcon className="w-4 h-4" />
+              Recarregar Sistema
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+export default ErrorBoundary;

@@ -41,7 +41,8 @@ const DrillItem = memo(({ item, onRemove, onUpdate }: {
     </div>
 ));
 
-const SessionCard = ({ session }: { session: PracticeSession }) => {
+/* Fix: Typed SessionCard as React.FC to allow 'key' prop when used in list mapping */
+const SessionCard: React.FC<{ session: PracticeSession }> = ({ session }) => {
     const isIA = session.source === 'AI';
     return (
         <div className="bg-black/40 p-4 rounded-2xl border border-white/5 group hover:border-highlight transition-all relative overflow-hidden">
