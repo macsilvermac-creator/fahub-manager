@@ -15,28 +15,21 @@ export const authService = {
       const users = authService.getUsers();
       if (users.some(u => u.email === email)) throw new Error('Email já cadastrado.');
 
-      const isFirstUser = users.length === 0;
-      const initialRole = isFirstUser ? 'MASTER' : role;
-      const initialStatus = isFirstUser ? 'APPROVED' : 'PENDING';
-
       const newUser: User = {
           id: `user-${Date.now()}`,
           email,
           name,
-          role: initialRole,
+          role,
           cpf: cpf || '000.000.000-00',
           avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`,
-          status: initialStatus,
+          status: 'APPROVED',
           program: 'BOTH',
-          isProfileComplete: isFirstUser
+          isProfileComplete: true
       };
 
       const updatedUsers = [...users, newUser];
       localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updatedUsers));
-
-      if (isFirstUser) {
-          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
-      }
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
 
       return newUser;
   },
@@ -62,7 +55,6 @@ export const authService = {
           localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(appUser));
           return appUser;
       } catch (error: any) {
-          console.error("Erro no login Google:", error);
           throw new Error("Falha ao conectar com Google: " + error.message);
       }
   },
@@ -89,10 +81,5 @@ export const authService = {
       const users = authService.getUsers();
       const updated = users.map(u => u.id === userId ? { ...u, isProfileComplete: true } : u);
       localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updated));
-      
-      const current = authService.getCurrentUser();
-      if (current && current.id === userId) {
-          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...current, isProfileComplete: true }));
-      }
   }
 };

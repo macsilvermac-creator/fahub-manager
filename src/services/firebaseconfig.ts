@@ -1,14 +1,8 @@
-
-// @ts-ignore
 import { initializeApp } from "firebase/app";
-// @ts-ignore
 import { getAuth } from "firebase/auth";
-// @ts-ignore
 import { getFirestore } from "firebase/firestore";
-// @ts-ignore
 import { getStorage } from "firebase/storage";
 
-// Configuração extraída das imagens do console Firebase (fahub-manager)
 const firebaseConfig = {
   apiKey: "AIzaSyB6VDLKBK9Siz81DC_bEm54oMILT-Hd6wA",
   authDomain: "fahub-manager.firebaseapp.com",
@@ -19,10 +13,8 @@ const firebaseConfig = {
   measurementId: "G-MLRSBH8J6H"
 };
 
-// Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
 
-// Exporta os serviços
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
