@@ -1,3 +1,4 @@
+
 import * as React from 'react';
 import { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -8,7 +9,7 @@ import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 
-// Importações Lazy - Todas apontando para a raiz /pages
+// Importações Lazy
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Roster = lazy(() => import('./pages/Roster'));
 const Recruitment = lazy(() => import('./pages/Recruitment'));
@@ -38,7 +39,7 @@ const PublicTeam = lazy(() => import('./pages/PublicTeam'));
 const BroadcastBooth = lazy(() => import('./pages/BroadcastBooth'));
 const BroadcastOverlay = lazy(() => import('./pages/BroadcastOverlay'));
 const MyProfile = lazy(() => import('./pages/MyProfile'));
-const PlatformHQ = lazy(() => import('./pages/PlatformHQ')); // Ativando PlatformHQ
+const PlatformHQ = lazy(() => import('./pages/PlatformHQ'));
 
 const App: React.FC = () => {
   return (
@@ -47,6 +48,8 @@ const App: React.FC = () => {
         <HashRouter>
           <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#0B1120]"><LoadingScreen /></div>}>
             <Routes>
+              {/* Rota Raiz agora aponta para o Login para forçar o Identity Gateway */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/public/team" element={<PublicTeam />} />
