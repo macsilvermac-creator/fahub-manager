@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Card from '../../components/Card';
 import { storageService } from '../../services/storageService';
@@ -56,14 +55,15 @@ const AthleteDashboard: React.FC = () => {
                             <span className="text-highlight font-bold mb-2">Rating Geral</span>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
+                            {/* Fix: Cast val as any to avoid 'unknown' assignability errors */}
                             {athlete.stats && Object.entries(athlete.stats).filter(([k]) => k !== 'ovr').map(([key, val]) => (
                                 <div key={key} className="bg-black/20 p-3 rounded-xl border border-white/5">
                                     <p className="text-[10px] text-text-secondary uppercase font-bold">{key}</p>
                                     <div className="flex items-center justify-between">
                                         <div className="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden mr-3">
-                                            <div className="h-full bg-highlight" style={{ width: `${val}%` }}></div>
+                                            <div className="h-full bg-highlight" style={{ width: `${(val as number)}%` }}></div>
                                         </div>
-                                        <span className="text-white font-bold text-sm">{val}</span>
+                                        <span className="text-white font-bold text-sm">{val as number}</span>
                                     </div>
                                 </div>
                             ))}
