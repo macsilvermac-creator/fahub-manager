@@ -1,2 +1,2 @@
-// Redirecionado para o index.tsx na raiz.
+// Ponto de entrada movido para main.tsx para resolver erro de compilação.
 export {};

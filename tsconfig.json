@@ -20,6 +20,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["index.tsx", "App.tsx", "types.ts", "services/**/*.ts", "pages/**/*.tsx", "components/**/*.tsx", "contexts/**/*.tsx", "hooks/**/*.ts", "utils/**/*.ts"],
+  "include": ["main.tsx", "App.tsx", "types.ts", "services/**/*.ts", "pages/**/*.tsx", "components/**/*.tsx", "contexts/**/*.tsx", "hooks/**/*.ts", "utils/**/*.ts"],
   "exclude": ["node_modules", "dist", ".vercel", "src"]
 }
