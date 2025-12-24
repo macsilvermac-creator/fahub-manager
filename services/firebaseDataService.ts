@@ -1,4 +1,4 @@
-import { db, storage } from 'services/firebaseConfig';
+import { db, storage } from './firebaseConfig';
 import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
 import { Player, Game, TeamSettings, Transaction } from '../types';
 

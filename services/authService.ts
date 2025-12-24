@@ -1,4 +1,4 @@
-import { auth } from 'services/firebaseConfig';
+import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
 import { User, UserRole } from '../types';
 
