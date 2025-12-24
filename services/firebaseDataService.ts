@@ -1,6 +1,6 @@
-import { db, storage } from './firebaseConfig';
+import { db, storage } from '@/services/firebaseConfig';
 import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
-import { Player, Game, TeamSettings, Transaction } from '../types';
+import { Player, Game, TeamSettings, Transaction } from '@/types';
 
 export const firebaseDataService = {
     syncPlayers: async (players: Player[]) => {

@@ -1,6 +1,6 @@
-import { auth } from './firebaseConfig';
+import { auth } from '@/services/firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
-import { User, UserRole } from '../types';
+import { User, UserRole } from '@/types';
 
 const CURRENT_USER_KEY = 'gridiron_current_user';
 const USERS_LIST_KEY = 'gridiron_users_list';

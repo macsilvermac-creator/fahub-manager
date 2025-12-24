@@ -5,17 +5,12 @@ declare global {
     }
   }
 
-  /* Fix: Declaring AIStudio interface to resolve type mismatch on Window object and allow merging with global types */
-  interface AIStudio {
-    hasSelectedApiKey(): Promise<boolean>;
-    openSelectKey(): Promise<void>;
-  }
+  /* Fix: AIStudio interface and window.aistudio property are already defined by the platform environment. 
+     Removing these duplicate declarations to resolve "Duplicate identifier" and "identical modifiers" errors. */
 
   interface Window {
     YT: any;
     onYouTubeIframeAPIReady: () => void;
-    /* Fix: Property 'aistudio' must use the named type 'AIStudio' to match existing declarations in the environment and resolve subsequent declaration errors */
-    aistudio: AIStudio;
   }
 
   namespace NodeJS {

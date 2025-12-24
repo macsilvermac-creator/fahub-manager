@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'url';
 import path from 'path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
@@ -9,12 +12,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, './'),
       'services': path.resolve(__dirname, './services'),
       'components': path.resolve(__dirname, './components'),
-      'pages': path.resolve(__dirname, './pages'),
-      '@': path.resolve(__dirname, './')
-    },
-    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+      'pages': path.resolve(__dirname, './pages')
+    }
   },
   build: {
     outDir: 'dist',
@@ -24,9 +26,5 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html'),
       },
     },
-  },
-  server: {
-    port: 3000,
-    host: true
   }
 });
