@@ -17,6 +17,7 @@ export const firebaseDataService = {
             const snapshot = await getDocs(collection(db, 'players'));
             return snapshot.docs.map(d => ({ ...d.data(), id: d.id })) as Player[];
         } catch (e) {
+            console.error("Erro ao buscar players:", e);
             return [];
         }
     },
