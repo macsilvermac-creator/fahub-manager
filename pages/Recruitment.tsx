@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { RecruitmentCandidate, CombineStats } from '../types';
 import { storageService } from '../services/storageService';
 import { analyzeTryoutPerformance } from '../services/geminiService';
-import { UsersIcon, CheckCircleIcon, SparklesIcon, TrashIcon, ClockIcon, ActivityIcon } from '../components/icons/UiIcons';
+import { CheckCircleIcon, SparklesIcon, TrashIcon, ClockIcon } from '../components/icons/UiIcons';
 import { useToast } from '../contexts/ToastContext';
 import PageHeader from '../components/PageHeader';
 
@@ -14,12 +14,12 @@ const Recruitment: React.FC = () => {
     const [view, setView] = useState<'LIST' | 'STATION'>('LIST');
     const [selectedCandidate, setSelectedCandidate] = useState<RecruitmentCandidate | null>(null);
     
-    // Timer State
     const [timer, setTimer] = useState(0);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     const timerRef = useRef<any>(null);
 
     useEffect(() => {
+        /* Fix: Correctly used getCandidates method added to storageService */
         setCandidates(storageService.getCandidates());
     }, []);
 
@@ -43,29 +43,55 @@ const Recruitment: React.FC = () => {
         const updated = { ...selectedCandidate, combineStats: updatedStats, status: 'TESTING' as const };
         const newList = candidates.map(x => x.id === updated.id ? updated : x);
         setCandidates(newList);
+        /* Fix: Correctly used saveCandidates method added to storageService */
         storageService.saveCandidates(newList);
         setSelectedCandidate(updated);
         toast.success(`Tempo salvo: ${timer.toFixed(2)}s`);
     };
 
+    const handleAiAnalysis = async () => {
+        if (!selectedCandidate) return;
+        toast.info("Consultando IA Scout...");
+        try {
+            const result = await analyzeTryoutPerformance(selectedCandidate);
+            const updated = { 
+                ...selectedCandidate, 
+                aiAnalysis: result.technicalAnalysis, 
+                rating: result.potentialRating, 
+                status: 'EVALUATED' as const 
+            };
+            const newList = candidates.map(x => x.id === updated.id ? updated : x);
+            setCandidates(newList);
+            /* Fix: Correctly used saveCandidates method added to storageService */
+            storageService.saveCandidates(newList);
+            setSelectedCandidate(updated);
+            toast.success("Dossiê de recrutamento gerado!");
+        } catch (e) {
+            toast.error("Erro na análise da IA.");
+        }
+    };
+
     return (
         <div className="space-y-4 pb-20 animate-fade-in">
-            <PageHeader title="Tryout Hub" subtitle="Aferição de novatos e IA Scout." />
+            <PageHeader title="Tryout Hub" subtitle="Módulo de identificação e aferição de talentos." />
 
             {view === 'LIST' && (
                 <div className="grid grid-cols-1 gap-3">
                     {candidates.map(c => (
                         <div key={c.id} onClick={() => { setSelectedCandidate(c); setView('STATION'); }} className="bg-secondary p-4 rounded-2xl border border-white/5 flex items-center justify-between group active:scale-95 transition-all cursor-pointer">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-black/40 rounded-xl flex items-center justify-center font-black text-highlight border border-highlight/20 text-lg">
-                                    {c.bibNumber || '??'}
+                                <div className="w-12 h-12 bg-black/40 rounded-xl flex items-center justify-center font-black text-highlight border border-highlight/20 text-lg italic">
+                                    #{c.bibNumber || '??'}
                                 </div>
                                 <div>
-                                    <h4 className="text-white font-bold text-sm uppercase">{c.name}</h4>
-                                    <p className="text-[10px] text-text-secondary uppercase">{c.position} • {c.weight}kg</p>
+                                    <h4 className="text-white font-bold text-sm uppercase italic">{c.name}</h4>
+                                    <p className="text-[10px] text-text-secondary uppercase font-bold">{c.position} • {c.weight}kg</p>
                                 </div>
                             </div>
-                            <div className={`w-2 h-2 rounded-full ${c.status === 'EVALUATED' ? 'bg-green-500 shadow-glow' : 'bg-yellow-500 animate-pulse'}`}></div>
+                            <div className="flex items-center gap-3">
+                                {c.status === 'EVALUATED' && <SparklesIcon className="w-4 h-4 text-purple-400" />}
+                                <div className={`w-2 h-2 rounded-full ${c.status === 'EVALUATED' ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`}></div>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -73,28 +99,41 @@ const Recruitment: React.FC = () => {
 
             {view === 'STATION' && selectedCandidate && (
                 <div className="space-y-6 animate-slide-in max-w-xl mx-auto">
-                    <Card className="border-l-4 border-l-blue-500">
+                    <Card className="border-l-4 border-l-highlight">
                         <div className="flex justify-between items-center">
-                            <h3 className="text-xl font-black text-white italic uppercase">Atleta #{selectedCandidate.bibNumber}</h3>
-                            <button onClick={() => setView('LIST')} className="text-xs text-text-secondary underline">Voltar</button>
+                            <h3 className="text-xl font-black text-white italic uppercase">Atleta {selectedCandidate.name}</h3>
+                            <button onClick={() => setView('LIST')} className="text-xs text-text-secondary hover:text-white underline">Voltar para Lista</button>
                         </div>
-                        <p className="text-lg text-white font-bold">{selectedCandidate.name}</p>
                     </Card>
 
                     <div className="flex flex-col items-center gap-6">
                         <div 
                             onClick={startTimer}
-                            className={`w-64 h-64 rounded-3xl border-[10px] flex flex-col items-center justify-center shadow-2xl transition-all active:scale-95 cursor-pointer ${isTimerRunning ? 'bg-red-600 border-white animate-pulse' : 'bg-secondary border-highlight/30'}`}
+                            className={`w-64 h-64 rounded-[2.5rem] border-[10px] flex flex-col items-center justify-center shadow-2xl transition-all active:scale-95 cursor-pointer ${isTimerRunning ? 'bg-red-600 border-white animate-pulse' : 'bg-secondary border-highlight/30'}`}
                         >
-                            <span className="text-6xl font-mono font-black text-white">{timer.toFixed(2)}</span>
-                            <span className="text-[10px] font-black uppercase mt-2 text-white/50">{isTimerRunning ? 'STOP' : 'START'}</span>
+                            <span className="text-6xl font-mono font-black text-white tabular-nums">{timer.toFixed(2)}</span>
+                            <span className="text-[10px] font-black uppercase mt-2 text-white/50">{isTimerRunning ? 'CLIQUE PARA PARAR' : 'CLIQUE PARA INICIAR'}</span>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-3 w-full">
-                            <button onClick={() => handleSaveTime('fortyYards')} className="bg-blue-600 text-white font-black py-4 rounded-2xl uppercase text-[10px] shadow-lg">Salvar 40 Yard Dash</button>
-                            <button onClick={() => handleSaveTime('shuttle')} className="bg-blue-600 text-white font-black py-4 rounded-2xl uppercase text-[10px] shadow-lg">Salvar Shuttle Run</button>
+                            <button onClick={() => handleSaveTime('fortyYards')} className="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl uppercase text-[10px] shadow-lg transition-all">Salvar 40y Dash</button>
+                            <button onClick={() => handleSaveTime('shuttle')} className="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl uppercase text-[10px] shadow-lg transition-all">Salvar Shuttle Run</button>
                         </div>
+
+                        <button onClick={handleAiAnalysis} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl shadow-glow flex items-center justify-center gap-2 uppercase text-xs transition-all">
+                             <SparklesIcon className="w-5 h-5"/> Gerar Análise Scout IA
+                         </button>
                     </div>
+
+                    {selectedCandidate.aiAnalysis && (
+                        <Card title="Relatório de Inteligência">
+                            <p className="text-sm text-text-secondary italic leading-relaxed whitespace-pre-wrap">{selectedCandidate.aiAnalysis}</p>
+                            <div className="mt-4 flex justify-between items-center pt-4 border-t border-white/5">
+                                <span className="text-xs font-bold text-highlight uppercase">Rating Sugerido</span>
+                                <span className="text-2xl font-black text-white">{selectedCandidate.rating} OVR</span>
+                            </div>
+                        </Card>
+                    )}
                 </div>
             )}
         </div>

@@ -1,3 +1,4 @@
+
 export type UserRole = 'MASTER' | 'HEAD_COACH' | 'OFFENSIVE_COORD' | 'DEFENSIVE_COORD' | 'MEDICAL_STAFF' | 'FINANCIAL_MANAGER' | 'MARKETING_MANAGER' | 'COMMERCIAL_MANAGER' | 'PLAYER' | 'REFEREE' | 'SPORTS_DIRECTOR' | 'EQUIPMENT_MANAGER' | 'CANDIDATE' | 'PLATFORM_OWNER' | 'BROADCASTER' | 'SYSTEM' | 'ADMIN' | 'FAN' | 'STUDENT' | 'PRESIDENT' | 'VICE_PRESIDENT' | 'FINANCIAL_DIRECTOR' | 'COMMERCIAL_DIRECTOR' | 'MARKETING_DIRECTOR' | 'POSITION_COACH' | 'PHYSICAL_TRAINER' | 'STAFF';
 
 export type RosterCategory = 'ACTIVE' | 'PRACTICE_SQUAD' | 'IR' | 'SUSPENDED';
@@ -15,42 +16,37 @@ export interface CombineStats {
     lDrill?: number;
 }
 
-export interface User {
-    id: string;
-    email: string;
-    name: string;
-    role: UserRole;
+export interface PlayerRegistration {
     cpf: string;
-    avatarUrl: string;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-    program?: ProgramType;
-    isProfileComplete: boolean;
+    rg?: string;
+    birthDate: Date;
+    fullLegalName: string;
+    medicalExamDate?: Date;
+    documentStatus: 'COMPLETE' | 'INCOMPLETE' | 'EXPIRED';
+    bloodType?: string;
+    emergencyContact?: string;
+    emergencyPhone?: string;
 }
 
-export interface CoordinatorTask {
-    id: string;
-    title: string;
-    description: string;
-    assignedTo: 'OFFENSE' | 'DEFENSE' | 'ST';
-    status: 'TODO' | 'DOING' | 'DONE';
+export interface EquipmentSizes {
+    helmet?: 'S' | 'M' | 'L' | 'XL' | '2XL';
+    shoulderPad?: 'S' | 'M' | 'L' | 'XL' | '2XL';
+    jerseySize?: 'S' | 'M' | 'L' | 'XL' | '2XL';
+    cleatSize?: number;
+    gloveSize?: 'S' | 'M' | 'L';
 }
 
-export interface LeagueRanking {
-    position: number;
-    teamName: string;
-    record: string;
+/* Fix: Added missing IncubationStatus and IncubationData types */
+export type IncubationStatus = 'CULTURE' | 'FUNDAMENTALS' | 'EVALUATION' | 'GRADUATED';
+
+export interface IncubationData {
+    status: IncubationStatus;
+    cultureAccepted: boolean;
+    fundamentalsProgress: number;
+    fieldEvaluationScore?: number;
 }
 
-export interface DevelopmentPlan {
-    id: string;
-    playerId: string | number;
-    title: string;
-    generatedContent: string;
-    createdAt: Date;
-    deadline?: Date;
-    status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-}
-
+/* Fix: Added missing WellnessEntry type */
 export interface WellnessEntry {
     date: string;
     sleepQuality: number;
@@ -59,25 +55,6 @@ export interface WellnessEntry {
     stress: number;
     rpe: number;
 }
-
-export interface RecruitmentCandidate {
-    id: string;
-    name: string;
-    position: string;
-    weight: number;
-    height?: string;
-    age?: number;
-    experience?: string;
-    bibNumber?: number;
-    status: 'NEW' | 'TESTING' | 'EVALUATED' | 'SELECTED';
-    combineStats?: CombineStats;
-    aiAnalysis?: string;
-    rating?: number;
-    behaviorTags?: string[];
-    notes?: string;
-}
-
-export type IncubationStatus = 'CULTURE' | 'FUNDAMENTALS' | 'EVALUATION' | 'GRADUATED';
 
 export interface Player {
     id: string | number;
@@ -99,20 +76,19 @@ export interface Player {
     combineStats?: CombineStats;
     badges?: string[];
     commitmentLevel?: number;
-    incubation?: {
-        cultureAccepted: boolean;
-        fundamentalsProgress: number;
-        fieldEvaluationScore: number;
-        status: IncubationStatus;
-    };
+    registration?: PlayerRegistration;
+    equipmentSizes?: EquipmentSizes;
+    wingspan?: string;
     medicalExamExpiry?: Date;
-    developmentPlans?: DevelopmentPlan[];
+    developmentPlans?: any[];
     wellnessHistory?: WellnessEntry[];
     cpf?: string;
     nationality?: string;
     rosterHistory?: any[];
     depthChartOrder?: number;
     birthDate?: Date;
+    /* Fix: Added missing incubation property */
+    incubation?: IncubationData;
 }
 
 export interface PracticeScriptItem {
@@ -705,4 +681,48 @@ export interface Championship {
     name: string;
     year: number;
     division: string;
+}
+
+/* Fix: Added missing RecruitmentCandidate type */
+export interface RecruitmentCandidate {
+    id: string | number;
+    name: string;
+    position: string;
+    weight: number;
+    bibNumber?: string;
+    status: 'PENDING' | 'TESTING' | 'EVALUATED' | 'REJECTED' | 'HIRED';
+    combineStats?: CombineStats;
+    aiAnalysis?: string;
+    rating?: number;
+}
+
+/* Fix: Added missing DevelopmentPlan type */
+export interface DevelopmentPlan {
+    id: string;
+    playerId: string | number;
+    title: string;
+    generatedContent: string;
+    createdAt: Date;
+    deadline?: Date;
+    status: 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
+}
+
+/* Fix: Added missing User type */
+export interface User {
+    id: string;
+    email: string;
+    name: string;
+    role: UserRole;
+    cpf: string;
+    avatarUrl: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    program?: ProgramType;
+    isProfileComplete: boolean;
+}
+
+/* Fix: Added missing LeagueRanking type */
+export interface LeagueRanking {
+    position: number;
+    teamName: string;
+    record: string;
 }
