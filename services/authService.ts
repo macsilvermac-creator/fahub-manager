@@ -1,6 +1,6 @@
-import { auth } from '@/services/firebaseConfig';
+import { auth } from './firebaseConfig';
 import { signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
-import { User, UserRole } from '@/types';
+import { User, UserRole, ProgramType } from '../types';
 
 const CURRENT_USER_KEY = 'gridiron_current_user';
 const USERS_LIST_KEY = 'gridiron_users_list';
@@ -12,24 +12,26 @@ export const authService = {
   },
 
   register: async (name: string, email: string, role: UserRole, password: string, cpf: string): Promise<User> => {
-      const users = authService.getUsers();
-      if (users.some(u => u.email === email)) throw new Error('Email já cadastrado.');
-
       const newUser: User = {
-          id: `user-${Date.now()}`,
+          id: `u-${Date.now()}`,
           email,
           name,
-          role: role,
-          cpf: cpf || '000.000.000-00',
-          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`,
-          status: 'APPROVED',
-          program: 'BOTH',
-          isProfileComplete: true
+          role,
+          cpf,
+          avatarUrl: `https://ui-avatars.com/api/?name=${name}`,
+          status: 'PENDING',
+          isProfileComplete: false
       };
-
-      const updatedUsers = [...users, newUser];
-      localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updatedUsers));
+      
+      const users = authService.getUsers();
+      localStorage.setItem(USERS_LIST_KEY, JSON.stringify([...users, newUser]));
       return newUser;
+  },
+
+  updateUserStatus: (userId: string, status: 'PENDING' | 'APPROVED' | 'REJECTED', role: UserRole, program: ProgramType) => {
+      const users = authService.getUsers();
+      const updated = users.map(u => u.id === userId ? { ...u, status, role, program } : u);
+      localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updated));
   },
 
   loginWithGoogle: async (): Promise<User> => {
@@ -63,21 +65,11 @@ export const authService = {
     return stored ? JSON.parse(stored) : null;
   },
 
-  updateUserStatus: (userId: string, status: 'PENDING' | 'APPROVED' | 'REJECTED', role: UserRole, program: any) => {
-      const users = authService.getUsers();
-      const updated = users.map(u => u.id === userId ? { ...u, status, role, program } : u);
-      localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updated));
-  },
-
   completeUserProfile: async (userId: string) => {
       const user = authService.getCurrentUser();
       if (user && user.id === userId) {
           const updated = { ...user, isProfileComplete: true };
           localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updated));
-          
-          const users = authService.getUsers();
-          const updatedList = users.map(u => u.id === userId ? updated : u);
-          localStorage.setItem(USERS_LIST_KEY, JSON.stringify(updatedList));
       }
   },
 
