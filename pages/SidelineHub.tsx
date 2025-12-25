@@ -4,7 +4,7 @@ import Card from '../components/Card';
 import { storageService } from '../services/storageService';
 import { Game, Player, PlayEvent, GameUnit } from '../types';
 import { 
-    ClockIcon, PenIcon, ChevronDownIcon, XIcon, TrashIcon, WifiOffIcon
+    WhistleIcon, ClockIcon, PenIcon, ChevronDownIcon, TrashIcon
 } from '../components/icons/UiIcons';
 import LazyImage from '../components/LazyImage';
 import { useToast } from '../contexts/ToastContext';
@@ -93,7 +93,7 @@ const SidelineHub: React.FC = () => {
                     <button 
                         key={a.id + a.l}
                         onClick={() => { setPlayType(a.id as any); setPlayResult(a.res || 'COMPLETE'); }}
-                        className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${playType === a.id && (a.res ? playResult === a.res : true) ? 'bg-highlight border-highlight text-white shadow-glow' : 'bg-black/20 border-white/5 text-text-secondary hover:border-white/20'}`}
+                        className={`py-3.5 rounded-xl text-[10px] font-black uppercase transition-all border-2 ${playType === a.id && (a.res ? playResult === a.res : true) ? 'bg-highlight border-highlight text-white shadow-glow' : 'bg-black/20 border-white/5 text-text-secondary hover:border-white/20'}`}
                     >
                         {a.l}
                     </button>
@@ -108,13 +108,13 @@ const SidelineHub: React.FC = () => {
         <div className="flex flex-col lg:flex-row h-[calc(100vh-5rem)] gap-4 animate-fade-in overflow-hidden p-2">
             
             {/* CONSOLE COMPACTO (ESQUERDA) */}
-            <div className="w-full lg:w-[440px] shrink-0 flex flex-col gap-3">
-                <div className="bg-secondary/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-5 flex flex-col shadow-2xl h-full">
+            <div className="w-full lg:w-[420px] shrink-0 flex flex-col gap-3">
+                <div className="bg-secondary/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-5 flex flex-col shadow-2xl h-full overflow-hidden">
                     
-                    {/* Unidade Selecionada & Clock Integrados no Console */}
+                    {/* Unidade & Clock Integrados */}
                     <div className="flex flex-col gap-4 mb-4">
                         <div className="flex justify-between items-center">
-                            <h3 className="text-sm font-black text-white italic uppercase tracking-widest">Console de Campo</h3>
+                            <h3 className="text-xs font-black text-white italic uppercase tracking-widest">Sideline Console</h3>
                             <div className="bg-black/60 px-3 py-1 rounded-lg border border-highlight/20 font-mono text-highlight text-xs font-bold">
                                 {activeGame.clock}
                             </div>
@@ -125,7 +125,7 @@ const SidelineHub: React.FC = () => {
                                 <button 
                                     key={u} 
                                     onClick={() => { setActiveUnit(u as any); resetConsole(); }} 
-                                    className={`flex-1 py-2 rounded-lg text-[10px] font-black transition-all ${activeUnit === u ? 'bg-highlight text-white shadow-lg' : 'text-text-secondary'}`}
+                                    className={`flex-1 py-2 rounded-lg text-[9px] font-black transition-all ${activeUnit === u ? 'bg-highlight text-white shadow-lg' : 'text-text-secondary'}`}
                                 >
                                     {u === 'ST' ? 'ST' : u === 'OFFENSE' ? 'ATAQUE' : 'DEFESA'}
                                 </button>
@@ -136,11 +136,11 @@ const SidelineHub: React.FC = () => {
                     <div className="space-y-4 flex-1 overflow-y-auto no-scrollbar">
                         {/* 1. Ações Rápidas */}
                         <section>
-                            <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-2 ml-1">1. Tipo de Jogada</p>
+                            <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest mb-2 ml-1">1. Escolha a Jogada</p>
                             {renderActionGrid()}
                         </section>
 
-                        {/* 2. Cluster Numérico Otimizado */}
+                        {/* 2. Cluster Numérico Otimizado para não vazar */}
                         <section className="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
                             <div className="min-w-0">
                                 <label className="text-[9px] font-black text-text-secondary uppercase mb-1.5 block ml-1">2. Atleta (#)</label>
@@ -164,7 +164,7 @@ const SidelineHub: React.FC = () => {
                                 <div className="flex gap-1.5">
                                     <button 
                                         onClick={() => setYardSide(yardSide === '+' ? '-' : '+')} 
-                                        className={`w-10 rounded-xl font-black text-lg border-2 transition-all ${yardSide === '+' ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-red-600/20 border-red-500 text-red-400'}`}
+                                        className={`w-10 h-14 rounded-xl font-black text-lg border-2 transition-all shrink-0 ${yardSide === '+' ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-red-600/20 border-red-500 text-red-400'}`}
                                     >
                                         {yardSide}
                                     </button>
@@ -188,11 +188,11 @@ const SidelineHub: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Status Bar Compacta */}
-                <div className="bg-black/20 p-3 rounded-3xl border border-white/5 flex justify-between items-center px-5">
+                {/* Status Bar */}
+                <div className="bg-black/20 p-3 rounded-3xl border border-white/5 flex justify-between items-center px-5 shrink-0">
                     <div className="flex items-center gap-2">
                         <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                        <span className="text-[8px] font-black text-text-secondary uppercase tracking-widest">{isOnline ? 'Sincronizado' : 'Offline'}</span>
+                        <span className="text-[8px] font-black text-text-secondary uppercase tracking-widest">{isOnline ? 'Cloud Sync' : 'Offline Mode'}</span>
                     </div>
                     <span className="text-[8px] font-black text-text-secondary uppercase">Q{activeGame.currentQuarter} • {activeGame.clock}</span>
                 </div>
@@ -202,7 +202,7 @@ const SidelineHub: React.FC = () => {
             <div className="flex-1 flex flex-col gap-3 min-h-0">
                 <div className="flex justify-between items-center px-4 shrink-0">
                     <h3 className="text-[10px] font-black text-white uppercase italic tracking-[0.4em] flex items-center gap-2">
-                        Log de Transmissão
+                        Histórico de Campo
                     </h3>
                 </div>
 
@@ -229,13 +229,14 @@ const SidelineHub: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <span className="text-[9px] font-mono text-text-secondary opacity-40">{new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <ChevronDownIcon className={`w-4 h-4 text-text-secondary transition-transform ${expandedPlayId === event.id ? 'rotate-180 text-highlight' : ''}`} />
                                 </div>
                             </div>
                             
                             {expandedPlayId === event.id && (
                                 <div className="mt-3 pt-3 border-t border-white/5 flex justify-end gap-2 animate-fade-in">
-                                    <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-text-secondary hover:text-white"><PenIcon className="w-3 h-3"/></button>
-                                    <button className="p-2 bg-white/5 hover:bg-red-500/20 rounded-lg text-text-secondary hover:text-red-500"><TrashIcon className="w-3 h-3"/></button>
+                                    <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-text-secondary hover:text-white transition-colors"><PenIcon className="w-3 h-3"/></button>
+                                    <button className="p-2 bg-white/5 hover:bg-red-500/20 rounded-lg text-text-secondary hover:text-red-500 transition-colors"><TrashIcon className="w-3 h-3"/></button>
                                 </div>
                             )}
                         </div>
