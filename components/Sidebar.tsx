@@ -8,7 +8,6 @@ import {
 } from './icons/UiIcons';
 import { UserRole } from '../types';
 import { storageService } from '../services/storageService';
-import { authService } from '../services/authService';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,6 +19,8 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, currentRole, setRole }) => {
   const navigate = useNavigate();
   const isPlayer = currentRole === 'PLAYER';
+  const isCoach = ['HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD', 'POSITION_COACH'].includes(currentRole);
+  const isManagement = ['MASTER', 'PRESIDENT', 'FINANCIAL_MANAGER', 'ADMIN', 'PLATFORM_OWNER'].includes(currentRole);
   
   const navLinkClasses = "flex items-center px-4 py-2.5 text-text-secondary rounded-xl hover:bg-white/5 hover:text-white transition-all text-xs font-bold mb-1 group";
   const activeNavLinkClasses = "bg-highlight/10 text-highlight border-l-4 border-highlight font-black shadow-[0_0_15px_rgba(5,150,107,0.1)]";
@@ -59,6 +60,12 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, current
             <span>Overview</span>
           </NavLink>
 
+          <SectionLabel>Agenda Master</SectionLabel>
+          <NavLink to="/schedule" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <TrophyIcon className="w-4 h-4 mr-3 text-yellow-500" />
+            <span>Calendário</span>
+          </NavLink>
+
           <SectionLabel>{isPlayer ? 'Minha Rotina' : 'Operacional'}</SectionLabel>
           <NavLink to="/training-day" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
             <WhistleIcon className="w-4 h-4 mr-3 text-blue-400" />
@@ -69,13 +76,6 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, current
             <NavLink to="/sideline-hub" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
               <MapIcon className="w-4 h-4 mr-3 text-red-500" />
               <span>Sideline Hub</span>
-            </NavLink>
-          )}
-
-          {!isPlayer && (
-            <NavLink to="/schedule" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-              <TrophyIcon className="w-4 h-4 mr-3 text-yellow-500" />
-              <span>Calendário</span>
             </NavLink>
           )}
 
@@ -108,11 +108,16 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, current
             </>
           )}
 
-          <SectionLabel>Administração</SectionLabel>
-          <NavLink to="/finance" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <FinanceIcon className="w-4 h-4 mr-3 text-green-400" />
-            <span>{isPlayer ? 'Season Pass' : 'Financeiro'}</span>
-          </NavLink>
+          {/* FINANCEIRO BLOQUEADO PARA COACH */}
+          {!isCoach && (
+            <>
+              <SectionLabel>Administração</SectionLabel>
+              <NavLink to="/finance" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <FinanceIcon className="w-4 h-4 mr-3 text-green-400" />
+                <span>{isPlayer ? 'Season Pass' : 'Financeiro'}</span>
+              </NavLink>
+            </>
+          )}
 
           {(currentRole === 'MASTER' || currentRole === 'PLATFORM_OWNER') && (
             <>
