@@ -1,50 +1,53 @@
 
 import { UserRole } from '../types';
 
-export type Permission = 
-    | 'ACCESS_WAR_ROOM'      // Presidente/Vice
-    | 'MANAGE_FINANCES'      // Financeiro
-    | 'MANAGE_COMMERCIAL'    // Comercial
-    | 'MANAGE_MARKETING'     // Marketing
-    | 'MANAGE_SPORTS'        // Diretor de Esportes
-    | 'OPERATE_FIELD'        // Coaches
-    | 'VIEW_HEALTH'          // Medicina/Coach
-    | 'EDIT_PLAYBOOK'        // Coordenadores/HC
-    | 'BUY_IN_STORE'         // Atleta/Fã
-    | 'ADMIN_SYSTEM';        // Master
+export type PermissionArea = 'WAR_ROOM' | 'COMMERCIAL' | 'MARKETING' | 'SPORTS' | 'SETTINGS';
 
-const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
-    'MASTER': ['ACCESS_WAR_ROOM', 'MANAGE_FINANCES', 'MANAGE_COMMERCIAL', 'MANAGE_MARKETING', 'MANAGE_SPORTS', 'OPERATE_FIELD', 'VIEW_HEALTH', 'EDIT_PLAYBOOK', 'ADMIN_SYSTEM'],
-    'PRESIDENT': ['ACCESS_WAR_ROOM', 'MANAGE_FINANCES', 'MANAGE_COMMERCIAL', 'MANAGE_MARKETING', 'MANAGE_SPORTS', 'OPERATE_FIELD', 'VIEW_HEALTH', 'EDIT_PLAYBOOK'],
-    'VICE_PRESIDENT': ['ACCESS_WAR_ROOM', 'MANAGE_FINANCES', 'MANAGE_COMMERCIAL', 'MANAGE_MARKETING', 'MANAGE_SPORTS', 'OPERATE_FIELD', 'VIEW_HEALTH', 'EDIT_PLAYBOOK'],
-    'FINANCIAL_DIRECTOR': ['MANAGE_FINANCES', 'VIEW_HEALTH'],
-    'FINANCIAL_MANAGER': ['MANAGE_FINANCES', 'VIEW_HEALTH'],
-    'COMMERCIAL_DIRECTOR': ['MANAGE_COMMERCIAL'],
-    'COMMERCIAL_MANAGER': ['MANAGE_COMMERCIAL'],
-    'MARKETING_DIRECTOR': ['MANAGE_MARKETING'],
-    'MARKETING_MANAGER': ['MANAGE_MARKETING'],
-    'SPORTS_DIRECTOR': ['MANAGE_SPORTS', 'VIEW_HEALTH', 'OPERATE_FIELD'],
-    'HEAD_COACH': ['OPERATE_FIELD', 'VIEW_HEALTH', 'EDIT_PLAYBOOK'],
-    'OFFENSIVE_COORD': ['OPERATE_FIELD', 'EDIT_PLAYBOOK'],
-    'DEFENSIVE_COORD': ['OPERATE_FIELD', 'EDIT_PLAYBOOK'],
-    'POSITION_COACH': ['OPERATE_FIELD'],
-    'PHYSICAL_TRAINER': ['OPERATE_FIELD', 'VIEW_HEALTH'],
-    'MEDICAL_STAFF': ['VIEW_HEALTH'],
-    'REFEREE': ['OPERATE_FIELD'],
-    'EQUIPMENT_MANAGER': ['OPERATE_FIELD'],
+const ROLE_PERMISSIONS: Record<UserRole, PermissionArea[]> = {
+    'MASTER': ['WAR_ROOM', 'COMMERCIAL', 'MARKETING', 'SPORTS', 'SETTINGS'],
+    'COMMERCIAL_DIRECTOR': ['COMMERCIAL'],
+    'FINANCIAL_MANAGER': ['COMMERCIAL'],
+    'MARKETING_DIRECTOR': ['MARKETING'],
+    'SPORTS_DIRECTOR': ['SPORTS'],
+    'HEAD_COACH': ['SPORTS'],
+    'PLAYER': ['SPORTS'],
+    'STAFF': ['SPORTS'],
     'CANDIDATE': [],
-    'PLATFORM_OWNER': ['ACCESS_WAR_ROOM', 'MANAGE_FINANCES', 'MANAGE_COMMERCIAL', 'MANAGE_MARKETING', 'MANAGE_SPORTS', 'OPERATE_FIELD', 'VIEW_HEALTH', 'EDIT_PLAYBOOK', 'ADMIN_SYSTEM'],
-    'BROADCASTER': [],
-    'PLAYER': ['BUY_IN_STORE'],
-    'STUDENT': ['BUY_IN_STORE'],
-    'FAN': ['BUY_IN_STORE'],
-    'STAFF': ['OPERATE_FIELD'],
-    'SYSTEM': ['ADMIN_SYSTEM'],
-    'ADMIN': ['ADMIN_SYSTEM']
+    'PRESIDENT': ['WAR_ROOM', 'COMMERCIAL', 'MARKETING', 'SPORTS', 'SETTINGS'],
+    'VICE_PRESIDENT': ['WAR_ROOM', 'COMMERCIAL', 'MARKETING', 'SPORTS', 'SETTINGS'],
+    'FINANCIAL_DIRECTOR': ['COMMERCIAL'],
+    'COMMERCIAL_MANAGER': ['COMMERCIAL'],
+    'MARKETING_MANAGER': ['MARKETING'],
+    'OFFENSIVE_COORD': ['SPORTS'],
+    'DEFENSIVE_COORD': ['SPORTS'],
+    'POSITION_COACH': ['SPORTS'],
+    'PHYSICAL_TRAINER': ['SPORTS'],
+    'MEDICAL_STAFF': ['SPORTS'],
+    'REFEREE': ['SPORTS'],
+    'EQUIPMENT_MANAGER': ['SPORTS'],
+    'PLATFORM_OWNER': ['WAR_ROOM', 'COMMERCIAL', 'MARKETING', 'SPORTS', 'SETTINGS'],
+    'BROADCASTER': ['MARKETING'],
+    'STUDENT': ['SPORTS'],
+    'FAN': ['MARKETING'],
+    'SYSTEM': ['WAR_ROOM', 'COMMERCIAL', 'MARKETING', 'SPORTS', 'SETTINGS'],
+    'ADMIN': ['WAR_ROOM', 'COMMERCIAL', 'MARKETING', 'SPORTS', 'SETTINGS']
 };
 
 export const securityService = {
-    hasPermission: (role: UserRole, permission: Permission): boolean => {
-        return ROLE_PERMISSIONS[role]?.includes(permission) || false;
+    canAccess: (role: UserRole, area: PermissionArea): boolean => {
+        return ROLE_PERMISSIONS[role]?.includes(area) || false;
+    },
+    
+    getDirectorateLabel: (role: UserRole): string => {
+        switch(role) {
+            case 'MASTER': return 'Presidência';
+            case 'COMMERCIAL_DIRECTOR': return 'Diretoria Comercial';
+            case 'MARKETING_DIRECTOR': return 'Diretoria de Marketing';
+            case 'SPORTS_DIRECTOR': return 'Diretoria de Esportes';
+            case 'PRESIDENT': return 'Presidência';
+            case 'HEAD_COACH': return 'Comissão Técnica';
+            case 'PLAYER': return 'Atleta';
+            default: return 'Acesso Restrito';
+        }
     }
 };

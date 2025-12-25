@@ -145,6 +145,30 @@ const TacticalLab: React.FC = () => {
         setElements(prev => prev.map(el => el.id === draggingId ? { ...el, x, y } : el));
     };
 
+    // Fix: Added missing handleSavePlay function to ensure TacticalPlay consistency
+    const handleSavePlay = () => {
+        if (!selectedPlay && !elements.length) return;
+        
+        const newPlay: TacticalPlay = {
+            id: selectedPlay?.id || Date.now().toString(),
+            name: selectedPlay?.name || 'Nova Jogada',
+            concept: selectedPlay?.concept || 'Conceito extraído.',
+            unit: 'OFFENSE', // Default unit to satisfy TacticalPlay interface
+            elements: elements,
+            frames: frames,
+            createdAt: selectedPlay?.createdAt || new Date()
+        };
+        
+        const currentPlays = storageService.getTacticalPlays();
+        const updated = selectedPlay 
+            ? currentPlays.map(p => p.id === newPlay.id ? newPlay : p)
+            : [newPlay, ...currentPlays];
+            
+        storageService.saveTacticalPlays(updated);
+        setSavedPlays(updated);
+        toast.success("Jogada salva!");
+    };
+
     return (
         <div className="space-y-6 animate-fade-in pb-20 overflow-x-hidden">
             <style>{`
@@ -263,14 +287,14 @@ const TacticalLab: React.FC = () => {
                             <div className="pt-6 border-t border-white/5">
                                 <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-4">Referências de Vídeo</h4>
                                 <a 
-                                    href={`https://www.youtube.com/results?search_query=american+football+play+${selectedPlay?.name.replace(/\s+/g, '+')}+concept`}
+                                    href={`https://www.youtube.com/results?search_query=american+football+play+${selectedPlay?.name.replace(/\s+/g, '+') || 'football'}+concept`}
                                     target="_blank"
                                     className="w-full bg-red-600/10 hover:bg-red-600/20 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 transition-all group"
                                 >
                                     <VideoIcon className="w-6 h-6 text-red-500" />
                                     <div>
                                         <p className="text-white font-bold text-[10px] uppercase">Ver no YouTube</p>
-                                        <p className="text-[9px] text-text-secondary">Execuções reais de {selectedPlay?.name}</p>
+                                        <p className="text-[9px] text-text-secondary">Execuções reais de {selectedPlay?.name || 'jogadas'}</p>
                                     </div>
                                 </a>
                             </div>

@@ -1,7 +1,8 @@
+
 {
-  "name": "FAHUB MANAGER",
+  "name": "FAHUB MANAGER PRO",
   "short_name": "FAHUB",
-  "description": "Ecossistema de Gestão de Futebol Americano em Tempo Real.",
+  "description": "Ecossistema de Governança e Gestão de Futebol Americano por Diretorias.",
   "requestFramePermissions": [
     "camera",
     "microphone",

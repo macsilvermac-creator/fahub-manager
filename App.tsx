@@ -19,9 +19,27 @@ const SidelineHub = lazy(() => import('./pages/SidelineHub'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const Login = lazy(() => import('./pages/Login'));
 
-// CIATORS
+// CIATORS & OUTROS
 const CiatorsHub = lazy(() => import('./pages/CiatorsHub'));
 const CiatorsPresentation = lazy(() => import('./pages/CiatorsPresentation'));
+const TeamSettingsPage = lazy(() => import('./pages/TeamSettings'));
+
+// NOVAS DIRETORIAS (Stubs para expansão futura)
+const CommercialCRM = () => (
+    <div className="p-8 text-center bg-secondary/20 rounded-3xl border border-dashed border-white/10 animate-pulse">
+        <p className="opacity-30 italic uppercase font-black text-xl">Módulo de Patrocínios (CRM) em Desenvolvimento</p>
+    </div>
+);
+const MarketingAI = () => (
+    <div className="p-8 text-center bg-secondary/20 rounded-3xl border border-dashed border-white/10 animate-pulse">
+        <p className="opacity-30 italic uppercase font-black text-xl">Módulo de Hype IA em Desenvolvimento</p>
+    </div>
+);
+const FanPortal = () => (
+    <div className="p-8 text-center bg-secondary/20 rounded-3xl border border-dashed border-white/10 animate-pulse">
+        <p className="opacity-30 italic uppercase font-black text-xl">Módulo Portal do Fã em Desenvolvimento</p>
+    </div>
+);
 
 const App: React.FC = () => {
   return (
@@ -38,16 +56,26 @@ const App: React.FC = () => {
                   <Suspense fallback={<LoadingScreen />}>
                     <Routes>
                       <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/training-day" element={<TrainingHub />} />
-                      <Route path="/roster" element={<Roster />} />
-                      <Route path="/finance" element={<Finance />} />
-                      <Route path="/tactical-lab" element={<TacticalLab />} />
-                      <Route path="/sideline-hub" element={<SidelineHub />} />
-                      <Route path="/schedule" element={<Schedule />} />
                       
-                      {/* CIATORS ROUTES */}
+                      {/* DIRETORIA ESPORTES */}
+                      <Route path="/roster" element={<Roster />} />
+                      <Route path="/training-day" element={<TrainingHub />} />
+                      <Route path="/tactical-lab" element={<TacticalLab />} />
                       <Route path="/ciators" element={<CiatorsHub />} />
                       <Route path="/ciators/presentation/:id" element={<CiatorsPresentation />} />
+                      <Route path="/sideline-hub" element={<SidelineHub />} />
+                      <Route path="/schedule" element={<Schedule />} />
+
+                      {/* DIRETORIA COMERCIAL */}
+                      <Route path="/finance" element={<Finance />} />
+                      <Route path="/commercial/crm" element={<CommercialCRM />} />
+
+                      {/* DIRETORIA MARKETING */}
+                      <Route path="/marketing/ai" element={<MarketingAI />} />
+                      <Route path="/marketing/fan-portal" element={<FanPortal />} />
+
+                      {/* CONFIGURAÇÕES / MASTER */}
+                      <Route path="/settings" element={<TeamSettingsPage />} />
 
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>

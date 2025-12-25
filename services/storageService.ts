@@ -35,7 +35,6 @@ export const storageService = {
     initializeRAM: () => {
         if (!localStorage.getItem('fahub_settings')) {
             storageService.saveTeamSettings({
-                id: '1',
                 teamName: 'Gladiators FA',
                 logoUrl: 'https://ui-avatars.com/api/?name=JG&background=059669&color=fff',
                 primaryColor: '#059669',
@@ -47,9 +46,9 @@ export const storageService = {
         
         if (get('fahub_players').length === 0) {
             set('fahub_players', [
-                { id: 'p1', name: 'Lucas Thor', position: 'QB', jerseyNumber: 12, level: 15, xp: 450, rating: 88, status: 'ACTIVE', avatarUrl: 'https://ui-avatars.com/api/?name=LT&background=059669&color=fff' },
-                { id: 'p2', name: 'Andrei Pitbull', position: 'RB', jerseyNumber: 22, level: 12, xp: 300, rating: 85, status: 'ACTIVE', avatarUrl: 'https://ui-avatars.com/api/?name=AP&background=059669&color=fff' },
-                { id: 'p3', name: 'Zeca Hulk', position: 'LB', jerseyNumber: 55, level: 14, xp: 400, rating: 87, status: 'ACTIVE', avatarUrl: 'https://ui-avatars.com/api/?name=ZH&background=red&color=fff' }
+                { id: 'p1', name: 'Lucas Thor', position: 'QB', jerseyNumber: 12, level: 15, xp: 450, rating: 88, status: 'ACTIVE', avatarUrl: 'https://ui-avatars.com/api/?name=LT&background=059669&color=fff', class: 'Veterano', badges: ['Capitão'], program: 'TACKLE', rosterCategory: 'ACTIVE', attendanceRate: 95 },
+                { id: 'p2', name: 'Andrei Pitbull', position: 'RB', jerseyNumber: 22, level: 12, xp: 300, rating: 85, status: 'ACTIVE', avatarUrl: 'https://ui-avatars.com/api/?name=AP&background=059669&color=fff', class: 'Sênior', badges: ['Velocista'], program: 'TACKLE', rosterCategory: 'ACTIVE', attendanceRate: 88 },
+                { id: 'p3', name: 'Zeca Hulk', position: 'LB', jerseyNumber: 55, level: 14, xp: 400, rating: 87, status: 'ACTIVE', avatarUrl: 'https://ui-avatars.com/api/?name=ZH&background=red&color=fff', class: 'Veterano', badges: ['MVP'], program: 'TACKLE', rosterCategory: 'ACTIVE', attendanceRate: 92 }
             ]);
         }
         
@@ -103,7 +102,7 @@ export const storageService = {
 
     getTeamSettings: (): TeamSettings => {
         const data = localStorage.getItem('fahub_settings');
-        return data ? JSON.parse(data) : { id: '1', teamName: 'Gladiators', logoUrl: '', primaryColor: '#059669' };
+        return data ? JSON.parse(data) : { teamName: 'Gladiators', logoUrl: '', primaryColor: '#059669' };
     },
 
     saveTeamSettings: (data: TeamSettings) => set('fahub_settings', data),
