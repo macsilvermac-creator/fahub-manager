@@ -36,7 +36,6 @@ export interface EquipmentSizes {
     gloveSize?: 'S' | 'M' | 'L';
 }
 
-/* Fix: Added missing IncubationStatus and IncubationData types */
 export type IncubationStatus = 'CULTURE' | 'FUNDAMENTALS' | 'EVALUATION' | 'GRADUATED';
 
 export interface IncubationData {
@@ -46,7 +45,6 @@ export interface IncubationData {
     fieldEvaluationScore?: number;
 }
 
-/* Fix: Added missing WellnessEntry type */
 export interface WellnessEntry {
     date: string;
     sleepQuality: number;
@@ -87,7 +85,6 @@ export interface Player {
     rosterHistory?: any[];
     depthChartOrder?: number;
     birthDate?: Date;
-    /* Fix: Added missing incubation property */
     incubation?: IncubationData;
 }
 
@@ -683,7 +680,6 @@ export interface Championship {
     division: string;
 }
 
-/* Fix: Added missing RecruitmentCandidate type */
 export interface RecruitmentCandidate {
     id: string | number;
     name: string;
@@ -696,7 +692,6 @@ export interface RecruitmentCandidate {
     rating?: number;
 }
 
-/* Fix: Added missing DevelopmentPlan type */
 export interface DevelopmentPlan {
     id: string;
     playerId: string | number;
@@ -707,7 +702,6 @@ export interface DevelopmentPlan {
     status: 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
 }
 
-/* Fix: Added missing User type */
 export interface User {
     id: string;
     email: string;
@@ -720,7 +714,6 @@ export interface User {
     isProfileComplete: boolean;
 }
 
-/* Fix: Added missing LeagueRanking type */
 export interface LeagueRanking {
     position: number;
     teamName: string;

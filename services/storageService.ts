@@ -21,7 +21,6 @@ const set = (key: string, data: any) => {
 };
 
 const get = <T>(key: string): T[] => {
-    // Retorna do cache se disponível para poupar CPU/RAM
     if (memoryCache[key]) return memoryCache[key];
     
     const data = localStorage.getItem(key);
@@ -32,7 +31,6 @@ const get = <T>(key: string): T[] => {
 
 export const storageService = {
     initializeRAM: () => {
-        // Inicialização preguiçosa (Lazy) apenas se necessário
         if (!localStorage.getItem('fahub_settings')) {
             storageService.saveTeamSettings({
                 id: '1',
@@ -66,7 +64,32 @@ export const storageService = {
                         documentStatus: 'COMPLETE'
                     },
                     stats: { ovr: 88, speed: 85, strength: 80, agility: 75, tacticalIQ: 95 }
+                },
+                { 
+                    id: 'r1', 
+                    name: 'Pedro Novato', 
+                    position: 'WR', 
+                    jerseyNumber: 88, 
+                    level: 1, 
+                    xp: 0, 
+                    rating: 65, 
+                    status: 'INCUBATING',
+                    height: "1.80m",
+                    weight: 78,
+                    avatarUrl: "https://ui-avatars.com/api/?name=PN&background=orange&color=fff",
+                    incubation: {
+                        status: 'CULTURE',
+                        cultureAccepted: false,
+                        fundamentalsProgress: 0
+                    }
                 }
+            ]);
+        }
+
+        if (get('fahub_courses').length === 0) {
+            set('fahub_courses', [
+                { id: 'c1', title: 'Fundamentos do Tackle', description: 'Técnica de cabeça fora e Wrap-up.', thumbnailUrl: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?q=80&w=400', priority: true, level: 'Básico' },
+                { id: 'c2', title: 'Leitura de Cobertura', description: 'Como identificar Cover 2 e Cover 3.', thumbnailUrl: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=400', priority: false, level: 'Avançado' }
             ]);
         }
 
@@ -120,7 +143,7 @@ export const storageService = {
     logAuditAction: (action: string, details: string) => {
         const logs = get<AuditLog>('fahub_audit');
         const user = storageService.getCurrentUser();
-        set('fahub_audit', [{ id: Date.now().toString(), action, details, timestamp: new Date(), userName: user.name, role: user.role }, ...logs.slice(0, 49)]); // Limita a 50 logs para poupar RAM
+        set('fahub_audit', [{ id: Date.now().toString(), action, details, timestamp: new Date(), userName: user.name, role: user.role }, ...logs.slice(0, 49)]); 
     },
 
     getTransactions: () => get<Transaction>('fahub_transactions'),
@@ -142,7 +165,7 @@ export const storageService = {
     getClips: () => get<VideoClip>('fahub_clips'),
     saveClips: (data: VideoClip[]) => set('fahub_clips', data),
     getSocialFeed: () => get<SocialFeedPost>('fahub_social_feed'),
-    saveSocialFeedPost: (post: SocialFeedPost) => set('fahub_social_feed', [post, ...get<SocialFeedPost>('fahub_social_feed')].slice(0, 19)), // Limita feed
+    saveSocialFeedPost: (post: SocialFeedPost) => set('fahub_social_feed', [post, ...get<SocialFeedPost>('fahub_social_feed')].slice(0, 19)),
     toggleLikePost: (id: string) => {
         const feed = get<SocialFeedPost>('fahub_social_feed');
         set('fahub_social_feed', feed.map(p => p.id === id ? { ...p, likes: p.likes + 1 } : p));
@@ -230,7 +253,9 @@ export const storageService = {
     generateMonthlyInvoices: () => console.log("Generating monthly invoices..."),
     getAthleteByUserId: (userId: string) => {
         const players = get<Player>('fahub_players');
-        return players.find(p => p.name.includes('User')) || players[0];
+        // Simula encontrar o usuário pelo nome se for Lucas Thor (veterano) ou Pedro Novato (rookie)
+        const current = storageService.getCurrentUser();
+        return players.find(p => p.name.includes(current.name)) || players[0];
     },
     sendSignal: (signal: Partial<ObjectiveSignal>) => console.log("Signal sent", signal),
     getRoadmap: () => get<RoadmapItem>('fahub_roadmap'),

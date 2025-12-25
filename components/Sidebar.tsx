@@ -1,3 +1,4 @@
+
 import * as React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
@@ -87,17 +88,16 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, current
             <span>{isPlayer ? 'My Legacy' : 'Performance Card'}</span>
           </NavLink>
 
+          <NavLink to="/intel" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <VideoIcon className="w-4 h-4 mr-3 text-purple-400" />
+            <span>{isPlayer ? 'Vision Lab' : 'Intel Center'}</span>
+          </NavLink>
+
           {!isPlayer && (
-            <>
-              <NavLink to="/intel" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <VideoIcon className="w-4 h-4 mr-3 text-purple-400" />
-                <span>Intel Center</span>
-              </NavLink>
-              <NavLink to="/roster" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <UsersIcon className="w-4 h-4 mr-3 text-indigo-400" />
-                <span>Roster & Depth</span>
-              </NavLink>
-            </>
+            <NavLink to="/roster" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+              <UsersIcon className="w-4 h-4 mr-3 text-indigo-400" />
+              <span>Roster & Depth</span>
+            </NavLink>
           )}
 
           <SectionLabel>Administração</SectionLabel>
@@ -131,10 +131,10 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, current
           </button>
 
           <div className="grid grid-cols-3 gap-1">
-              <button onClick={() => handlePersonaSwitch('MASTER')} className={`flex flex-col items-center py-2 rounded-lg border transition-all ${currentRole === 'MASTER' ? 'bg-highlight border-highlight text-white' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}>
+              <button onClick={() => handlePersonaMatrix('MASTER')} className={`flex flex-col items-center py-2 rounded-lg border transition-all ${currentRole === 'MASTER' ? 'bg-highlight border-highlight text-white' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}>
                 <ShieldCheckIcon className="w-3 h-3 mb-1" /><span className="text-[7px] font-black uppercase">Diretor</span>
               </button>
-              <button onClick={() => handlePersonaSwitch('HEAD_COACH')} className={`flex flex-col items-center py-2 rounded-lg border transition-all ${currentRole === 'HEAD_COACH' ? 'bg-blue-600 border-blue-600 text-white' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}>
+              <button onClick={() => handlePersonaMatrix('HEAD_COACH')} className={`flex flex-col items-center py-2 rounded-lg border transition-all ${currentRole === 'HEAD_COACH' ? 'bg-blue-600 border-blue-600 text-white' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}>
                 <WhistleIcon className="w-3 h-3 mb-1" /><span className="text-[7px] font-black uppercase">Coach</span>
               </button>
               <button onClick={() => handlePersonaSwitch('PLAYER')} className={`flex flex-col items-center py-2 rounded-lg border transition-all ${currentRole === 'PLAYER' ? 'bg-orange-600 border-orange-600 text-white' : 'border-white/5 bg-white/5 text-text-secondary hover:bg-white/10'}`}>

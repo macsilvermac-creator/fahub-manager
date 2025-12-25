@@ -13,6 +13,7 @@ import LazyImage from '../components/LazyImage';
 import { useToast } from '../contexts/ToastContext';
 import { Objective, Player, Game, PracticeSession } from '../types';
 import { useNavigate } from 'react-router-dom';
+import RookiePortal from './RookiePortal';
 
 const Dashboard: React.FC = () => {
     const { currentRole } = useContext(UserContext) as UserContextType;
@@ -45,7 +46,14 @@ const Dashboard: React.FC = () => {
     }, [fullAgenda]);
 
     const renderPlayer = () => {
-        const myPlayer = players.find(p => p.name.includes("Lucas")) || players[0];
+        const currentUser = storageService.getCurrentUser();
+        const myPlayer = players.find(p => p.name.includes(currentUser.name)) || players[0];
+        
+        // Se for novato em incubação, mostra o portal especializado
+        if (myPlayer?.status === 'INCUBATING') {
+            return <RookiePortal />;
+        }
+
         const isRegistrationComplete = myPlayer?.registration?.documentStatus === 'COMPLETE';
         
         return (
@@ -69,7 +77,6 @@ const Dashboard: React.FC = () => {
                     <div className="lg:col-span-8 flex flex-col gap-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 items-stretch">
                             
-                            {/* ESTUDO DE PLAYBOOK (Referência de altura) */}
                             <Card title="Study Room (Playbook)" className="relative overflow-hidden group h-full flex flex-col border-purple-500/20">
                                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                     <BookIcon className="w-32 h-32 text-purple-400" />
@@ -90,7 +97,6 @@ const Dashboard: React.FC = () => {
                                 </div>
                             </Card>
 
-                            {/* COLUNA DO LEGACY & DOSSIÊ - Ajustada para flex-container */}
                             <div className="flex flex-col gap-6 h-full">
                                 <Card title="The Legacy" className="relative overflow-hidden group border-highlight/20 shrink-0">
                                     <div className="flex items-center gap-4 py-1">
@@ -138,7 +144,6 @@ const Dashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* IRON LAB ACCESS */}
                         <div className="bg-gradient-to-br from-orange-600/20 to-black p-6 rounded-[2.5rem] border border-orange-500/20 shadow-xl flex flex-col md:flex-row items-center justify-between group gap-6 shrink-0">
                             <div className="flex items-center gap-6">
                                 <div className="p-4 bg-orange-600/20 rounded-2xl group-hover:scale-110 transition-transform">
@@ -155,7 +160,6 @@ const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* AGENDA LATERAL */}
                     <div className="lg:col-span-4 h-full">
                         <div className="bg-[#0F172A] rounded-[2.5rem] border border-white/5 h-full flex flex-col overflow-hidden shadow-2xl min-h-[500px]">
                             <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
@@ -188,7 +192,7 @@ const Dashboard: React.FC = () => {
     return (
         <div className="h-full">
             {currentRole === 'PLAYER' ? renderPlayer() : (
-                <div className="p-20 text-center text-text-secondary opacity-30 italic font-black uppercase">Interface Administrativa Ativa</div>
+                <div className="p-20 text-center text-text-secondary opacity-30 italic font-black uppercase text-xs">Acesso restrito ao Painel de Comando.</div>
             )}
         </div>
     );
