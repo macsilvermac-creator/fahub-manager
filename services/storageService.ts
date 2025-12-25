@@ -69,6 +69,14 @@ export const storageService = {
                 }
             ]);
         }
+
+        if (get('fahub_invoices').length === 0) {
+            set('fahub_invoices', [
+                { id: 'inv-1', title: 'Mensalidade Jan/25', amount: 150, dueDate: new Date('2025-01-10'), status: 'PENDING', category: 'TUITION', playerName: 'Lucas Thor' },
+                { id: 'inv-2', title: 'Uniforme de Treino', amount: 85, dueDate: new Date('2025-01-05'), status: 'OVERDUE', category: 'EQUIPMENT', playerName: 'Lucas Thor' },
+                { id: 'inv-3', title: 'Inscrição Campeonato', amount: 200, dueDate: new Date('2025-02-15'), status: 'PENDING', category: 'EVENT', playerName: 'Lucas Thor' }
+            ]);
+        }
     },
 
     subscribe: (key: string, callback: () => void) => {

@@ -53,10 +53,6 @@ const Dashboard: React.FC = () => {
         return fullAgenda.find(e => e.timestamp > now) || fullAgenda[0];
     }, [fullAgenda]);
 
-    const handleXPGain = (amount: number, reason: string) => {
-        toast.info(`+${amount} XP: ${reason}`);
-    };
-
     const handleEventClick = (event: any) => {
         if (event.type === 'PRACTICE') {
             navigate(`/practice-detail/${event.id}`);
@@ -94,23 +90,23 @@ const Dashboard: React.FC = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div className="lg:col-span-8 space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
                             
                             {/* ESTUDO DE PLAYBOOK */}
-                            <Card title="Study Room (Playbook)" className="relative overflow-hidden group">
+                            <Card title="Study Room (Playbook)" className="relative overflow-hidden group h-full flex flex-col">
                                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                     <BookIcon className="w-32 h-32 text-purple-400" />
                                 </div>
-                                <div className="p-2">
-                                    <div className="w-full h-32 bg-black/40 rounded-xl border border-white/10 mb-4 flex items-center justify-center">
+                                <div className="p-2 flex-1 flex flex-col">
+                                    <div className="w-full flex-1 bg-black/40 rounded-xl border border-white/10 mb-4 flex items-center justify-center">
                                         <div className="text-center">
-                                            <p className="text-[10px] font-black text-purple-400 uppercase">Instalação da Semana</p>
-                                            <p className="text-white font-bold italic">Cover 3 Disguise</p>
+                                            <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em]">Instalação da Semana</p>
+                                            <p className="text-white font-black text-2xl italic uppercase tracking-tighter">Cover 3 Disguise</p>
                                         </div>
                                     </div>
                                     <button 
                                         onClick={() => navigate('/tactical-lab')}
-                                        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-xl uppercase text-[10px] shadow-lg transition-all active:scale-95"
+                                        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-xl uppercase text-[10px] shadow-lg transition-all active:scale-95 shrink-0"
                                     >
                                         Entrar no Lab de Estudo
                                     </button>
@@ -118,8 +114,8 @@ const Dashboard: React.FC = () => {
                             </Card>
 
                             {/* LEGACY CARD & BIO-VAULT */}
-                            <div className="space-y-6">
-                                <Card title="The Legacy (Card)" className="relative overflow-hidden group h-fit">
+                            <div className="flex flex-col gap-6">
+                                <Card title="The Legacy (Card)" className="relative overflow-hidden group">
                                     <div className="flex items-center gap-4 py-2">
                                         <div className="w-20 h-20 rounded-2xl p-0.5 bg-gradient-to-br from-highlight to-blue-500 shadow-glow relative transform group-hover:rotate-3 transition-transform">
                                             <LazyImage src={myPlayer?.avatarUrl || ''} className="w-full h-full rounded-2xl object-cover border-2 border-black" fallbackText="Thor" />
@@ -135,9 +131,9 @@ const Dashboard: React.FC = () => {
                                     </div>
                                 </Card>
 
-                                {/* BIO-VAULT (ALINHADO COM OS OUTROS CARDS) */}
-                                <Card title="Dossiê Cadastral (Súmula)" className="border-indigo-500/30">
-                                    <div className="space-y-4">
+                                {/* DOSSIÊ CADASTRAL (SÚMULA) - ESTICADO PARA ALINHAR */}
+                                <Card title="Dossiê Cadastral (Súmula)" className="border-indigo-500/30 flex-1 flex flex-col">
+                                    <div className="space-y-4 flex-1 flex flex-col">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <div className={`w-2 h-2 rounded-full ${isRegistrationComplete ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></div>
@@ -149,19 +145,21 @@ const Dashboard: React.FC = () => {
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-2">
-                                            <div className="bg-black/20 p-2 rounded-lg border border-white/5 text-center">
+                                            <div className="bg-black/20 p-4 rounded-lg border border-white/5 text-center">
                                                 <p className="text-[8px] text-text-secondary uppercase">Jersey</p>
-                                                <p className="text-sm font-black text-white">#{myPlayer?.jerseyNumber || '--'}</p>
+                                                <p className="text-lg font-black text-white">#{myPlayer?.jerseyNumber || '--'}</p>
                                             </div>
-                                            <div className="bg-black/20 p-2 rounded-lg border border-white/5 text-center">
+                                            <div className="bg-black/20 p-4 rounded-lg border border-white/5 text-center">
                                                 <p className="text-[8px] text-text-secondary uppercase">Exame Med.</p>
-                                                <p className={`text-sm font-black ${isRegistrationComplete ? 'text-green-400' : 'text-red-400'}`}>OK</p>
+                                                <p className={`text-lg font-black ${isRegistrationComplete ? 'text-green-400' : 'text-red-400'}`}>VÁLIDO</p>
                                             </div>
                                         </div>
 
+                                        <div className="flex-1"></div>
+
                                         <button 
                                             onClick={() => navigate('/profile')}
-                                            className="w-full bg-white/5 hover:bg-indigo-600 text-white font-black py-3 rounded-xl uppercase text-[10px] border border-white/10 transition-all flex items-center justify-center gap-2 active:scale-95"
+                                            className="w-full bg-white/5 hover:bg-indigo-600 text-white font-black py-4 rounded-xl uppercase text-[10px] border border-white/10 transition-all flex items-center justify-center gap-2 active:scale-95 mt-4"
                                         >
                                             <ClipboardIcon className="w-4 h-4" /> Gerenciar Meu Dossiê
                                         </button>
