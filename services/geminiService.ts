@@ -1,369 +1,257 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { RecruitmentCandidate, Player } from "../types";
 
-// Fix: Helper to get a new instance of GoogleGenAI using the process.env.API_KEY
-const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { GoogleGenAI, Type } from "@google/genai";
+import { TacticalPlay, Player, GameScoutingReport, RecruitmentCandidate } from "../types";
+
+const getAI = () => {
+    // Fix: Using correct initialization for GoogleGenAI with API key from process.env.API_KEY
+    return new GoogleGenAI({ apiKey: process.env.API_KEY! });
+};
 
 const cleanJson = (text: string) => {
     if (!text) return "{}";
     return text.replace(/```json|```/gi, '').trim();
 };
 
-export async function analyzeTryoutPerformance(candidate: RecruitmentCandidate) {
+export async function parseTacticalDiagram(base64: string, context: string): Promise<Partial<TacticalPlay>> {
     const ai = getAI();
-    const prompt = `
-        Aja como um Senior Scout da NFL. Analise este candidato para Futebol Americano e sugira um rating OVR (0-100) e posição ideal.
-        DADOS: ${JSON.stringify(candidate)}
-    `;
+    // Remove cabeçalho data:image/jpeg;base64,
+    const cleanBase64 = base64.split(',')[1] || base64;
     
-    try {
-        // Fix: Use generateContent directly and added responseSchema
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: prompt,
-            config: { 
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        potentialRating: { type: Type.NUMBER },
-                        technicalAnalysis: { type: Type.STRING },
-                        suggestedPosition: { type: Type.STRING }
-                    },
-                    required: ["potentialRating", "technicalAnalysis", "suggestedPosition"]
-                }
-            }
-        });
-        // Fix: Accessed .text property
-        return JSON.parse(cleanJson(response.text || "{}"));
-    } catch (error) {
-        console.error("Gemini Error:", error);
-        return { potentialRating: 70, technicalAnalysis: "Análise indisponível no momento.", suggestedPosition: candidate.position };
-    }
+    const prompt = `
+        Analise este desenho tático de Futebol Americano.
+        Converta círculos em jogadores ofensivos e X em defensivos.
+        Retorne estritamente um JSON: {
+            "name": "Nome curto",
+            "concept": "Descrição técnica 1 frase",
+            "unit": "OFFENSE|DEFENSE",
+            "category": "RUN|PASS",
+            "elements": [
+                { "id": "uuid", "type": "OFFENSE|DEFENSE", "label": "POS", "x": 0-600, "y": 0-400 }
+            ]
+        }
+    `;
+
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: {
+            parts: [
+                { text: prompt },
+                { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
+            ]
+        }
+    });
+
+    return JSON.parse(cleanJson(response.text || "{}"));
 }
 
 export async function generatePracticeScript(focus: string, duration: number, intensity: string) {
     const ai = getAI();
-    const prompt = `
-        Gere um roteiro de treino de ${duration}min for Futebol Americano focado em: ${focus}.
-        INTENSIDADE: ${intensity}.
-    `;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: prompt,
-            config: { 
-                responseMimeType: "application/json",
-                thinkingConfig: { thinkingBudget: 4096 },
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            id: { type: Type.STRING },
-                            startTime: { type: Type.STRING },
-                            durationMinutes: { type: Type.NUMBER },
-                            activityName: { type: Type.STRING },
-                            type: { type: Type.STRING }
-                        },
-                        required: ["id", "startTime", "durationMinutes", "activityName", "type"]
-                    }
+    const prompt = `Gere roteiro de treino ${duration}min: ${focus}. Retorne JSON array de { id, startTime, durationMinutes, activityName, type }`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { 
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        id: { type: Type.STRING },
+                        startTime: { type: Type.STRING },
+                        durationMinutes: { type: Type.NUMBER },
+                        activityName: { type: Type.STRING },
+                        type: { type: Type.STRING }
+                    },
+                    required: ["id", "startTime", "durationMinutes", "activityName", "type"]
                 }
             }
-        });
-        return JSON.parse(cleanJson(response.text || "[]"));
-    } catch (error) {
-        console.error("Gemini Error:", error);
-        return [];
-    }
+        }
+    });
+    return JSON.parse(cleanJson(response.text || "[]"));
 }
+
+// Fix: Added missing exported functions to satisfy dependencies in other components
 
 export async function generatePracticePlan(prompt: string) {
     const ai = getAI();
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: prompt
-        });
-        return response.text || "Sem resposta da IA.";
-    } catch (error) {
-        return "Erro ao gerar plano. Tente novamente.";
-    }
-}
-
-export async function generatePlayerAnalysis(player: Player, context: string) {
-    const ai = getAI();
-    const prompt = `Analise a performance e biotipo do atleta ${player.name} (${player.position}) no contexto: ${context}. Gere um texto motivacional e técnico curto.`;
-    
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: prompt
-        });
-        return response.text || "";
-    } catch (error) {
-        return "Análise indisponível.";
-    }
-}
-
-export async function importPlaybookFromImage(base64: string) {
-    const ai = getAI();
-    const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
-    
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: {
-                parts: [
-                    { text: "Identifique os jogadores e rotas no diagrama tático e converta para JSON." },
-                    { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
-                ]
-            },
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            id: { type: Type.STRING },
-                            type: { type: Type.STRING },
-                            label: { type: Type.STRING },
-                            x: { type: Type.NUMBER },
-                            y: { type: Type.NUMBER }
-                        },
-                        required: ["id", "type", "label", "x", "y"]
-                    }
-                }
-            }
-        });
-        return JSON.parse(cleanJson(response.text || "[]"));
-    } catch (error) {
-        console.error("Vision Error:", error);
-        return [];
-    }
-}
-
-export async function scanFinancialDocument(base64: string) {
-    const ai = getAI();
-    const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: {
-                parts: [
-                    { text: "Extraia os dados deste recibo para JSON." },
-                    { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
-                ]
-            },
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        title: { type: Type.STRING },
-                        amount: { type: Type.NUMBER },
-                        date: { type: Type.STRING },
-                        category: { type: Type.STRING }
-                    },
-                    required: ["title", "amount", "date", "category"]
-                }
-            }
-        });
-        return JSON.parse(cleanJson(response.text || "{}"));
-    } catch (error) {
-        return {};
-    }
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt
+    });
+    return response.text || "";
 }
 
 export async function analyzeOpponentTendencies(notes: string) {
     const ai = getAI();
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: `Analise as tendências do adversário baseadas nestas notas de scout: ${notes}.`,
-            config: { 
-                responseMimeType: "application/json",
-                thinkingConfig: { thinkingBudget: 2048 },
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        summary: { type: Type.STRING },
-                        keysToVictory: { 
-                            type: Type.ARRAY,
-                            items: { type: Type.STRING }
-                        }
-                    },
-                    required: ["summary", "keysToVictory"]
+    const prompt = `Analise as tendências do adversário baseando-se nestas notas: ${notes}. Retorne JSON com summary (string) e keysToVictory (array de strings).`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                    summary: { type: Type.STRING },
+                    keysToVictory: { type: Type.ARRAY, items: { type: Type.STRING } }
                 }
             }
-        });
-        return JSON.parse(cleanJson(response.text || "{}"));
-    } catch (error) {
-        return { summary: "Erro na análise.", keysToVictory: [] };
-    }
+        }
+    });
+    return JSON.parse(cleanJson(response.text || "{}"));
 }
 
 export async function suggestPlayConcepts(situation: string) {
     const ai = getAI();
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: `Sugira jogadas e conceitos táticos para a seguinte situação: ${situation}`,
-            config: { 
-                responseMimeType: "application/json",
-                thinkingConfig: { thinkingBudget: 2048 },
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            name: { type: Type.STRING },
-                            reason: { type: Type.STRING }
-                        },
-                        required: ["name", "reason"]
+    const prompt = `Sugira 3 conceitos de jogadas para a situação: ${situation}. Retorne JSON array de { name, reason }.`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        name: { type: Type.STRING },
+                        reason: { type: Type.STRING }
                     }
                 }
             }
-        });
-        return JSON.parse(cleanJson(response.text || "[]"));
-    } catch (error) {
-        return [];
-    }
+        }
+    });
+    return JSON.parse(cleanJson(response.text || "[]"));
 }
 
 export async function explainPlayImage(base64: string, question: string) {
     const ai = getAI();
-    const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
-
-    try {
-        const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: {
-                parts: [
-                    { text: `Explique este diagrama tático. Pergunta: ${question}` },
-                    { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
-                ]
-            }
-        });
-        return response.text || "";
-    } catch (error) {
-        return "Erro ao analisar imagem.";
-    }
+    const cleanBase64 = base64.split(',')[1] || base64;
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+            parts: [
+                { text: question },
+                { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
+            ]
+        }
+    });
+    return response.text || "";
 }
 
-export async function analyzePlayMatchup(concept: string, scouting: any, opponent: string) {
+export async function generatePlayerAnalysis(player: Player, context: string) {
     const ai = getAI();
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: `Analise como o conceito ${concept} se comporta contra o scout do adversário ${opponent}: ${JSON.stringify(scouting)}`,
-            config: {
-                thinkingConfig: { thinkingBudget: 4096 }
-            }
-        });
-        return response.text || "";
-    } catch (error) {
-        return "Simulação indisponível.";
-    }
+    const prompt = `Analise a evolução do jogador ${player.name} (${player.position}) no contexto: ${context}. Gere um relatório de PDI em português.`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt
+    });
+    return response.text || "";
 }
 
-export async function generateInstallSchedule(context: string) {
+export async function analyzePlayMatchup(playDescription: string, scouting: GameScoutingReport, opponent: string) {
     const ai = getAI();
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: `Gere um cronograma de instalação tática baseado neste contexto: ${context}`,
-            config: { 
-                responseMimeType: "application/json",
-                thinkingConfig: { thinkingBudget: 2048 },
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            id: { type: Type.STRING },
-                            day: { type: Type.STRING },
-                            category: { type: Type.STRING },
-                            concept: { type: Type.STRING }
-                        },
-                        required: ["id", "day", "category", "concept"]
-                    }
-                }
-            }
-        });
-        return JSON.parse(cleanJson(response.text || "[]"));
-    } catch (error) {
-        return [];
-    }
+    const prompt = `Analise a eficácia da jogada "${playDescription}" contra o adversário "${opponent}" que tem este scout: ${scouting.defenseAnalysis}.`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt
+    });
+    return response.text || "";
 }
 
 export async function generateGymPlan(goal: string, equipment: string, program: string) {
     const ai = getAI();
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Gere um plano de treinamento de força focado em ${goal} para a modalidade ${program} com os seguintes equipamentos: ${equipment}. Formate em HTML simples.`,
-        });
-        return response.text || "";
-    } catch (error) {
-        return "Erro ao gerar treino.";
-    }
+    const prompt = `Crie um plano de treino de academia para ${program} focado em ${goal} usando ${equipment}. Use HTML para formatação básica.`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt
+    });
+    return response.text || "";
 }
 
 export async function generateMarketingContent(topic: string, platform: string) {
     const ai = getAI();
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Crie um copy de marketing para a plataforma ${platform} sobre o tópico: ${topic}`,
-        });
-        return response.text || "";
-    } catch (error) {
-        return "Erro ao gerar copy.";
-    }
+    const prompt = `Crie um post de marketing para ${platform} sobre o tópico: ${topic}. Seja persuasivo e use emojis.`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt
+    });
+    return response.text || "";
 }
 
-export async function generateSponsorshipProposal(company: string, amount: number) {
+export async function generateSponsorshipProposal(company: string, value: number) {
     const ai = getAI();
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: `Escreva uma proposta formal de patrocínio para a empresa ${company} solicitando o valor de R$ ${amount}.`,
-        });
-        return response.text || "";
-    } catch (error) {
-        return "Erro ao gerar proposta.";
-    }
+    const prompt = `Escreva um email profissional de prospecção de patrocínio para a empresa ${company} solicitando o valor de R$ ${value}.`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt
+    });
+    return response.text || "";
 }
 
-export async function generateColorCommentary(home: string, away: string, context: string) {
+export async function scanFinancialDocument(base64: string) {
     const ai = getAI();
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: `Aja como um narrador de Futebol Americano. Gere comentários sobre o jogo ${home} vs ${away} dado o contexto: ${context}.`,
-            config: { 
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        intro: { type: Type.STRING },
-                        homePlayerToWatch: { type: Type.STRING },
-                        awayPlayerToWatch: { type: Type.STRING },
-                        keyMatchups: { 
-                            type: Type.ARRAY,
-                            items: { type: Type.STRING }
-                        }
-                    },
-                    required: ["intro", "homePlayerToWatch", "awayPlayerToWatch", "keyMatchups"]
-                }
-            }
-        });
-        return JSON.parse(cleanJson(response.text || "{}"));
-    } catch (error) {
-        return { intro: "Erro na conexão com narrador virtual.", keyMatchups: [] };
-    }
+    const cleanBase64 = base64.split(',')[1] || base64;
+    const prompt = `Extraia dados financeiros deste recibo. Retorne JSON: { "title": "string", "amount": number, "date": "YYYY-MM-DD", "category": "TUITION|EQUIPMENT|EVENT|STORE|OTHER" }`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+            parts: [
+                { text: prompt },
+                { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
+            ]
+        },
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(cleanJson(response.text || "{}"));
+}
+
+export async function generateInstallSchedule(plays: string[]) {
+    const ai = getAI();
+    const prompt = `Gere uma matriz de instalação semanal para estas jogadas: ${plays.join(', ')}. Retorne formato amigável.`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt
+    });
+    return response.text || "";
+}
+
+export async function importPlaybookFromImage(base64: string) {
+    const ai = getAI();
+    const cleanBase64 = base64.split(',')[1] || base64;
+    const prompt = `Identifique jogadores ofensivos e defensivos nesta imagem. Retorne JSON array de elements: { "id": "uuid", "type": "OFFENSE|DEFENSE", "label": "POS", "x": number, "y": number }.`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+            parts: [
+                { text: prompt },
+                { inlineData: { mimeType: "image/jpeg", data: cleanBase64 } }
+            ]
+        },
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(cleanJson(response.text || "[]"));
+}
+
+export async function analyzeTryoutPerformance(candidate: RecruitmentCandidate) {
+    const ai = getAI();
+    const prompt = `Analise o desempenho deste candidato de tryout: ${candidate.name}, 40y: ${candidate.combineStats?.fortyYards}s. Retorne JSON: { "technicalAnalysis": "string", "potentialRating": number }.`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(cleanJson(response.text || "{}"));
+}
+
+export async function generateColorCommentary(home: string, away: string, situation: string) {
+    const ai = getAI();
+    const prompt = `Atue como um narrador de futebol americano. Gere notas de transmissão para ${home} vs ${away}. Contexto: ${situation}. Retorne JSON com intro, homePlayerToWatch, awayPlayerToWatch, keyMatchups (array).`;
+    const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(cleanJson(response.text || "{}"));
 }
