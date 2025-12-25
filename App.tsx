@@ -3,13 +3,13 @@ import * as React from 'react';
 import { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-// Componentes Críticos (Bundle Inicial Mínimo)
+// Componentes Críticos
 import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 
-// Lazy Loading de todas as rotas para economia de RAM (Modo PWA/Mobile-First)
+// Lazy Loading
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Roster = lazy(() => import('./pages/Roster'));
 const Recruitment = lazy(() => import('./pages/Recruitment'));
@@ -39,6 +39,8 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const PublicTeam = lazy(() => import('./pages/PublicTeam'));
 const PublicLeague = lazy(() => import('./pages/PublicLeague'));
+const SidelineHub = lazy(() => import('./pages/SidelineHub'));
+const Schedule = lazy(() => import('./pages/Schedule'));
 
 const App: React.FC = () => {
   return (
@@ -82,6 +84,8 @@ const App: React.FC = () => {
                       <Route path="/profile" element={<MyProfile />} />
                       <Route path="/help" element={<HelpCenter />} />
                       <Route path="/intel" element={<VideoAnalysis />} />
+                      <Route path="/sideline-hub" element={<SidelineHub />} />
+                      <Route path="/schedule" element={<Schedule />} />
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                   </Suspense>

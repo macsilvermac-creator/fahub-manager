@@ -6,6 +6,24 @@ export type ProgramType = 'TACKLE' | 'FLAG' | 'BOTH' | 'YOUTH';
 export type PracticeSource = 'MANUAL' | 'AI';
 export type PracticeTarget = 'FULL_TEAM' | 'UNIT' | 'POSITION' | 'OFFENSE' | 'DEFENSE';
 
+export type GameUnit = 'OFFENSE' | 'DEFENSE' | 'ST';
+
+export interface PlayEvent {
+    id: string;
+    gameId: string | number;
+    timestamp: Date;
+    unit: GameUnit;
+    down?: number;
+    distance?: number;
+    yardLine?: number;
+    playType: 'PASS' | 'RUN' | 'PUNT' | 'FG' | 'KICKOFF' | 'PAT';
+    result: 'CATCH' | 'DROP' | 'INT' | 'SACK' | 'FUMBLE' | 'TACKLE' | 'TOUCHDOWN' | 'SAFETY' | 'GOOD' | 'NO_GOOD' | 'MUFF' | 'COMPLETE';
+    primaryPlayerId?: string | number;
+    primaryJersey?: number;
+    yards?: number;
+    isVerified?: boolean;
+}
+
 export interface CombineStats {
     date: Date;
     fortyYards?: number;
@@ -177,7 +195,7 @@ export interface Game {
     currentQuarter?: number;
     clock?: string;
     rotation?: PlayerRotation[];
-    timeline?: any[];
+    timeline?: PlayEvent[];
     audioNotes?: any[];
     gameRoster?: string[];
     halftimeStats?: HalftimeStats;
@@ -693,7 +711,7 @@ export interface RecruitmentCandidate {
 }
 
 export interface DevelopmentPlan {
-    id: string;
+    id: string | number;
     playerId: string | number;
     title: string;
     generatedContent: string;

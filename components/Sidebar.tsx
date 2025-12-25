@@ -4,7 +4,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   DashboardIcon, RosterIcon, WhistleIcon, FinanceIcon, 
   TrophyIcon, TargetIcon, VideoIcon, UsersIcon, ShieldCheckIcon, GlobeIcon, SwapIcon,
-  BookIcon, DumbbellIcon, StarIcon
+  BookIcon, DumbbellIcon, StarIcon, MapIcon
 } from './icons/UiIcons';
 import { UserRole } from '../types';
 import { storageService } from '../services/storageService';
@@ -66,9 +66,16 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, current
           </NavLink>
           
           {!isPlayer && (
+            <NavLink to="/sideline-hub" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+              <MapIcon className="w-4 h-4 mr-3 text-red-500" />
+              <span>Sideline Hub</span>
+            </NavLink>
+          )}
+
+          {!isPlayer && (
             <NavLink to="/schedule" onClick={handleLinkClick} className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-              <TrophyIcon className="w-4 h-4 mr-3 text-red-500" />
-              <span>Game Day</span>
+              <TrophyIcon className="w-4 h-4 mr-3 text-yellow-500" />
+              <span>Calendário</span>
             </NavLink>
           )}
 
