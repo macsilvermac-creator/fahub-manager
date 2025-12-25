@@ -1,19 +1,17 @@
 
 import React, { useContext, useEffect, useState, useMemo } from 'react';
-import { UserContext, UserContextType } from '../components/Layout';
-import { storageService } from '../services/storageService';
-import Card from '../components/Card';
+import { UserContext, UserContextType } from '@/components/Layout';
+import { storageService } from '@/services/storageService';
+import Card from '@/components/Card';
 import { 
-    ActivityIcon, UsersIcon, CheckCircleIcon, ClockIcon, 
-    WalletIcon, SparklesIcon, WhistleIcon, TrophyIcon, TargetIcon,
-    AlertTriangleIcon, TrendingUpIcon, HeartIcon, DumbbellIcon, BookIcon, StarIcon, CalendarIcon,
-    ShieldCheckIcon, ClipboardIcon, ChevronRightIcon
-} from '../components/icons/UiIcons';
-import LazyImage from '../components/LazyImage';
-import { useToast } from '../contexts/ToastContext';
-import { Objective, Player, Game, PracticeSession } from '../types';
+    UsersIcon, CheckCircleIcon, ClockIcon, 
+    BookIcon, StarIcon, CalendarIcon,
+    ShieldCheckIcon, ClipboardIcon, ChevronRightIcon,
+    DumbbellIcon
+} from '@/components/icons/UiIcons';
+import LazyImage from '@/components/LazyImage';
+import { Player, Game, PracticeSession } from '@/types';
 import { useNavigate } from 'react-router-dom';
-import RookiePortal from './RookiePortal';
 
 const Dashboard: React.FC = () => {
     const { currentRole } = useContext(UserContext) as UserContextType;
@@ -34,7 +32,7 @@ const Dashboard: React.FC = () => {
 
     const fullAgenda = useMemo(() => {
         const items = [
-            ...games.map(g => ({ ...g, type: 'GAME' as const, title: `VS ${g.opponent}`, timestamp: new Date(g.date).getTime(), startTime: new Date(g.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) })),
+            ...games.map(g => ({ ...g, type: 'GAME' as const, title: `VS ${g.opponent}`, timestamp: new Date(g.date).getTime() })),
             ...practices.map(p => ({ ...p, type: 'PRACTICE' as const, title: p.title, timestamp: new Date(p.date).getTime() }))
         ];
         return items.sort((a, b) => a.timestamp - b.timestamp);
@@ -46,19 +44,11 @@ const Dashboard: React.FC = () => {
     }, [fullAgenda]);
 
     const renderPlayer = () => {
-        const currentUser = storageService.getCurrentUser();
-        const myPlayer = players.find(p => p.name.includes(currentUser.name)) || players[0];
-        
-        // Se for novato em incubação, mostra o portal especializado
-        if (myPlayer?.status === 'INCUBATING') {
-            return <RookiePortal />;
-        }
-
+        const myPlayer = players.find(p => p.name.includes("Lucas")) || players[0];
         const isRegistrationComplete = myPlayer?.registration?.documentStatus === 'COMPLETE';
         
         return (
             <div className="flex flex-col h-full gap-6 animate-fade-in pb-20 overflow-x-hidden">
-                {/* 1. NEXT UP HEADER */}
                 <div 
                     onClick={() => nextEvent?.type === 'PRACTICE' && navigate(`/practice-detail/${nextEvent.id}`)}
                     className={`relative p-8 rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col md:flex-row justify-between items-center transition-all cursor-pointer group ${nextEvent?.type === 'GAME' ? 'bg-gradient-to-r from-red-600 to-black' : 'bg-gradient-to-r from-blue-700 to-black'}`}
@@ -76,7 +66,6 @@ const Dashboard: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                     <div className="lg:col-span-8 flex flex-col gap-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 items-stretch">
-                            
                             <Card title="Study Room (Playbook)" className="relative overflow-hidden group h-full flex flex-col border-purple-500/20">
                                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                     <BookIcon className="w-32 h-32 text-purple-400" />
@@ -192,7 +181,7 @@ const Dashboard: React.FC = () => {
     return (
         <div className="h-full">
             {currentRole === 'PLAYER' ? renderPlayer() : (
-                <div className="p-20 text-center text-text-secondary opacity-30 italic font-black uppercase text-xs">Acesso restrito ao Painel de Comando.</div>
+                <div className="p-20 text-center text-text-secondary opacity-30 italic font-black uppercase">Interface Administrativa Ativa</div>
             )}
         </div>
     );

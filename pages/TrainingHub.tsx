@@ -1,17 +1,17 @@
 
 import React, { useState, useEffect, useContext, useCallback, memo, useMemo } from 'react';
-import PageHeader from '../components/PageHeader';
-import Card from '../components/Card';
-import { storageService } from '../services/storageService';
-import { PracticeSession, PracticeScriptItem, PracticeTarget } from '../types';
+import PageHeader from '@/components/PageHeader';
+import Card from '@/components/Card';
+import { storageService } from '@/services/storageService';
+import { PracticeSession, PracticeScriptItem, PracticeTarget } from '@/types';
 import { 
     WhistleIcon, SparklesIcon, ClockIcon, TrashIcon, 
-    PlusIcon, CalendarIcon, UsersIcon, CheckCircleIcon, 
+    PlusIcon, CalendarIcon, CheckCircleIcon, 
     ChevronRightIcon 
-} from '../components/icons/UiIcons';
-import { useToast } from '../contexts/ToastContext';
-import { generatePracticeScript } from '../services/geminiService';
-import { UserContext, UserContextType } from '../components/Layout';
+} from '@/components/icons/UiIcons';
+import { useToast } from '@/contexts/ToastContext';
+import { generatePracticeScript } from '@/services/geminiService';
+import { UserContext, UserContextType } from '@/components/Layout';
 import { useNavigate } from 'react-router-dom';
 
 const DrillItem = memo(({ item, onRemove, onUpdate }: { 

@@ -1,17 +1,16 @@
 
-import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
-import Card from '../components/Card';
-import { Player, Transaction, Subscription, Budget, Bill, TransactionCategory, Invoice } from '../types';
-import { storageService } from '../services/storageService';
-import { FinanceIcon } from '../components/icons/NavIcons';
+import React, { useState, useEffect, useContext } from 'react';
+import Card from '@/components/Card';
+import { Transaction, Invoice } from '@/types';
+import { storageService } from '@/services/storageService';
+import { FinanceIcon } from '@/components/icons/NavIcons';
 import { 
-    WalletIcon, ClockIcon, RefreshIcon, 
-    CheckCircleIcon, ScanIcon, QrcodeIcon, 
-    TrophyIcon, BookIcon, XIcon, ShoppingBagIcon 
-} from '../components/icons/UiIcons';
-import { UserContext, UserContextType } from '../components/Layout';
-import Modal from '../components/Modal';
-import { useToast } from '../contexts/ToastContext';
+    WalletIcon, CheckCircleIcon, QrcodeIcon, 
+    TrophyIcon, BookIcon, ShoppingBagIcon 
+} from '@/components/icons/UiIcons';
+import { UserContext, UserContextType } from '@/components/Layout';
+import Modal from '@/components/Modal';
+import { useToast } from '@/contexts/ToastContext';
 
 const Finance: React.FC = () => {
     const { currentRole } = useContext(UserContext) as UserContextType;
@@ -19,9 +18,6 @@ const Finance: React.FC = () => {
     
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const [viewMode, setViewMode] = useState<'OVERVIEW' | 'SUBSCRIPTIONS' | 'BILLS'>('OVERVIEW');
-    
-    // Atleta UI States
     const [selectedInvoiceForPix, setSelectedInvoiceForPix] = useState<Invoice | null>(null);
 
     const isPlayer = currentRole === 'PLAYER';
@@ -58,7 +54,6 @@ const Finance: React.FC = () => {
 
         return (
             <div className="space-y-10 animate-fade-in max-w-6xl mx-auto pb-20">
-                {/* Texto Superior Informativo */}
                 <div className="bg-gradient-to-r from-[#1e293b] to-black p-8 rounded-[3rem] border border-white/10 shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-10 opacity-5">
                         <WalletIcon className="w-64 h-64 text-white" />
@@ -71,16 +66,15 @@ const Finance: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Grade 3x2 de Cobranças */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {myInvoices.map((inv: any) => (
+                    {myInvoices.map((inv) => (
                         <div 
                             key={inv.id} 
                             className="group relative bg-secondary/60 backdrop-blur-md rounded-[2.5rem] border border-white/5 p-8 shadow-xl transition-all duration-500 hover:scale-[1.03] hover:shadow-glow hover:border-highlight/30 flex flex-col h-full"
                         >
                             <div className="flex justify-between items-start mb-6">
                                 <div className="p-4 bg-black/40 rounded-3xl border border-white/5 group-hover:border-highlight/40 transition-colors">
-                                    {getCategoryIcon(inv.category)}
+                                    {getCategoryIcon(inv.category || 'OTHER')}
                                 </div>
                                 <span className={`text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border ${getStatusStyles(inv.status)}`}>
                                     {inv.status === 'PENDING' ? 'Pendente' : inv.status === 'PAID' ? 'Pago' : 'Atrasado'}
@@ -122,7 +116,6 @@ const Finance: React.FC = () => {
                     )}
                 </div>
 
-                {/* Modal Pix QR Code */}
                 <Modal 
                     isOpen={!!selectedInvoiceForPix} 
                     onClose={() => setSelectedInvoiceForPix(null)} 
@@ -145,12 +138,12 @@ const Finance: React.FC = () => {
                             <div className="flex gap-2">
                                 <input 
                                     readOnly 
-                                    value={`00020126580014BR.GOV.BCB.PIX0136-PIX-MOCK-CODE-${selectedInvoiceForPix?.id}`}
+                                    value={`PIX-CODE-${selectedInvoiceForPix?.id}`}
                                     className="flex-1 bg-transparent text-[10px] text-white/40 border-none outline-none overflow-hidden text-ellipsis font-mono"
                                 />
                                 <button 
                                     onClick={() => {
-                                        navigator.clipboard.writeText(`00020126580014BR.GOV.BCB.PIX0136-PIX-MOCK-CODE-${selectedInvoiceForPix?.id}`);
+                                        navigator.clipboard.writeText(`PIX-CODE-${selectedInvoiceForPix?.id}`);
                                         toast.success("Código copiado!");
                                     }}
                                     className="text-highlight text-[10px] font-black uppercase whitespace-nowrap bg-highlight/10 px-3 py-1 rounded-lg"
@@ -159,9 +152,6 @@ const Finance: React.FC = () => {
                                 </button>
                             </div>
                         </div>
-                        <p className="text-[10px] text-text-secondary text-center leading-relaxed italic opacity-60">
-                            Após o pagamento, o sistema sincronizará seu status automaticamente em alguns minutos.
-                        </p>
                     </div>
                 </Modal>
             </div>
@@ -170,7 +160,6 @@ const Finance: React.FC = () => {
 
     if (isPlayer) return renderAthleteView();
 
-    // Visão Master 
     return (
         <div className="space-y-6 pb-12 animate-fade-in relative">
              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -182,9 +171,9 @@ const Finance: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <Card title="Acesso Reservado à Diretoria">
+            <Card title="Acesso Reservado">
                 <div className="p-10 text-center text-text-secondary opacity-30 italic font-black uppercase">
-                    Funcionalidades de Gestão Indisponíveis no Modo Simulação
+                    Funcionalidades Indisponíveis no Modo Simulação
                 </div>
             </Card>
         </div>
