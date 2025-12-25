@@ -168,4 +168,3 @@ const RookiePortal: React.FC = () => {
 };
 
 export default RookiePortal;
-impor
