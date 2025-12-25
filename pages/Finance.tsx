@@ -10,7 +10,7 @@ import {
 } from '@/components/icons/UiIcons';
 import { UserContext, UserContextType } from '@/components/Layout';
 import Modal from '@/components/Modal';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '../contexts/ToastContext';
 
 const Finance: React.FC = () => {
     const { currentRole } = useContext(UserContext) as UserContextType;
@@ -59,9 +59,9 @@ const Finance: React.FC = () => {
                         <WalletIcon className="w-64 h-64 text-white" />
                     </div>
                     <div className="relative z-10">
-                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Financeiro & Mensalidades</h2>
+                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Season Pass & Elegibilidade</h2>
                         <p className="text-text-secondary text-sm mt-3 max-w-2xl leading-relaxed font-medium">
-                            Mantenha suas obrigações em dia para garantir elegibilidade. Pagamentos via Pix são processados em tempo real.
+                            Mantenha o seu passe ativo para garantir sua escalação oficial e acesso total aos treinos.
                         </p>
                     </div>
                 </div>
@@ -77,7 +77,7 @@ const Finance: React.FC = () => {
                                     {getCategoryIcon(inv.category || 'OTHER')}
                                 </div>
                                 <span className={`text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border ${getStatusStyles(inv.status)}`}>
-                                    {inv.status === 'PENDING' ? 'Pendente' : inv.status === 'PAID' ? 'Pago' : 'Atrasado'}
+                                    {inv.status === 'PENDING' ? 'Pendente' : inv.status === 'PAID' ? 'Ativo' : 'Atrasado'}
                                 </span>
                             </div>
 
@@ -95,7 +95,7 @@ const Finance: React.FC = () => {
                                     onClick={() => window.open('https://www.asaas.com', '_blank')}
                                     className="flex-1 bg-highlight hover:bg-highlight-hover text-white font-black py-4 rounded-2xl uppercase text-[10px] shadow-lg transition-all active:scale-95"
                                 >
-                                    Efetuar Pagamento
+                                    Ativar Passe
                                 </button>
                                 <button 
                                     onClick={() => setSelectedInvoiceForPix(inv)}
@@ -111,7 +111,7 @@ const Finance: React.FC = () => {
                     {myInvoices.length === 0 && (
                         <div className="col-span-full py-40 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-secondary/10">
                             <CheckCircleIcon className="w-20 h-20 text-highlight mx-auto mb-4 opacity-20" />
-                            <p className="text-white font-black uppercase tracking-widest italic opacity-40">Nenhuma pendência financeira encontrada.</p>
+                            <p className="text-white font-black uppercase tracking-widest italic opacity-40">Seu Season Pass está em dia.</p>
                         </div>
                     )}
                 </div>

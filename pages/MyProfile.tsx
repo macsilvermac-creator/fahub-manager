@@ -20,7 +20,6 @@ const MyProfile: React.FC = () => {
     const playersList = storageService.getPlayers();
     const player = playersList.find(p => p.name === user?.name) || playersList[0];
     
-    // Mock data para evolução
     const skillData = [
         { subject: 'Explosão', A: 85 },
         { subject: 'Força', A: 92 },
@@ -46,7 +45,6 @@ const MyProfile: React.FC = () => {
         <div className="space-y-6 animate-fade-in pb-20">
             <PageHeader title="Meu Perfil" subtitle="Gestão de Carreira e Dossiê Federativo." />
 
-            {/* ABAS DE NAVEGAÇÃO INTERNA */}
             <div className="flex bg-secondary p-1 rounded-2xl border border-white/5 w-fit shadow-xl mb-8">
                 <button onClick={() => setActiveTab('LEGACY')} className={`px-10 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'LEGACY' ? 'bg-highlight text-white shadow-glow' : 'text-text-secondary hover:text-white'}`}>
                     <StarIcon className="w-4 h-4"/> Legacy & Stats
@@ -57,14 +55,14 @@ const MyProfile: React.FC = () => {
             </div>
 
             {activeTab === 'LEGACY' ? (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* CARD FÍSICO (O QUE JÁ EXISTE) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                    {/* CARD FÍSICO - Ajustado para alinhar altura */}
                     <div className="lg:col-span-4 flex justify-center">
-                        <div className="relative w-[320px] h-[480px] rounded-3xl overflow-hidden shadow-[0_0_60px_rgba(5,150,105,0.4)] border-2 border-highlight/30 group perspective-1000">
+                        <div className="relative w-full max-w-[340px] h-full min-h-[520px] rounded-[2.5rem] overflow-hidden shadow-[0_0_60px_rgba(5,150,105,0.4)] border-2 border-highlight/30 group perspective-1000">
                             <div className="absolute inset-0 bg-gradient-to-br from-highlight via-[#0f172a] to-black"></div>
                             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
-                            <div className="relative z-10 p-7 flex flex-col items-center h-full">
-                                <div className="flex justify-between w-full mb-6">
+                            <div className="relative z-10 p-8 flex flex-col items-center justify-between h-full">
+                                <div className="flex justify-between w-full">
                                     <div className="text-center">
                                         <p className="text-5xl font-black text-white italic leading-none">{player?.rating || 0}</p>
                                         <p className="text-[12px] font-black text-highlight uppercase mt-1 tracking-widest">{player?.position}</p>
@@ -73,25 +71,37 @@ const MyProfile: React.FC = () => {
                                         <TrophyIcon className="w-6 h-6 text-highlight" />
                                     </div>
                                 </div>
-                                <div className="w-56 h-56 relative mb-4">
-                                    <LazyImage src={player?.avatarUrl} className="w-full h-full object-cover object-top relative z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)]" style={{maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)'}} fallbackText={player?.name} />
+                                
+                                <div className="w-60 h-60 relative">
+                                    <LazyImage src={player?.avatarUrl} className="w-full h-full object-cover object-top relative z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)]" style={{maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)'}} fallbackText={player?.name} />
                                 </div>
-                                <div className="w-full text-center bg-black/40 backdrop-blur-md py-3 rounded-2xl border border-white/10 mb-4 shadow-xl">
-                                    <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter leading-none">{player?.name}</h2>
+
+                                <div className="w-full text-center bg-black/40 backdrop-blur-md py-4 rounded-3xl border border-white/10 shadow-xl mb-2">
+                                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter leading-none italic">{player?.name}</h2>
                                 </div>
-                                <div className="grid grid-cols-3 gap-x-8 gap-y-3 w-full pt-4 border-t border-white/10">
-                                    <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-bold">SPD</p><p className="text-lg font-black text-white">88</p></div>
-                                    <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-bold">STR</p><p className="text-lg font-black text-white">92</p></div>
-                                    <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-bold">AGI</p><p className="text-lg font-black text-white">75</p></div>
+
+                                <div className="grid grid-cols-3 gap-x-4 w-full pt-6 border-t border-white/10 pb-2">
+                                    <div className="text-center">
+                                        <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">SPD</p>
+                                        <p className="text-xl font-black text-white">88</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">STR</p>
+                                        <p className="text-xl font-black text-white">92</p>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">AGI</p>
+                                        <p className="text-xl font-black text-white">75</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* DASHBOARD DE PERFORMANCE */}
-                    <div className="lg:col-span-8 space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Card title="Matriz de Atributos">
+                    <div className="lg:col-span-8 flex flex-col gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
+                            <Card title="Matriz de Atributos" className="h-full">
                                 <div className="h-64 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <RadarChart cx="50%" cy="50%" outerRadius="80%" data={skillData}>
@@ -102,7 +112,7 @@ const MyProfile: React.FC = () => {
                                     </ResponsiveContainer>
                                 </div>
                             </Card>
-                            <Card title="Evolução na Temporada">
+                            <Card title="Evolução na Temporada" className="h-full">
                                 <div className="h-64 w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <LineChart data={evolutionData}>
@@ -115,18 +125,27 @@ const MyProfile: React.FC = () => {
                                 </div>
                             </Card>
                         </div>
-                        <div className="bg-secondary/40 p-6 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden">
+                        
+                        <div className="bg-secondary/40 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden shrink-0">
                             <h3 className="text-white font-black uppercase italic text-sm mb-6 flex items-center gap-2">
                                  <CheckCircleIcon className="w-5 h-5 text-highlight" /> Resultados do Último Combine
                             </h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
-                                    <p className="text-[9px] text-text-secondary uppercase font-bold mb-1">40 Yard Dash</p>
-                                    <p className="text-2xl font-black text-white">4.52s</p>
+                                <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 text-center">
+                                    <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">40 Yard Dash</p>
+                                    <p className="text-3xl font-black text-white italic">4.52s</p>
                                 </div>
-                                <div className="bg-black/40 p-5 rounded-2xl border border-white/5">
-                                    <p className="text-[9px] text-text-secondary uppercase font-bold mb-1">Bench Press</p>
-                                    <p className="text-2xl font-black text-white">18 reps</p>
+                                <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 text-center">
+                                    <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">Bench Press</p>
+                                    <p className="text-3xl font-black text-white italic">18 reps</p>
+                                </div>
+                                <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 text-center">
+                                    <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">Vertical</p>
+                                    <p className="text-3xl font-black text-white italic">32"</p>
+                                </div>
+                                <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 text-center">
+                                    <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">Broad Jump</p>
+                                    <p className="text-3xl font-black text-white italic">112"</p>
                                 </div>
                             </div>
                         </div>
