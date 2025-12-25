@@ -26,14 +26,12 @@ const Dashboard: React.FC = () => {
             const g = storageService.getGames();
             const pr = storageService.getPracticeSessions();
             
-            // Só atualiza o estado se houver mudança real para poupar CPU/RAM
             setPlayers(prev => JSON.stringify(prev) !== JSON.stringify(p) ? p : prev);
             setGames(prev => JSON.stringify(prev) !== JSON.stringify(g) ? g : prev);
             setPractices(prev => JSON.stringify(prev) !== JSON.stringify(pr) ? pr : prev);
         };
         
         load();
-        // Otimização: Unsubscribe explícito para evitar acúmulo de listeners na RAM
         const unsubscribe = storageService.subscribe('storage_update', load);
         return () => unsubscribe();
     }, []);
@@ -57,19 +55,19 @@ const Dashboard: React.FC = () => {
         
         return (
             <div className="flex flex-col h-full gap-6 animate-fade-in pb-20 overflow-x-hidden">
-                {/* Banner Ajustado: Maior altura, fonte em linha única, botão START */}
+                {/* Banner Ajustado: Altura reduzida em 1/3 (min-h-160) e padding p-8 */}
                 <div 
                     onClick={() => nextEvent?.type === 'PRACTICE' && navigate(`/practice-detail/${nextEvent.id}`)}
-                    className={`relative p-12 min-h-[240px] rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col md:flex-row justify-between items-center transition-all cursor-pointer group ${nextEvent?.type === 'GAME' ? 'bg-gradient-to-r from-red-600 to-black' : 'bg-gradient-to-r from-blue-700 to-black'}`}
+                    className={`relative p-8 min-h-[160px] rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col md:flex-row justify-between items-center transition-all cursor-pointer group ${nextEvent?.type === 'GAME' ? 'bg-gradient-to-r from-red-600 to-black' : 'bg-gradient-to-r from-blue-700 to-black'}`}
                 >
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 group-hover:scale-105 transition-transform duration-700"></div>
-                    <div className="relative z-10 max-w-[70%]">
-                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em]">Next Mission</span>
-                        <h2 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter leading-none mt-4 whitespace-nowrap overflow-hidden text-ellipsis">
-                            {nextEvent?.title || 'No events'}
+                    <div className="relative z-10 max-w-[75%]">
+                        <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em]">Próximo Compromisso</span>
+                        <h2 className="text-xl md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none mt-3 whitespace-nowrap overflow-hidden text-ellipsis">
+                            {nextEvent?.title || 'Agenda Vazia'}
                         </h2>
                     </div>
-                    <button className="relative z-10 bg-white text-black px-12 py-5 rounded-2xl font-black uppercase italic shadow-2xl transform active:scale-95 hover:scale-105 transition-all mt-6 md:mt-0 min-w-[160px]">
+                    <button className="relative z-10 bg-white text-black px-10 py-4 rounded-2xl font-black uppercase italic shadow-2xl transform active:scale-95 hover:scale-105 transition-all mt-4 md:mt-0 min-w-[140px] text-sm">
                         START
                     </button>
                 </div>
@@ -82,7 +80,7 @@ const Dashboard: React.FC = () => {
                                     <BookIcon className="w-32 h-32 text-purple-400" />
                                 </div>
                                 <div className="p-2 flex-1 flex flex-col">
-                                    <div className="w-full flex-1 bg-black/40 rounded-[2rem] border border-white/10 mb-4 flex items-center justify-center min-h-[180px]">
+                                    <div className="w-full flex-1 bg-black/40 rounded-[2rem] border border-white/10 mb-4 flex items-center justify-center min-h-[160px]">
                                         <div className="text-center">
                                             <p className="text-[10px] font-black text-purple-400 uppercase tracking-[0.2em]">Instalação da Semana</p>
                                             <p className="text-white font-black text-2xl italic uppercase tracking-tighter">Cover 3 Disguise</p>
