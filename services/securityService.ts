@@ -1,5 +1,5 @@
 
-import { UserRole } from '../types';
+import { UserRole, ProgramType } from '../types';
 
 export type PermissionArea = 'WAR_ROOM' | 'COMMERCIAL' | 'MARKETING' | 'SPORTS' | 'SETTINGS';
 
@@ -38,15 +38,18 @@ export const securityService = {
         return ROLE_PERMISSIONS[role]?.includes(area) || false;
     },
     
+    // Filtro por Modalidade (O ponto principal da sua solicitação)
+    isFeatureEnabled: (userProgram: ProgramType | undefined, featureProgram: ProgramType): boolean => {
+        if (!userProgram || userProgram === 'BOTH') return true;
+        return userProgram === featureProgram;
+    },
+
     getDirectorateLabel: (role: UserRole): string => {
         switch(role) {
             case 'MASTER': return 'Presidência';
             case 'COMMERCIAL_DIRECTOR': return 'Diretoria Comercial';
             case 'MARKETING_DIRECTOR': return 'Diretoria de Marketing';
             case 'SPORTS_DIRECTOR': return 'Diretoria de Esportes';
-            case 'PRESIDENT': return 'Presidência';
-            case 'HEAD_COACH': return 'Comissão Técnica';
-            case 'PLAYER': return 'Atleta';
             default: return 'Acesso Restrito';
         }
     }

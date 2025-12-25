@@ -84,6 +84,8 @@ export interface Player {
     // Fix: Added missing properties required by various components
     birthDate?: Date;
     nationality?: string;
+    // Fix: Added missing combineStats property
+    combineStats?: CombineStats;
 }
 
 export interface WellnessEntry {
