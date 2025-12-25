@@ -66,10 +66,10 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                    <div className="lg:col-span-8 space-y-6 flex flex-col">
+                    <div className="lg:col-span-8 flex flex-col gap-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 items-stretch">
                             
-                            {/* ESTUDO DE PLAYBOOK (A referência de altura) */}
+                            {/* ESTUDO DE PLAYBOOK (Referência de altura) */}
                             <Card title="Study Room (Playbook)" className="relative overflow-hidden group h-full flex flex-col border-purple-500/20">
                                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                                     <BookIcon className="w-32 h-32 text-purple-400" />
@@ -90,7 +90,7 @@ const Dashboard: React.FC = () => {
                                 </div>
                             </Card>
 
-                            {/* COLUNA DO LEGACY & DOSSIÊ - AJUSTADA PARA ESTICAR */}
+                            {/* COLUNA DO LEGACY & DOSSIÊ - Ajustada para flex-container */}
                             <div className="flex flex-col gap-6 h-full">
                                 <Card title="The Legacy" className="relative overflow-hidden group border-highlight/20 shrink-0">
                                     <div className="flex items-center gap-4 py-1">
@@ -104,9 +104,8 @@ const Dashboard: React.FC = () => {
                                     </div>
                                 </Card>
 
-                                {/* DOSSIÊ CADASTRAL - ESTICADO COM flex-1 PARA ALINHAR AO LADO */}
                                 <Card title="Dossiê Cadastral (Súmula)" className="border-indigo-500/30 flex-1 flex flex-col bg-gradient-to-br from-secondary to-[#0f172a]">
-                                    <div className="space-y-4 flex-1 flex flex-col justify-between py-2">
+                                    <div className="space-y-4 flex-1 flex flex-col justify-between">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <div className={`w-2 h-2 rounded-full ${isRegistrationComplete ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></div>
@@ -140,7 +139,7 @@ const Dashboard: React.FC = () => {
                         </div>
 
                         {/* IRON LAB ACCESS */}
-                        <div className="bg-gradient-to-br from-orange-600/20 to-black p-6 rounded-[2.5rem] border border-orange-500/20 shadow-xl flex flex-col md:flex-row items-center justify-between group gap-6 mt-6">
+                        <div className="bg-gradient-to-br from-orange-600/20 to-black p-6 rounded-[2.5rem] border border-orange-500/20 shadow-xl flex flex-col md:flex-row items-center justify-between group gap-6 shrink-0">
                             <div className="flex items-center gap-6">
                                 <div className="p-4 bg-orange-600/20 rounded-2xl group-hover:scale-110 transition-transform">
                                     <DumbbellIcon className="w-10 h-10 text-orange-500" />
@@ -157,7 +156,7 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     {/* AGENDA LATERAL */}
-                    <div className="lg:col-span-4">
+                    <div className="lg:col-span-4 h-full">
                         <div className="bg-[#0F172A] rounded-[2.5rem] border border-white/5 h-full flex flex-col overflow-hidden shadow-2xl min-h-[500px]">
                             <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
                                 <h3 className="text-xs font-black text-highlight uppercase tracking-[0.4em] flex items-center gap-2">

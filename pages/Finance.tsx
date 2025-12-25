@@ -9,12 +9,12 @@ import {
     CheckCircleIcon, ScanIcon, QrcodeIcon, 
     TrophyIcon, BookIcon, XIcon, ShoppingBagIcon 
 } from '../components/icons/UiIcons';
-import { UserContext } from '../components/Layout';
+import { UserContext, UserContextType } from '../components/Layout';
 import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 
 const Finance: React.FC = () => {
-    const { currentRole } = useContext(UserContext) as any;
+    const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
     
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -23,7 +23,6 @@ const Finance: React.FC = () => {
     
     // Atleta UI States
     const [selectedInvoiceForPix, setSelectedInvoiceForPix] = useState<Invoice | null>(null);
-    const [isTxModalOpen, setIsTxModalOpen] = useState(false);
 
     const isPlayer = currentRole === 'PLAYER';
 
@@ -67,8 +66,7 @@ const Finance: React.FC = () => {
                     <div className="relative z-10">
                         <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Financeiro & Mensalidades</h2>
                         <p className="text-text-secondary text-sm mt-3 max-w-2xl leading-relaxed font-medium">
-                            Mantenha suas obrigações em dia para garantir regularidade federativa e elegibilidade nos Game Days. 
-                            Use o QR Code para pagamentos via Pix ou clique em "Efetuar Pagamento" para boletos e cartões.
+                            Mantenha suas obrigações em dia para garantir elegibilidade. Pagamentos via Pix são processados em tempo real.
                         </p>
                     </div>
                 </div>
@@ -78,7 +76,7 @@ const Finance: React.FC = () => {
                     {myInvoices.map((inv: any) => (
                         <div 
                             key={inv.id} 
-                            className="group relative bg-secondary/60 backdrop-blur-md rounded-[2.5rem] border border-white/5 p-8 shadow-xl transition-all duration-500 hover:scale-[1.03] hover:shadow-glow hover:border-highlight/30 flex flex-col"
+                            className="group relative bg-secondary/60 backdrop-blur-md rounded-[2.5rem] border border-white/5 p-8 shadow-xl transition-all duration-500 hover:scale-[1.03] hover:shadow-glow hover:border-highlight/30 flex flex-col h-full"
                         >
                             <div className="flex justify-between items-start mb-6">
                                 <div className="p-4 bg-black/40 rounded-3xl border border-white/5 group-hover:border-highlight/40 transition-colors">
@@ -99,14 +97,12 @@ const Finance: React.FC = () => {
                             </div>
 
                             <div className="flex gap-2 shrink-0">
-                                <a 
-                                    href="https://www.asaas.com" 
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex-1 bg-highlight hover:bg-highlight-hover text-white font-black py-4 rounded-2xl uppercase text-[10px] shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
+                                <button 
+                                    onClick={() => window.open('https://www.asaas.com', '_blank')}
+                                    className="flex-1 bg-highlight hover:bg-highlight-hover text-white font-black py-4 rounded-2xl uppercase text-[10px] shadow-lg transition-all active:scale-95"
                                 >
                                     Efetuar Pagamento
-                                </a>
+                                </button>
                                 <button 
                                     onClick={() => setSelectedInvoiceForPix(inv)}
                                     className="p-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl border border-white/10 transition-all active:scale-90"
@@ -130,12 +126,12 @@ const Finance: React.FC = () => {
                 <Modal 
                     isOpen={!!selectedInvoiceForPix} 
                     onClose={() => setSelectedInvoiceForPix(null)} 
-                    title="Pagamento via Pix"
+                    title="Pagamento Instantâneo Pix"
                 >
                     <div className="flex flex-col items-center p-4">
                         <div className="bg-white p-6 rounded-[2rem] mb-6 shadow-2xl border-4 border-highlight/20">
                              <img 
-                                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=PIX-MOCK-PAYMENT-${selectedInvoiceForPix?.id}`} 
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=PIX-PAYMENT-${selectedInvoiceForPix?.id}`} 
                                 alt="QR Code Pix"
                                 className="w-48 h-48"
                              />
@@ -145,17 +141,17 @@ const Finance: React.FC = () => {
                              <p className="text-highlight font-black text-2xl tracking-tighter">TOTAL: R$ {selectedInvoiceForPix?.amount.toFixed(2)}</p>
                         </div>
                         <div className="w-full bg-black/40 p-4 rounded-2xl border border-white/10 mb-6">
-                            <p className="text-[9px] text-text-secondary uppercase font-black tracking-widest mb-3 text-center">Pix Copia e Cola</p>
+                            <p className="text-[9px] text-text-secondary uppercase font-black tracking-widest mb-3 text-center">Código Pix Copia e Cola</p>
                             <div className="flex gap-2">
                                 <input 
                                     readOnly 
-                                    value={`00020126580014BR.GOV.BCB.PIX0136-GRIDIRON-MOCK-CODE-${selectedInvoiceForPix?.id}`}
+                                    value={`00020126580014BR.GOV.BCB.PIX0136-PIX-MOCK-CODE-${selectedInvoiceForPix?.id}`}
                                     className="flex-1 bg-transparent text-[10px] text-white/40 border-none outline-none overflow-hidden text-ellipsis font-mono"
                                 />
                                 <button 
                                     onClick={() => {
-                                        navigator.clipboard.writeText(`00020126580014BR.GOV.BCB.PIX0136-GRIDIRON-MOCK-CODE-${selectedInvoiceForPix?.id}`);
-                                        toast.success("Código Pix copiado!");
+                                        navigator.clipboard.writeText(`00020126580014BR.GOV.BCB.PIX0136-PIX-MOCK-CODE-${selectedInvoiceForPix?.id}`);
+                                        toast.success("Código copiado!");
                                     }}
                                     className="text-highlight text-[10px] font-black uppercase whitespace-nowrap bg-highlight/10 px-3 py-1 rounded-lg"
                                 >
@@ -164,7 +160,7 @@ const Finance: React.FC = () => {
                             </div>
                         </div>
                         <p className="text-[10px] text-text-secondary text-center leading-relaxed italic opacity-60">
-                            Após o pagamento, o sistema sincronizará seu status automaticamente em até 10 minutos.
+                            Após o pagamento, o sistema sincronizará seu status automaticamente em alguns minutos.
                         </p>
                     </div>
                 </Modal>
@@ -174,7 +170,7 @@ const Finance: React.FC = () => {
 
     if (isPlayer) return renderAthleteView();
 
-    // Visão Master (Simplificada para este XML)
+    // Visão Master 
     return (
         <div className="space-y-6 pb-12 animate-fade-in relative">
              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -186,10 +182,9 @@ const Finance: React.FC = () => {
                     </div>
                 </div>
             </div>
-            {/* Fix: Added mandatory children prop to Card component */}
-            <Card title="Visão de Gestão Indisponível na Simulação do Atleta">
-                <div className="p-8 text-center text-text-secondary italic">
-                    Esta funcionalidade está disponível apenas para usuários com permissão de Diretoria ou Financeiro.
+            <Card title="Acesso Reservado à Diretoria">
+                <div className="p-10 text-center text-text-secondary opacity-30 italic font-black uppercase">
+                    Funcionalidades de Gestão Indisponíveis no Modo Simulação
                 </div>
             </Card>
         </div>

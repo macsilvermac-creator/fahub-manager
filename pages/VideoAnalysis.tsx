@@ -1,15 +1,16 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import Card from '../components/Card';
 import { VideoClip, VideoTag, ProgramType } from '../types';
 import { storageService } from '../services/storageService';
 import { 
-    ScissorsIcon, PlayCircleIcon, SparklesIcon, TrashIcon, 
-    ClockIcon, PenIcon, EraserIcon, ActivityIcon 
+    ScissorsIcon, PlayCircleIcon, BrainIcon, EyeIcon, 
+    SparklesIcon, TrashIcon, ClockIcon, PenIcon, EraserIcon 
 } from '../components/icons/UiIcons';
 import { VideoIcon } from '../components/icons/NavIcons';
 import { useToast } from '../contexts/ToastContext';
 import LazyImage from '../components/LazyImage';
+import { UserContext, UserContextType } from '../components/Layout';
 
 declare global {
   interface Window {
@@ -19,30 +20,23 @@ declare global {
 }
 
 const VideoAnalysis: React.FC = () => {
+    const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
     const [program, setProgram] = useState<ProgramType>('TACKLE');
     const [activeTab, setActiveTab] = useState<'ANALYZE' | 'LIBRARY'>('ANALYZE');
     
-    // Player State
+    // Refs
     const playerRef = useRef<any>(null);
+
+    // States
     const [videoUrl, setVideoUrl] = useState('');
     const [isPlayerReady, setIsPlayerReady] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [playbackRate, setPlaybackRate] = useState(1);
-
-    // Drawing State
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [drawMode, setDrawMode] = useState<'NONE' | 'PEN'>('NONE');
+    const [zoomLevel, setZoomLevel] = useState(1);
 
     // Data State
     const [clips, setClips] = useState<VideoClip[]>([]);
-    const [currentTag, setCurrentTag] = useState<Partial<VideoTag>>({
-        down: 1,
-        distance: 10,
-        result: 'COMPLETE'
-    });
-    const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
 
     useEffect(() => {
         const user = storageService.getCurrentUser();
@@ -60,7 +54,7 @@ const VideoAnalysis: React.FC = () => {
         if (playerRef.current) playerRef.current.destroy();
         playerRef.current = new window.YT.Player('yt-player-el', {
             videoId: id,
-            playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0 },
+            playerVars: { autoplay: 0, controls: 1, modestbranding: 1, rel: 0 },
             events: {
                 onReady: () => setIsPlayerReady(true),
                 onStateChange: (event: any) => {
@@ -80,35 +74,22 @@ const VideoAnalysis: React.FC = () => {
         const match = videoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
         if (match && match[1]) {
             initPlayer(match[1]);
-            toast.success("Vision Lab: Jogo Ingerido!");
+            toast.success("Sala de Vídeo pronta!");
         } else toast.error("Link inválido.");
-    };
-
-    const handleAiScout = () => {
-        setIsAiAnalyzing(true);
-        setTimeout(() => {
-            if (program === 'FLAG') {
-                setCurrentTag({...currentTag, offensivePlayCall: 'Quick Slant', offensiveFormation: 'Trips Right'});
-            } else {
-                setCurrentTag({...currentTag, offensivePlayCall: 'Outside Zone', personnel: '11 Personnel'});
-            }
-            setIsAiAnalyzing(false);
-            toast.success("Sugestão de Tag pronta!");
-        }, 1500);
     };
 
     const handleSaveClip = () => {
         const newClip: VideoClip = {
             id: `clip-${Date.now()}`,
-            title: `Clip @ ${Math.floor(currentTime)}s`,
+            title: `Meu Snap em ${Math.floor(currentTime)}s`,
             videoUrl: videoUrl,
             startTime: Math.floor(currentTime),
-            tags: currentTag as VideoTag
+            tags: { down: 1, distance: 10, offensivePlayCall: 'Tag Manual', result: 'TAGGED' }
         };
         const updated = [newClip, ...clips];
         setClips(updated);
         storageService.saveClips(updated);
-        toast.success("Lance salvo na biblioteca.");
+        toast.success("Snap marcado para análise!");
     };
 
     return (
@@ -119,107 +100,99 @@ const VideoAnalysis: React.FC = () => {
                         <VideoIcon className="text-highlight w-6 h-6" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-white italic uppercase">Vision Lab</h2>
-                        <p className="text-[10px] text-text-secondary font-bold uppercase">MODO: {program}</p>
+                        <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">Vision Lab (Atleta)</h2>
+                        <p className="text-[10px] text-text-secondary font-bold uppercase">Marque seus Snaps para o Coach</p>
                     </div>
                 </div>
-                <div className="flex bg-secondary p-1 rounded-xl">
-                    <button onClick={() => setActiveTab('ANALYZE')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'ANALYZE' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>Analisar</button>
-                    <button onClick={() => setActiveTab('LIBRARY')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'LIBRARY' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>Biblioteca</button>
+                <div className="flex bg-secondary p-1 rounded-xl border border-white/5">
+                    <button onClick={() => setActiveTab('ANALYZE')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'ANALYZE' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>Estudar</button>
+                    <button onClick={() => setActiveTab('LIBRARY')} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeTab === 'LIBRARY' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>Meus Snaps</button>
                 </div>
             </div>
 
             {activeTab === 'ANALYZE' ? (
-                <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden pb-4">
-                    <div className="lg:col-span-8 flex flex-col gap-4 overflow-hidden">
-                        <div className="relative flex-1 bg-black rounded-[2rem] border border-white/10 overflow-hidden shadow-2xl group">
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden pb-4">
+                    <div className="lg:col-span-9 flex flex-col gap-4 overflow-hidden">
+                        <div className="relative flex-1 bg-black rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl group">
                             {!isPlayerReady && (
                                 <div className="absolute inset-0 z-20 bg-slate-900 flex flex-col items-center justify-center p-8 text-center">
-                                    <input className="w-full max-w-md bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm mb-4 outline-none focus:border-highlight" placeholder="URL YouTube..." value={videoUrl} onChange={e => setVideoUrl(e.target.value)} />
-                                    <button onClick={handleLoadVideo} className="bg-highlight text-white px-8 py-3 rounded-2xl font-black uppercase text-xs shadow-glow">Montar Film Room</button>
+                                    <div className="w-16 h-16 bg-red-600 rounded-2xl flex items-center justify-center mb-6 animate-pulse">
+                                        <PlayCircleIcon className="w-8 h-8 text-white" />
+                                    </div>
+                                    <input className="w-full max-w-md bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm mb-4 outline-none focus:border-highlight" placeholder="URL do Jogo no YouTube..." value={videoUrl} onChange={e => setVideoUrl(e.target.value)} />
+                                    <button onClick={handleLoadVideo} className="bg-highlight text-white px-10 py-3 rounded-2xl font-black uppercase text-xs shadow-glow transition-all active:scale-95">Carregar Gravação</button>
                                 </div>
                             )}
-                            <div id="yt-player-el" className="w-full h-full pointer-events-none"></div>
+                            
+                            <div 
+                                className="w-full h-full transition-transform duration-300 origin-center"
+                                style={{ transform: `scale(${zoomLevel})` }}
+                            >
+                                <div id="yt-player-el" className="w-full h-full pointer-events-none"></div>
+                            </div>
+
                             {isPlayerReady && (
-                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-black/60 backdrop-blur-xl p-2 rounded-2xl flex items-center gap-4 shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => playerRef.current.seekTo(playerRef.current.getCurrentTime() - 5)} className="p-2 text-white hover:text-highlight"><ClockIcon className="w-5 h-5 rotate-180"/></button>
-                                    <button onClick={() => playerRef.current.getPlayerState() === 1 ? playerRef.current.pauseVideo() : playerRef.current.playVideo()} className="p-3 bg-highlight text-white rounded-full"><PlayCircleIcon className="w-6 h-6"/></button>
-                                    <button onClick={() => playerRef.current.seekTo(playerRef.current.getCurrentTime() + 5)} className="p-2 text-white hover:text-highlight"><ClockIcon className="w-5 h-5"/></button>
-                                    <div className="w-px h-6 bg-white/10 mx-2"></div>
-                                    <button onClick={() => {const rates = [0.25, 0.5, 1, 2]; const next = rates[(rates.indexOf(playbackRate) + 1) % rates.length]; setPlaybackRate(next); playerRef.current.setPlaybackRate(next);}} className="text-[10px] font-black text-white w-10">{playbackRate}x</button>
+                                <div className="absolute top-6 right-6 z-30 flex flex-col gap-2">
+                                    <button onClick={() => setZoomLevel(prev => prev === 1 ? 2 : 1)} className="bg-black/60 backdrop-blur-md text-white p-3 rounded-xl border border-white/10 font-black text-xs uppercase shadow-2xl">
+                                        {zoomLevel === 1 ? 'Zoom 2x' : 'Reset Zoom'}
+                                    </button>
+                                    <button onClick={() => {const rates = [0.5, 1]; const next = rates[(rates.indexOf(playbackRate) + 1) % rates.length]; setPlaybackRate(next); playerRef.current.setPlaybackRate(next);}} className="bg-black/60 backdrop-blur-md text-white p-3 rounded-xl border border-white/10 font-black text-xs uppercase shadow-2xl">
+                                        Vel: {playbackRate}x
+                                    </button>
                                 </div>
                             )}
                         </div>
-                        <div className="flex gap-4 p-4 bg-secondary/30 rounded-2xl border border-white/5">
-                            <button onClick={handleAiScout} disabled={isAiAnalyzing} className="flex-1 py-3 rounded-xl font-black text-[10px] uppercase bg-purple-600 text-white flex items-center justify-center gap-2 shadow-lg disabled:opacity-50">
-                                {isAiAnalyzing ? 'Sincronizando...' : <><SparklesIcon className="w-4 h-4" /> Scout IA</>}
-                            </button>
-                            <button onClick={handleSaveClip} className="flex-1 py-3 rounded-xl font-black text-[10px] uppercase bg-highlight text-white flex items-center justify-center gap-2 shadow-lg">
-                                <ScissorsIcon className="w-4 h-4" /> Salvar Tag
-                            </button>
+
+                        <div className="flex gap-4 p-4 bg-secondary/40 rounded-3xl border border-white/5">
+                             <button 
+                                onClick={handleSaveClip}
+                                disabled={!isPlayerReady}
+                                className="flex-1 bg-highlight hover:bg-highlight-hover text-white font-black py-4 rounded-2xl uppercase text-xs shadow-glow transform active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-20"
+                             >
+                                <ScissorsIcon className="w-5 h-5" /> TAGEAR JOGADA (SNAP)
+                             </button>
                         </div>
                     </div>
 
-                    <div className="lg:col-span-4 overflow-y-auto custom-scrollbar pr-2 pb-4">
-                        <Card title="Tagging Protocol">
-                            <div className="space-y-4">
-                                {program === 'TACKLE' ? (
-                                    <div className="space-y-4 animate-fade-in">
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="text-[9px] font-black text-text-secondary uppercase mb-1 block">Down</label>
-                                                <select className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-xs outline-none focus:border-highlight" value={currentTag.down} onChange={e => setCurrentTag({...currentTag, down: Number(e.target.value)})}>
-                                                    <option value={1}>1st Down</option><option value={2}>2nd Down</option><option value={3}>3rd Down</option><option value={4}>4th Down</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="text-[9px] font-black text-text-secondary uppercase mb-1 block">Distance</label>
-                                                <input type="number" className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-xs outline-none focus:border-highlight" value={currentTag.distance} onChange={e => setCurrentTag({...currentTag, distance: Number(e.target.value)})} />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black text-text-secondary uppercase mb-1 block">Personnel</label>
-                                            <input className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-xs outline-none focus:border-highlight" placeholder="Ex: 11 Personnel" value={currentTag.personnel || ''} onChange={e => setCurrentTag({...currentTag, personnel: e.target.value})} />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4 animate-fade-in">
-                                        <div className="p-3 bg-highlight/10 rounded-xl border border-highlight/20 flex justify-between items-center mb-2">
-                                            <span className="text-[10px] font-black text-highlight uppercase">Rusher Clock</span>
-                                            <span className="font-mono text-xl text-white">{(currentTime % 7).toFixed(2)}s</span>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <button onClick={() => setCurrentTag({...currentTag, result: 'PASS'})} className={`py-4 border-2 rounded-xl font-black text-xs uppercase ${currentTag.result === 'PASS' ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-secondary border-white/5 text-text-secondary'}`}>PASSE</button>
-                                            <button onClick={() => setCurrentTag({...currentTag, result: 'RUN'})} className={`py-4 border-2 rounded-xl font-black text-xs uppercase ${currentTag.result === 'RUN' ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-secondary border-white/5 text-text-secondary'}`}>CORRIDA</button>
-                                        </div>
-                                        <div>
-                                            <label className="text-[9px] font-black text-text-secondary uppercase mb-1 block">Pull Outcome</label>
-                                            <select className="w-full bg-black/20 border border-white/10 rounded-lg p-2 text-white text-xs">
-                                                <option>Clean Pull</option><option>Flag Miss</option><option>Shielding</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                )}
+                    <div className="lg:col-span-3 flex flex-col gap-6">
+                        <Card title="Acesso Premium">
+                            <div className="bg-gradient-to-br from-indigo-900/40 to-black p-5 rounded-2xl border border-indigo-500/30 text-center">
+                                <SparklesIcon className="w-10 h-10 text-indigo-400 mx-auto mb-3" />
+                                <h4 className="text-white font-black uppercase text-xs italic leading-tight">Highlight Profissional</h4>
+                                <p className="text-[10px] text-text-secondary mt-2 leading-relaxed">Transforme seus Snaps em um reel épico para recrutamento.</p>
+                                <button className="w-full bg-indigo-600 text-white font-black py-3 rounded-xl text-[10px] uppercase mt-4 shadow-lg active:scale-95 transition-all">Solicitar Orçamento</button>
                             </div>
                         </Card>
+                        
+                        <div className="bg-orange-600/10 p-5 rounded-3xl border border-orange-500/20 text-center flex-1 flex flex-col justify-center">
+                            <ClockIcon className="w-8 h-8 text-orange-400 mx-auto mb-3" />
+                            <p className="text-[10px] text-orange-300 font-bold uppercase">Tempo de Vídeo Hoje</p>
+                            <p className="text-2xl font-black text-white italic">{(currentTime / 60).toFixed(1)} MIN</p>
+                        </div>
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {clips.map(clip => (
-                            <div key={clip.id} className="bg-secondary rounded-2xl overflow-hidden border border-white/10 group hover:border-highlight transition-all">
-                                <div className="aspect-video bg-black relative">
-                                    <LazyImage src={`https://img.youtube.com/vi/${clip.videoUrl.split('v=')[1]}/0.jpg`} className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 flex items-center justify-center"><PlayCircleIcon className="w-12 h-12 text-white shadow-glow" /></div>
-                                </div>
-                                <div className="p-4">
-                                    <h4 className="text-white font-bold uppercase italic text-sm">{clip.tags.offensivePlayCall || 'Snap'}</h4>
-                                    <p className="text-[10px] text-text-secondary mt-1">{clip.startTime}s • {clip.tags.result}</p>
-                                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto custom-scrollbar pb-20 px-2">
+                    {clips.map(clip => (
+                        <div key={clip.id} className="bg-secondary/40 rounded-[2.5rem] overflow-hidden border border-white/5 group hover:border-highlight transition-all">
+                            <div className="aspect-video bg-black relative">
+                                <LazyImage src={`https://img.youtube.com/vi/${clip.videoUrl.match(/v=([^&]+)/)?.[1] || ''}/0.jpg`} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20"><PlayCircleIcon className="w-10 h-10 text-white" /></div>
                             </div>
-                        ))}
-                    </div>
+                            <div className="p-5 flex justify-between items-center">
+                                <div>
+                                    <h4 className="text-white font-bold uppercase text-xs">{clip.title}</h4>
+                                    <p className="text-[9px] text-text-secondary uppercase font-bold mt-1">Tag: Manual</p>
+                                </div>
+                                <button className="p-2 text-text-secondary hover:text-red-500 transition-colors"><TrashIcon className="w-4 h-4"/></button>
+                            </div>
+                        </div>
+                    ))}
+                    {clips.length === 0 && (
+                        <div className="col-span-full py-40 text-center opacity-20 italic font-black uppercase text-sm tracking-widest border-2 border-dashed border-white/10 rounded-[3rem]">
+                            Nenhum snap marcado ainda.
+                        </div>
+                    )}
                 </div>
             )}
         </div>

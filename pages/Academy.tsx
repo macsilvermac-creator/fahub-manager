@@ -53,7 +53,7 @@ const Academy: React.FC = () => {
     useEffect(() => {
         if (view === 'COURSES' && shopItems.length > 0) {
             const timer = setInterval(() => {
-                setShopIndex(prev => (prev + 2) % shopItems.length);
+                setShopIndex(prev => (prev + 1) % shopItems.length);
             }, 6000);
             return () => clearInterval(timer);
         }
@@ -75,7 +75,7 @@ const Academy: React.FC = () => {
     };
 
     const VerticalCourseCard = ({ course, type }: { course: Course, type: 'COACH' | 'ATHLETE' | 'SHOP' }) => {
-        // Guard para evitar erro de undefined properties
+        // Guard para evitar erro de undefined properties (Instabilidade da imagem corrigida aqui)
         if (!course) return null;
 
         return (
@@ -130,7 +130,7 @@ const Academy: React.FC = () => {
                             <div className="flex gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 px-2">
                                 {coachRecommendations.length > 0 ? 
                                     coachRecommendations.map(c => <VerticalCourseCard key={c.id} course={c} type="COACH" />) :
-                                    <div className="w-full py-20 text-center opacity-20 italic">Aguardando recomendações do staff...</div>
+                                    <div className="w-full py-20 text-center opacity-20 italic font-black uppercase text-[10px]">Aguardando recomendações do staff...</div>
                                 }
                             </div>
                         </section>
@@ -143,7 +143,7 @@ const Academy: React.FC = () => {
                             <div className="flex gap-6 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4 px-2">
                                 {athleteNeeds.length > 0 ? 
                                     athleteNeeds.map(c => <VerticalCourseCard key={c.id} course={c} type="ATHLETE" />) :
-                                    <div className="w-full py-20 text-center opacity-20 italic">Seu plano de evolução está sendo processado...</div>
+                                    <div className="w-full py-20 text-center opacity-20 italic font-black uppercase text-[10px]">Seu plano de evolução está sendo processado...</div>
                                 }
                             </div>
                         </section>
@@ -157,16 +157,11 @@ const Academy: React.FC = () => {
                             </div>
 
                             {shopItems.length > 0 ? (
-                                <>
-                                    <div className="animate-fade-in" key={`shop-1-${shopIndex}`}>
-                                        <VerticalCourseCard course={shopItems[shopIndex % shopItems.length]} type="SHOP" />
-                                    </div>
-                                    <div className="animate-fade-in" key={`shop-2-${shopIndex}`}>
-                                        <VerticalCourseCard course={shopItems[(shopIndex + 1) % shopItems.length]} type="SHOP" />
-                                    </div>
-                                </>
+                                <div className="animate-fade-in" key={`shop-item-${shopIndex}`}>
+                                    <VerticalCourseCard course={shopItems[shopIndex]} type="SHOP" />
+                                </div>
                             ) : (
-                                <div className="flex-1 flex items-center justify-center opacity-10 text-center text-xs font-black uppercase">Loja Offline</div>
+                                <div className="flex-1 flex items-center justify-center opacity-10 text-center text-xs font-black uppercase">Loja Temporariamente Offline</div>
                             )}
 
                             <button className="w-full py-4 bg-white/5 hover:bg-indigo-500 text-text-secondary hover:text-white rounded-2xl text-[10px] font-black uppercase transition-all border border-white/10 flex items-center justify-center gap-2">
