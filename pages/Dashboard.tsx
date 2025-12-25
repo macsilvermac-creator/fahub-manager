@@ -22,12 +22,20 @@ const Dashboard: React.FC = () => {
 
     useEffect(() => {
         const load = () => {
-            setPlayers(storageService.getPlayers() || []);
-            setGames(storageService.getGames() || []);
-            setPractices(storageService.getPracticeSessions() || []);
+            const p = storageService.getPlayers();
+            const g = storageService.getGames();
+            const pr = storageService.getPracticeSessions();
+            
+            // Só atualiza o estado se houver mudança real para poupar CPU/RAM
+            setPlayers(prev => JSON.stringify(prev) !== JSON.stringify(p) ? p : prev);
+            setGames(prev => JSON.stringify(prev) !== JSON.stringify(g) ? g : prev);
+            setPractices(prev => JSON.stringify(prev) !== JSON.stringify(pr) ? pr : prev);
         };
+        
         load();
-        return storageService.subscribe('storage_update', load);
+        // Otimização: Unsubscribe explícito para evitar acúmulo de listeners na RAM
+        const unsubscribe = storageService.subscribe('storage_update', load);
+        return () => unsubscribe();
     }, []);
 
     const fullAgenda = useMemo(() => {
@@ -49,17 +57,20 @@ const Dashboard: React.FC = () => {
         
         return (
             <div className="flex flex-col h-full gap-6 animate-fade-in pb-20 overflow-x-hidden">
+                {/* Banner Ajustado: Maior altura, fonte em linha única, botão START */}
                 <div 
                     onClick={() => nextEvent?.type === 'PRACTICE' && navigate(`/practice-detail/${nextEvent.id}`)}
-                    className={`relative p-8 rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col md:flex-row justify-between items-center transition-all cursor-pointer group ${nextEvent?.type === 'GAME' ? 'bg-gradient-to-r from-red-600 to-black' : 'bg-gradient-to-r from-blue-700 to-black'}`}
+                    className={`relative p-12 min-h-[240px] rounded-[3rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col md:flex-row justify-between items-center transition-all cursor-pointer group ${nextEvent?.type === 'GAME' ? 'bg-gradient-to-r from-red-600 to-black' : 'bg-gradient-to-r from-blue-700 to-black'}`}
                 >
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 group-hover:scale-105 transition-transform duration-700"></div>
-                    <div className="relative z-10">
+                    <div className="relative z-10 max-w-[70%]">
                         <span className="text-[10px] font-black text-white/50 uppercase tracking-[0.4em]">Next Mission</span>
-                        <h2 className="text-3xl md:text-4xl font-black text-white italic uppercase tracking-tighter leading-none mt-2">{nextEvent?.title || 'No events'}</h2>
+                        <h2 className="text-2xl md:text-3xl font-black text-white italic uppercase tracking-tighter leading-none mt-4 whitespace-nowrap overflow-hidden text-ellipsis">
+                            {nextEvent?.title || 'No events'}
+                        </h2>
                     </div>
-                    <button className="relative z-10 bg-white text-black px-8 py-4 rounded-2xl font-black uppercase italic shadow-2xl transform active:scale-95 transition-all mt-6 md:mt-0">
-                        Confirmar Presença
+                    <button className="relative z-10 bg-white text-black px-12 py-5 rounded-2xl font-black uppercase italic shadow-2xl transform active:scale-95 hover:scale-105 transition-all mt-6 md:mt-0 min-w-[160px]">
+                        START
                     </button>
                 </div>
 
