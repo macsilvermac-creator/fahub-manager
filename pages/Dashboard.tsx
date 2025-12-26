@@ -1,6 +1,5 @@
 
 import React, { useContext, useMemo } from 'react';
-// Fix: Added useNavigate to handle internal routing
 import { useNavigate } from 'react-router-dom';
 import { UserContext, UserContextType } from '../components/Layout';
 import { storageService } from '../services/storageService';
@@ -10,7 +9,6 @@ import CoachHubButtons from '../features/dashboard/CoachHubButtons';
 import { ShieldCheckIcon, HeartPulseIcon, ActivityIcon } from '../components/icons/UiIcons';
 
 const Dashboard: React.FC = () => {
-    // Fix: Initialized navigate hook
     const navigate = useNavigate();
     const { currentRole } = useContext(UserContext) as UserContextType;
     const user = storageService.getCurrentUser();
@@ -29,7 +27,7 @@ const Dashboard: React.FC = () => {
     }), []);
 
     // 1. VISÃO EXECUTIVA (MASTER / CEO)
-    const isExecutive = ['MASTER', 'PLATFORM_OWNER', 'PRESIDENT', 'VICE_PRESIDENT', 'FINANCIAL_DIRECTOR', 'COMMERCIAL_DIRECTOR', 'MARKETING_DIRECTOR', 'SPORTS_DIRECTOR'].includes(currentRole);
+    const isExecutive = ['MASTER', 'PLATFORM_OWNER', 'PRESIDENT', 'VICE_PRESIDENT', 'FINANCIAL_DIRECTOR', 'SPORTS_DIRECTOR'].includes(currentRole);
     if (isExecutive) {
         return (
             <div className="space-y-6">
