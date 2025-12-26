@@ -1,5 +1,5 @@
 
-import { UserRole, ProgramType } from '../types';
+import { UserRole } from '../types';
 
 export type FeaturePermission = 
   | 'GOVERNANCE_VIEW'    // War Room, Auditoria, Aprovações
@@ -8,7 +8,7 @@ export type FeaturePermission =
   | 'COMMERCIAL_CRM'     // Patrocínios, CRM, Vendas
   | 'MARKETING_CENTER'   // Social AI, Fan Portal, Academy
   | 'SPORTS_MGMT'        // GM, Roster Geral, Contratos
-  | 'COACH_CONSOLE'      // Practice Plan, Tactical Lab, Drills
+  | 'COACH_CONSOLE'      // Practice Plan, Tactical Lab (Ciators), Drills
   | 'FIELD_OPS'          // Sideline Hub, Rotação, Súmula
   | 'HEALTH_LAB'         // Medical Records, Wellness Staff view
   | 'ATHLETE_PORTAL'     // Minha Carreira, Invoices, Playbook study
@@ -20,14 +20,14 @@ const ROLE_PERMISSIONS: Record<UserRole, FeaturePermission[]> = {
   'VICE_PRESIDENT': ['GOVERNANCE_VIEW', 'STRATEGIC_KPI', 'SPORTS_MGMT'],
   
   'FINANCIAL_DIRECTOR': ['FINANCIAL_CONTROL', 'STRATEGIC_KPI'],
-  // Fix: Added missing role FINANCIAL_MANAGER
   'FINANCIAL_MANAGER': ['FINANCIAL_CONTROL'],
+  
   'COMMERCIAL_DIRECTOR': ['COMMERCIAL_CRM', 'STRATEGIC_KPI'],
-  // Fix: Added missing role COMMERCIAL_MANAGER
   'COMMERCIAL_MANAGER': ['COMMERCIAL_CRM'],
+  
   'MARKETING_DIRECTOR': ['MARKETING_CENTER', 'STRATEGIC_KPI'],
-  // Fix: Added missing role MARKETING_MANAGER
   'MARKETING_MANAGER': ['MARKETING_CENTER'],
+  
   'SPORTS_DIRECTOR': ['SPORTS_MGMT', 'STRATEGIC_KPI', 'LOGISTICS_TRIP'],
 
   'HEAD_COACH': ['COACH_CONSOLE', 'FIELD_OPS', 'SPORTS_MGMT', 'HEALTH_LAB', 'LOGISTICS_TRIP'],
@@ -58,26 +58,19 @@ export const securityService = {
     return ROLE_PERMISSIONS[role]?.includes(permission) || false;
   },
 
-  getHomeRoute: (role: UserRole): string => {
-    if (['MASTER', 'PRESIDENT', 'VICE_PRESIDENT'].includes(role)) return '/dashboard';
-    if (role === 'PLAYER' || role === 'STUDENT') return '/dashboard'; // Career Mode Dash
-    if (role.includes('DIRECTOR')) return '/dashboard';
-    return '/dashboard';
-  },
-
   getRoleLabel: (role: UserRole): string => {
     const labels: Partial<Record<UserRole, string>> = {
       'MASTER': 'Platform Master',
       'PRESIDENT': 'Presidência',
-      'FINANCIAL_DIRECTOR': 'Diretoria Financeira',
-      'COMMERCIAL_DIRECTOR': 'Diretoria Comercial',
-      'MARKETING_DIRECTOR': 'Diretoria de Marketing',
-      'SPORTS_DIRECTOR': 'Diretoria de Esportes',
+      'FINANCIAL_DIRECTOR': 'Dir. Financeiro',
+      'COMMERCIAL_DIRECTOR': 'Dir. Comercial',
+      'MARKETING_DIRECTOR': 'Dir. Marketing',
+      'SPORTS_DIRECTOR': 'General Manager',
       'HEAD_COACH': 'Head Coach',
       'OFFENSIVE_COORD': 'Coord. Ofensivo',
       'DEFENSIVE_COORD': 'Coord. Defensivo',
-      'PLAYER': 'Atleta Profissional',
-      'MEDICAL_STAFF': 'Saúde & Performance'
+      'PLAYER': 'Atleta Ativo',
+      'MEDICAL_STAFF': 'Dpto. Médico'
     };
     return labels[role] || role.replace('_', ' ');
   }

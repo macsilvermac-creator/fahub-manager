@@ -42,6 +42,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
 
   return (
     <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0F172A] transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 lg:relative lg:translate-x-0 flex flex-col h-full border-r border-white/5 shadow-2xl`}>
+      {/* Brand Header */}
       <div className="h-20 flex items-center px-6 border-b border-white/5 bg-[#0B1120] shrink-0">
             <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transform -rotate-6 ${program === 'FLAG' ? 'bg-yellow-600' : 'bg-highlight'}`}>
@@ -56,6 +57,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
             </div>
       </div>
       
+      {/* Scrollable Menu */}
       <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar py-4 px-3">
         <nav className="flex-1">
           <NavLink to="/dashboard" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
@@ -63,33 +65,43 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
             <span>PAINEL PRINCIPAL</span>
           </NavLink>
 
-          {/* UNIDADE TÉCNICA / CAMPO */}
-          <SectionLabel label="Unidade de Campo" permissions={['COACH_CONSOLE', 'FIELD_OPS', 'SPORTS_MGMT']} />
+          {/* UNIDADE DE CAMPO / TÉCNICA */}
+          <SectionLabel label="Operação de Campo" permissions={['COACH_CONSOLE', 'FIELD_OPS', 'SPORTS_MGMT']} />
           <MenuItem to="/roster" icon={UsersIcon} label="ELENCO & ROSTER" permission="SPORTS_MGMT" />
-          <MenuItem to="/tactical-lab" icon={BrainIcon} label="TACTICAL LAB" permission="COACH_CONSOLE" />
+          <MenuItem to="/tactical-lab" icon={BrainIcon} label="CIATORS (TACTICS)" permission="COACH_CONSOLE" />
           <MenuItem to="/training-day" icon={WhistleIcon} label="TREINOS & SCRIPTS" permission="COACH_CONSOLE" />
           <MenuItem to="/sideline" icon={TargetIcon} label="SIDELINE HUB" permission="FIELD_OPS" />
 
-          {/* DIRETORIAS EXECUTIVAS */}
-          <SectionLabel label="Diretoria" permissions={['FINANCIAL_CONTROL', 'COMMERCIAL_CRM', 'MARKETING_CENTER']} />
+          {/* GESTÃO ADMINISTRATIVA */}
+          <SectionLabel label="Gestão Executiva" permissions={['FINANCIAL_CONTROL', 'COMMERCIAL_CRM', 'MARKETING_CENTER']} />
           <MenuItem to="/finance" icon={FinanceIcon} label="FINANCEIRO" permission="FINANCIAL_CONTROL" />
-          <MenuItem to="/commercial" icon={BriefcaseIcon} label="COMERCIAL / CRM" permission="COMMERCIAL_CRM" />
+          <MenuItem to="/commercial" icon={BriefcaseIcon} label="COMERCIAL & CRM" permission="COMMERCIAL_CRM" />
           <MenuItem to="/marketing" icon={MegaphoneIcon} label="MARKETING & MÍDIA" permission="MARKETING_CENTER" />
 
-          {/* PERFORMANCE & LOGÍSTICA */}
-          <SectionLabel label="Performance & Apoio" permissions={['HEALTH_LAB', 'LOGISTICS_TRIP']} />
+          {/* APOIO E LOGÍSTICA */}
+          <SectionLabel label="Apoio e Performance" permissions={['HEALTH_LAB', 'LOGISTICS_TRIP']} />
           <MenuItem to="/performance" icon={HeartPulseIcon} label="PERFORMANCE LAB" permission="HEALTH_LAB" />
-          <MenuItem to="/logistics" icon={BusIcon} label="LOGÍSTICA & TRIP" permission="LOGISTICS_TRIP" />
+          <MenuItem to="/logistics" icon={BusIcon} label="LOGÍSTICA & VIAGEM" permission="LOGISTICS_TRIP" />
 
-          {/* GOVERNANÇA / MASTER */}
+          {/* GOVERNANÇA MASTER */}
           <SectionLabel label="Governança" permissions={['GOVERNANCE_VIEW']} />
           <MenuItem to="/admin" icon={ShieldCheckIcon} label="WAR ROOM (ADMIN)" permission="GOVERNANCE_VIEW" />
-          <MenuItem to="/roadmap" icon={MapIcon} label="ROADMAP" permission="GOVERNANCE_VIEW" />
+          <MenuItem to="/roadmap" icon={MapIcon} label="ESTRATÉGIA (ROADMAP)" permission="GOVERNANCE_VIEW" />
+          
+          {/* LOJA: Público */}
+          <NavLink to="/marketplace" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''} mt-4`}>
+            <TrophyIcon className="w-4 h-4 mr-3 text-yellow-500" />
+            <span>LOJA DO TIME</span>
+          </NavLink>
         </nav>
       </div>
 
+      {/* Footer: Logout */}
       <div className="p-4 border-t border-white/5 bg-[#0B1120]">
-           <button onClick={() => authService.logout()} className="w-full py-2.5 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2">
+           <button 
+                onClick={() => authService.logout()} 
+                className="w-full py-2.5 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2"
+           >
                 Sair do Sistema
            </button>
       </div>

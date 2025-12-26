@@ -8,7 +8,7 @@ import LoadingScreen from './components/LoadingScreen';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
 
-// LAZY MODULES
+// LAZY MODULES (PERFORMANCE PWA)
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Roster = lazy(() => import('./pages/Roster'));
 const TacticalLab = lazy(() => import('./pages/TacticalLab'));
@@ -17,7 +17,6 @@ const Finance = lazy(() => import('./pages/Finance'));
 const Commercial = lazy(() => import('./pages/Commercial'));
 const Marketing = lazy(() => import('./pages/Marketing'));
 const PerformanceLab = lazy(() => import('./pages/PerformanceLab'));
-const Officiating = lazy(() => import('./pages/Officiating'));
 const Logistics = lazy(() => import('./pages/Logistics'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const Roadmap = lazy(() => import('./pages/Roadmap'));
@@ -37,19 +36,28 @@ const App: React.FC = () => {
                 <Layout>
                   <Suspense fallback={<LoadingScreen />}>
                     <Routes>
+                      {/* Eixo Principal */}
                       <Route path="/dashboard" element={<Dashboard />} />
+                      
+                      {/* Eixo Técnico */}
                       <Route path="/roster" element={<Roster />} />
                       <Route path="/tactical-lab" element={<TacticalLab />} />
                       <Route path="/training-day" element={<TrainingHub />} />
                       <Route path="/sideline" element={<SidelineHub />} />
+                      
+                      {/* Eixo Executivo */}
                       <Route path="/finance" element={<Finance />} />
                       <Route path="/commercial" element={<Commercial />} />
                       <Route path="/marketing" element={<Marketing />} />
+                      
+                      {/* Eixo Operacional */}
                       <Route path="/performance" element={<PerformanceLab />} />
-                      <Route path="/officiating" element={<Officiating />} />
                       <Route path="/logistics" element={<Logistics />} />
+                      
+                      {/* Eixo Governança */}
                       <Route path="/admin" element={<AdminPanel />} />
                       <Route path="/roadmap" element={<Roadmap />} />
+                      
                       <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                   </Suspense>
