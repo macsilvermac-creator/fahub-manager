@@ -1,4 +1,3 @@
-
 import React, { useContext, useMemo } from 'react';
 import { UserContext, UserContextType } from '../components/Layout';
 import Card from '../components/Card';
@@ -6,8 +5,10 @@ import {
     UsersIcon, FinanceIcon, MegaphoneIcon, 
     WhistleIcon, TrophyIcon, BriefcaseIcon,
     SparklesIcon, TargetIcon, ShieldCheckIcon,
-    ClockIcon, BrainIcon, ActivityIcon
+    ClockIcon, BrainIcon, ActivityIcon, HeartPulseIcon
 } from '../components/icons/UiIcons';
+// Fix: Added missing import for LazyImage component
+import LazyImage from '../components/LazyImage';
 import { storageService } from '../services/storageService';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,79 +19,7 @@ const Dashboard: React.FC = () => {
     const user = storageService.getCurrentUser();
     const program = user?.program || 'TACKLE';
 
-    // --- VISÃO COMISSÃO TÉCNICA (COACH WAR ROOM) ---
-    const renderCoachWarRoom = () => (
-        <div className="space-y-6 animate-fade-in pb-10">
-            <div className="bg-gradient-to-br from-blue-900/40 to-slate-900 p-8 rounded-[3rem] border border-blue-500/20 shadow-2xl flex justify-between items-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-10 opacity-5">
-                    <WhistleIcon className="w-64 h-64 text-white" />
-                </div>
-                <div className="relative z-10">
-                    <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter">Coach Command Center</h2>
-                    <p className="text-blue-400 text-sm font-bold uppercase tracking-widest mt-1">Status: {program} Operation Active</p>
-                </div>
-                <div className="bg-black/40 px-6 py-3 rounded-2xl border border-white/10 hidden md:block">
-                    <p className="text-[10px] text-text-secondary uppercase font-black">Próximo Compromisso</p>
-                    <p className="text-white font-bold">Treino Tático - 19:30</p>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Botão de Impacto: Treino */}
-                <button 
-                    onClick={() => navigate('/training-day')}
-                    className="group relative bg-secondary/60 hover:bg-secondary border border-white/5 hover:border-highlight transition-all p-8 rounded-[2.5rem] text-left overflow-hidden shadow-xl"
-                >
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform">
-                        <ActivityIcon className="w-20 h-20 text-highlight" />
-                    </div>
-                    <div className="p-3 bg-highlight/10 rounded-2xl w-fit mb-6">
-                        <WhistleIcon className="w-8 h-8 text-highlight" />
-                    </div>
-                    <h3 className="text-2xl font-black text-white uppercase italic">Dia de Treino</h3>
-                    <p className="text-text-secondary text-xs mt-2 font-medium">Scripts, Drills e Frequência.</p>
-                </button>
-
-                {/* Botão de Impacto: Jogo */}
-                <button 
-                    onClick={() => navigate('/schedule')}
-                    className="group relative bg-secondary/60 hover:bg-secondary border border-white/5 hover:border-red-500 transition-all p-8 rounded-[2.5rem] text-left overflow-hidden shadow-xl"
-                >
-                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:-rotate-12 transition-transform">
-                        <TrophyIcon className="w-20 h-20 text-red-500" />
-                    </div>
-                    <div className="p-3 bg-red-500/10 rounded-2xl w-fit mb-6">
-                        <TargetIcon className="w-8 h-8 text-red-500" />
-                    </div>
-                    <h3 className="text-2xl font-black text-white uppercase italic">Game Day</h3>
-                    <p className="text-text-secondary text-xs mt-2 font-medium">Escalação, Call Sheet e Scout.</p>
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 <Card title="Tactical Intel" className="md:col-span-2">
-                    <div className="flex items-center gap-6 p-4 bg-black/20 rounded-2xl border border-white/5">
-                        <div className="p-4 bg-cyan-600/20 rounded-2xl text-cyan-400">
-                            <BrainIcon className="w-10 h-10" />
-                        </div>
-                        <div className="flex-1">
-                            <h4 className="text-white font-bold uppercase italic text-sm">Biblioteca de Playbook</h4>
-                            <p className="text-[10px] text-text-secondary mt-1">12 jogadas instaladas para esta semana. Revise o plano de instalação.</p>
-                        </div>
-                        <button onClick={() => navigate('/tactical-lab')} className="px-5 py-2 bg-cyan-600 text-white rounded-xl text-[10px] font-black uppercase shadow-glow">Abrir Lab</button>
-                    </div>
-                 </Card>
-                 
-                 <Card title="OVR Equipe">
-                    <div className="text-center py-4">
-                        <p className="text-5xl font-black text-highlight italic">74.2</p>
-                        <p className="text-[10px] text-text-secondary uppercase mt-2 font-bold tracking-widest">Média de Performance</p>
-                    </div>
-                 </Card>
-            </div>
-        </div>
-    );
-
+    // --- VISÃO MASTER / PRESIDÊNCIA ---
     const renderMasterView = () => (
         <div className="space-y-6 animate-fade-in">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -130,7 +59,7 @@ const Dashboard: React.FC = () => {
                     </div>
                 </Card>
 
-                <Card title="Relatório da Presidência" className="lg:col-span-1">
+                <Card title="Relatório Financeiro" className="lg:col-span-1">
                     <div className="space-y-4">
                         <div className="flex justify-between items-center text-sm border-b border-white/5 pb-2">
                             <span className="text-text-secondary">Mensalidades</span>
@@ -146,55 +75,149 @@ const Dashboard: React.FC = () => {
         </div>
     );
 
-    const renderCommercialView = () => (
+    // --- VISÃO TÉCNICA (COACHES) ---
+    const renderCoachView = () => (
         <div className="space-y-6 animate-fade-in">
-             <div className="bg-green-900/10 border border-green-500/20 p-8 rounded-[3rem] flex justify-between items-center">
-                <div>
-                    <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Diretoria Comercial</h2>
-                    <p className="text-green-400 text-sm font-bold uppercase mt-1">Foco: Monetização e Contratos</p>
+             <div className="bg-gradient-to-br from-blue-900/40 to-slate-900 p-8 rounded-[3rem] border border-blue-500/20 flex justify-between items-center relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 p-10 opacity-5">
+                    <WhistleIcon className="w-64 h-64 text-white" />
                 </div>
-                <BriefcaseIcon className="w-16 h-16 text-green-500 opacity-20" />
+                <div className="relative z-10">
+                    <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter">Command Center</h2>
+                    <p className="text-blue-400 text-sm font-bold uppercase tracking-widest mt-1">Operation: {program} Ready</p>
+                </div>
+                <div className="bg-black/40 px-6 py-3 rounded-2xl border border-white/10 hidden md:block shrink-0">
+                    <p className="text-[10px] text-text-secondary uppercase font-black">Próximo Snap</p>
+                    <p className="text-white font-bold">Treino Tático - 19:30</p>
+                </div>
             </div>
-            <Card title="Prospectos Atuais">
-                <div className="p-10 text-center text-text-secondary italic">Nenhum contrato em negociação no momento.</div>
-            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button onClick={() => navigate('/training-day')} className="group relative bg-secondary/60 hover:bg-secondary border border-white/5 hover:border-highlight transition-all p-8 rounded-[2.5rem] text-left overflow-hidden shadow-xl">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform"><ActivityIcon className="w-20 h-20 text-highlight" /></div>
+                    <div className="p-3 bg-highlight/10 rounded-2xl w-fit mb-6"><WhistleIcon className="w-8 h-8 text-highlight" /></div>
+                    <h3 className="text-2xl font-black text-white uppercase italic">Field Execution</h3>
+                    <p className="text-text-secondary text-xs mt-2 font-medium">Scripts, Drills e Frequência ao vivo.</p>
+                </button>
+                <button onClick={() => navigate('/tactical-lab')} className="group relative bg-secondary/60 hover:bg-secondary border border-white/5 hover:border-cyan-500 transition-all p-8 rounded-[2.5rem] text-left overflow-hidden shadow-xl">
+                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform"><BrainIcon className="w-20 h-20 text-cyan-400" /></div>
+                    <div className="p-3 bg-cyan-500/10 rounded-2xl w-fit mb-6"><BrainIcon className="w-8 h-8 text-cyan-400" /></div>
+                    <h3 className="text-2xl font-black text-white uppercase italic">Tactical Library</h3>
+                    <p className="text-text-secondary text-xs mt-2 font-medium">Playbook digital e análise de padrões.</p>
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card title="OVR Equipe">
+                    <div className="text-center py-4">
+                        <p className="text-5xl font-black text-highlight italic">74.2</p>
+                        <p className="text-[10px] text-text-secondary uppercase mt-2 font-bold tracking-widest">Baseado no último treino</p>
+                    </div>
+                </Card>
+                <Card title="Alertas DP" className="md:col-span-2">
+                    <div className="flex items-center gap-4 text-sm text-text-secondary italic h-full">
+                         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                         Nenhum atleta em protocolo de concussão ou IR crítica hoje.
+                    </div>
+                </Card>
+            </div>
         </div>
     );
 
-    const renderSportsView = () => (
-        <div className="space-y-6 animate-fade-in">
-             <div className="bg-blue-900/10 border border-blue-500/20 p-8 rounded-[3rem] flex justify-between items-center">
-                <div>
-                    <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Diretoria de Esportes</h2>
-                    <p className="text-blue-400 text-sm font-bold uppercase mt-1">Foco: Performance e Roster Global</p>
+    // --- VISÃO ATLETA ---
+    const renderPlayerView = () => (
+        <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
+            <div className="bg-gradient-to-br from-slate-900 to-black p-8 rounded-[3rem] border border-white/10 flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
+                    <TrophyIcon className="w-64 h-64 text-white" />
                 </div>
-                <WhistleIcon className="w-16 h-16 text-blue-500 opacity-20" />
+                <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-highlight to-cyan-400 shrink-0">
+                    <LazyImage src={user?.avatarUrl || ''} className="w-full h-full rounded-full border-4 border-primary object-cover" />
+                </div>
+                <div className="flex-1 text-center md:text-left relative z-10">
+                    <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">{user?.name}</h2>
+                    <p className="text-highlight font-bold uppercase tracking-widest text-xs mt-1">Ataque • QB • #12</p>
+                    <div className="mt-6 grid grid-cols-3 gap-4">
+                        <div className="text-center bg-white/5 p-3 rounded-2xl border border-white/5">
+                            <p className="text-[8px] text-text-secondary uppercase font-black">Level</p>
+                            <p className="text-xl font-black text-white">15</p>
+                        </div>
+                        <div className="text-center bg-white/5 p-3 rounded-2xl border border-white/5">
+                            <p className="text-[8px] text-text-secondary uppercase font-black">Rating</p>
+                            <p className="text-xl font-black text-highlight">82</p>
+                        </div>
+                        <div className="text-center bg-white/5 p-3 rounded-2xl border border-white/5">
+                            <p className="text-[8px] text-text-secondary uppercase font-black">XP</p>
+                            <p className="text-xl font-black text-blue-400">420</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button onClick={() => navigate('/tactical-lab')} className="bg-secondary/40 border border-white/10 p-6 rounded-3xl flex items-center gap-4 hover:border-highlight transition-all">
+                    <div className="p-3 bg-highlight/10 rounded-2xl text-highlight"><BrainIcon className="w-6 h-6"/></div>
+                    <div className="text-left">
+                        <h4 className="text-white font-black uppercase text-sm italic">Estudar Playbook</h4>
+                        <p className="text-[10px] text-text-secondary uppercase">Novas jogadas instaladas</p>
+                    </div>
+                </button>
+                <button onClick={() => navigate('/finance')} className="bg-secondary/40 border border-white/10 p-6 rounded-3xl flex items-center gap-4 hover:border-green-500 transition-all">
+                    <div className="p-3 bg-green-500/10 rounded-2xl text-green-400"><FinanceIcon className="w-6 h-6"/></div>
+                    <div className="text-left">
+                        <h4 className="text-white font-black uppercase text-sm italic">Financeiro</h4>
+                        <p className="text-[10px] text-text-secondary uppercase">Mensalidade: Regular</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    );
+
+    // --- VISÃO DIRETORIA (ESPORTES/COMERCIAL/MARKETING) ---
+    const renderDirectorView = (title: string, focus: string, icon: React.FC<any>) => (
+        <div className="space-y-6 animate-fade-in">
+             <div className="bg-secondary/40 border border-white/10 p-8 rounded-[3rem] flex justify-between items-center shadow-xl">
+                <div>
+                    <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">{title}</h2>
+                    <p className="text-highlight text-sm font-bold uppercase mt-1 tracking-widest">Foco: {focus}</p>
+                </div>
+                {React.createElement(icon, { className: "w-16 h-16 text-highlight opacity-20" })}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card title="Média OVR Elenco" className="text-center">
-                    <p className="text-5xl font-black text-highlight italic">78.5</p>
-                    <p className="text-[10px] text-text-secondary uppercase mt-2">Baseado em 55 atletas</p>
+                <Card title="KPIs do Departamento" className="md:col-span-2">
+                    <div className="h-40 flex items-center justify-center text-text-secondary italic">Aguardando dados consolidados...</div>
                 </Card>
-                <Card title="Tryouts / Candidatos" className="text-center">
-                    <p className="text-5xl font-black text-blue-400 italic">15</p>
-                    <p className="text-[10px] text-text-secondary uppercase mt-2">Novas solicitações</p>
+                <Card title="Status de Meta">
+                    <div className="text-center py-6">
+                        <p className="text-5xl font-black text-white italic">85%</p>
+                        <p className="text-[10px] text-text-secondary uppercase mt-2">Atingido</p>
+                    </div>
                 </Card>
             </div>
         </div>
     );
 
+    // --- LÓGICA DE ROTEAMENTO DE VISÃO ---
     return (
         <div className="h-full">
-            {currentRole === 'MASTER' && renderMasterView()}
-            {currentRole === 'COMMERCIAL_DIRECTOR' && renderCommercialView()}
-            {currentRole === 'MARKETING_DIRECTOR' && renderSportsView()} {/* Fallback Marketing */}
-            {currentRole === 'SPORTS_DIRECTOR' && renderSportsView()}
+            {['MASTER', 'PRESIDENT', 'VICE_PRESIDENT'].includes(currentRole) && renderMasterView()}
             
-            {/* CARGOS TÉCNICOS (COMISSÃO) - VISÃO OPERACIONAL EXCLUSIVA */}
-            {['HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD', 'POSITION_COACH'].includes(currentRole) && renderCoachWarRoom()}
+            {['HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD', 'POSITION_COACH'].includes(currentRole) && renderCoachView()}
             
-            {/* ATLETA */}
-            {currentRole === 'PLAYER' && <div className="p-12 text-center text-text-secondary uppercase font-black italic">Portal do Atleta em Construção</div>}
+            {['PLAYER', 'STUDENT'].includes(currentRole) && renderPlayerView()}
+            
+            {currentRole === 'COMMERCIAL_DIRECTOR' && renderDirectorView('Diretoria Comercial', 'Captação e Contratos', BriefcaseIcon)}
+            {currentRole === 'MARKETING_DIRECTOR' && renderDirectorView('Diretoria de Marketing', 'Marca e Comunidade', MegaphoneIcon)}
+            {currentRole === 'SPORTS_DIRECTOR' && renderDirectorView('Diretoria de Esportes', 'Planejamento e Roster', WhistleIcon)}
+            {currentRole === 'FINANCIAL_DIRECTOR' && renderDirectorView('Diretoria Financeira', 'Fluxo de Caixa', FinanceIcon)}
+
+            {/* FALLBACK PARA CARGOS SEM DASHBOARD MAPEADA */}
+            {!['MASTER', 'PRESIDENT', 'VICE_PRESIDENT', 'HEAD_COACH', 'OFFENSIVE_COORD', 'DEFENSIVE_COORD', 'POSITION_COACH', 'PLAYER', 'STUDENT', 'COMMERCIAL_DIRECTOR', 'MARKETING_DIRECTOR', 'SPORTS_DIRECTOR', 'FINANCIAL_DIRECTOR'].includes(currentRole) && (
+                <div className="h-full flex flex-col items-center justify-center opacity-30">
+                    <ShieldCheckIcon className="w-16 h-16 mb-4" />
+                    <p className="font-black uppercase tracking-widest text-center">Dashboard Administrativo em Construção para esta Persona</p>
+                </div>
+            )}
         </div>
     );
 };
