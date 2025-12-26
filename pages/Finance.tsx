@@ -1,30 +1,26 @@
-
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
-import Card from '../components/Card';
-import { Transaction, Invoice, TransactionCategory, Player } from '../types';
-import { storageService } from '../services/storageService';
-import { scanFinancialDocument } from '../services/geminiService';
+import Card from '@/components/Card';
+import { Transaction, Invoice, TransactionCategory, Player } from '@/types';
+import { storageService } from '@/services/storageService';
+import { scanFinancialDocument } from '@/services/geminiService';
 import { 
     WalletIcon, SparklesIcon, ScanIcon, 
     RefreshIcon, BankIcon, AlertTriangleIcon,
     CheckCircleIcon, QrcodeIcon, TrendingUpIcon
-} from '../components/icons/UiIcons';
-import { UserContext, UserContextType } from '../components/Layout';
-import Modal from '../components/Modal';
-import { useToast } from '../contexts/ToastContext';
+} from '@/components/icons/UiIcons';
+import { UserContext, UserContextType } from '@/components/Layout';
+import Modal from '@/components/Modal';
+import { useToast } from '@/contexts/ToastContext';
 
 const Finance: React.FC = () => {
     const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     
-    // Data State
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [players, setPlayers] = useState<Player[]>([]);
     
-    // View States
-    const [viewMode, setViewMode] = useState<'FLOW' | 'INVOICES' | 'RECOVERY'>('FLOW');
     const [isScanning, setIsScanning] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
@@ -109,7 +105,6 @@ const Finance: React.FC = () => {
                 </div>
             </div>
 
-            {/* Financial KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-secondary/40 backdrop-blur-xl border border-white/5 p-6 rounded-[2.5rem] shadow-xl">
                     <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Saldo em Caixa</p>
@@ -134,7 +129,6 @@ const Finance: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Ledger Table */}
                 <div className="lg:col-span-8">
                     <Card title="Livro de Registros (Ledger)" titleClassName="italic font-black uppercase text-sm">
                         <div className="overflow-x-auto custom-scrollbar">
@@ -171,7 +165,6 @@ const Finance: React.FC = () => {
                     </Card>
                 </div>
 
-                {/* Billing Support Side */}
                 <div className="lg:col-span-4 space-y-6">
                     <Card title="Quick Recovery" titleClassName="italic font-black uppercase text-sm border-b-0 pb-0">
                         <p className="text-[10px] text-text-secondary mb-6 px-1">Atletas com maior tempo de inadimplência.</p>
@@ -201,7 +194,6 @@ const Finance: React.FC = () => {
                 </div>
             </div>
 
-            {/* Modal de Cobrança Rápida (Pix) */}
             <Modal isOpen={!!selectedInvoice} onClose={() => setSelectedInvoice(null)} title="Cobrança Instantânea">
                 <div className="flex flex-col items-center gap-6 p-4">
                     <div className="bg-white p-6 rounded-[2rem] shadow-2xl">

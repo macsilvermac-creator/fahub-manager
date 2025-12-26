@@ -1,18 +1,14 @@
-
 import React, { useState, useEffect, useContext } from 'react';
-import Card from '../components/Card';
-// Fix: Ensuring correct type imports
-import { Player, PracticeSession, PracticeScriptItem } from '../types';
-import { storageService } from '../services/storageService';
-// Fix: Updated import name for generatePracticeScript
-import { generatePracticeScript } from '../services/geminiService';
-import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon } from '../components/icons/UiIcons';
-import { UserContext } from '../components/Layout';
-import Button from '../components/Button'; 
-import Input from '../components/Input';
-import { useToast } from '../contexts/ToastContext';
+import Card from '@/components/Card';
+import { Player, PracticeSession, PracticeScriptItem } from '@/types';
+import { storageService } from '@/services/storageService';
+import { generatePracticeScript } from '@/services/geminiService';
+import { SparklesIcon, PlayCircleIcon, ClockIcon, TrashIcon, PenIcon } from '@/components/icons/UiIcons';
+import { UserContext } from '@/components/Layout';
+import Button from '@/components/Button'; 
+import Input from '@/components/Input';
+import { useToast } from '@/contexts/ToastContext';
 
-// PRESETS PARA CONSTRUÇÃO RÁPIDA
 const QUICK_BLOCKS = [
     { type: 'WARMUP', name: 'Alongamento / Warmup', duration: 15, desc: 'Ativação muscular e mobilidade.' },
     { type: 'INDY', name: 'Individual (Indy)', duration: 20, desc: 'Drills específicos por posição.' },
@@ -32,18 +28,15 @@ const PracticePlan: React.FC = () => {
     const [selectedPractice, setSelectedPractice] = useState<PracticeSession | null>(null);
     const [activeMode, setActiveMode] = useState<'SCRIPT' | 'PERFORMANCE'>('SCRIPT');
 
-    // Form State
     const [newTitle, setNewTitle] = useState('');
     const [newFocus, setNewFocus] = useState('');
     const [newDate, setNewDate] = useState('');
     const [newCategory, setNewCategory] = useState<'PHYSICAL' | 'TACTICAL' | 'MENTAL'>('TACTICAL');
-    const [newDuration, setNewDuration] = useState(120); // Duração padrão 2h
+    const [newDuration, setNewDuration] = useState(120);
 
-    // Script Management State
     const [generatedScript, setGeneratedScript] = useState<PracticeScriptItem[]>([]);
     const [isGeneratingScript, setIsGeneratingScript] = useState(false);
     
-    // Timer State
     const [isTimerFullScreen, setIsTimerFullScreen] = useState(false);
     const [isTimerRunning, setIsTimerRunning] = useState(false);
     const [timerSeconds, setTimerSeconds] = useState(0);
@@ -74,7 +67,6 @@ const PracticePlan: React.FC = () => {
             title: newTitle,
             focus: newFocus,
             date: new Date(newDate),
-            // Fix: category and attendees added to match type definition
             category: newCategory,
             attendees: [],
             checkedInAttendees: [],
@@ -89,7 +81,6 @@ const PracticePlan: React.FC = () => {
         toast.success("Treino agendado com sucesso!");
     };
 
-    // --- MANUAL BUILDER LOGIC ---
     const addTime = (timeStr: string, minutes: number): string => {
         const [h, m] = timeStr.split(':').map(Number);
         const date = new Date();
@@ -98,9 +89,7 @@ const PracticePlan: React.FC = () => {
     };
 
     const handleAddQuickBlock = (block: any) => {
-        let startTime = '19:00'; // Horário padrão inicial
-        
-        // Se já tiver item, pega o horário final do último
+        let startTime = '19:00'; 
         if (generatedScript.length > 0) {
             const lastItem = generatedScript[generatedScript.length - 1];
             startTime = addTime(lastItem.startTime, lastItem.durationMinutes);
@@ -121,7 +110,6 @@ const PracticePlan: React.FC = () => {
 
     const handleRemoveBlock = (id: string) => {
         const updated = generatedScript.filter(i => i.id !== id);
-        // Recalcular horários
         let currentTime = '19:00';
         const recalculated = updated.map(item => {
             const newItem = { ...item, startTime: currentTime };
@@ -131,7 +119,6 @@ const PracticePlan: React.FC = () => {
         setGeneratedScript(recalculated);
     };
 
-    // --- AI WIZARD INTEGRATION ---
     const handleAiGenerateScript = async () => {
         if (!newFocus) {
             toast.warning("Defina um foco principal primeiro (ex: 'Defesa Redzone').");
@@ -142,7 +129,6 @@ const PracticePlan: React.FC = () => {
         
         try {
             const script = await generatePracticeScript(newFocus, newDuration, "High Intensity");
-            
             if (script && script.length > 0) {
                 setGeneratedScript(script);
                 toast.success(`✅ Roteiro gerado com ${script.length} atividades!`);
@@ -185,7 +171,6 @@ const PracticePlan: React.FC = () => {
 
             {isCreating && canEdit && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Column: Config & Manual Builder */}
                     <div className="lg:col-span-2 space-y-6">
                         <Card className="animate-slide-in no-print border border-highlight/20">
                              <form onSubmit={handleCreatePractice} className="space-y-4">
@@ -267,9 +252,7 @@ const PracticePlan: React.FC = () => {
                         </Card>
                     </div>
 
-                    {/* Right Column: Tools */}
                     <div className="lg:col-span-1 space-y-4">
-                        {/* Manual Builder Tools */}
                         <div className="bg-secondary p-4 rounded-xl border border-white/5">
                             <h4 className="font-bold text-white mb-4 flex items-center gap-2">
                                 <PenIcon className="w-4 h-4 text-blue-400" /> Construtor Rápido
@@ -291,7 +274,6 @@ const PracticePlan: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* AI Generator */}
                         <div className="bg-gradient-to-br from-purple-900/30 to-secondary p-4 rounded-xl border border-purple-500/30">
                             <h4 className="font-bold text-white mb-2 flex items-center gap-2">
                                 <SparklesIcon className="w-4 h-4 text-purple-400" /> IA Assistant
@@ -370,7 +352,6 @@ const PracticePlan: React.FC = () => {
                 </div>
             </div>
             
-            {/* TIMER OVERLAY */}
             {isTimerFullScreen && (
                 <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center animate-fade-in">
                     <button onClick={() => setIsTimerFullScreen(false)} className="absolute top-6 right-6 text-white/50 hover:text-white">Fechar</button>
