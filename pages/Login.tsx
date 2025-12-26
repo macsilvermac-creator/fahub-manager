@@ -21,7 +21,7 @@ const Login: React.FC = () => {
             color: "text-red-500",
             options: [
                 { role: 'MASTER', label: 'Admin Master', icon: ShieldCheckIcon },
-                { role: 'PRESIDENT', label: 'Presidência', icon: TrophyIcon },
+                { role: 'PRESIDENT', label: 'Presidente', icon: TrophyIcon },
                 { role: 'FINANCIAL_DIRECTOR', label: 'Dir. Financeiro', icon: FinanceIcon },
                 { role: 'COMMERCIAL_DIRECTOR', label: 'Dir. Comercial', icon: BriefcaseIcon },
                 { role: 'MARKETING_DIRECTOR', label: 'Dir. Marketing', icon: MegaphoneIcon }
@@ -57,7 +57,8 @@ const Login: React.FC = () => {
             cpf: '000.000.000-00',
             status: 'APPROVED' as const,
             avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`,
-            program: program
+            program: program,
+            isProfileComplete: true
         };
         localStorage.setItem('gridiron_current_user', JSON.stringify(mockUser));
         navigate('/dashboard');
@@ -66,6 +67,7 @@ const Login: React.FC = () => {
 
     return (
         <div className="h-screen w-screen flex flex-col md:flex-row overflow-hidden bg-[#0B1120]">
+            {/* Branding Panel */}
             <div className={`relative w-full ${step === 'SELECTOR' ? 'md:w-1/4' : 'md:w-1/2'} flex flex-col items-center justify-center p-12 transition-all duration-700 bg-black/40`}>
                 <div className={`w-24 h-24 rounded-3xl flex items-center justify-center shadow-glow transform -rotate-6 mb-6 ${program === 'FLAG' ? 'bg-yellow-600' : 'bg-highlight'}`}>
                     <span className="text-white font-black text-4xl italic">FH</span>
@@ -78,11 +80,13 @@ const Login: React.FC = () => {
                 </div>
             </div>
 
+            {/* Interaction Panel */}
             <div className={`w-full ${step === 'SELECTOR' ? 'md:w-3/4' : 'md:w-1/2'} flex items-center justify-center p-6 transition-all duration-700`}>
                 {step === 'LOGIN' && (
                     <div className="w-full max-w-sm glass-panel p-8 rounded-[2.5rem] animate-fade-in text-center">
-                        <h2 className="text-xl font-bold text-white mb-6 italic">Acesso Restrito</h2>
-                        <button onClick={() => setStep('SELECTOR')} className="w-full bg-highlight text-white font-black py-4 rounded-2xl uppercase text-xs shadow-glow">Entrar na Matriz</button>
+                        <h2 className="text-xl font-bold text-white mb-6 italic tracking-tight">Portal de Gestão Esportiva</h2>
+                        <p className="text-text-secondary text-sm mb-8">Bem-vindo à nova era do Futebol Americano no Brasil.</p>
+                        <button onClick={() => setStep('SELECTOR')} className="w-full bg-highlight text-white font-black py-4 rounded-2xl uppercase text-xs shadow-glow transform active:scale-95 transition-all">Entrar no Ecossistema</button>
                     </div>
                 )}
 
@@ -90,7 +94,7 @@ const Login: React.FC = () => {
                     <div className="w-full h-full max-h-[85vh] glass-panel p-10 rounded-[3.5rem] animate-slide-in overflow-hidden flex flex-col">
                         <div className="mb-8 shrink-0">
                             <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Matriz de Identidades</h2>
-                            <p className="text-text-secondary text-[10px] font-bold uppercase tracking-widest mt-1">Selecione o perfil para análise</p>
+                            <p className="text-text-secondary text-[10px] font-bold uppercase tracking-widest mt-1">Simule o workflow de cada cargo</p>
                         </div>
                         
                         <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 space-y-10">

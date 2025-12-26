@@ -71,8 +71,8 @@ export const securityService = {
       'HEAD_COACH': 'Head Coach',
       'OFFENSIVE_COORD': 'Coord. Ofensivo',
       'DEFENSIVE_COORD': 'Coord. Defensivo',
-      'PLAYER': 'Atleta Profissional',
-      'MEDICAL_STAFF': 'Dpto. Médico'
+      'PLAYER': 'Atleta Ativo',
+      'MEDICAL_STAFF': 'Saúde & Performance'
     };
     return labels[role] || role.replace('_', ' ');
   }

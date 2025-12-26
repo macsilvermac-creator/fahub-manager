@@ -65,27 +65,35 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
 
           <SectionLabel label="Unidade de Campo" permissions={['COACH_CONSOLE', 'FIELD_OPS', 'SPORTS_MGMT']} />
           <MenuItem to="/roster" icon={UsersIcon} label="ELENCO & ROSTER" permission="SPORTS_MGMT" />
-          <MenuItem to="/tactical-lab" icon={BrainIcon} label="TACTICAL LAB" permission="COACH_CONSOLE" />
+          <MenuItem to="/tactical-lab" icon={BrainIcon} label="CIATORS (TACTICS)" permission="COACH_CONSOLE" />
           <MenuItem to="/training-day" icon={WhistleIcon} label="TREINOS & SCRIPTS" permission="COACH_CONSOLE" />
           <MenuItem to="/sideline" icon={TargetIcon} label="SIDELINE HUB" permission="FIELD_OPS" />
 
-          <SectionLabel label="Diretoria" permissions={['FINANCIAL_CONTROL', 'COMMERCIAL_CRM', 'MARKETING_CENTER']} />
+          <SectionLabel label="Gestão Executiva" permissions={['FINANCIAL_CONTROL', 'COMMERCIAL_CRM', 'MARKETING_CENTER']} />
           <MenuItem to="/finance" icon={FinanceIcon} label="FINANCEIRO" permission="FINANCIAL_CONTROL" />
-          <MenuItem to="/commercial" icon={BriefcaseIcon} label="COMERCIAL / CRM" permission="COMMERCIAL_CRM" />
+          <MenuItem to="/commercial" icon={BriefcaseIcon} label="COMERCIAL & CRM" permission="COMMERCIAL_CRM" />
           <MenuItem to="/marketing" icon={MegaphoneIcon} label="MARKETING & MÍDIA" permission="MARKETING_CENTER" />
 
           <SectionLabel label="Apoio e Performance" permissions={['HEALTH_LAB', 'LOGISTICS_TRIP']} />
           <MenuItem to="/performance" icon={HeartPulseIcon} label="PERFORMANCE LAB" permission="HEALTH_LAB" />
-          <MenuItem to="/logistics" icon={BusIcon} label="LOGÍSTICA & TRIP" permission="LOGISTICS_TRIP" />
+          <MenuItem to="/logistics" icon={BusIcon} label="LOGÍSTICA & VIAGEM" permission="LOGISTICS_TRIP" />
 
           <SectionLabel label="Governança" permissions={['GOVERNANCE_VIEW']} />
           <MenuItem to="/admin" icon={ShieldCheckIcon} label="WAR ROOM (ADMIN)" permission="GOVERNANCE_VIEW" />
-          <MenuItem to="/roadmap" icon={MapIcon} label="ROADMAP" permission="GOVERNANCE_VIEW" />
+          <MenuItem to="/roadmap" icon={MapIcon} label="ESTRATÉGIA (ROADMAP)" permission="GOVERNANCE_VIEW" />
+          
+          <NavLink to="/marketplace" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''} mt-4`}>
+            <TrophyIcon className="w-4 h-4 mr-3 text-yellow-500" />
+            <span>LOJA DO TIME</span>
+          </NavLink>
         </nav>
       </div>
 
       <div className="p-4 border-t border-white/5 bg-[#0B1120]">
-           <button onClick={() => authService.logout()} className="w-full py-2.5 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2">
+           <button 
+                onClick={() => authService.logout()} 
+                className="w-full py-2.5 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2"
+           >
                 Sair do Sistema
            </button>
       </div>
