@@ -2,11 +2,13 @@
   --team-primary: #059669;
   --highlight: #059669;
   --highlight-hover: #047857;
+  --bg-dark: #0B1120;
+  --text-main: #f1f5f9;
 }
 
 body {
-  background-color: #0B1120;
-  color: #f1f5f9;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
   font-family: 'Inter', sans-serif;
   margin: 0;
   padding: 0;
@@ -45,13 +47,4 @@ body {
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
-}
-
-/* Utilitários de Performance */
-.lazy-load-placeholder {
-  filter: blur(10px);
-  transition: filter 0.3s ease-out;
-}
-.lazy-load-placeholder.loaded {
-  filter: blur(0);
 }
