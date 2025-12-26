@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import PageHeader from '@/components/PageHeader';
 import Card from '@/components/Card';
-import { BookIcon, SparklesIcon, PlayCircleIcon, SearchIcon, ActivityIcon, UsersIcon } from '@/components/icons/UiIcons';
+// Fix: Added ChevronRightIcon to the imported icons from UiIcons
+import { BookIcon, SparklesIcon, PlayCircleIcon, SearchIcon, ActivityIcon, UsersIcon, ChevronRightIcon } from '@/components/icons/UiIcons';
 
 const PlaybookLab: React.FC = () => {
     const [showAiMentor, setShowAiMentor] = useState(false);

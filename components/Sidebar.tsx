@@ -2,7 +2,8 @@ import * as React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   CalendarIcon, BrainIcon, WhistleIcon, BookIcon,
-  DashboardIcon, FinanceIcon, UsersIcon, ShieldCheckIcon
+  DashboardIcon, FinanceIcon, UsersIcon, ShieldCheckIcon,
+  LockIcon, TargetIcon
 } from './icons/UiIcons';
 import { UserRole } from '../types';
 import { securityService } from '../services/securityService';
@@ -43,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
             <span>Base</span>
           </NavLink>
 
-          <p className="px-4 text-[9px] font-black text-text-secondary/20 uppercase tracking-[0.3em] mt-8 mb-4">Elite Hubs</p>
+          <p className="px-4 text-[9px] font-black text-text-secondary/20 uppercase tracking-[0.3em] mt-8 mb-4">Tactical Hubs</p>
           
           <NavLink to="/agenda" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
             <CalendarIcon className="w-4 h-4 mr-3" />
@@ -65,23 +66,23 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
             <span>Playbook Lab</span>
           </NavLink>
 
-          <p className="px-4 text-[9px] font-black text-text-secondary/20 uppercase tracking-[0.3em] mt-8 mb-4">Gestão</p>
+          <p className="px-4 text-[9px] font-black text-text-secondary/20 uppercase tracking-[0.3em] mt-8 mb-4">Associação</p>
           
-          <NavLink to="/finance" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <FinanceIcon className="w-4 h-4 mr-3" />
-            <span>Finanças</span>
+          <NavLink to="/vault-hub" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <LockIcon className="w-4 h-4 mr-3 text-yellow-500" />
+            <span>Vault Hub</span>
           </NavLink>
           
-          <NavLink to="/profile" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <UsersIcon className="w-4 h-4 mr-3" />
-            <span>Meu Perfil</span>
+          <NavLink to="/register-lab" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            <TargetIcon className="w-4 h-4 mr-3 text-green-400" />
+            <span>Register Lab</span>
           </NavLink>
         </nav>
       </div>
 
       <div className="p-4 border-t border-white/5">
            <button onClick={() => authService.logout()} className="w-full py-3 bg-red-600/5 hover:bg-red-600 text-red-500 hover:text-white rounded-2xl text-[10px] font-black uppercase transition-all tracking-[0.2em]">
-                Logout
+                Sair do Sistema
            </button>
       </div>
     </aside>

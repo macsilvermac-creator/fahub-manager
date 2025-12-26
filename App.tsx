@@ -12,7 +12,8 @@ const Agenda = lazy(() => import('@/pages/Agenda'));
 const BrainLab = lazy(() => import('@/pages/BrainLab'));
 const IronLab = lazy(() => import('@/pages/IronLab'));
 const PlaybookLab = lazy(() => import('@/pages/PlaybookLab'));
-const Finance = lazy(() => import('@/pages/Finance'));
+const VaultHub = lazy(() => import('@/pages/VaultHub'));
+const RegisterLab = lazy(() => import('@/pages/RegisterLab'));
 const MyProfile = lazy(() => import('@/pages/MyProfile'));
 const Roster = lazy(() => import('@/pages/Roster'));
 const SidelineHub = lazy(() => import('@/pages/SidelineHub'));
@@ -36,7 +37,8 @@ const App: React.FC = () => {
                       <Route path="/brain-lab" element={<BrainLab />} />
                       <Route path="/iron-lab" element={<IronLab />} />
                       <Route path="/playbook-lab" element={<PlaybookLab />} />
-                      <Route path="/finance" element={<Finance />} />
+                      <Route path="/vault-hub" element={<VaultHub />} />
+                      <Route path="/register-lab" element={<RegisterLab />} />
                       <Route path="/profile" element={<MyProfile />} />
                       <Route path="/roster" element={<Roster />} />
                       <Route path="/sideline" element={<SidelineHub />} />
