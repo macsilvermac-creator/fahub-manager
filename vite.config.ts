@@ -9,7 +9,6 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // Alias '@' apontando para a raiz atual para evitar erros de '../'
       '@': path.resolve(__dirname, './'),
     },
   },
@@ -19,15 +18,16 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    sourcemap: false, // Desativado para build mais rápido e menor consumo de memória
+    sourcemap: false, // Evita crash de memória no esbuild
+    minify: 'esbuild',
     rollupOptions: {
-      input: {
-        main: './index.html',
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          charts: ['recharts'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+        },
       },
     },
   },
-  server: {
-    port: 3000,
-    host: true
-  }
 });

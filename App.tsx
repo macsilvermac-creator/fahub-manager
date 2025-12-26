@@ -5,7 +5,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ToastProvider } from '@/contexts/ToastContext';
 
-// --- MODO LAZY ATIVADO ---
+// Importações com Alias Absoluto
 const Login = lazy(() => import('@/pages/Login'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const MyProfile = lazy(() => import('@/pages/MyProfile'));

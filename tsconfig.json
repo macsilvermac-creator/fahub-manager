@@ -16,19 +16,9 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "*": ["*", "node_modules/*"]
+      "@/*": ["./*"]
     }
   },
-  "include": [
-    "./**/*.ts", 
-    "./**/*.tsx",
-    "components",
-    "contexts",
-    "features",
-    "hooks",
-    "pages",
-    "services",
-    "utils"
-  ],
+  "include": ["./**/*.ts", "./**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }
