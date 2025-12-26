@@ -2,8 +2,6 @@
 :root {
   --team-primary: #059669;
   --highlight: #059669;
-  --neon-cyan: #06b6d4;
-  --neon-purple: #a855f7;
 }
 
 body {
@@ -11,48 +9,16 @@ body {
   color: #f1f5f9;
   font-family: 'Inter', sans-serif;
   overscroll-behavior: none;
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-.shadow-glow {
-  box-shadow: 0 0 25px rgba(5, 150, 105, 0.3);
-}
-
-.shadow-glow-blue {
-  box-shadow: 0 0 25px rgba(59, 130, 246, 0.3);
-}
-
-.glass-panel {
-  background: rgba(30, 41, 59, 0.4);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-shimmer {
-  animation: shimmer 2.5s infinite;
-}
-
-.perspective-1000 {
-  perspective: 1000px;
-}
-
-.card-holographic {
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.1) 100%);
+/* Efeito Holográfico */
+.holographic-glow {
   position: relative;
   overflow: hidden;
 }
 
-.card-holographic::after {
-  content: '';
+.holographic-glow::after {
+  content: "";
   position: absolute;
   top: -150%;
   left: -150%;
@@ -61,41 +27,53 @@ body {
   background: linear-gradient(
     45deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.05) 45%,
-    rgba(255, 255, 255, 0.2) 50%,
-    rgba(255, 255, 255, 0.05) 55%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.03) 55%,
     transparent 100%
   );
   transform: rotate(-45deg);
-  transition: all 0.6s;
+  transition: all 0.8s;
   pointer-events: none;
 }
 
-.group:hover .card-holographic::after {
+.holographic-glow:hover::after {
   top: -50%;
   left: -50%;
 }
 
+/* Animação de Shimmer */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s infinite linear;
+}
+
+/* Pulse Neon */
 @keyframes neon-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%, 100% { box-shadow: 0 0 15px rgba(5, 150, 105, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(5, 150, 105, 0.5); }
 }
 
-.animate-neon {
-  animation: neon-pulse 2s ease-in-out infinite;
+.shadow-neon {
+  animation: neon-pulse 3s infinite ease-in-out;
 }
 
-/* Custom Scrollbar Elite */
+/* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--highlight);
+
+.glass-panel {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
