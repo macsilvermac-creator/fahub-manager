@@ -8,7 +8,7 @@ export type FeaturePermission =
   | 'COMMERCIAL_CRM'     // Patrocínios, CRM, Vendas
   | 'MARKETING_CENTER'   // Social AI, Fan Portal, Academy
   | 'SPORTS_MGMT'        // GM, Roster Geral, Contratos
-  | 'COACH_CONSOLE'      // Practice Plan, Tactical Lab (Ciators), Drills
+  | 'COACH_CONSOLE'      // Practice Plan, Tactical Lab, Drills
   | 'FIELD_OPS'          // Sideline Hub, Rotação, Súmula
   | 'HEALTH_LAB'         // Medical Records, Wellness Staff view
   | 'ATHLETE_PORTAL'     // Minha Carreira, Invoices, Playbook study
@@ -16,6 +16,8 @@ export type FeaturePermission =
 
 const ROLE_PERMISSIONS: Record<UserRole, FeaturePermission[]> = {
   'MASTER': ['GOVERNANCE_VIEW', 'STRATEGIC_KPI', 'FINANCIAL_CONTROL', 'COMMERCIAL_CRM', 'MARKETING_CENTER', 'SPORTS_MGMT', 'COACH_CONSOLE', 'FIELD_OPS', 'HEALTH_LAB', 'ATHLETE_PORTAL', 'LOGISTICS_TRIP'],
+  'PLATFORM_OWNER': ['GOVERNANCE_VIEW', 'STRATEGIC_KPI', 'FINANCIAL_CONTROL', 'COMMERCIAL_CRM', 'MARKETING_CENTER', 'SPORTS_MGMT', 'COACH_CONSOLE', 'FIELD_OPS', 'HEALTH_LAB', 'ATHLETE_PORTAL', 'LOGISTICS_TRIP'],
+  
   'PRESIDENT': ['GOVERNANCE_VIEW', 'STRATEGIC_KPI', 'SPORTS_MGMT', 'LOGISTICS_TRIP'],
   'VICE_PRESIDENT': ['GOVERNANCE_VIEW', 'STRATEGIC_KPI', 'SPORTS_MGMT'],
   
@@ -44,11 +46,10 @@ const ROLE_PERMISSIONS: Record<UserRole, FeaturePermission[]> = {
   'REFEREE': ['FIELD_OPS'],
   'EQUIPMENT_MANAGER': ['FIELD_OPS', 'LOGISTICS_TRIP'],
   
-  'PLATFORM_OWNER': ['GOVERNANCE_VIEW', 'STRATEGIC_KPI', 'FINANCIAL_CONTROL', 'ADMIN_SYSTEM' as any],
-  'CANDIDATE': [],
   'STAFF': ['LOGISTICS_TRIP'],
   'BROADCASTER': ['MARKETING_CENTER'],
   'FAN': ['ATHLETE_PORTAL'],
+  'CANDIDATE': [],
   'SYSTEM': ['GOVERNANCE_VIEW'],
   'ADMIN': ['GOVERNANCE_VIEW']
 };
@@ -61,7 +62,8 @@ export const securityService = {
   getRoleLabel: (role: UserRole): string => {
     const labels: Partial<Record<UserRole, string>> = {
       'MASTER': 'Platform Master',
-      'PRESIDENT': 'Presidência',
+      'PLATFORM_OWNER': 'Proprietário',
+      'PRESIDENT': 'Presidente',
       'FINANCIAL_DIRECTOR': 'Dir. Financeiro',
       'COMMERCIAL_DIRECTOR': 'Dir. Comercial',
       'MARKETING_DIRECTOR': 'Dir. Marketing',
@@ -69,7 +71,7 @@ export const securityService = {
       'HEAD_COACH': 'Head Coach',
       'OFFENSIVE_COORD': 'Coord. Ofensivo',
       'DEFENSIVE_COORD': 'Coord. Defensivo',
-      'PLAYER': 'Atleta Ativo',
+      'PLAYER': 'Atleta Profissional',
       'MEDICAL_STAFF': 'Dpto. Médico'
     };
     return labels[role] || role.replace('_', ' ');
