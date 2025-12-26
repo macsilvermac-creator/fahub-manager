@@ -12,6 +12,8 @@ import { ToastProvider } from './contexts/ToastContext';
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Roster = lazy(() => import('./pages/Roster'));
 const TacticalLab = lazy(() => import('./pages/TacticalLab'));
+const CiatorsHub = lazy(() => import('./pages/CiatorsHub'));
+const CiatorsPresentation = lazy(() => import('./pages/CiatorsPresentation'));
 const TrainingHub = lazy(() => import('./pages/TrainingHub'));
 const Finance = lazy(() => import('./pages/Finance'));
 const Commercial = lazy(() => import('./pages/Commercial'));
@@ -22,6 +24,7 @@ const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const Roadmap = lazy(() => import('./pages/Roadmap'));
 const SidelineHub = lazy(() => import('./pages/SidelineHub'));
 const Login = lazy(() => import('./pages/Login'));
+const Recruitment = lazy(() => import('./pages/Recruitment'));
 
 const App: React.FC = () => {
   return (
@@ -42,8 +45,11 @@ const App: React.FC = () => {
                       {/* Eixo Técnico */}
                       <Route path="/roster" element={<Roster />} />
                       <Route path="/tactical-lab" element={<TacticalLab />} />
+                      <Route path="/ciators" element={<CiatorsHub />} />
+                      <Route path="/ciators/presentation/:id" element={<CiatorsPresentation />} />
                       <Route path="/training-day" element={<TrainingHub />} />
                       <Route path="/sideline" element={<SidelineHub />} />
+                      <Route path="/recruitment" element={<Recruitment />} />
                       
                       {/* Eixo Executivo */}
                       <Route path="/finance" element={<Finance />} />
