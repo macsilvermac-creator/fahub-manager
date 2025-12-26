@@ -1,20 +1,21 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
-import { Player, RosterCategory, ProgramType } from '../types';
-import AthleteCard from '../components/AthleteCard';
-import AddPlayerModal from '../components/AddPlayerModal';
-import PlayerDetailsModal from '../components/PlayerDetailsModal';
-import ConfirmationModal from '../components/ConfirmationModal';
-import { storageService } from '../services/storageService';
-import { UserContext } from '../components/Layout';
-import { useToast } from '../contexts/ToastContext'; 
-import { useAppStore } from '../utils/storeHooks';
-import PageHeader from '../components/PageHeader';
-import { FilterIcon, UsersIcon } from '../components/icons/UiIcons';
+import React, { useState, useContext, useMemo } from 'react';
+import { Player, RosterCategory } from '@/types';
+import AthleteCard from '@/components/AthleteCard';
+import AddPlayerModal from '@/components/AddPlayerModal';
+import PlayerDetailsModal from '@/components/PlayerDetailsModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import { storageService } from '@/services/storageService';
+import { UserContext } from '@/components/Layout';
+import { useToast } from '@/contexts/ToastContext'; 
+import { useAppStore } from '@/utils/storeHooks';
+import PageHeader from '@/components/PageHeader';
+import { UsersIcon } from '@/components/icons/UiIcons';
 
 const Roster: React.FC = () => {
     const { currentRole } = useContext(UserContext) as any;
     const toast = useToast();
     
+    // Usando o hook reativo para evitar loops de render
     const players = useAppStore('players', storageService.getPlayers);
     const activeProgram = useAppStore('activeProgram', storageService.getActiveProgram);
 
@@ -59,16 +60,11 @@ const Roster: React.FC = () => {
 
     const filteredPlayers = useMemo(() => {
         return players.filter(p => {
-            // Filtro por Modalidade (PWA Context)
             if (p.program && p.program !== activeProgram && p.program !== 'BOTH') return false;
-
-            // Filtro por Categoria de Roster
             if ((p.rosterCategory || 'ACTIVE') !== activeCategory) return false;
-            
-            // Filtro por Unidade Tática
             if (unitFilter === 'ALL') return true;
-            const pos = p.position;
             
+            const pos = p.position;
             if (unitFilter === 'OFFENSE') {
                 return activeProgram === 'FLAG' 
                     ? ['QB','WR','C','RUSHER','ATH'].includes(pos)
@@ -91,7 +87,7 @@ const Roster: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
                 <PageHeader 
                     title={`Elenco ${activeProgram}`} 
-                    subtitle={`Gerenciamento de Atletas para a temporada 2025.`} 
+                    subtitle="Gerenciamento de Atletas e Depth Chart." 
                 />
                 <div className="flex gap-2">
                     {canManageRoster && (
@@ -102,7 +98,6 @@ const Roster: React.FC = () => {
                 </div>
             </div>
 
-            {/* BARRA DE CATEGORIAS */}
             <div className="flex flex-col md:flex-row md:items-center gap-4 border-b border-white/5 pb-1">
                 <div className="flex overflow-x-auto no-scrollbar shrink-0">
                     <button onClick={() => setActiveCategory('ACTIVE')} className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${activeCategory === 'ACTIVE' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary hover:text-white'}`}>Ativos</button>
@@ -125,7 +120,6 @@ const Roster: React.FC = () => {
                 </div>
             </div>
 
-            {/* GRID DE ATLETAS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredPlayers.map(player => (
                     <AthleteCard 
@@ -145,7 +139,7 @@ const Roster: React.FC = () => {
             
             <AddPlayerModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAdd={handleAddPlayer} />
             <PlayerDetailsModal isOpen={!!selectedPlayer} onClose={() => setSelectedPlayer(null)} player={selectedPlayer} />
-            <ConfirmationModal isOpen={!!playerToDelete} onClose={() => setPlayerToDelete(null)} onConfirm={confirmDeletePlayer} title="Confirmar Remoção" message={`Tem certeza que deseja remover ${playerToDelete?.name} do elenco? Esta ação é irreversível.`} confirmLabel="Excluir Definitivamente" />
+            <ConfirmationModal isOpen={!!playerToDelete} onClose={() => setPlayerToDelete(null)} onConfirm={confirmDeletePlayer} title="Confirmar Remoção" message={`Deseja remover ${playerToDelete?.name} do elenco?`} confirmLabel="Excluir Definitivamente" />
         </div>
     );
 };

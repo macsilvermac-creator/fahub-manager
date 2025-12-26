@@ -1,17 +1,15 @@
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Fix: Define __dirname for ESM environments where it is not available globally
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // Fix: Used the manually defined __dirname
+      // Alias '@' apontando para a raiz atual para evitar erros de '../'
       '@': path.resolve(__dirname, './'),
     },
   },
@@ -21,6 +19,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    sourcemap: false, // Desativado para build mais rápido e menor consumo de memória
     rollupOptions: {
       input: {
         main: './index.html',
