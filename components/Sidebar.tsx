@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
@@ -21,7 +20,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
   const user = authService.getCurrentUser();
   const program = user?.program || 'TACKLE';
   
-  const navLinkClasses = "flex items-center px-4 py-2.5 text-text-secondary rounded-xl hover:bg-white/5 hover:text-white transition-all text-xs font-bold mb-1 group";
+  const navLinkClasses = "flex items-center px-4 py-3 text-text-secondary rounded-xl hover:bg-white/5 hover:text-white transition-all text-xs font-bold mb-1 group";
   const activeNavLinkClasses = "bg-highlight/10 text-highlight border-l-4 border-highlight font-black";
 
   const MenuItem = ({ to, icon: Icon, label, permission }: { to: string, icon: any, label: string, permission: FeaturePermission }) => {
@@ -34,15 +33,12 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
     );
   };
 
-  const SectionLabel = ({ label, permissions }: { label: string, permissions: FeaturePermission[] }) => {
-    const hasAny = permissions.some(p => securityService.hasAccess(currentRole, p));
-    if (!hasAny) return null;
-    return <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mt-6 mb-2 border-b border-white/5 pb-1">{label}</p>;
-  };
+  const SectionLabel = ({ label }: { label: string }) => (
+    <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mt-6 mb-2 border-b border-white/5 pb-1">{label}</p>
+  );
 
   return (
     <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0F172A] transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-200 lg:relative lg:translate-x-0 flex flex-col h-full border-r border-white/5 shadow-2xl`}>
-      {/* Brand Header */}
       <div className="h-20 flex items-center px-6 border-b border-white/5 bg-[#0B1120] shrink-0">
             <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transform -rotate-6 ${program === 'FLAG' ? 'bg-yellow-600' : 'bg-highlight'}`}>
@@ -57,52 +53,34 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
             </div>
       </div>
       
-      {/* Scrollable Menu */}
       <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar py-4 px-3">
         <nav className="flex-1">
           <NavLink to="/dashboard" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
             <DashboardIcon className="w-4 h-4 mr-3" />
-            <span>PAINEL PRINCIPAL</span>
+            <span>SALA DE CARREIRA</span>
           </NavLink>
 
-          {/* UNIDADE DE CAMPO / TÉCNICA */}
-          <SectionLabel label="Operação de Campo" permissions={['COACH_CONSOLE', 'FIELD_OPS', 'SPORTS_MGMT']} />
-          <MenuItem to="/roster" icon={UsersIcon} label="ELENCO & ROSTER" permission="SPORTS_MGMT" />
-          <MenuItem to="/tactical-lab" icon={BrainIcon} label="CIATORS (TACTICS)" permission="COACH_CONSOLE" />
-          <MenuItem to="/training-day" icon={WhistleIcon} label="TREINOS & SCRIPTS" permission="COACH_CONSOLE" />
+          <SectionLabel label="Performance & Estudo" />
+          <MenuItem to="/gemini-playbook" icon={BookIcon} label="IA PLAYBOOK" permission="ATHLETE_PORTAL" />
+          <MenuItem to="/vision-lab" icon={BrainIcon} label="VISION LAB (VÍDEOS)" permission="ATHLETE_PORTAL" />
+          <MenuItem to="/training-day" icon={WhistleIcon} label="MEUS TREINOS" permission="COACH_CONSOLE" />
+          <MenuItem to="/locker-room" icon={UsersIcon} label="VESTIÁRIO (MURAL)" permission="ATHLETE_PORTAL" />
+
+          <SectionLabel label="Administrativo" />
+          <MenuItem to="/finance" icon={FinanceIcon} label="FINANCEIRO / MENSALIDADE" permission="ATHLETE_PORTAL" />
+          <MenuItem to="/marketplace" icon={TrophyIcon} label="LOJA & ITENS" permission="ATHLETE_PORTAL" />
+          <MenuItem to="/profile" icon={UsersIcon} label="MEU BID / PERFIL" permission="ATHLETE_PORTAL" />
+
+          <SectionLabel label="Gestão (Staff)" />
+          <MenuItem to="/roster" icon={UsersIcon} label="ROSTER GERAL" permission="SPORTS_MGMT" />
           <MenuItem to="/sideline" icon={TargetIcon} label="SIDELINE HUB" permission="FIELD_OPS" />
-
-          {/* GESTÃO ADMINISTRATIVA */}
-          <SectionLabel label="Gestão Executiva" permissions={['FINANCIAL_CONTROL', 'COMMERCIAL_CRM', 'MARKETING_CENTER']} />
-          <MenuItem to="/finance" icon={FinanceIcon} label="FINANCEIRO" permission="FINANCIAL_CONTROL" />
-          <MenuItem to="/commercial" icon={BriefcaseIcon} label="COMERCIAL & CRM" permission="COMMERCIAL_CRM" />
-          <MenuItem to="/marketing" icon={MegaphoneIcon} label="MARKETING & MÍDIA" permission="MARKETING_CENTER" />
-
-          {/* APOIO E LOGÍSTICA */}
-          <SectionLabel label="Apoio e Performance" permissions={['HEALTH_LAB', 'LOGISTICS_TRIP']} />
-          <MenuItem to="/performance" icon={HeartPulseIcon} label="PERFORMANCE LAB" permission="HEALTH_LAB" />
-          <MenuItem to="/logistics" icon={BusIcon} label="LOGÍSTICA & VIAGEM" permission="LOGISTICS_TRIP" />
-
-          {/* GOVERNANÇA MASTER */}
-          <SectionLabel label="Governança" permissions={['GOVERNANCE_VIEW']} />
-          <MenuItem to="/admin" icon={ShieldCheckIcon} label="WAR ROOM (ADMIN)" permission="GOVERNANCE_VIEW" />
-          <MenuItem to="/roadmap" icon={MapIcon} label="ESTRATÉGIA (ROADMAP)" permission="GOVERNANCE_VIEW" />
-          
-          {/* LOJA: Público */}
-          <NavLink to="/marketplace" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''} mt-4`}>
-            <TrophyIcon className="w-4 h-4 mr-3 text-yellow-500" />
-            <span>LOJA DO TIME</span>
-          </NavLink>
+          <MenuItem to="/admin" icon={ShieldCheckIcon} label="ADMIN PANEL" permission="GOVERNANCE_VIEW" />
         </nav>
       </div>
 
-      {/* Footer: Logout */}
       <div className="p-4 border-t border-white/5 bg-[#0B1120]">
-           <button 
-                onClick={() => authService.logout()} 
-                className="w-full py-2.5 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2"
-           >
-                Sair do Sistema
+           <button onClick={() => authService.logout()} className="w-full py-2.5 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2">
+                Sair
            </button>
       </div>
     </aside>
