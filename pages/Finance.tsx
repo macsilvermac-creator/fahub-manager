@@ -1,181 +1,222 @@
 
-import React, { useState, useEffect, useContext } from 'react';
-import Card from '@/components/Card';
-import { Transaction, Invoice } from '@/types';
-import { storageService } from '@/services/storageService';
-import { FinanceIcon } from '@/components/icons/NavIcons';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
+import Card from '../components/Card';
+import { Transaction, Invoice, TransactionCategory, Player } from '../types';
+import { storageService } from '../services/storageService';
+import { scanFinancialDocument } from '../services/geminiService';
 import { 
-    WalletIcon, CheckCircleIcon, QrcodeIcon, 
-    TrophyIcon, BookIcon, ShoppingBagIcon 
-} from '@/components/icons/UiIcons';
-import { UserContext, UserContextType } from '@/components/Layout';
-import Modal from '@/components/Modal';
+    WalletIcon, SparklesIcon, ScanIcon, 
+    RefreshIcon, BankIcon, AlertTriangleIcon,
+    CheckCircleIcon, QrcodeIcon, TrendingUpIcon
+} from '../components/icons/UiIcons';
+import { UserContext, UserContextType } from '../components/Layout';
+import Modal from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 
 const Finance: React.FC = () => {
     const { currentRole } = useContext(UserContext) as UserContextType;
     const toast = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
+    // Data State
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [invoices, setInvoices] = useState<Invoice[]>([]);
-    const [selectedInvoiceForPix, setSelectedInvoiceForPix] = useState<Invoice | null>(null);
+    const [players, setPlayers] = useState<Player[]>([]);
+    
+    // View States
+    const [viewMode, setViewMode] = useState<'FLOW' | 'INVOICES' | 'RECOVERY'>('FLOW');
+    const [isScanning, setIsScanning] = useState(false);
+    const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
-    const isPlayer = currentRole === 'PLAYER';
+    const isExecutive = ['MASTER', 'FINANCIAL_DIRECTOR', 'FINANCIAL_MANAGER', 'PRESIDENT'].includes(currentRole);
 
     useEffect(() => {
-        const loadData = () => {
-            setInvoices(storageService.getInvoices() || []);
-            if (!isPlayer) {
-                setTransactions(storageService.getTransactions() || []);
-            }
+        const load = () => {
+            setTransactions(storageService.getTransactions());
+            setInvoices(storageService.getInvoices());
+            setPlayers(storageService.getPlayers());
         };
-        loadData();
-        return storageService.subscribe('storage_update', loadData);
-    }, [isPlayer]);
+        load();
+        return storageService.subscribe('storage_update', load);
+    }, []);
 
-    const renderAthleteView = () => {
-        const myInvoices = invoices.filter(inv => inv.playerName.includes("Lucas Thor") || invoices.length < 5);
+    const totals = useMemo(() => {
+        const income = transactions.filter(t => t.type === 'INCOME').reduce((a, b) => a + b.amount, 0);
+        const expense = transactions.filter(t => t.type === 'EXPENSE').reduce((a, b) => a + b.amount, 0);
+        const overdue = invoices.filter(i => i.status === 'OVERDUE').reduce((a, b) => a + b.amount, 0);
+        const pending = invoices.filter(i => i.status === 'PENDING').reduce((a, b) => a + b.amount, 0);
+        return { balance: income - expense, income, expense, overdue, pending };
+    }, [transactions, invoices]);
 
-        const getCategoryIcon = (cat: string) => {
-            switch(cat) {
-                case 'TUITION': return <WalletIcon className="w-10 h-10 text-highlight" />;
-                case 'EQUIPMENT': return <ShoppingBagIcon className="w-10 h-10 text-orange-400" />;
-                case 'EVENT': return <TrophyIcon className="w-10 h-10 text-blue-400" />;
-                case 'STORE': return <BookIcon className="w-10 h-10 text-purple-400" />;
-                default: return <FinanceIcon className="w-10 h-10 text-gray-400" />;
-            }
-        };
-
-        const getStatusStyles = (status: string) => {
-            if (status === 'PAID') return 'bg-green-500/20 text-green-400 border-green-500/30';
-            if (status === 'OVERDUE') return 'bg-red-500/20 text-red-400 border-red-500/30';
-            return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-        };
-
-        return (
-            <div className="space-y-10 animate-fade-in max-w-6xl mx-auto pb-20">
-                <div className="bg-gradient-to-r from-[#1e293b] to-black p-8 rounded-[3rem] border border-white/10 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-10 opacity-5">
-                        <WalletIcon className="w-64 h-64 text-white" />
-                    </div>
-                    <div className="relative z-10">
-                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Season Pass & Elegibilidade</h2>
-                        <p className="text-text-secondary text-sm mt-3 max-w-2xl leading-relaxed font-medium">
-                            Mantenha o seu passe ativo para garantir sua escalação oficial e acesso total aos treinos.
-                        </p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {myInvoices.map((inv) => (
-                        <div 
-                            key={inv.id} 
-                            className="group relative bg-secondary/60 backdrop-blur-md rounded-[2.5rem] border border-white/5 p-8 shadow-xl transition-all duration-500 hover:scale-[1.03] hover:shadow-glow hover:border-highlight/30 flex flex-col h-full"
-                        >
-                            <div className="flex justify-between items-start mb-6">
-                                <div className="p-4 bg-black/40 rounded-3xl border border-white/5 group-hover:border-highlight/40 transition-colors">
-                                    {getCategoryIcon(inv.category || 'OTHER')}
-                                </div>
-                                <span className={`text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border ${getStatusStyles(inv.status)}`}>
-                                    {inv.status === 'PENDING' ? 'Pendente' : inv.status === 'PAID' ? 'Ativo' : 'Atrasado'}
-                                </span>
-                            </div>
-
-                            <div className="mb-8 flex-1">
-                                <h3 className="text-white font-black text-xl uppercase italic leading-tight mb-2 truncate">{inv.title}</h3>
-                                <p className="text-text-secondary text-[10px] uppercase font-bold tracking-widest mb-6">Vencimento: {new Date(inv.dueDate).toLocaleDateString()}</p>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-sm font-bold text-highlight">R$</span>
-                                    <span className="text-4xl font-black text-white italic">{inv.amount.toFixed(2)}</span>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-2 shrink-0">
-                                <button 
-                                    onClick={() => window.open('https://www.asaas.com', '_blank')}
-                                    className="flex-1 bg-highlight hover:bg-highlight-hover text-white font-black py-4 rounded-2xl uppercase text-[10px] shadow-lg transition-all active:scale-95"
-                                >
-                                    Ativar Passe
-                                </button>
-                                <button 
-                                    onClick={() => setSelectedInvoiceForPix(inv)}
-                                    className="p-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl border border-white/10 transition-all active:scale-90"
-                                    title="Pagar via Pix"
-                                >
-                                    <QrcodeIcon className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                    
-                    {myInvoices.length === 0 && (
-                        <div className="col-span-full py-40 text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-secondary/10">
-                            <CheckCircleIcon className="w-20 h-20 text-highlight mx-auto mb-4 opacity-20" />
-                            <p className="text-white font-black uppercase tracking-widest italic opacity-40">Seu Season Pass está em dia.</p>
-                        </div>
-                    )}
-                </div>
-
-                <Modal 
-                    isOpen={!!selectedInvoiceForPix} 
-                    onClose={() => setSelectedInvoiceForPix(null)} 
-                    title="Pagamento Instantâneo Pix"
-                >
-                    <div className="flex flex-col items-center p-4">
-                        <div className="bg-white p-6 rounded-[2rem] mb-6 shadow-2xl border-4 border-highlight/20">
-                             <img 
-                                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=PIX-PAYMENT-${selectedInvoiceForPix?.id}`} 
-                                alt="QR Code Pix"
-                                className="w-48 h-48"
-                             />
-                        </div>
-                        <div className="text-center mb-8">
-                             <p className="text-white font-black text-xl mb-1 uppercase italic">{selectedInvoiceForPix?.title}</p>
-                             <p className="text-highlight font-black text-2xl tracking-tighter">TOTAL: R$ {selectedInvoiceForPix?.amount.toFixed(2)}</p>
-                        </div>
-                        <div className="w-full bg-black/40 p-4 rounded-2xl border border-white/10 mb-6">
-                            <p className="text-[9px] text-text-secondary uppercase font-black tracking-widest mb-3 text-center">Código Pix Copia e Cola</p>
-                            <div className="flex gap-2">
-                                <input 
-                                    readOnly 
-                                    value={`PIX-CODE-${selectedInvoiceForPix?.id}`}
-                                    className="flex-1 bg-transparent text-[10px] text-white/40 border-none outline-none overflow-hidden text-ellipsis font-mono"
-                                />
-                                <button 
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(`PIX-CODE-${selectedInvoiceForPix?.id}`);
-                                        toast.success("Código copiado!");
-                                    }}
-                                    className="text-highlight text-[10px] font-black uppercase whitespace-nowrap bg-highlight/10 px-3 py-1 rounded-lg"
-                                >
-                                    Copiar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </Modal>
-            </div>
-        );
+    const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setIsScanning(true);
+            toast.info("Analisando recibo via Vision AI...");
+            const reader = new FileReader();
+            reader.readAsDataURL(e.target.files[0]);
+            reader.onload = async () => {
+                try {
+                    const data = await scanFinancialDocument(reader.result as string);
+                    const newTx: Transaction = {
+                        id: `tx-${Date.now()}`,
+                        title: data.title || 'Compra Scaneada',
+                        amount: data.amount || 0,
+                        type: 'EXPENSE',
+                        category: (data.category as TransactionCategory) || 'OTHER',
+                        date: new Date(),
+                        status: 'PAID',
+                        aiGenerated: true
+                    };
+                    storageService.saveTransactions([newTx, ...transactions]);
+                    toast.success("Despesa processada e arquivada!");
+                } catch (err) {
+                    toast.error("Erro na leitura da IA. Tente uma foto mais nítida.");
+                } finally {
+                    setIsScanning(false);
+                }
+            };
+        }
     };
 
-    if (isPlayer) return renderAthleteView();
+    if (!isExecutive) {
+        return (
+            <div className="flex flex-col items-center justify-center py-40 opacity-30 italic font-black uppercase text-sm tracking-widest text-center px-10">
+                <BankIcon className="w-16 h-16 mb-4" />
+                Acesso restrito à diretoria financeira e administrativa.
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6 pb-12 animate-fade-in relative">
-             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-3">
-                    <div className="p-3 bg-secondary rounded-xl"><FinanceIcon className="text-highlight w-8 h-8" /></div>
-                    <div>
-                        <h2 className="text-3xl font-bold text-text-primary">Financeiro Master</h2>
-                        <p className="text-text-secondary">Gestão de Receita e Inadimplência.</p>
+        <div className="space-y-8 animate-fade-in pb-20">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div>
+                    <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter">CFO Dashboard</h2>
+                    <p className="text-highlight text-[10px] font-black uppercase tracking-[0.4em] mt-1">Controladoria de Ativos & Receita</p>
+                </div>
+                <div className="flex gap-3">
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleScanReceipt} />
+                    <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="bg-secondary border border-white/10 hover:border-highlight text-white px-6 py-3 rounded-2xl font-black uppercase italic text-xs transition-all flex items-center gap-3 group"
+                    >
+                        {isScanning ? <RefreshIcon className="w-4 h-4 animate-spin" /> : <ScanIcon className="w-4 h-4 group-hover:scale-110 transition-transform" />}
+                        Scan Recibo (IA)
+                    </button>
+                    <button className="bg-highlight hover:bg-highlight-hover text-white px-8 py-3 rounded-2xl font-black uppercase italic text-xs shadow-glow transition-all active:scale-95">
+                        Novo Lançamento
+                    </button>
+                </div>
+            </div>
+
+            {/* Financial KPIs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-secondary/40 backdrop-blur-xl border border-white/5 p-6 rounded-[2.5rem] shadow-xl">
+                    <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Saldo em Caixa</p>
+                    <h3 className="text-3xl font-black text-white italic mt-1">R$ {totals.balance.toLocaleString()}</h3>
+                    <p className="text-[10px] font-bold text-green-400 mt-2 flex items-center gap-1"><TrendingUpIcon className="w-3 h-3"/> +R$ 4.2k vs mês anterior</p>
+                </div>
+                <div className="bg-secondary/40 backdrop-blur-xl border border-white/5 p-6 rounded-[2.5rem] shadow-xl border-l-4 border-l-red-500">
+                    <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Inadimplência Real</p>
+                    <h3 className="text-3xl font-black text-red-500 italic mt-1">R$ {totals.overdue.toLocaleString()}</h3>
+                    <p className="text-[10px] font-bold text-text-secondary mt-2">{invoices.filter(i => i.status === 'OVERDUE').length} faturas em atraso</p>
+                </div>
+                <div className="bg-secondary/40 backdrop-blur-xl border border-white/5 p-6 rounded-[2.5rem] shadow-xl border-l-4 border-l-blue-500">
+                    <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Receita Pendente</p>
+                    <h3 className="text-3xl font-black text-blue-400 italic mt-1">R$ {totals.pending.toLocaleString()}</h3>
+                    <p className="text-[10px] font-bold text-text-secondary mt-2">Mensalidades a vencer</p>
+                </div>
+                <div className="bg-secondary/40 backdrop-blur-xl border border-white/5 p-6 rounded-[2.5rem] shadow-xl">
+                    <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Burn Rate (Mensal)</p>
+                    <h3 className="text-3xl font-black text-white italic mt-1">R$ {totals.expense.toLocaleString()}</h3>
+                    <p className="text-[10px] font-bold text-orange-400 mt-2">Ponto de Equilíbrio: Dia 22</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Ledger Table */}
+                <div className="lg:col-span-8">
+                    <Card title="Livro de Registros (Ledger)" titleClassName="italic font-black uppercase text-sm">
+                        <div className="overflow-x-auto custom-scrollbar">
+                            <table className="w-full text-left">
+                                <thead className="bg-black/20 text-[10px] font-black text-text-secondary uppercase tracking-widest">
+                                    <tr>
+                                        <th className="p-4">Data</th>
+                                        <th className="p-4">Descrição</th>
+                                        <th className="p-4">Categoria</th>
+                                        <th className="p-4 text-right">Valor</th>
+                                        <th className="p-4 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="text-xs font-bold">
+                                    {transactions.slice(0, 10).map(tx => (
+                                        <tr key={tx.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                            <td className="p-4 text-text-secondary font-mono">{new Date(tx.date).toLocaleDateString()}</td>
+                                            <td className="p-4">
+                                                <span className="text-white uppercase">{tx.title}</span>
+                                                {tx.aiGenerated && <SparklesIcon className="w-3 h-3 text-purple-400 inline ml-2" />}
+                                            </td>
+                                            <td className="p-4"><span className="bg-white/5 px-2 py-1 rounded text-[9px] uppercase">{tx.category}</span></td>
+                                            <td className={`p-4 text-right font-black italic ${tx.type === 'INCOME' ? 'text-green-400' : 'text-red-400'}`}>
+                                                {tx.type === 'INCOME' ? '+' : '-'} R$ {tx.amount.toLocaleString()}
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <CheckCircleIcon className="w-4 h-4 text-highlight mx-auto" />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Billing Support Side */}
+                <div className="lg:col-span-4 space-y-6">
+                    <Card title="Quick Recovery" titleClassName="italic font-black uppercase text-sm border-b-0 pb-0">
+                        <p className="text-[10px] text-text-secondary mb-6 px-1">Atletas com maior tempo de inadimplência.</p>
+                        <div className="space-y-3">
+                            {invoices.filter(i => i.status === 'OVERDUE').slice(0, 5).map(inv => (
+                                <div key={inv.id} className="bg-black/40 p-4 rounded-2xl border border-red-500/20 flex justify-between items-center group hover:border-red-500 transition-all">
+                                    <div className="flex-1">
+                                        <h4 className="text-white font-black uppercase text-[10px]">{inv.playerName}</h4>
+                                        <p className="text-[10px] text-red-400 font-black italic">R$ {inv.amount.toLocaleString()}</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setSelectedInvoice(inv)}
+                                        className="bg-white/5 hover:bg-highlight hover:text-white p-2 rounded-lg text-text-secondary transition-all"
+                                    >
+                                        <QrcodeIcon className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+
+                    <div className="bg-highlight/5 p-6 rounded-[2.5rem] border border-highlight/20 text-center shadow-xl">
+                        <BankIcon className="w-10 h-10 text-highlight mx-auto mb-4" />
+                        <h4 className="text-white font-black uppercase italic text-sm">Asaas Sync Ativo</h4>
+                        <p className="text-[10px] text-text-secondary mt-2 leading-relaxed">Mensalidades são geradas automaticamente no dia 05 de cada mês.</p>
                     </div>
                 </div>
             </div>
-            <Card title="Acesso Reservado">
-                <div className="p-10 text-center text-text-secondary opacity-30 italic font-black uppercase">
-                    Funcionalidades Indisponíveis no Modo Simulação
+
+            {/* Modal de Cobrança Rápida (Pix) */}
+            <Modal isOpen={!!selectedInvoice} onClose={() => setSelectedInvoice(null)} title="Cobrança Instantânea">
+                <div className="flex flex-col items-center gap-6 p-4">
+                    <div className="bg-white p-6 rounded-[2rem] shadow-2xl">
+                         <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=PIX-${selectedInvoice?.id}`} alt="QR Code Pix" className="w-48 h-48" />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="text-xl font-black text-white italic uppercase tracking-tight">{selectedInvoice?.playerName}</h3>
+                        <p className="text-2xl font-black text-highlight italic mt-1">R$ {selectedInvoice?.amount.toLocaleString()}</p>
+                        <p className="text-xs text-text-secondary mt-2 font-bold uppercase tracking-widest">Vencimento: {selectedInvoice && new Date(selectedInvoice.dueDate).toLocaleDateString()}</p>
+                    </div>
+                    <button className="w-full bg-highlight hover:bg-highlight-hover text-white font-black py-4 rounded-2xl uppercase italic text-xs shadow-glow transition-all active:scale-95">
+                        Copiar Chave Pix
+                    </button>
                 </div>
-            </Card>
+            </Modal>
         </div>
     );
 };

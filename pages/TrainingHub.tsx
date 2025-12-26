@@ -1,176 +1,72 @@
 
-import React, { useState, useEffect, useContext, useCallback, memo, useMemo } from 'react';
-import PageHeader from '@/components/PageHeader';
-import Card from '@/components/Card';
-import { storageService } from '@/services/storageService';
-import { PracticeSession, PracticeScriptItem, PracticeTarget } from '@/types';
-import { 
-    WhistleIcon, SparklesIcon, ClockIcon, TrashIcon, 
-    PlusIcon, CalendarIcon, CheckCircleIcon, 
-    ChevronRightIcon 
-} from '@/components/icons/UiIcons';
-import { useToast } from '@/contexts/ToastContext';
-import { generatePracticeScript } from '@/services/geminiService';
-import { UserContext, UserContextType } from '@/components/Layout';
+import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const DrillItem = memo(({ item, onRemove, onUpdate }: { 
-    item: PracticeScriptItem, 
-    onRemove: (id: string) => void, 
-    onUpdate: (id: string, field: string, val: any) => void 
-}) => (
-    <div className="bg-black/20 p-3 rounded-xl border border-white/5 flex gap-3 items-center animate-fade-in group hover:border-highlight/30 transition-all">
-        <div className="flex flex-col shrink-0">
-            <input 
-                type="time"
-                className="bg-transparent text-highlight font-mono font-black text-xs outline-none"
-                value={item.startTime}
-                onChange={(e) => onUpdate(item.id, 'startTime', e.target.value)}
-            />
-        </div>
-        <div className="flex-1">
-            <input 
-                className="w-full bg-transparent text-xs text-white outline-none border-b border-transparent focus:border-highlight font-bold" 
-                value={item.activityName} 
-                onChange={(e) => onUpdate(item.id, 'activityName', e.target.value)} 
-                placeholder="Nome do Drill..."
-            />
-        </div>
-        <div className="w-12">
-            <input 
-                type="number"
-                className="w-full bg-transparent text-xs text-white outline-none font-bold text-right" 
-                value={item.durationMinutes} 
-                onChange={(e) => onUpdate(item.id, 'durationMinutes', Number(e.target.value))} 
-            />
-        </div>
-        <button onClick={() => onRemove(item.id)} className="text-red-500/30 hover:text-red-500 transition-colors">
-            <TrashIcon className="w-4 h-4"/>
-        </button>
-    </div>
-));
-
-const SessionCard = ({ session, onClick }: { session: PracticeSession, onClick: () => void }) => {
-    const isIA = session.source === 'AI';
-    return (
-        <div 
-            onClick={onClick}
-            className="bg-black/40 p-5 rounded-[2rem] border border-white/5 group hover:border-highlight transition-all relative overflow-hidden cursor-pointer"
-        >
-            {isIA && <div className="absolute top-0 right-0 p-4 opacity-10"><SparklesIcon className="w-10 h-10 text-purple-400"/></div>}
-            <div className="flex justify-between items-start mb-3">
-                <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${isIA ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-highlight/20 text-highlight border border-highlight/30'}`}>
-                    {session.target || 'GERAL'}
-                </span>
-                <span className="text-[10px] font-mono text-text-secondary font-bold">
-                    {new Date(session.date).toLocaleDateString('pt-BR')}
-                </span>
-            </div>
-            <h4 className="text-sm font-black text-white uppercase italic truncate mb-4">{session.title}</h4>
-            <div className="flex justify-between items-center border-t border-white/5 pt-4">
-                <div className="flex items-center gap-1.5 text-[10px] text-text-secondary font-black uppercase">
-                    <ClockIcon className="w-3 h-3"/> {session.script?.length || 0} Drills
-                </div>
-                <span className="text-[10px] font-black text-highlight uppercase tracking-widest group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                    Detalhes <ChevronRightIcon className="w-3 h-3" />
-                </span>
-            </div>
-        </div>
-    );
-};
+import PageHeader from '../components/PageHeader';
+import Card from '../components/Card';
+import { storageService } from '../services/storageService';
+import { PracticeSession, PracticeScriptItem, PracticeTarget } from '../types';
+import { 
+    WhistleIcon, SparklesIcon, ClockIcon, 
+    TrashIcon, PlusIcon, CalendarIcon, 
+    CheckCircleIcon, ChevronRightIcon, PenIcon,
+    /* Fix: Added missing RefreshIcon import */
+    RefreshIcon
+} from '../components/icons/UiIcons';
+import { useToast } from '../contexts/ToastContext';
+import { generatePracticeScript } from '../services/geminiService';
+import { UserContext, UserContextType } from '../components/Layout';
 
 const TrainingHub: React.FC = () => {
     const { currentRole } = useContext(UserContext) as UserContextType;
     const navigate = useNavigate();
     const toast = useToast();
     const [practices, setPractices] = useState<PracticeSession[]>([]);
-    const [view, setView] = useState<'BUILDER' | 'LIBRARY'>('BUILDER');
-    const isPlayer = currentRole === 'PLAYER';
-    const currentUser = storageService.getCurrentUser();
+    const [view, setView] = useState<'BUILDER' | 'LIST'>('BUILDER');
     
-    // Coach Form States
-    const [manualTitle, setManualTitle] = useState('');
-    const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
-    const [manualTime, setManualTime] = useState('19:30');
-    const [manualTarget, setManualTarget] = useState<PracticeTarget>('FULL_TEAM');
-    const [manualFocus, setManualFocus] = useState('INSTALAÇÃO');
-    const [manualScript, setManualScript] = useState<PracticeScriptItem[]>([]);
+    // Manual Form States
+    const [title, setTitle] = useState('');
+    const [focus, setFocus] = useState('');
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [startTime, setStartTime] = useState('19:30');
+    const [duration, setDuration] = useState(120);
+    const [target, setTarget] = useState<PracticeTarget>('FULL_TEAM');
+    const [script, setScript] = useState<PracticeScriptItem[]>([]);
     
-    // IA States
-    const [aiPrompt, setAiPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
 
     useEffect(() => {
-        const load = () => setPractices(storageService.getPracticeSessions());
-        load();
-        return storageService.subscribe('storage_update', load);
+        setPractices(storageService.getPracticeSessions());
     }, []);
 
-    const addManualDrill = useCallback(() => {
-        let startTime = manualTime;
-        if (manualScript.length > 0) {
-            const last = manualScript[manualScript.length - 1];
+    const addDrill = () => {
+        let start = startTime;
+        if (script.length > 0) {
+            const last = script[script.length - 1];
             const [h, m] = last.startTime.split(':').map(Number);
-            const date = new Date();
-            date.setHours(h, m + last.durationMinutes);
-            startTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            const d = new Date(); d.setHours(h, m + last.durationMinutes);
+            start = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         }
         const newItem: PracticeScriptItem = {
-            id: `dr-${Date.now()}`,
-            startTime: startTime,
+            id: `drill-${Date.now()}`,
+            startTime: start,
             durationMinutes: 15,
-            activityName: "",
+            activityName: "Novo Drill",
             type: 'TECHNICAL'
         };
-        setManualScript(prev => [...prev, newItem]);
-    }, [manualScript, manualTime]);
-
-    const handleUpdateDrill = useCallback((id: string, field: string, val: any) => {
-        setManualScript(prev => prev.map(s => s.id === id ? { ...s, [field]: val } : s));
-    }, []);
-
-    const handleRemoveDrill = useCallback((id: string) => {
-        setManualScript(prev => prev.filter(s => s.id !== id));
-    }, []);
-
-    const handleSaveManual = () => {
-        if (!manualTitle) return toast.warning("Dê um nome à sua sessão!");
-        const newSession: PracticeSession = {
-            id: `man-${Date.now()}`,
-            title: manualTitle,
-            focus: manualFocus,
-            date: new Date(manualDate),
-            startTime: manualTime,
-            target: manualTarget,
-            source: 'MANUAL',
-            attendees: [],
-            script: manualScript
-        };
-        storageService.savePracticeSessions([newSession, ...practices]);
-        setManualTitle('');
-        setManualScript([]);
-        toast.success("Plano de treino tático agendado!");
+        setScript([...script, newItem]);
     };
 
-    const handleGenerateAI = async () => {
-        if (!aiPrompt) return toast.warning("Descreva o objetivo do treino para a IA.");
+    const handleUpdateDrill = (id: string, field: string, val: any) => {
+        setScript(script.map(s => s.id === id ? { ...s, [field]: val } : s));
+    };
+
+    const handleAiGenerate = async () => {
+        if (!focus) return toast.warning("Defina um foco para a IA (ex: Defesa Redzone)");
         setIsGenerating(true);
         try {
-            const script = await generatePracticeScript(aiPrompt, 120, "High Intensity");
-            const newSession: PracticeSession = {
-                id: `ai-${Date.now()}`,
-                title: `IA: ${aiPrompt.substring(0, 30)}...`,
-                focus: "INTEL",
-                date: new Date(manualDate),
-                startTime: manualTime,
-                target: 'FULL_TEAM',
-                source: 'AI',
-                attendees: [],
-                script: script
-            };
-            storageService.savePracticeSessions([newSession, ...practices]);
-            setAiPrompt('');
-            toast.success("O roteiro tático foi gerado com sucesso!");
+            const result = await generatePracticeScript(focus, duration, "Elite");
+            setScript(result);
+            toast.success("Roteiro otimizado pela IA!");
         } catch (e) {
             toast.error("IA temporariamente indisponível.");
         } finally {
@@ -178,141 +74,129 @@ const TrainingHub: React.FC = () => {
         }
     };
 
-    const sortedPractices = useMemo(() => {
-        return [...practices].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    }, [practices]);
-
-    if (isPlayer) {
-        return (
-            <div className="space-y-6 animate-fade-in pb-20">
-                <PageHeader title="Minha Agenda" subtitle="Estude o plano de hoje e confirme presença." />
-                <div className="grid grid-cols-1 gap-4">
-                    {sortedPractices.length > 0 ? (
-                        sortedPractices.map(p => {
-                            const isConfirmed = p.attendees?.includes(currentUser.name);
-                            return (
-                                <div 
-                                    key={p.id} 
-                                    onClick={() => navigate(`/practice-detail/${p.id}`)}
-                                    className="bg-secondary/40 p-6 rounded-[2.5rem] border border-white/5 hover:border-highlight group transition-all flex flex-col md:flex-row justify-between items-center gap-6 cursor-pointer shadow-xl"
-                                >
-                                    <div className="flex items-center gap-6 w-full md:w-auto">
-                                        <div className={`w-16 h-16 rounded-2xl flex flex-col items-center justify-center border transition-all ${isConfirmed ? 'bg-highlight/10 border-highlight text-highlight' : 'bg-white/5 border-white/10 text-white'}`}>
-                                            <span className="text-[10px] font-black uppercase leading-none">{new Date(p.date).toLocaleDateString('pt-BR', { month: 'short' })}</span>
-                                            <span className="text-2xl font-black">{new Date(p.date).getDate()}</span>
-                                        </div>
-                                        <div>
-                                            <h4 className="text-xl font-black text-white uppercase italic group-hover:text-highlight transition-colors">{p.title}</h4>
-                                            <div className="flex gap-4 mt-1">
-                                                <span className="text-[10px] font-bold text-text-secondary flex items-center gap-1 uppercase tracking-widest">
-                                                    <ClockIcon className="w-3 h-3"/> {p.startTime || '19:30'}
-                                                </span>
-                                                <span className="text-[10px] font-bold text-blue-400 flex items-center gap-1 uppercase tracking-widest">
-                                                    <WhistleIcon className="w-3 h-3"/> {p.focus}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4 w-full md:w-auto justify-between">
-                                        {isConfirmed ? (
-                                            <span className="bg-highlight/20 text-highlight text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-widest border border-highlight/30 flex items-center gap-2">
-                                                <CheckCircleIcon className="w-4 h-4"/> Confirmado
-                                            </span>
-                                        ) : (
-                                            <span className="bg-red-600/10 text-red-500 text-[10px] font-black px-4 py-2 rounded-xl uppercase tracking-widest border border-red-500/30">Pendente</span>
-                                        )}
-                                        <ChevronRightIcon className="w-6 h-6 text-text-secondary group-hover:text-white group-hover:translate-x-1 transition-all" />
-                                    </div>
-                                </div>
-                            );
-                        })
-                    ) : (
-                        <div className="py-40 text-center opacity-30 border-2 border-dashed border-white/10 rounded-[3rem]">
-                            <CalendarIcon className="w-16 h-16 mx-auto mb-4" />
-                            <p className="font-black uppercase tracking-widest">Nenhum treino agendado</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    }
+    const handleSave = () => {
+        if (!title) return toast.warning("Título obrigatório.");
+        const newSession: PracticeSession = {
+            id: `prac-${Date.now()}`,
+            title,
+            focus,
+            date: new Date(date),
+            startTime,
+            target,
+            source: 'MANUAL',
+            attendees: [],
+            script
+        };
+        const updated = [newSession, ...practices];
+        setPractices(updated);
+        storageService.savePracticeSessions(updated);
+        toast.success("Treino agendado com sucesso!");
+        setView('LIST');
+    };
 
     return (
-        <div className="space-y-6 animate-fade-in pb-20">
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
-                <PageHeader title="Training Command" subtitle="Crie roteiros táticos minuto a minuto." />
+        <div className="space-y-8 animate-fade-in pb-20">
+            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
+                <PageHeader title="Training Hub" subtitle="Engenharia de campo e planejamento de sessões." />
                 <div className="flex bg-secondary p-1 rounded-2xl border border-white/5 shadow-xl">
-                    <button onClick={() => setView('BUILDER')} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${view === 'BUILDER' ? 'bg-highlight text-white shadow-glow' : 'text-text-secondary hover:text-white'}`}>Builder</button>
-                    <button onClick={() => setView('LIBRARY')} className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase transition-all ${view === 'LIBRARY' ? 'bg-highlight text-white shadow-glow' : 'text-text-secondary hover:text-white'}`}>Histórico</button>
+                    <button onClick={() => setView('BUILDER')} className={`px-10 py-3 rounded-xl text-xs font-black uppercase transition-all ${view === 'BUILDER' ? 'bg-highlight text-white shadow-glow' : 'text-text-secondary hover:text-white'}`}>Builder</button>
+                    <button onClick={() => setView('LIST')} className={`px-10 py-3 rounded-xl text-xs font-black uppercase transition-all ${view === 'LIST' ? 'bg-highlight text-white shadow-glow' : 'text-text-secondary hover:text-white'}`}>Histórico</button>
                 </div>
             </div>
 
             {view === 'BUILDER' ? (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <div className="lg:col-span-7 space-y-6">
-                        <Card title="Planejador Manual" className="border-highlight/20 h-full flex flex-col">
-                            <div className="space-y-4 flex-1">
+                        <Card title="Prancheta de Sessão" titleClassName="italic font-black uppercase text-sm">
+                            <div className="space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <input className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-highlight outline-none transition-all" placeholder="Título da Sessão" value={manualTitle} onChange={e => setManualTitle(e.target.value)} />
-                                    <input type="date" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-highlight outline-none" value={manualDate} onChange={e => setManualDate(e.target.value)} />
+                                    <input className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white focus:border-highlight outline-none" placeholder="Nome do Treino (ex: Preparação Playoffs)" value={title} onChange={e => setTitle(e.target.value)} />
+                                    <input type="date" className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white outline-none" value={date} onChange={e => setDate(e.target.value)} />
                                 </div>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                    <input type="time" className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white focus:border-highlight outline-none" value={manualTime} onChange={e => setManualTime(e.target.value)} />
-                                    <select className="col-span-2 bg-black/40 border border-white/10 rounded-xl p-3 text-[10px] font-black uppercase text-white focus:border-highlight outline-none" value={manualTarget} onChange={e => setManualTarget(e.target.value as any)}>
-                                        <option value="FULL_TEAM">Todo o Time</option>
-                                        <option value="OFFENSE">Unidade: Ataque</option>
-                                        <option value="DEFENSE">Unidade: Defesa</option>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <input type="time" className="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-xs text-white" value={startTime} onChange={e => setStartTime(e.target.value)} />
+                                    <select className="col-span-2 bg-black/40 border border-white/10 rounded-2xl p-3 text-[10px] font-black uppercase text-white" value={target} onChange={e => setTarget(e.target.value as any)}>
+                                        <option value="FULL_TEAM">TODO O TIME</option>
+                                        <option value="OFFENSE">UNIDADE: ATAQUE</option>
+                                        <option value="DEFENSE">UNIDADE: DEFESA</option>
                                     </select>
-                                    <input className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white focus:border-highlight outline-none" placeholder="Foco (ex: Blitz)" value={manualFocus} onChange={e => setManualFocus(e.target.value)} />
+                                    <input className="w-full bg-black/40 border border-white/10 rounded-2xl p-3 text-xs text-white" placeholder="Foco (ex: Redzone)" value={focus} onChange={e => setFocus(e.target.value)} />
                                 </div>
-                                <div className="pt-6 border-t border-white/5">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h4 className="text-[10px] font-black text-highlight uppercase tracking-[0.2em]">Practice Script</h4>
-                                        <button onClick={addManualDrill} className="p-2 bg-highlight/10 text-highlight rounded-xl hover:bg-highlight hover:text-white transition-all"><PlusIcon className="w-5 h-5"/></button>
+
+                                <div className="pt-8 border-t border-white/5">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h4 className="text-[10px] font-black text-highlight uppercase tracking-[0.4em] flex items-center gap-2">
+                                            <ClockIcon className="w-4 h-4"/> Minute-by-Minute Script
+                                        </h4>
+                                        <div className="flex gap-2">
+                                            <button onClick={handleAiGenerate} disabled={isGenerating} className="p-2 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-xl hover:bg-purple-600 hover:text-white transition-all">
+                                                {isGenerating ? <RefreshIcon className="w-4 h-4 animate-spin"/> : <SparklesIcon className="w-4 h-4"/>}
+                                            </button>
+                                            <button onClick={addDrill} className="p-2 bg-highlight/20 text-highlight border border-highlight/30 rounded-xl hover:bg-highlight hover:text-white transition-all"><PlusIcon className="w-4 h-4"/></button>
+                                        </div>
                                     </div>
-                                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {manualScript.map(item => <DrillItem key={item.id} item={item} onRemove={handleRemoveDrill} onUpdate={handleUpdateDrill} />)}
-                                        {manualScript.length === 0 && <p className="text-center py-10 text-text-secondary text-xs italic opacity-30">Adicione drills para compor o roteiro técnico.</p>}
+
+                                    <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                                        {script.map((item, idx) => (
+                                            <div key={item.id} className="bg-black/40 p-4 rounded-2xl border border-white/5 flex items-center gap-4 group hover:border-highlight/30 transition-all">
+                                                <input type="time" className="bg-transparent text-highlight font-mono font-black text-sm outline-none" value={item.startTime} onChange={e => handleUpdateDrill(item.id, 'startTime', e.target.value)} />
+                                                <div className="flex-1">
+                                                    <input className="w-full bg-transparent text-xs text-white outline-none border-b border-transparent focus:border-highlight font-bold" value={item.activityName} onChange={e => handleUpdateDrill(item.id, 'activityName', e.target.value)} placeholder="Título do Drill..." />
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <input type="number" className="w-10 bg-transparent text-right text-xs text-white font-bold outline-none" value={item.durationMinutes} onChange={e => handleUpdateDrill(item.id, 'durationMinutes', Number(e.target.value))} />
+                                                    <span className="text-[8px] text-text-secondary font-black uppercase">MIN</span>
+                                                </div>
+                                                <button onClick={() => setScript(script.filter(s => s.id !== item.id))} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><TrashIcon className="w-4 h-4"/></button>
+                                            </div>
+                                        ))}
+                                        {script.length === 0 && <p className="text-center py-20 text-text-secondary text-xs italic opacity-30">Adicione drills ou use o assistente IA para compor seu roteiro.</p>}
                                     </div>
                                 </div>
+                                
+                                <button onClick={handleSave} className="w-full bg-highlight hover:bg-highlight-hover text-white font-black py-5 rounded-[2.5rem] uppercase italic tracking-tighter shadow-glow transition-all active:scale-95 mt-6">Publicar Agenda de Treino</button>
                             </div>
-                            <button onClick={handleSaveManual} className="w-full bg-highlight hover:bg-highlight-hover text-white font-black py-5 rounded-[2rem] uppercase italic tracking-tighter mt-6 shadow-glow transition-all active:scale-95">Publicar Plano de Campo</button>
                         </Card>
                     </div>
 
                     <div className="lg:col-span-5 space-y-6">
-                        <Card title="Geração Mágica (IA)" className="border-purple-500/20 bg-gradient-to-br from-purple-900/5 to-transparent">
-                            <p className="text-xs text-purple-300 font-bold uppercase tracking-widest mb-4">Mago Tático Gemini</p>
-                            <textarea 
-                                className="w-full h-40 bg-black/40 border-2 border-purple-500/20 rounded-2xl p-4 text-sm text-white focus:border-purple-500 outline-none placeholder-purple-900/50 resize-none mb-4 transition-all"
-                                placeholder="Descreva o treino: 'Treino de 90min para receivers focado em release e rotas de média distância em Cover 2...'"
-                                value={aiPrompt}
-                                onChange={e => setAiPrompt(e.target.value)}
-                            />
-                            <button onClick={handleGenerateAI} disabled={isGenerating} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl uppercase text-[10px] shadow-lg flex justify-center items-center gap-3 transition-all active:scale-95 disabled:opacity-50">
-                                {isGenerating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <><SparklesIcon className="w-5 h-5"/> Gerar Roteiro Pro</>}
-                            </button>
-                        </Card>
-                        <div className="bg-blue-600/10 border border-blue-500/30 p-6 rounded-[2.5rem] flex items-center gap-4">
-                             <div className="p-3 bg-blue-600/20 rounded-xl text-blue-400"><CalendarIcon className="w-6 h-6"/></div>
-                             <div>
-                                 <p className="text-white font-black uppercase text-xs">Sincronia de Calendário</p>
-                                 <p className="text-[10px] text-text-secondary">Os planos publicados aparecem instantaneamente na agenda dos atletas para estudo.</p>
+                        <div className="bg-gradient-to-br from-blue-900/60 to-black p-8 rounded-[3rem] border border-blue-500/20 shadow-2xl">
+                             <WhistleIcon className="w-12 h-12 text-blue-400 mb-6" />
+                             <h4 className="text-white font-black uppercase italic text-xl">The Field Command</h4>
+                             <p className="text-sm text-blue-200 mt-4 leading-relaxed font-medium">Os roteiros publicados aqui são sincronizados com o app dos atletas. Cada segundo conta para a disciplina de uma unidade campeã.</p>
+                             <div className="mt-8 grid grid-cols-2 gap-4">
+                                 <div className="bg-black/40 p-4 rounded-2xl text-center">
+                                     <p className="text-[8px] text-text-secondary uppercase font-black">Efficiency Goal</p>
+                                     <p className="text-2xl font-black text-white italic">100%</p>
+                                 </div>
+                                 <div className="bg-black/40 p-4 rounded-2xl text-center">
+                                     <p className="text-[8px] text-text-secondary uppercase font-black">Tempo de Estudo</p>
+                                     <p className="text-2xl font-black text-white italic">{duration} min</p>
+                                 </div>
                              </div>
                         </div>
                     </div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-slide-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {practices.map(p => (
-                        <SessionCard key={p.id} session={p} onClick={() => navigate(`/practice-execution/${p.id}`)} />
-                    ))}
-                    {practices.length === 0 && (
-                        <div className="col-span-full py-40 text-center opacity-30 border-2 border-dashed border-white/10 rounded-[3rem]">
-                            <WhistleIcon className="w-16 h-16 mx-auto mb-4" />
-                            <p className="font-black uppercase tracking-widest text-sm">Nenhuma sessão no histórico</p>
+                        <div 
+                            key={p.id} 
+                            onClick={() => navigate(`/practice-execution/${p.id}`)}
+                            className="bg-secondary/40 p-6 rounded-[2.5rem] border border-white/5 hover:border-highlight transition-all cursor-pointer group shadow-xl"
+                        >
+                            <div className="flex justify-between items-start mb-4">
+                                <span className="bg-highlight/20 text-highlight text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest">{p.target || 'GERAL'}</span>
+                                <span className="text-[10px] font-mono text-text-secondary font-bold">{new Date(p.date).toLocaleDateString()}</span>
+                            </div>
+                            <h4 className="text-xl font-black text-white uppercase italic truncate leading-tight">{p.title}</h4>
+                            <div className="mt-6 flex justify-between items-center border-t border-white/5 pt-4">
+                                <span className="text-[10px] font-black text-text-secondary uppercase">{p.script?.length || 0} Drills de Campo</span>
+                                <ChevronRightIcon className="w-5 h-5 text-text-secondary group-hover:translate-x-1 transition-transform" />
+                            </div>
                         </div>
-                    )}
+                    ))}
+                    {practices.length === 0 && <p className="col-span-full text-center py-40 opacity-20 italic font-black uppercase">Nenhuma sessão histórica encontrada.</p>}
                 </div>
             )}
         </div>

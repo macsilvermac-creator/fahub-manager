@@ -1,238 +1,166 @@
 
-import React, { useState } from 'react';
-import PageHeader from '../components/PageHeader';
-import Card from '../components/Card';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
-import { authService } from '../services/authService';
-import LazyImage from '../components/LazyImage';
+import { PracticeSession, Player, PracticeFeedback } from '../types';
 import { 
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    Radar, RadarChart, PolarGrid, PolarAngleAxis
-} from 'recharts';
-import { StarIcon, TrophyIcon, BookIcon } from '../components/icons/NavIcons';
-import { TrendingUpIcon, ActivityIcon, CheckCircleIcon, ClipboardIcon, ShieldCheckIcon, WalletIcon } from '../components/icons/UiIcons';
+    ClockIcon, CheckCircleIcon, UsersIcon, 
+    PrinterIcon, SparklesIcon, PenIcon, 
+    MessageIcon, WhistleIcon, ActivityIcon
+} from '../components/icons/UiIcons';
+import LazyImage from '../components/LazyImage';
 import { useToast } from '../contexts/ToastContext';
+import PageHeader from '../components/PageHeader';
 
-const MyProfile: React.FC = () => {
+const PracticeExecution: React.FC = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
     const toast = useToast();
-    const [activeTab, setActiveTab] = useState<'LEGACY' | 'DOSSIER'>('LEGACY');
-    const user = authService.getCurrentUser();
-    const playersList = storageService.getPlayers();
-    const player = playersList.find(p => p.name === user?.name) || playersList[0];
-    
-    const skillData = [
-        { subject: 'Explosão', A: 85 },
-        { subject: 'Força', A: 92 },
-        { subject: 'Agilidade', A: 75 },
-        { subject: 'Velocidade', A: 88 },
-        { subject: 'Técnica', A: 70 },
-        { subject: 'IQ Tático', A: 82 },
-    ];
+    const [session, setSession] = useState<PracticeSession | null>(null);
+    const [athletes, setAthletes] = useState<Player[]>([]);
+    const [editingFeedback, setEditingFeedback] = useState<string | null>(null);
 
-    const evolutionData = [
-        { date: 'Set', ovr: 72 },
-        { date: 'Out', ovr: 75 },
-        { date: 'Nov', ovr: 80 },
-        { date: 'Dez', ovr: 88 },
-    ];
+    useEffect(() => {
+        const practices = storageService.getPracticeSessions();
+        const found = practices.find(p => String(p.id) === id);
+        if (found) {
+            setSession(found);
+            setAthletes(storageService.getPlayers().slice(0, 30));
+        } else {
+            navigate('/training-day');
+        }
+    }, [id, navigate]);
 
-    const handleSaveDossier = (e: React.FormEvent) => {
-        e.preventDefault();
-        toast.success("Dossiê atualizado! Súmula Digital sincronizada.");
+    const handleSaveFeedback = (playerId: string | number, notes: string) => {
+        if (!session) return;
+        const newFeedback: PracticeFeedback = {
+            playerId,
+            notes,
+            timestamp: new Date()
+        };
+        const updatedFeedbacks = [...(session.feedbacks || []).filter(f => f.playerId !== playerId), newFeedback];
+        const updatedSession = { ...session, feedbacks: updatedFeedbacks };
+        
+        const all = storageService.getPracticeSessions();
+        storageService.savePracticeSessions(all.map(s => String(s.id) === String(session.id) ? updatedSession : s));
+        setSession(updatedSession);
+        setEditingFeedback(null);
+        toast.success("Feedback de campo arquivado!");
     };
 
+    if (!session) return null;
+
     return (
-        <div className="space-y-6 animate-fade-in pb-20">
-            <PageHeader title="Meu Perfil" subtitle="Gestão de Carreira e Dossiê Federativo." />
+        <div className="space-y-6 animate-fade-in pb-24">
+            <PageHeader title="Mission Execution" subtitle="Modo operacional de campo (Sideline Control)." />
 
-            <div className="flex bg-secondary p-1 rounded-2xl border border-white/5 w-fit shadow-xl mb-8">
-                <button onClick={() => setActiveTab('LEGACY')} className={`px-10 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'LEGACY' ? 'bg-highlight text-white shadow-glow' : 'text-text-secondary hover:text-white'}`}>
-                    <StarIcon className="w-4 h-4"/> Legacy & Stats
-                </button>
-                <button onClick={() => setActiveTab('DOSSIER')} className={`px-10 py-3 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-2 ${activeTab === 'DOSSIER' ? 'bg-indigo-600 text-white shadow-glow' : 'text-text-secondary hover:text-white'}`}>
-                    <ShieldCheckIcon className="w-4 h-4"/> Dossiê (Súmula)
-                </button>
-            </div>
-
-            {activeTab === 'LEGACY' ? (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-                    {/* CARD FÍSICO - Ajustado para alinhar altura */}
-                    <div className="lg:col-span-4 flex justify-center">
-                        <div className="relative w-full max-w-[340px] h-full min-h-[520px] rounded-[2.5rem] overflow-hidden shadow-[0_0_60px_rgba(5,150,105,0.4)] border-2 border-highlight/30 group perspective-1000">
-                            <div className="absolute inset-0 bg-gradient-to-br from-highlight via-[#0f172a] to-black"></div>
-                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
-                            <div className="relative z-10 p-8 flex flex-col items-center justify-between h-full">
-                                <div className="flex justify-between w-full">
-                                    <div className="text-center">
-                                        <p className="text-5xl font-black text-white italic leading-none">{player?.rating || 0}</p>
-                                        <p className="text-[12px] font-black text-highlight uppercase mt-1 tracking-widest">{player?.position}</p>
-                                    </div>
-                                    <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 backdrop-blur-sm">
-                                        <TrophyIcon className="w-6 h-6 text-highlight" />
-                                    </div>
-                                </div>
-                                
-                                <div className="w-60 h-60 relative">
-                                    <LazyImage src={player?.avatarUrl} className="w-full h-full object-cover object-top relative z-10 drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)]" style={{maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)'}} fallbackText={player?.name} />
-                                </div>
-
-                                <div className="w-full text-center bg-black/40 backdrop-blur-md py-4 rounded-3xl border border-white/10 shadow-xl mb-2">
-                                    <h2 className="text-2xl font-black text-white uppercase tracking-tighter leading-none italic">{player?.name}</h2>
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-x-4 w-full pt-6 border-t border-white/10 pb-2">
-                                    <div className="text-center">
-                                        <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">SPD</p>
-                                        <p className="text-xl font-black text-white">88</p>
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">STR</p>
-                                        <p className="text-xl font-black text-white">92</p>
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">AGI</p>
-                                        <p className="text-xl font-black text-white">75</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-secondary/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                    <WhistleIcon className="w-48 h-48 text-white" />
+                </div>
+                
+                <div className="flex items-center gap-6 relative z-10">
+                    <div className="p-5 bg-highlight/10 rounded-3xl border border-highlight/20 shadow-glow">
+                        <WhistleIcon className="w-10 h-10 text-highlight" />
                     </div>
-
-                    {/* DASHBOARD DE PERFORMANCE */}
-                    <div className="lg:col-span-8 flex flex-col gap-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
-                            <Card title="Matriz de Atributos" className="h-full">
-                                <div className="h-64 w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={skillData}>
-                                            <PolarGrid stroke="rgba(255,255,255,0.05)" />
-                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }} />
-                                            <Radar name="Skills" dataKey="A" stroke="#059669" fill="#059669" fillOpacity={0.6} />
-                                        </RadarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </Card>
-                            <Card title="Evolução na Temporada" className="h-full">
-                                <div className="h-64 w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={evolutionData}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                            <XAxis dataKey="date" stroke="#94a3b8" />
-                                            <YAxis domain={[60, 100]} stroke="#94a3b8" />
-                                            <Line type="monotone" dataKey="ovr" stroke="#059669" strokeWidth={4} dot={{ fill: '#059669', r: 6 }} />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </Card>
-                        </div>
-                        
-                        <div className="bg-secondary/40 p-8 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden shrink-0">
-                            <h3 className="text-white font-black uppercase italic text-sm mb-6 flex items-center gap-2">
-                                 <CheckCircleIcon className="w-5 h-5 text-highlight" /> Resultados do Último Combine
-                            </h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 text-center">
-                                    <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">40 Yard Dash</p>
-                                    <p className="text-3xl font-black text-white italic">4.52s</p>
-                                </div>
-                                <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 text-center">
-                                    <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">Bench Press</p>
-                                    <p className="text-3xl font-black text-white italic">18 reps</p>
-                                </div>
-                                <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 text-center">
-                                    <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">Vertical</p>
-                                    <p className="text-3xl font-black text-white italic">32"</p>
-                                </div>
-                                <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 text-center">
-                                    <p className="text-[10px] text-text-secondary uppercase font-bold mb-1">Broad Jump</p>
-                                    <p className="text-3xl font-black text-white italic">112"</p>
-                                </div>
-                            </div>
-                        </div>
+                    <div>
+                        <span className="text-[10px] font-black text-highlight uppercase tracking-[0.4em] mb-1 block">Live Session</span>
+                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none">{session.title}</h2>
+                        <p className="text-sm text-text-secondary mt-2 font-bold uppercase tracking-widest">{session.focus} • {athletes.length} PRONTOS PARA O SNAP</p>
                     </div>
                 </div>
-            ) : (
-                <form onSubmit={handleSaveDossier} className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-slide-in">
-                    <div className="lg:col-span-2 space-y-6">
-                        <Card title="Dados de Registro Federativo">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="text-[10px] font-black text-text-secondary uppercase mb-2 block">Nome Civil Completo</label>
-                                    <input className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white focus:border-highlight outline-none" defaultValue={player?.name} />
+
+                <div className="flex gap-3 w-full md:w-auto relative z-10">
+                    <button onClick={() => window.print()} className="flex-1 md:flex-none bg-white text-black hover:bg-gray-200 px-8 py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95">
+                        <PrinterIcon className="w-4 h-4" /> IMPRIMIR ROTEIRO
+                    </button>
+                    <button onClick={() => navigate('/training-day')} className="flex-1 md:flex-none bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white px-8 py-4 rounded-2xl font-black text-xs border border-red-500/20 transition-all active:scale-95">
+                        FINALIZAR TREINO
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Timeline Visual */}
+                <div className="lg:col-span-4 space-y-4">
+                    <h3 className="text-xs font-black text-white uppercase tracking-[0.4em] flex items-center gap-2 px-4">
+                        <ClockIcon className="w-4 h-4 text-highlight" /> Timeline de Drills
+                    </h3>
+                    <div className="space-y-3 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
+                        {session.script?.map((item, idx) => (
+                            <div key={item.id} className="bg-secondary/40 p-5 rounded-[2rem] border border-white/5 group hover:border-highlight transition-all relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-5">
+                                    <SparklesIcon className="w-12 h-12 text-white" />
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-text-secondary uppercase mb-2 block">CPF (Imutável)</label>
-                                    <input className="w-full bg-black/40 border border-white/5 rounded-xl p-4 text-text-secondary outline-none cursor-not-allowed" value="000.000.000-00" readOnly />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-text-secondary uppercase mb-2 block">Data de Nascimento</label>
-                                    <input type="date" className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white focus:border-highlight outline-none" defaultValue="2000-01-01" />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-text-secondary uppercase mb-2 block">Gênero / Categoria</label>
-                                    <select className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white focus:border-highlight outline-none">
-                                        <option>MASCULINO ADULTO</option>
-                                        <option>FEMININO ADULTO</option>
-                                        <option>SUB-20</option>
-                                    </select>
-                                </div>
+                                <span className="text-highlight font-mono font-black text-xl leading-none">{item.startTime}</span>
+                                <h4 className="text-white font-black uppercase italic text-sm mt-1">{item.activityName}</h4>
+                                <p className="text-[10px] text-text-secondary uppercase font-bold mt-4 tracking-widest">{item.durationMinutes} MIN • {item.type}</p>
                             </div>
-                        </Card>
-
-                        <Card title="Draft Specs (Aferição Física)">
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div>
-                                    <label className="text-[10px] font-black text-text-secondary uppercase mb-2 block">Altura (m)</label>
-                                    <input className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white focus:border-highlight outline-none" defaultValue={player?.height} />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-text-secondary uppercase mb-2 block">Peso (kg)</label>
-                                    <input className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white focus:border-highlight outline-none" defaultValue={player?.weight} />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-text-secondary uppercase mb-2 block">Envergadura</label>
-                                    <input className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white focus:border-highlight outline-none" placeholder="1.95m" />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-text-secondary uppercase mb-2 block">Tipo Sanguíneo</label>
-                                    <select className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white focus:border-highlight outline-none">
-                                        <option>A+</option><option>O+</option><option>AB+</option><option>Outro</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </Card>
-
-                        <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-4 rounded-2xl shadow-glow uppercase transition-all transform active:scale-95">Atualizar Dossiê de Atleta</button>
+                        ))}
                     </div>
+                </div>
 
-                    <div className="space-y-6">
-                        <Card title="Kit Lab (Tamanhos)">
-                             <div className="space-y-4">
-                                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                                     <span className="text-[10px] font-black text-text-secondary uppercase">Capacete</span>
-                                     <select className="bg-transparent text-white font-bold outline-none"><option>L</option><option>XL</option></select>
-                                 </div>
-                                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl">
-                                     <span className="text-[10px] font-black text-text-secondary uppercase">Shoulder Pad</span>
-                                     <select className="bg-transparent text-white font-bold outline-none"><option>XL</option><option>2XL</option></select>
-                                 </div>
-                                 <div className="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-highlight/30">
-                                     <span className="text-[10px] font-black text-highlight uppercase">Jersey Oficial</span>
-                                     <span className="font-black text-white text-xl">#{player?.jerseyNumber}</span>
-                                 </div>
-                             </div>
-                        </Card>
-
-                        <div className="bg-indigo-900/20 border border-indigo-500/30 p-6 rounded-[2rem] text-center">
-                            <ShieldCheckIcon className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
-                            <h4 className="text-white font-black uppercase text-xs italic">Súmula Digital</h4>
-                            <p className="text-[10px] text-text-secondary mt-2">Seus dados estão 100% em conformidade com o protocolo de identificação da Confederação.</p>
-                        </div>
+                {/* Athlete Roster Feedback */}
+                <div className="lg:col-span-8 space-y-4">
+                    <h3 className="text-xs font-black text-blue-400 uppercase tracking-[0.4em] flex items-center gap-2 px-4">
+                        <ActivityIcon className="w-4 h-4 text-blue-400" /> Notas de Desempenho
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {athletes.map(player => {
+                            const feedback = session.feedbacks?.find(f => String(f.playerId) === String(player.id));
+                            return (
+                                <div key={player.id} className="bg-secondary/40 border border-white/5 rounded-[2rem] p-5 flex flex-col gap-4 group hover:border-highlight/30 transition-all shadow-xl">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-4">
+                                            <LazyImage src={player.avatarUrl} className="w-12 h-12 rounded-full border-2 border-white/10" />
+                                            <div>
+                                                <p className="text-xs font-black text-white uppercase italic">{player.name}</p>
+                                                <p className="text-[9px] text-text-secondary font-black">{player.position} • #{player.jerseyNumber}</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => setEditingFeedback(String(player.id))}
+                                            className="p-3 bg-white/5 rounded-xl text-text-secondary hover:text-white transition-all"
+                                        >
+                                            <PenIcon className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    
+                                    {editingFeedback === String(player.id) ? (
+                                        <div className="space-y-2 animate-fade-in">
+                                            <textarea 
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-[10px] text-white outline-none focus:border-highlight"
+                                                placeholder="Notas técnicas do drill..."
+                                                defaultValue={feedback?.notes}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleSaveFeedback(player.id, e.currentTarget.value);
+                                                    }
+                                                }}
+                                                autoFocus
+                                            />
+                                            <div className="flex gap-2">
+                                                <button className="flex-1 bg-highlight text-white text-[10px] font-black py-2 rounded-lg" onClick={() => handleSaveFeedback(player.id, (document.activeElement as HTMLTextAreaElement).value)}>SALVAR</button>
+                                                <button className="px-4 py-2 bg-white/5 text-text-secondary text-[10px] font-black rounded-lg" onClick={() => setEditingFeedback(null)}>CANCELAR</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        feedback && (
+                                            <div className="bg-highlight/5 p-3 rounded-xl border border-highlight/20 flex gap-3 items-start">
+                                                <MessageIcon className="w-3 h-3 text-highlight mt-0.5" />
+                                                <p className="text-[10px] text-highlight italic leading-relaxed font-medium">{feedback.notes}</p>
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
-                </form>
-            )}
+                </div>
+            </div>
         </div>
     );
 };
 
-export default MyProfile;
+export default PracticeExecution;
