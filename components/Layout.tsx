@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useMemo } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -27,7 +26,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <UserContext.Provider value={value}>
       <div className={`flex h-screen bg-primary text-text-primary transition-all duration-500`}>
-        {/* Fix: removed setRole prop as it is not defined in SidebarProps in Sidebar.tsx */}
         <Sidebar 
           isOpen={isSidebarOpen} 
           setIsOpen={setSidebarOpen} 
@@ -36,7 +34,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header onMenuClick={() => setSidebarOpen(true)} />
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-primary p-4 lg:p-8 custom-scrollbar">
+          <main className="flex-1 overflow-hidden bg-primary pt-3 px-4 lg:px-6 pb-4 custom-scrollbar flex flex-col">
             {children}
           </main>
         </div>

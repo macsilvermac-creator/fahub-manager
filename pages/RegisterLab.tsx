@@ -8,54 +8,50 @@ const RegisterLab: React.FC = () => {
     const [eligibility, setEligibility] = useState(85);
 
     const FormSection = ({ title, icon: Icon, children }: { title: string, icon: any, children: React.ReactNode }) => (
-        <div className="bg-black/20 rounded-[2.5rem] border border-white/5 p-8 space-y-6">
-            <div className="flex items-center gap-3 mb-2">
-                <Icon className="w-5 h-5 text-highlight" />
-                <h3 className="text-xs font-black text-white uppercase tracking-[0.3em]">{title}</h3>
+        <div className="bg-black/20 rounded-[2rem] border border-white/5 p-6 space-y-4 shadow-inner">
+            <div className="flex items-center gap-2 mb-1">
+                <Icon className="w-4 h-4 text-highlight" />
+                <h3 className="text-[10px] font-black text-white uppercase tracking-[0.3em]">{title}</h3>
             </div>
             {children}
         </div>
     );
 
-    const inputClass = "w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-highlight outline-none transition-all placeholder:text-white/20 font-medium";
-    const labelClass = "text-[10px] font-black text-text-secondary uppercase tracking-widest mb-1.5 block ml-1";
+    const inputClass = "w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:border-highlight outline-none transition-all placeholder:text-white/10 font-medium";
+    const labelClass = "text-[9px] font-black text-text-secondary uppercase tracking-[0.2em] mb-1 block ml-1";
 
     return (
-        <div className="h-full flex flex-col space-y-6 animate-fade-in overflow-hidden">
-            <PageHeader title="Register Lab" subtitle="Sua identidade oficial federativa e prontuário de campo." />
+        <div className="flex-1 flex flex-col min-h-0 space-y-4 animate-fade-in overflow-hidden">
+            <PageHeader title="Register Lab" subtitle="Identidade oficial federativa FAHUB." />
 
-            {/* ELIGIBILITY BAR */}
-            <div className="bg-secondary/40 rounded-3xl p-6 border border-white/5 shadow-xl">
-                <div className="flex justify-between items-center mb-2">
-                    <p className="text-[10px] font-black text-white uppercase tracking-[0.3em] flex items-center gap-2">
-                        <ShieldCheckIcon className="w-4 h-4 text-highlight" /> Sumula Digital Eligibility
+            {/* ELIGIBILITY BAR COMPACTA */}
+            <div className="bg-secondary/40 rounded-3xl p-4 border border-white/5 shadow-xl shrink-0">
+                <div className="flex justify-between items-center mb-2 px-1">
+                    <p className="text-[9px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2">
+                        <ShieldCheckIcon className="w-3.5 h-3.5 text-highlight" /> Sumula Digital Eligibility
                     </p>
-                    <span className="text-lg font-black text-highlight italic">{eligibility}%</span>
+                    <span className="text-sm font-black text-highlight italic">{eligibility}%</span>
                 </div>
-                <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden">
+                <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden">
                     <div className="h-full bg-highlight shadow-glow transition-all duration-1000" style={{ width: `${eligibility}%` }}></div>
                 </div>
-                {eligibility < 100 && (
-                    <p className="text-[9px] text-yellow-500 font-bold uppercase mt-2 italic">Atenção: Carregue seu atestado médico para atingir 100%.</p>
-                )}
             </div>
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 overflow-y-auto custom-scrollbar pr-2 pb-10">
-                
-                {/* LEFT: FORM DATA */}
-                <div className="lg:col-span-8 space-y-6">
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden">
+                {/* LEFT: SCROLLABLE DATA */}
+                <div className="lg:col-span-8 overflow-y-auto custom-scrollbar pr-1 space-y-4 pb-10">
                     <FormSection title="Identity Record" icon={UsersIcon}>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                                 <label className={labelClass}>Nome Completo</label>
                                 <input className={inputClass} value="Lucas Thor Machado" readOnly />
                             </div>
                             <div>
-                                <label className={labelClass}>RG (com órgão emissor)</label>
+                                <label className={labelClass}>Documento (RG/SSP)</label>
                                 <input className={inputClass} placeholder="0.000.000 SSP/SC" />
                             </div>
                             <div>
-                                <label className={labelClass}>CPF</label>
+                                <label className={labelClass}>Tax ID (CPF)</label>
                                 <input className={inputClass} value="000.000.000-00" readOnly />
                             </div>
                             <div>
@@ -65,29 +61,27 @@ const RegisterLab: React.FC = () => {
                         </div>
                     </FormSection>
 
-                    <FormSection title="Field Specs (Súmula)" icon={CheckCircleIcon}>
-                        <div className="grid grid-cols-3 gap-4">
+                    <FormSection title="Match Day Specs" icon={CheckCircleIcon}>
+                        <div className="grid grid-cols-3 gap-3">
                             <div>
-                                <label className={labelClass}>Posição Primária</label>
+                                <label className={labelClass}>Posição</label>
                                 <select className={inputClass}>
-                                    <option>QB</option>
-                                    <option>WR</option>
-                                    <option>RB</option>
+                                    <option>QB</option><option>WR</option><option>RB</option>
                                 </select>
                             </div>
                             <div>
-                                <label className={labelClass}>Jersey Number (#)</label>
+                                <label className={labelClass}>Jersey (#)</label>
                                 <input className={inputClass} type="number" value="12" />
                             </div>
                             <div>
                                 <label className={labelClass}>Categoria</label>
-                                <input className={inputClass} value="Senior / Full Pads" readOnly />
+                                <input className={inputClass} value="Elite Pro" readOnly />
                             </div>
                         </div>
                     </FormSection>
 
-                    <FormSection title="Physical Biometrics" icon={ActivityIcon}>
-                        <div className="grid grid-cols-3 gap-4">
+                    <FormSection title="Biometrics" icon={ActivityIcon}>
+                        <div className="grid grid-cols-3 gap-3">
                             <div>
                                 <label className={labelClass}>Peso (kg)</label>
                                 <input className={inputClass} type="number" value="95" />
@@ -97,41 +91,37 @@ const RegisterLab: React.FC = () => {
                                 <input className={inputClass} type="text" value="1.88" />
                             </div>
                             <div>
-                                <label className={labelClass}>Vencimento Atestado</label>
-                                <input className={`${inputClass} border-red-500/50 text-red-400`} type="date" value="2023-12-01" />
+                                <label className={labelClass}>Exame Médico</label>
+                                <input className={`${inputClass} ${eligibility < 100 ? 'border-red-500/50 text-red-400' : ''}`} type="date" />
                             </div>
                         </div>
                     </FormSection>
                 </div>
 
-                {/* RIGHT: PHOTO & CARD */}
-                <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-gradient-to-br from-highlight/20 to-black rounded-[3rem] border border-highlight/30 p-8 flex flex-col items-center text-center shadow-2xl">
-                         <div className="w-48 h-48 rounded-[2.5rem] border-4 border-highlight p-1 shadow-glow mb-6">
-                             <LazyImage src="https://ui-avatars.com/api/?name=Lucas+Thor&background=059669&color=fff&size=200" className="w-full h-full rounded-[2rem] object-cover" />
+                {/* RIGHT: ID CARD & ACTIONS */}
+                <div className="lg:col-span-4 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+                    <div className="bg-gradient-to-br from-highlight/10 to-black rounded-[2.5rem] border border-highlight/20 p-6 flex flex-col items-center text-center shadow-2xl">
+                         <div className="w-36 h-36 rounded-[2rem] border-4 border-highlight p-0.5 shadow-glow mb-4">
+                             <LazyImage src="https://ui-avatars.com/api/?name=Lucas+Thor&background=059669&color=fff&size=150" className="w-full h-full rounded-[1.8rem] object-cover" />
                          </div>
-                         <h4 className="text-white font-black uppercase italic text-lg leading-tight">Foto Oficial de Súmula</h4>
-                         <p className="text-[10px] text-text-secondary mt-2 uppercase tracking-widest px-4">Esta imagem será usada pelos árbitros para conferência de campo.</p>
-                         
-                         <button className="mt-8 w-full py-4 bg-white text-black font-black uppercase italic text-xs rounded-2xl shadow-xl hover:bg-highlight hover:text-white transition-all">Substituir Foto</button>
+                         <h4 className="text-white font-black uppercase italic text-sm leading-tight">Foto Oficial de Súmula</h4>
+                         <button className="mt-6 w-full py-3 bg-white/10 hover:bg-white text-text-secondary hover:text-black font-black uppercase italic text-[9px] rounded-xl transition-all border border-white/10">Atualizar Foto</button>
                     </div>
 
-                    <div className="bg-black/40 rounded-[2.5rem] border border-white/5 p-8">
-                         <h4 className="text-xs font-black text-white uppercase tracking-widest mb-4">Documentos Anexos</h4>
+                    <div className="bg-black/40 rounded-[2rem] border border-white/5 p-6 flex flex-col gap-4">
+                         <h4 className="text-[9px] font-black text-white uppercase tracking-widest mb-1">Dossiê Digital</h4>
                          <div className="space-y-2">
-                             <div className="bg-white/5 p-3 rounded-xl flex justify-between items-center">
-                                 <span className="text-[10px] text-text-secondary font-bold uppercase">RG_FRENTE.JPG</span>
-                                 <span className="text-[10px] text-highlight font-black">✔ OK</span>
-                             </div>
-                             <div className="bg-white/5 p-3 rounded-xl flex justify-between items-center">
-                                 <span className="text-[10px] text-text-secondary font-bold uppercase">ATESTADO.PDF</span>
-                                 <span className="text-[10px] text-red-500 font-black">✖ EXPIROU</span>
-                             </div>
+                             {['RG_FRONT', 'HEALTH_CERT'].map(doc => (
+                                 <div key={doc} className="bg-white/5 p-2.5 rounded-xl flex justify-between items-center border border-white/5">
+                                     <span className="text-[8px] text-text-secondary font-bold uppercase">{doc}</span>
+                                     <span className="text-[8px] text-highlight font-black">VALIDO</span>
+                                 </div>
+                             ))}
                          </div>
-                         <button className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 text-white font-black uppercase text-[10px] rounded-xl border border-white/10 transition-all">Upload Documentos</button>
+                         <button className="w-full py-3 bg-highlight/10 hover:bg-highlight text-highlight hover:text-white font-black uppercase text-[9px] rounded-xl border border-highlight/30 transition-all active:scale-95 mt-2">
+                            SALVAR IDENTIDADE DIGITAL
+                         </button>
                     </div>
-
-                    <button className="w-full py-6 bg-highlight text-white font-black uppercase italic text-sm rounded-[2rem] shadow-glow transform active:scale-95 transition-all">Salvar Todos os Dados</button>
                 </div>
             </div>
         </div>
