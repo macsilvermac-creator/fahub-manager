@@ -21,7 +21,7 @@ const RegisterLab: React.FC = () => {
     const labelClass = "text-[9px] font-black text-text-secondary uppercase tracking-[0.2em] mb-1 block ml-1";
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 space-y-4 animate-fade-in overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0 space-y-4 animate-fade-in">
             <PageHeader title="Register Lab" subtitle="Identidade oficial federativa FAHUB." />
 
             {/* ELIGIBILITY BAR COMPACTA */}
@@ -37,9 +37,9 @@ const RegisterLab: React.FC = () => {
                 </div>
             </div>
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden">
-                {/* LEFT: SCROLLABLE DATA */}
-                <div className="lg:col-span-8 overflow-y-auto custom-scrollbar pr-1 space-y-4 pb-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                {/* LEFT: DATA */}
+                <div className="lg:col-span-8 space-y-4 pb-10">
                     <FormSection title="Identity Record" icon={UsersIcon}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
@@ -99,7 +99,7 @@ const RegisterLab: React.FC = () => {
                 </div>
 
                 {/* RIGHT: ID CARD & ACTIONS */}
-                <div className="lg:col-span-4 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
+                <div className="lg:col-span-4 flex flex-col gap-4">
                     <div className="bg-gradient-to-br from-highlight/10 to-black rounded-[2.5rem] border border-highlight/20 p-6 flex flex-col items-center text-center shadow-2xl">
                          <div className="w-36 h-36 rounded-[2rem] border-4 border-highlight p-0.5 shadow-glow mb-4">
                              <LazyImage src="https://ui-avatars.com/api/?name=Lucas+Thor&background=059669&color=fff&size=150" className="w-full h-full rounded-[1.8rem] object-cover" />

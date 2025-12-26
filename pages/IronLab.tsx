@@ -8,7 +8,6 @@ import {
     CheckCircleIcon, AlertTriangleIcon, RefreshIcon,
     StarIcon, LockIcon, PlayCircleIcon,
     ShoppingBagIcon, ChevronRightIcon,
-    // Fix: Added missing TrophyIcon import
     TrophyIcon
 } from '../components/icons/UiIcons';
 import { useToast } from '../contexts/ToastContext';
@@ -93,7 +92,7 @@ const Academy: React.FC = () => {
     };
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 animate-fade-in overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
             <PageHeader title="Elite Academy & Iron Lab" subtitle="Evolução técnica fora das 100 jardas." />
 
             <div className="flex bg-secondary p-1 rounded-2xl border border-white/5 w-fit shadow-xl mb-4 shrink-0">
@@ -102,8 +101,8 @@ const Academy: React.FC = () => {
             </div>
 
             {view === 'COURSES' ? (
-                <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 overflow-hidden">
-                    <div className="lg:col-span-3 space-y-6 overflow-y-auto custom-scrollbar pr-2 pb-10">
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    <div className="lg:col-span-3 space-y-6 pb-10">
                         <section>
                             <div className="mb-3 px-1">
                                 <p className="text-xl font-black text-white italic uppercase tracking-tighter leading-none flex items-center gap-2">
@@ -125,21 +124,21 @@ const Academy: React.FC = () => {
                             </div>
                         </section>
                     </div>
-                    <div className="lg:col-span-1 bg-black/30 rounded-[2.5rem] border border-white/5 p-5 flex flex-col gap-4 overflow-hidden">
+                    <div className="lg:col-span-1 bg-black/30 rounded-[2.5rem] border border-white/5 p-5 flex flex-col gap-4">
                         <h3 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em]">Market Spotlight</h3>
-                        <div className="flex-1 flex flex-col justify-center overflow-hidden">
+                        <div className="flex-1 flex flex-col justify-center">
                             {shopItems.length > 0 && <VerticalCourseCard course={shopItems[shopIndex]} type="SHOP" />}
                         </div>
                     </div>
                 </div>
             ) : (
-                <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden">
-                    <div className="lg:col-span-4 bg-secondary/40 rounded-[2.5rem] border border-white/5 p-6 flex flex-col shadow-2xl h-full overflow-hidden">
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4">
+                    <div className="lg:col-span-4 bg-secondary/40 rounded-[2.5rem] border border-white/5 p-6 flex flex-col shadow-2xl">
                         <div className="flex items-center gap-3 mb-6 shrink-0">
                             <SparklesIcon className="w-5 h-5 text-orange-500 animate-pulse" />
                             <h3 className="text-lg font-black text-white italic uppercase tracking-tighter">Iron Console</h3>
                         </div>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 pr-1">
+                        <div className="space-y-6">
                             <section>
                                 <p className="text-[9px] font-black text-text-secondary uppercase tracking-[0.2em] mb-3">Ambiente</p>
                                 <div className="grid grid-cols-3 gap-1.5 p-1 bg-black/20 rounded-xl border border-white/5">
@@ -160,12 +159,12 @@ const Academy: React.FC = () => {
                                 </div>
                             </section>
                         </div>
-                        <button onClick={handleGenerate} disabled={isGenerating} className="mt-4 w-full bg-white text-black font-black py-4 rounded-2xl uppercase italic text-[10px] shadow-glow-orange shrink-0 transition-all active:scale-95">
+                        <button onClick={handleGenerate} disabled={isGenerating} className="mt-8 w-full bg-white text-black font-black py-4 rounded-2xl uppercase italic text-[10px] shadow-glow-orange transition-all active:scale-95">
                             {isGenerating ? <RefreshIcon className="w-4 h-4 animate-spin mx-auto" /> : 'CONSTRUIR TREINO'}
                         </button>
                     </div>
 
-                    <div className="lg:col-span-8 overflow-y-auto custom-scrollbar pr-2 pb-10">
+                    <div className="lg:col-span-8 pb-10">
                         {workout ? (
                             <div className="space-y-4 animate-fade-in">
                                 <div className="bg-black/60 p-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden flex justify-between items-center">

@@ -39,30 +39,28 @@ const VaultHub: React.FC = () => {
     );
 
     return (
-        <div className="flex-1 flex flex-col min-h-0 space-y-4 animate-fade-in overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0 space-y-4 animate-fade-in">
             <PageHeader title="Vault Hub" subtitle="Controle financeiro de alta performance." />
 
-            <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* LEFT: ACTIONS */}
-                <div className="bg-secondary/20 rounded-[2.5rem] border border-white/5 p-6 flex flex-col overflow-hidden shadow-2xl">
+                <div className="bg-secondary/20 rounded-[2.5rem] border border-white/5 p-6 flex flex-col shadow-2xl">
                     <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.4em] mb-4 px-1">Ações Pendentes</h3>
-                    <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
-                        <div className="grid grid-cols-2 gap-3">
-                            <PaymentCard title="Mensalidade Outubro" amount="150,00" icon={WalletIcon} type="Regular" />
-                            <PaymentCard title="Inscrição Torneio" amount="80,00" icon={TrophyIcon} type="Taxa" />
-                            <PaymentCard title="Transporte Jogos" amount="120,00" icon={BusIcon} type="Viagem" />
-                            <PaymentCard title="Store: Jersey 2024" amount="450,00" icon={ActivityIcon} type="Compra" />
-                        </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <PaymentCard title="Mensalidade Outubro" amount="150,00" icon={WalletIcon} type="Regular" />
+                        <PaymentCard title="Inscrição Torneio" amount="80,00" icon={TrophyIcon} type="Taxa" />
+                        <PaymentCard title="Transporte Jogos" amount="120,00" icon={BusIcon} type="Viagem" />
+                        <PaymentCard title="Store: Jersey 2024" amount="450,00" icon={ActivityIcon} type="Compra" />
                     </div>
                 </div>
 
                 {/* RIGHT: HISTORY */}
-                <div className="bg-secondary/20 rounded-[2.5rem] border border-white/5 p-6 flex flex-col overflow-hidden shadow-2xl">
+                <div className="bg-secondary/20 rounded-[2.5rem] border border-white/5 p-6 flex flex-col shadow-2xl">
                     <div className="flex justify-between items-center mb-4 px-1">
                         <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.4em]">Payment History</h3>
                         <span className="text-[9px] text-highlight font-black uppercase tracking-widest">Elegível</span>
                     </div>
-                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                    <div className="space-y-2">
                         {[1,2,3,4,5,6,7,8,9,10].map(i => (
                             <div key={i} className="bg-black/20 rounded-2xl p-3.5 border border-white/5 flex items-center justify-between group hover:bg-black/40 transition-all">
                                 <div className="flex items-center gap-3">
