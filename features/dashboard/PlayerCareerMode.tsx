@@ -1,11 +1,14 @@
 
 import React from 'react';
-// @ts-ignore
 import { useNavigate } from 'react-router-dom';
 import Card from '../../components/Card';
 import LazyImage from '../../components/LazyImage';
-import { ClipboardIcon, UsersIcon, ActivityIcon } from '../../components/icons/UiIcons';
-import { TrophyIcon, BookIcon, ShopIcon } from '../../components/icons/NavIcons';
+import { 
+  TrophyIcon, ActivityIcon, SparklesIcon, 
+  // Fix: Added BookIcon to imports
+  CheckCircleIcon, StarIcon, WhistleIcon,
+  ClockIcon, WalletIcon, BookIcon
+} from '../../components/icons/UiIcons';
 
 interface PlayerCareerModeProps {
     player: any;
@@ -16,145 +19,137 @@ interface PlayerCareerModeProps {
 const PlayerCareerMode: React.FC<PlayerCareerModeProps> = ({ player, nextGame, xpLeaders }) => {
     const navigate = useNavigate();
 
-    if (!player) return <div className="text-white">Carregando Carreira...</div>;
-
     return (
-        <div className="space-y-6 pb-20 animate-fade-in">
-            {/* HERO SECTION: PLAYER CARD */}
-            <div className="relative bg-gradient-to-br from-gray-900 to-black rounded-3xl p-6 border border-white/10 overflow-hidden shadow-2xl">
-                {/* Background Decor */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-highlight/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
-                
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-                    {/* Avatar with Level Ring */}
-                    <div className="relative group cursor-pointer" onClick={() => navigate('/profile')}>
-                        <div className="w-28 h-28 rounded-full p-[3px] bg-gradient-to-br from-highlight to-cyan-400">
-                            <LazyImage src={player.avatarUrl} className="w-full h-full rounded-full object-cover border-4 border-black" />
-                        </div>
-                        <div className="absolute -bottom-2 -right-2 bg-black text-white font-black text-xl w-10 h-10 flex items-center justify-center rounded-lg border-2 border-highlight shadow-lg">
-                            {player.level}
-                        </div>
-                    </div>
-
-                    {/* Stats & Progress */}
-                    <div className="flex-1 text-center md:text-left">
-                        <h1 className="text-3xl font-black text-white uppercase italic tracking-tighter">{player.name}</h1>
-                        <p className="text-highlight font-bold text-sm mb-4">{player.position} • {player.class} • FAHUB Stars</p>
+        <div className="space-y-8 pb-20 animate-fade-in max-w-6xl mx-auto">
+            {/* Player Main Card - THE ELITE EXPERIENCE */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                <div className="lg:col-span-5 flex justify-center">
+                    <div className="relative w-full max-w-[380px] h-[540px] rounded-[3rem] overflow-hidden shadow-[0_0_60px_rgba(5,150,105,0.4)] border-2 border-highlight/30 group perspective-1000 cursor-pointer" onClick={() => navigate('/profile')}>
+                        <div className="absolute inset-0 bg-gradient-to-br from-highlight via-[#0B1120] to-black"></div>
+                        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
                         
-                        <div className="bg-white/5 rounded-xl p-3 border border-white/5 mb-3">
-                            <div className="flex justify-between text-xs font-bold text-text-secondary uppercase mb-1">
-                                <span>XP da Temporada</span>
-                                <span>{player.xp} / 5000</span>
-                            </div>
-                            <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden">
-                                <div className="h-full bg-gradient-to-r from-highlight to-cyan-400" style={{ width: `${(player.xp % 1000) / 10}%` }}></div>
-                            </div>
-                        </div>
+                        {/* Shimmer Effect */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/10 opacity-0 group-hover:opacity-40 transition-opacity duration-700 animate-pulse"></div>
 
-                        <button 
-                            onClick={() => navigate('/profile')} 
-                            className="text-xs font-bold text-text-secondary hover:text-white flex items-center gap-1 mx-auto md:mx-0 transition-colors"
-                        >
-                            <ClipboardIcon className="w-3 h-3" /> Atualizar Meus Dados Cadastrais
-                        </button>
-                    </div>
-
-                    {/* OVR Badge */}
-                    <div className="flex flex-col items-center justify-center bg-white/5 p-4 rounded-xl border border-white/10 min-w-[80px]">
-                        <span className="text-xs text-text-secondary font-bold uppercase">OVR</span>
-                        <span className="text-4xl font-black text-white">{player.rating}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* NEXT MISSION */}
-                <div className="lg:col-span-2">
-                    <Card title="Próxima Missão" className="border-l-4 border-l-highlight h-full">
-                        {nextGame ? (
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-4 bg-highlight/10 rounded-2xl">
-                                        <TrophyIcon className="w-8 h-8 text-highlight" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-black text-white uppercase">Jogo vs {nextGame.opponent}</h3>
-                                        <p className="text-sm text-text-secondary">{new Date(nextGame.date).toLocaleDateString()} • {new Date(nextGame.date).toLocaleTimeString()}</p>
-                                        <p className="text-xs text-text-secondary mt-1 flex items-center gap-1">
-                                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                            Presença Obrigatória
-                                        </p>
-                                    </div>
+                        <div className="relative z-10 p-10 flex flex-col items-center justify-between h-full">
+                            <div className="flex justify-between w-full">
+                                <div className="text-center">
+                                    <p className="text-6xl font-black text-white italic leading-none drop-shadow-2xl">{player.rating}</p>
+                                    <p className="text-[14px] font-black text-highlight uppercase mt-1 tracking-[0.2em]">{player.position}</p>
                                 </div>
-                                <button className="w-full md:w-auto bg-highlight hover:bg-highlight-hover text-white px-8 py-4 rounded-xl font-black uppercase tracking-wider shadow-lg transform active:scale-95 transition-all">
-                                    Confirmar Presença
-                                </button>
+                                <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 backdrop-blur-md shadow-2xl">
+                                    <StarIcon className="w-8 h-8 text-highlight" />
+                                </div>
                             </div>
-                        ) : (
-                            <div className="text-center py-8 opacity-50">
-                                <TrophyIcon className="w-12 h-12 mx-auto mb-2 text-text-secondary" />
-                                <p>Nenhum jogo agendado.</p>
+
+                            <div className="w-64 h-64 relative">
+                                <div className="absolute inset-0 bg-highlight/20 rounded-full blur-[60px] animate-pulse"></div>
+                                <LazyImage 
+                                    src={player.avatarUrl} 
+                                    className="w-full h-full object-cover object-top relative z-10 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" 
+                                    style={{maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)'}} 
+                                    fallbackText={player.name}
+                                />
                             </div>
-                        )}
-                    </Card>
+
+                            <div className="w-full text-center">
+                                <h2 className="text-3xl font-black text-white uppercase tracking-tighter italic leading-none mb-1">{player.name}</h2>
+                                <p className="text-[10px] font-bold text-text-secondary uppercase tracking-[0.4em] opacity-60">Gladiators FA • Elite Athlete</p>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-x-6 w-full pt-6 border-t border-white/10">
+                                <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-black">SPD</p><p className="text-xl font-black text-white">88</p></div>
+                                <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-black">STR</p><p className="text-xl font-black text-white">92</p></div>
+                                <div className="text-center"><p className="text-[9px] text-text-secondary uppercase font-black">AGI</p><p className="text-xl font-black text-white">75</p></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* BODY STATUS (Check-in Rápido) */}
-                <div className="lg:col-span-1">
-                    <Card title="Status Físico (Hoje)">
-                        <div className="grid grid-cols-3 gap-2">
-                            <button className="flex flex-col items-center gap-2 p-3 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded-xl transition-all" onClick={() => alert("Check-in: 100%")}>
-                                <span className="text-2xl">⚡</span>
-                                <span className="text-[10px] font-bold text-green-400 uppercase">100%</span>
-                            </button>
-                            <button className="flex flex-col items-center gap-2 p-3 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-xl transition-all" onClick={() => alert("Check-in: Cansado")}>
-                                <span className="text-2xl">🥱</span>
-                                <span className="text-[10px] font-bold text-yellow-400 uppercase">Sore</span>
-                            </button>
-                            <button className="flex flex-col items-center gap-2 p-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl transition-all" onClick={() => navigate('/performance')}>
-                                <span className="text-2xl">🚑</span>
-                                <span className="text-[10px] font-bold text-red-400 uppercase">Dor</span>
-                            </button>
+                <div className="lg:col-span-7 flex flex-col gap-6">
+                    {/* XP Progress Dashboard */}
+                    <div className="bg-secondary/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+                        <div className="flex justify-between items-end mb-6">
+                            <div>
+                                <h3 className="text-2xl font-black text-white italic uppercase tracking-tight">Temporada 2025</h3>
+                                <p className="text-xs text-text-secondary font-bold uppercase tracking-widest mt-1">Nível de Prestígio: {player.level}</p>
+                            </div>
+                            <div className="text-right">
+                                <span className="text-3xl font-black text-highlight italic">{player.xp}</span>
+                                <span className="text-xs text-text-secondary font-bold ml-1">XP</span>
+                            </div>
                         </div>
-                    </Card>
+                        <div className="h-4 w-full bg-black/40 rounded-full overflow-hidden border border-white/5 relative">
+                            <div className="h-full bg-gradient-to-r from-highlight via-cyan-400 to-highlight transition-all duration-2000 shadow-glow" style={{ width: `${(player.xp % 1000) / 10}%` }}></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
+                        </div>
+                        <div className="flex justify-between mt-3">
+                            <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Rookie II</span>
+                            <span className="text-[10px] font-black text-highlight uppercase tracking-widest">Veteran I</span>
+                        </div>
+                    </div>
+
+                    {/* Quick Access Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+                        {[
+                            { label: 'Playbook', icon: BookIcon, path: '/tactical-lab', color: 'text-blue-400', bg: 'bg-blue-600/10' },
+                            { label: 'Treino Hoje', icon: WhistleIcon, path: '/training-day', color: 'text-purple-400', bg: 'bg-purple-600/10' },
+                            { label: 'Season Pass', icon: WalletIcon, path: '/finance', color: 'text-green-400', bg: 'bg-green-600/10' },
+                            { label: 'Evolução', icon: ActivityIcon, path: '/performance', color: 'text-orange-400', bg: 'bg-orange-600/10' }
+                        ].map((btn, i) => (
+                            <button 
+                                key={i}
+                                onClick={() => navigate(btn.path)}
+                                className="bg-secondary/40 border border-white/5 rounded-3xl p-6 flex flex-col items-center justify-center gap-3 hover:border-highlight/50 transition-all group active:scale-95"
+                            >
+                                <div className={`p-4 rounded-2xl ${btn.bg} ${btn.color} group-hover:scale-110 transition-transform`}>
+                                    <btn.icon className="w-6 h-6" />
+                                </div>
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest">{btn.label}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {/* LEADERBOARD & ACTIONS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card title="Leaderboard do Time (XP)">
+            {/* Secondary Intel Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <Card title="Próxima Batalha" className="border-l-4 border-l-red-500">
+                    {nextGame ? (
+                        <div className="flex items-center justify-between gap-6">
+                            <div className="flex items-center gap-6">
+                                <div className="w-20 h-20 bg-red-600/10 rounded-[2rem] flex flex-col items-center justify-center border border-red-500/20 text-red-500">
+                                    <span className="text-[10px] font-black uppercase">{new Date(nextGame.date).toLocaleDateString('pt-BR', { month: 'short' })}</span>
+                                    <span className="text-3xl font-black italic leading-none">{new Date(nextGame.date).getDate()}</span>
+                                </div>
+                                <div>
+                                    <h4 className="text-2xl font-black text-white italic uppercase leading-none">VS {nextGame.opponent}</h4>
+                                    <p className="text-xs text-text-secondary font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
+                                        <ClockIcon className="w-3 h-3" /> {new Date(nextGame.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} • Estádio Municipal
+                                    </p>
+                                </div>
+                            </div>
+                            <button className="bg-white text-black font-black px-6 py-3 rounded-2xl text-[10px] uppercase shadow-xl hover:bg-highlight hover:text-white transition-all">Confirmar Presença</button>
+                        </div>
+                    ) : (
+                        <p className="text-center py-6 text-text-secondary italic">Aguardando definição da tabela pela Federação.</p>
+                    )}
+                </Card>
+
+                <Card title="Líderes de Engajamento (XP)" className="border-l-4 border-l-highlight">
                     <div className="space-y-3">
-                        {xpLeaders.map((p: any, idx: number) => (
-                            <div key={p.id} className="flex items-center justify-between bg-secondary p-3 rounded-lg border border-white/5">
+                        {xpLeaders.slice(0, 3).map((l, i) => (
+                            <div key={i} className="flex items-center justify-between bg-black/20 p-3 rounded-2xl border border-white/5">
                                 <div className="flex items-center gap-3">
-                                    <span className={`font-black w-6 text-center ${idx === 0 ? 'text-yellow-400 text-lg' : 'text-gray-500'}`}>{idx + 1}</span>
-                                    <LazyImage src={p.avatarUrl} className="w-8 h-8 rounded-full bg-black" />
-                                    <span className={`font-bold text-sm ${p.id === player.id ? 'text-highlight' : 'text-white'}`}>{p.name}</span>
+                                    <span className={`w-6 text-center font-black italic ${i === 0 ? 'text-yellow-500 text-lg' : 'text-gray-500'}`}>{i + 1}º</span>
+                                    <img src={l.avatarUrl} className="w-8 h-8 rounded-full border border-white/10" alt="" />
+                                    <span className="text-white font-bold text-sm uppercase">{l.name}</span>
                                 </div>
-                                <span className="font-mono font-bold text-white text-sm">{p.xp} XP</span>
+                                <span className="font-mono font-black text-highlight">{l.xp} XP</span>
                             </div>
                         ))}
                     </div>
                 </Card>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => navigate('/gemini-playbook')} className="bg-purple-900/40 hover:bg-purple-900/60 border border-purple-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <BookIcon className="w-8 h-8 text-purple-400" />
-                        <span className="font-bold text-white text-sm">Estudar Playbook</span>
-                    </button>
-                    <button onClick={() => navigate('/locker-room')} className="bg-blue-900/40 hover:bg-blue-900/60 border border-blue-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <UsersIcon className="w-8 h-8 text-blue-400" />
-                        <span className="font-bold text-white text-sm">Vestiário</span>
-                    </button>
-                    <button onClick={() => navigate('/marketplace')} className="bg-yellow-900/40 hover:bg-yellow-900/60 border border-yellow-500/30 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <TrophyIcon className="w-8 h-8 text-yellow-400" />
-                        <span className="font-bold text-white text-sm">Loja & Itens</span>
-                    </button>
-                    <button onClick={() => navigate('/profile')} className="bg-gray-800 hover:bg-gray-700 border border-white/10 p-4 rounded-xl flex flex-col items-center justify-center gap-2 transition-all">
-                        <ActivityIcon className="w-8 h-8 text-gray-400" />
-                        <span className="font-bold text-white text-sm">Meus Highlights</span>
-                    </button>
-                </div>
             </div>
         </div>
     );

@@ -1,7 +1,11 @@
 
 import React from 'react';
-import { DumbbellIcon, ClipboardIcon } from '../../components/icons/UiIcons';
-import { TrophyIcon, BookIcon } from '../../components/icons/NavIcons';
+import { useNavigate } from 'react-router-dom';
+import { 
+  DumbbellIcon, ClipboardIcon, WhistleIcon, 
+  // Fix: Added ActivityIcon and UsersIcon to imports
+  TrophyIcon, BookIcon, BrainIcon, ActivityIcon, UsersIcon
+} from '../../components/icons/UiIcons';
 
 interface CoachHubButtonsProps {
     setActiveHub: (hub: string) => void;
@@ -10,32 +14,74 @@ interface CoachHubButtonsProps {
     program: string;
 }
 
-const CoachHubButtons: React.FC<CoachHubButtonsProps> = ({ setActiveHub, setActiveModule, nextGame, program }) => (
-    <div className="grid grid-cols-1 gap-4 h-[calc(100vh-250px)]">
-        <button onClick={() => { setActiveHub('TRAINING'); setActiveModule('PRACTICE'); }} className={`glass-panel bg-gradient-to-br ${program === 'TACKLE' ? 'from-blue-900/40 hover:border-blue-400' : 'from-yellow-900/40 hover:border-yellow-400'} to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group`}>
-            <DumbbellIcon className={`w-12 h-12 mb-2 group-hover:scale-110 transition-transform ${program === 'TACKLE' ? 'text-blue-400' : 'text-yellow-400'}`} />
-            <span className="text-2xl font-black text-white uppercase">Dia de Treino</span>
-            <span className={`text-xs mt-1 ${program === 'TACKLE' ? 'text-blue-300' : 'text-yellow-300'}`}>Scripts, IA & Performance ({program})</span>
-        </button>
-        <button onClick={() => { setActiveHub('GAME'); setActiveModule('MISSION_CONTROL'); }} className="glass-panel bg-gradient-to-br from-red-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-6 shadow-lg active:scale-95 transition-transform group hover:border-red-400">
-            <TrophyIcon className="w-12 h-12 text-red-400 mb-2 group-hover:scale-110 transition-transform" />
-            <span className="text-2xl font-black text-white uppercase">Dia de Jogo</span>
-                {nextGame ? 
-                <span className="text-xs text-red-200 bg-red-900/50 px-2 py-1 rounded mt-2">Próximo: vs {nextGame.opponent}</span> :
-                <span className="text-xs text-red-200 mt-1">Nenhum jogo agendado</span>
-                }
-        </button>
-        <div className="grid grid-cols-2 gap-4 h-full">
-            <button onClick={() => { setActiveHub('PLANNING'); setActiveModule('ROSTER'); }} className="glass-panel bg-gradient-to-br from-green-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg active:scale-95 transition-transform group hover:border-green-400">
-                <ClipboardIcon className="w-8 h-8 text-green-400 mb-2 group-hover:scale-110 transition-transform" />
-                <span className="text-lg font-black text-white uppercase">Gestão</span>
-            </button>
-            <button onClick={() => { setActiveHub('STUDY'); setActiveModule('VIDEO'); }} className="glass-panel bg-gradient-to-br from-purple-900/40 to-transparent rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg active:scale-95 transition-transform group hover:border-purple-400">
-                <BookIcon className="w-8 h-8 text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
-                <span className="text-lg font-black text-white uppercase">Estudos (IA)</span>
-            </button>
+const CoachHubButtons: React.FC<CoachHubButtonsProps> = ({ program }) => {
+    const navigate = useNavigate();
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 h-full px-2">
+            {/* Main Action Block: TRAINING */}
+            <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <button 
+                    onClick={() => navigate('/training-day')}
+                    className="relative overflow-hidden bg-gradient-to-br from-blue-900/60 to-black rounded-[3rem] border border-blue-500/30 p-10 flex flex-col items-start text-left group transition-all hover:border-blue-400 shadow-2xl"
+                >
+                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <WhistleIcon className="w-48 h-48 text-white" />
+                    </div>
+                    <div className="p-4 bg-blue-500/20 rounded-2xl text-blue-400 mb-6">
+                        <DumbbellIcon className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none">Training Day</h3>
+                    <p className="text-sm text-blue-200 mt-3 font-bold uppercase tracking-widest opacity-80">Scripts & Performance ({program})</p>
+                    <div className="mt-auto pt-10 flex items-center gap-2 text-highlight font-black uppercase text-[10px] tracking-[0.2em]">
+                        Operar Campo <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                </button>
+
+                <button 
+                    onClick={() => navigate('/sideline')}
+                    className="relative overflow-hidden bg-gradient-to-br from-red-900/60 to-black rounded-[3rem] border border-red-500/30 p-10 flex flex-col items-start text-left group transition-all hover:border-red-400 shadow-2xl"
+                >
+                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <TrophyIcon className="w-48 h-48 text-white" />
+                    </div>
+                    <div className="p-4 bg-red-500/20 rounded-2xl text-red-400 mb-6">
+                        <ActivityIcon className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none">Game Day</h3>
+                    <p className="text-sm text-red-200 mt-3 font-bold uppercase tracking-widest opacity-80">Súmula Digital & Rotação</p>
+                    <div className="mt-auto pt-10 flex items-center gap-2 text-red-400 font-black uppercase text-[10px] tracking-[0.2em]">
+                        Mission Control <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                </button>
+            </div>
+
+            {/* Sidebar Support Blocks */}
+            <div className="lg:col-span-4 flex flex-col gap-6">
+                <button 
+                    onClick={() => navigate('/tactical-lab')}
+                    className="flex-1 bg-secondary/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-8 flex flex-col justify-between hover:border-highlight group transition-all shadow-xl"
+                >
+                    <div className="flex justify-between items-center">
+                        <h4 className="text-white font-black uppercase italic tracking-widest">Tactical Lab</h4>
+                        <BrainIcon className="w-6 h-6 text-highlight group-hover:scale-110 transition-transform" />
+                    </div>
+                    <p className="text-xs text-text-secondary font-medium leading-relaxed mt-4">CIATORS: Digitalize suas jogadas e use Vision AI para scout.</p>
+                </button>
+
+                <button 
+                    onClick={() => navigate('/roster')}
+                    className="flex-1 bg-secondary/40 backdrop-blur-xl border border-white/5 rounded-[2.5rem] p-8 flex flex-col justify-between hover:border-blue-400 group transition-all shadow-xl"
+                >
+                    <div className="flex justify-between items-center">
+                        <h4 className="text-white font-black uppercase italic tracking-widest">Roster Control</h4>
+                        <UsersIcon className="w-6 h-6 text-blue-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <p className="text-xs text-text-secondary font-medium leading-relaxed mt-4">Gestão de Depth Chart e histórico de performance.</p>
+                </button>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 export default CoachHubButtons;
