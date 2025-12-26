@@ -15,8 +15,6 @@ const CACHE_LIMIT = 50;
 
 const set = (key: string, data: any) => {
     const stringified = JSON.stringify(data);
-    const prev = localStorage.getItem(key);
-    if (prev === stringified) return;
     localStorage.setItem(key, stringified);
     if (Object.keys(memoryCache).length > CACHE_LIMIT) memoryCache = {};
     memoryCache[key] = data; 
@@ -35,27 +33,13 @@ export const storageService = {
     initializeRAM: () => {
         if (!localStorage.getItem('fahub_settings')) {
             storageService.saveTeamSettings({
-                teamName: 'Gladiators FA',
+                teamName: 'Joinville Gladiators',
                 logoUrl: 'https://ui-avatars.com/api/?name=JG&background=059669&color=fff',
                 primaryColor: '#059669',
                 address: 'Joinville, SC',
                 plan: 'ALL_PRO',
                 sportType: 'TACKLE'
             });
-        }
-        
-        if (get('fahub_players').length === 0) {
-            set('fahub_players', [
-                { id: 'p1', name: 'Lucas Thor', position: 'QB', jerseyNumber: 12, level: 15, xp: 450, rating: 88, status: 'ACTIVE', avatarUrl: 'https://ui-avatars.com/api/?name=LT&background=059669&color=fff', class: 'Veterano', badges: ['Capitão'], program: 'TACKLE', rosterCategory: 'ACTIVE', attendanceRate: 95 },
-                { id: 'p2', name: 'Andrei Pitbull', position: 'RB', jerseyNumber: 22, level: 12, xp: 300, rating: 85, status: 'ACTIVE', avatarUrl: 'https://ui-avatars.com/api/?name=AP&background=059669&color=fff', class: 'Sênior', badges: ['Velocista'], program: 'TACKLE', rosterCategory: 'ACTIVE', attendanceRate: 88 },
-                { id: 'p3', name: 'Zeca Hulk', position: 'LB', jerseyNumber: 55, level: 14, xp: 400, rating: 87, status: 'ACTIVE', avatarUrl: 'https://ui-avatars.com/api/?name=ZH&background=red&color=fff', class: 'Veterano', badges: ['MVP'], program: 'TACKLE', rosterCategory: 'ACTIVE', attendanceRate: 92 }
-            ]);
-        }
-        
-        if (get('fahub_games').length === 0) {
-            set('fahub_games', [{
-                id: 'g1', opponent: 'Istepôs FA', date: new Date(), location: 'Home', status: 'IN_PROGRESS', score: '07-00', currentQuarter: 1, clock: '12:00', timeline: []
-            }]);
         }
     },
 
@@ -70,7 +54,7 @@ export const storageService = {
 
     getCurrentUser: () => {
         const user = localStorage.getItem('gridiron_current_user');
-        return user ? JSON.parse(user) : { role: 'MASTER', name: 'Coach Guto', id: 'u1', program: 'TACKLE' };
+        return user ? JSON.parse(user) : null;
     },
     
     setCurrentUser: (u: any) => set('gridiron_current_user', u),
@@ -111,7 +95,7 @@ export const storageService = {
     logAuditAction: (action: string, details: string) => {
         const logs = get<AuditLog>('fahub_audit');
         const user = storageService.getCurrentUser();
-        set('fahub_audit', [{ id: Date.now().toString(), action, details, timestamp: new Date(), userName: user.name, role: user.role }, ...logs.slice(0, 19)]);
+        set('fahub_audit', [{ id: Date.now().toString(), action, details, timestamp: new Date(), userName: user?.name || 'Sistema', role: user?.role || 'SYSTEM' }, ...logs.slice(0, 19)]);
     },
 
     getTransactions: () => get<Transaction>('fahub_transactions'),

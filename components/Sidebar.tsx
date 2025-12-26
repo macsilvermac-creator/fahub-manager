@@ -5,7 +5,7 @@ import {
   DashboardIcon, WhistleIcon, FinanceIcon, 
   UsersIcon, MegaphoneIcon, BrainIcon, 
   BriefcaseIcon, ShieldCheckIcon, TrophyIcon, 
-  BookIcon, HeartPulseIcon
+  BookIcon, HeartPulseIcon, TargetIcon
 } from './icons/UiIcons';
 import { UserRole } from '../types';
 import { securityService } from '../services/securityService';
@@ -15,7 +15,6 @@ interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   currentRole: UserRole;
-  setRole: (role: UserRole) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, currentRole }) => {
@@ -50,71 +49,50 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, current
             <span>PAINEL PRINCIPAL</span>
           </NavLink>
 
-          {/* Seção Esportiva - Técnicos e Atletas */}
-          {securityService.canAccess(currentRole, 'SPORTS') && (
+          {/* Unidade de Campo: Técnico e Atleta */}
+          {(currentRole.includes('COACH') || currentRole.includes('COORD') || currentRole === 'PLAYER' || currentRole === 'MASTER' || currentRole === 'SPORTS_DIRECTOR') && (
             <>
-                <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mt-6 mb-2 border-b border-white/5 pb-1">Unidade de Campo</p>
-                
-                <NavLink to="/roster" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                    <UsersIcon className="w-4 h-4 mr-3 text-blue-400" />
-                    <span>Elenco & Roster</span>
-                </NavLink>
+              <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mt-6 mb-2 border-b border-white/5 pb-1">Unidade de Campo</p>
+              
+              <NavLink to="/roster" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <UsersIcon className="w-4 h-4 mr-3 text-blue-400" />
+                <span>Elenco & Roster</span>
+              </NavLink>
 
-                <NavLink to="/tactical-lab" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                    <BrainIcon className="w-4 h-4 mr-3 text-cyan-400" />
-                    <span>Playbook Digital</span>
-                </NavLink>
+              <NavLink to="/tactical-lab" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <BrainIcon className="w-4 h-4 mr-3 text-cyan-400" />
+                <span>Playbook Digital</span>
+              </NavLink>
 
-                <NavLink to="/training-day" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                    <WhistleIcon className="w-4 h-4 mr-3 text-indigo-400" />
-                    <span>Treinos & Scripts</span>
-                </NavLink>
-
-                {['MASTER', 'HEAD_COACH', 'EQUIPMENT_MANAGER'].includes(currentRole) && (
-                    <NavLink to="/inventory" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                        <ShieldCheckIcon className="w-4 h-4 mr-3 text-orange-400" />
-                        <span>Almoxarifado</span>
-                    </NavLink>
-                )}
+              <NavLink to="/training-day" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+                <WhistleIcon className="w-4 h-4 mr-3 text-indigo-400" />
+                <span>Treinos & Scripts</span>
+              </NavLink>
             </>
           )}
 
-          {/* Seção Administrativa - Diretores e Master */}
-          {securityService.canAccess(currentRole, 'COMMERCIAL') && (
+          {/* Diretoria & Governança */}
+          {securityService.canAccess(currentRole, 'WAR_ROOM') && (
             <>
-              <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mt-6 mb-2 border-b border-white/5 pb-1">Diretoria</p>
+              <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mt-6 mb-2 border-b border-white/5 pb-1">Diretoria Executiva</p>
               
               <NavLink to="/finance" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <FinanceIcon className="w-4 h-4 mr-3 text-green-400" />
                 <span>Gestão Financeira</span>
               </NavLink>
 
-              <NavLink to="/commercial" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <BriefcaseIcon className="w-4 h-4 mr-3 text-blue-500" />
-                <span>Comercial / CRM</span>
-              </NavLink>
-
-              <NavLink to="/marketing" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <MegaphoneIcon className="w-4 h-4 mr-3 text-pink-500" />
-                <span>Marketing / Mídia</span>
-              </NavLink>
-            </>
-          )}
-
-          {/* Seção Governança - Master / Presidente */}
-          {securityService.canAccess(currentRole, 'SETTINGS') && (
-            <>
-              <p className="px-4 text-[9px] font-black text-text-secondary/40 uppercase tracking-widest mt-6 mb-2 border-b border-white/5 pb-1">Governança</p>
               <NavLink to="/admin" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
                 <ShieldCheckIcon className="w-4 h-4 mr-3 text-red-500" />
-                <span>War Room (Admin)</span>
-              </NavLink>
-              <NavLink to="/settings" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-                <HeartPulseIcon className="w-4 h-4 mr-3 text-gray-400" />
-                <span>Configurações</span>
+                <span>War Room (Governança)</span>
               </NavLink>
             </>
           )}
+          
+          {/* Marketplace / Loja: Visível para todos */}
+          <NavLink to="/marketplace" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''} mt-4`}>
+            <BriefcaseIcon className="w-4 h-4 mr-3 text-yellow-500" />
+            <span>LOJA DO TIME</span>
+          </NavLink>
         </nav>
       </div>
 
@@ -126,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, setIsOpen, current
            >
                 Sair do Sistema
            </button>
-           <p className="text-[7px] text-text-secondary/30 text-center mt-3 uppercase tracking-widest">v3.5 Build Production</p>
+           <p className="text-[7px] text-text-secondary/30 text-center mt-3 uppercase tracking-widest">Acesso: {currentRole}</p>
       </div>
     </aside>
   );

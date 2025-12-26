@@ -27,11 +27,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <UserContext.Provider value={value}>
       <div className={`flex h-screen bg-primary text-text-primary transition-all duration-500`}>
+        {/* Fix: removed setRole prop as it is not defined in SidebarProps in Sidebar.tsx */}
         <Sidebar 
           isOpen={isSidebarOpen} 
           setIsOpen={setSidebarOpen} 
           currentRole={currentRole}
-          setRole={setRole}
         />
         
         <div className="flex-1 flex flex-col overflow-hidden">
