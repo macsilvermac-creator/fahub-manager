@@ -123,3 +123,5 @@ export const MapPinIcon = (props: any) => <svg {...iconProps} {...props} viewBox
 export const CloudIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>;
 /** Fix: Added EraserIcon export */
 export const EraserIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>;
+/** Fix: Added ZapIcon export */
+export const ZapIcon = (props: any) => <svg {...iconProps} {...props} viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>;

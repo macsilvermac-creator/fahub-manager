@@ -34,8 +34,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header onMenuClick={() => setSidebarOpen(true)} />
-          {/* Alterado para overflow-y-auto para permitir rolagem global da página */}
-          <main className="flex-1 overflow-y-auto bg-primary pt-3 px-4 lg:px-6 pb-10 custom-scrollbar flex flex-col">
+          <main className="flex-1 overflow-y-auto bg-primary pt-2 px-4 lg:px-6 pb-6 custom-scrollbar flex flex-col">
             {children}
           </main>
         </div>
