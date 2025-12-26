@@ -1,12 +1,11 @@
-
 import React, { useContext, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserContext, UserContextType } from '../components/Layout';
-import { storageService } from '../services/storageService';
-import ExecutiveDashboard from '../features/dashboard/ExecutiveDashboard';
-import PlayerCareerMode from '../features/dashboard/PlayerCareerMode';
-import CoachHubButtons from '../features/dashboard/CoachHubButtons';
-import { ShieldCheckIcon, HeartPulseIcon, ActivityIcon } from '../components/icons/UiIcons';
+import { UserContext, UserContextType } from '@/components/Layout';
+import { storageService } from '@/services/storageService';
+import ExecutiveDashboard from '@/features/dashboard/ExecutiveDashboard';
+import PlayerCareerMode from '@/features/dashboard/PlayerCareerMode';
+import CoachHubButtons from '@/features/dashboard/CoachHubButtons';
+import { ShieldCheckIcon } from '@/components/icons/UiIcons';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -19,19 +18,16 @@ const Dashboard: React.FC = () => {
         date: new Date(Date.now() + 86400000 * 3)
     }), []);
 
-    // Mock Leaders
     const xpLeaders = [
         { id: 1, name: 'Lucas Thor', xp: 4520, avatarUrl: 'https://ui-avatars.com/api/?name=Lucas+Thor&background=059669&color=fff' },
         { id: 2, name: 'Guto Coach', xp: 3980, avatarUrl: 'https://ui-avatars.com/api/?name=Guto+Coach&background=3b82f6&color=fff' }
     ];
 
-    // 1. VISÃO EXECUTIVA
     const isExecutive = ['MASTER', 'PLATFORM_OWNER', 'PRESIDENT', 'VICE_PRESIDENT', 'FINANCIAL_DIRECTOR', 'SPORTS_DIRECTOR'].includes(currentRole);
     if (isExecutive) {
         return <ExecutiveDashboard handleCopyInvite={() => alert("Link de convite copiado!")} />;
     }
 
-    // 2. VISÃO TÉCNICA
     const isTechnical = currentRole.includes('COACH') || currentRole.includes('COORD');
     if (isTechnical) {
         return (
@@ -52,7 +48,6 @@ const Dashboard: React.FC = () => {
         );
     }
 
-    // 3. VISÃO ATLETA (A NOVA HOME NARCISISTA)
     if (currentRole === 'PLAYER' || currentRole === 'STUDENT') {
         return (
             <PlayerCareerMode 
