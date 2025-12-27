@@ -1,145 +1,81 @@
+
 import React, { useState, useContext, useMemo } from 'react';
 import { Player, RosterCategory } from '@/types';
 import AthleteCard from '@/components/AthleteCard';
-import AddPlayerModal from '@/components/AddPlayerModal';
-import PlayerDetailsModal from '@/components/PlayerDetailsModal';
-import ConfirmationModal from '@/components/ConfirmationModal';
 import { storageService } from '@/services/storageService';
 import { UserContext } from '@/components/Layout';
 import { useToast } from '@/contexts/ToastContext'; 
 import { useAppStore } from '@/utils/storeHooks';
 import PageHeader from '@/components/PageHeader';
-import { UsersIcon } from '@/components/icons/UiIcons';
+import { UsersIcon, AlertCircleIcon } from '@/components/icons/UiIcons';
 
 const Roster: React.FC = () => {
     const { currentRole } = useContext(UserContext) as any;
     const toast = useToast();
     
-    // Usando o hook reativo para evitar loops de render
     const players = useAppStore('players', storageService.getPlayers);
     const activeProgram = useAppStore('activeProgram', storageService.getActiveProgram);
 
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-    const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
-    const [activeCategory, setActiveCategory] = useState<RosterCategory>('ACTIVE');
-    const [unitFilter, setUnitFilter] = useState<'ALL' | 'OFFENSE' | 'DEFENSE' | 'ST'>('ALL');
-
-    const canManageRoster = currentRole === 'MASTER' || currentRole === 'HEAD_COACH';
-
-    const handleAddPlayer = (newPlayerData: any) => {
-        try {
-            const newPlayer: Player = {
-                id: Date.now(),
-                level: 1,
-                xp: 0,
-                rating: 70, 
-                status: 'ACTIVE',
-                rosterCategory: 'ACTIVE',
-                badges: ['Novato'],
-                ...newPlayerData,
-                program: activeProgram
-            };
-            
-            storageService.registerAthlete(newPlayer);
-            setIsAddModalOpen(false);
-            toast.success(`Atleta ${newPlayer.name} registrado!`); 
-        } catch (error: any) {
-            toast.error(error.message); 
-        }
-    };
-
-    const confirmDeletePlayer = () => {
-        if (playerToDelete) {
-            const updatedPlayers = players.filter(p => p.id !== playerToDelete.id);
-            storageService.savePlayers(updatedPlayers);
-            toast.info(`${playerToDelete.name} removido.`); 
-            setPlayerToDelete(null);
-        }
-    };
+    const [activeFilter, setActiveFilter] = useState<'ALL' | 'OFFENSE' | 'DEFENSE' | 'ST' | 'IR' | 'INELIGIBLE'>('ALL');
 
     const filteredPlayers = useMemo(() => {
         return players.filter(p => {
-            if (p.program && p.program !== activeProgram && p.program !== 'BOTH') return false;
-            if ((p.rosterCategory || 'ACTIVE') !== activeCategory) return false;
-            if (unitFilter === 'ALL') return true;
+            if (activeFilter === 'ALL') return true;
+            if (activeFilter === 'IR') return p.rosterCategory === 'IR';
+            if (activeFilter === 'INELIGIBLE') return p.status === 'BLOCKED' || (p.attendanceRate || 0) < 50;
             
             const pos = p.position;
-            if (unitFilter === 'OFFENSE') {
-                return activeProgram === 'FLAG' 
-                    ? ['QB','WR','C','RUSHER','ATH'].includes(pos)
-                    : ['QB','RB','WR','TE','OL','LT','LG','C','RG','RT'].includes(pos);
-            }
-            if (unitFilter === 'DEFENSE') {
-                return activeProgram === 'FLAG'
-                    ? ['LB','DB','S','RUSHER','ATH'].includes(pos)
-                    : ['DL','DE','DT','LB','CB','S','FS','SS'].includes(pos);
-            }
-            if (unitFilter === 'ST') {
-                return ['K','P','LS','KR','PR'].includes(pos);
-            }
+            if (activeFilter === 'OFFENSE') return ['QB','RB','WR','TE','OL'].includes(pos);
+            if (activeFilter === 'DEFENSE') return ['DL','LB','CB','S','FS','SS'].includes(pos);
+            if (activeFilter === 'ST') return ['K','P','LS'].includes(pos);
+            
             return true;
         });
-    }, [players, activeCategory, unitFilter, activeProgram]);
+    }, [players, activeFilter]);
 
     return (
-        <div className="space-y-6 animate-fade-in pb-20">
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
-                <PageHeader 
-                    title={`Elenco ${activeProgram}`} 
-                    subtitle="Gerenciamento de Atletas e Depth Chart." 
-                />
-                <div className="flex gap-2">
-                    {canManageRoster && (
-                        <button onClick={() => setIsAddModalOpen(true)} className="px-6 py-3 bg-highlight text-white rounded-2xl font-black uppercase text-xs shadow-glow transition-all active:scale-95">
-                            + Recrutar Atleta
-                        </button>
+        <div className="space-y-6 animate-fade-in pb-20 flex flex-col h-full overflow-hidden">
+            <PageHeader title="Roster Master" subtitle="Visualização tática e elegibilidade de elenco." />
+
+            {/* FILTROS DE ELITE */}
+            <div className="flex bg-secondary/40 p-1.5 rounded-3xl border border-white/5 shrink-0 overflow-x-auto no-scrollbar">
+                {[
+                    { id: 'ALL', label: 'TUDO' },
+                    { id: 'OFFENSE', label: 'ATAQUE' },
+                    { id: 'DEFENSE', label: 'DEFESA' },
+                    { id: 'ST', label: 'ST' },
+                    { id: 'IR', label: 'IR (DM)' },
+                    { id: 'INELIGIBLE', label: 'INAPTOS' }
+                ].map(f => (
+                    <button 
+                        key={f.id}
+                        onClick={() => setActiveFilter(f.id as any)}
+                        className={`flex-1 min-w-[100px] py-3 rounded-2xl text-[10px] font-black transition-all uppercase tracking-widest ${activeFilter === f.id ? (f.id === 'INELIGIBLE' ? 'bg-red-600 text-white' : 'bg-highlight text-white') : 'text-text-secondary hover:text-white'}`}
+                    >
+                        {f.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* GRID DE 6 CARDS (PAGINADO NO SCROLL) */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredPlayers.map(player => (
+                        <AthleteCard 
+                            key={player.id} 
+                            player={player} 
+                            onClick={() => {}}
+                            onDelete={() => {}}
+                        />
+                    ))}
+                    {filteredPlayers.length === 0 && (
+                        <div className="col-span-full py-40 text-center opacity-20 italic font-black uppercase text-sm border-2 border-dashed border-white/10 rounded-[3rem]">
+                             <UsersIcon className="w-16 h-16 mx-auto mb-4" />
+                             Nenhum atleta nesta categoria
+                        </div>
                     )}
                 </div>
             </div>
-
-            <div className="flex flex-col md:flex-row md:items-center gap-4 border-b border-white/5 pb-1">
-                <div className="flex overflow-x-auto no-scrollbar shrink-0">
-                    <button onClick={() => setActiveCategory('ACTIVE')} className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${activeCategory === 'ACTIVE' ? 'border-highlight text-highlight' : 'border-transparent text-text-secondary hover:text-white'}`}>Ativos</button>
-                    <button onClick={() => setActiveCategory('PRACTICE_SQUAD')} className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${activeCategory === 'PRACTICE_SQUAD' ? 'border-blue-400 text-blue-400' : 'border-transparent text-text-secondary hover:text-white'}`}>Practice Squad</button>
-                    <button onClick={() => setActiveCategory('IR')} className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest border-b-2 transition-all ${activeCategory === 'IR' ? 'border-red-500 text-red-500' : 'border-transparent text-text-secondary hover:text-white'}`}>Injured Reserve</button>
-                </div>
-                
-                <div className="w-px h-6 bg-white/10 hidden md:block"></div>
-
-                <div className="flex gap-1 bg-black/20 p-1 rounded-xl border border-white/5">
-                    {['ALL', 'OFFENSE', 'DEFENSE', 'ST'].map(unit => (
-                        <button 
-                            key={unit}
-                            onClick={() => setUnitFilter(unit as any)}
-                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${unitFilter === unit ? 'bg-white/10 text-white' : 'text-text-secondary hover:text-white'}`}
-                        >
-                            {unit}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredPlayers.map(player => (
-                    <AthleteCard 
-                        key={player.id} 
-                        player={player} 
-                        onClick={setSelectedPlayer}
-                        onDelete={setPlayerToDelete}
-                    />
-                ))}
-                {filteredPlayers.length === 0 && (
-                    <div className="col-span-full py-20 text-center opacity-30 border-2 border-dashed border-white/10 rounded-[2.5rem]">
-                        <UsersIcon className="w-12 h-12 mx-auto mb-4" />
-                        <p className="font-black uppercase tracking-widest text-xs">Nenhum atleta nesta categoria</p>
-                    </div>
-                )}
-            </div>
-            
-            <AddPlayerModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAdd={handleAddPlayer} />
-            <PlayerDetailsModal isOpen={!!selectedPlayer} onClose={() => setSelectedPlayer(null)} player={selectedPlayer} />
-            <ConfirmationModal isOpen={!!playerToDelete} onClose={() => setPlayerToDelete(null)} onConfirm={confirmDeletePlayer} title="Confirmar Remoção" message={`Deseja remover ${playerToDelete?.name} do elenco?`} confirmLabel="Excluir Definitivamente" />
         </div>
     );
 };
