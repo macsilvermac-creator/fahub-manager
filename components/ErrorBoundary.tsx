@@ -1,21 +1,19 @@
-
-import React, { ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangleIcon, RefreshIcon } from './icons/UiIcons';
 
-interface Props {
+interface ErrorBoundaryProps {
   children?: ReactNode;
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
 }
 
-// Fix: Extending React.Component to ensure props and state are correctly typed by the compiler
-class ErrorBoundary extends React.Component<Props, State> {
-  public state: State = { hasError: false };
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = { hasError: false };
 
-  public static getDerivedStateFromError(error: Error): State {
+  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
@@ -80,7 +78,6 @@ class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Correctly accessing props.children
     return this.props.children;
   }
 }
