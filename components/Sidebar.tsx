@@ -1,9 +1,8 @@
+
 import * as React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  CalendarIcon, BrainIcon, WhistleIcon, BookIcon,
-  DashboardIcon, FinanceIcon, UsersIcon, ShieldCheckIcon,
-  LockIcon, TargetIcon
+  DashboardIcon, LockIcon, TargetIcon, UsersIcon
 } from './icons/UiIcons';
 import { UserRole } from '../types';
 import { securityService } from '../services/securityService';
@@ -16,10 +15,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => {
-  const user = authService.getCurrentUser();
-  
   const navLinkClasses = "flex items-center px-4 py-3.5 text-text-secondary rounded-2xl hover:bg-white/5 hover:text-white transition-all text-xs font-black uppercase tracking-widest mb-1 group";
-  const activeNavLinkClasses = "bg-highlight/10 text-highlight border-r-4 border-highlight font-black shadow-[inset_-10px_0_20px_rgba(5,150,105,0.1)]";
+  const activeNavLinkClasses = "bg-highlight/10 text-highlight border-r-4 border-highlight font-black";
 
   return (
     <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0B1120] transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 lg:relative lg:translate-x-0 flex flex-col h-full border-r border-white/5 shadow-2xl`}>
@@ -41,32 +38,10 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
         <nav className="space-y-1">
           <NavLink to="/dashboard" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
             <DashboardIcon className="w-4 h-4 mr-3" />
-            <span>Base</span>
+            <span>Base de Comando</span>
           </NavLink>
 
-          <p className="px-4 text-[9px] font-black text-text-secondary/20 uppercase tracking-[0.3em] mt-8 mb-4">Tactical Hubs</p>
-          
-          <NavLink to="/agenda" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <CalendarIcon className="w-4 h-4 mr-3" />
-            <span>Agenda</span>
-          </NavLink>
-
-          <NavLink to="/brain-lab" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <BrainIcon className="w-4 h-4 mr-3 text-cyan-400" />
-            <span>Brain Lab</span>
-          </NavLink>
-
-          <NavLink to="/iron-lab" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <WhistleIcon className="w-4 h-4 mr-3 text-orange-500" />
-            <span>Iron Lab</span>
-          </NavLink>
-
-          <NavLink to="/playbook-lab" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
-            <BookIcon className="w-4 h-4 mr-3 text-purple-400" />
-            <span>Playbook Lab</span>
-          </NavLink>
-
-          <p className="px-4 text-[9px] font-black text-text-secondary/20 uppercase tracking-[0.3em] mt-8 mb-4">Associação</p>
+          <p className="px-4 text-[9px] font-black text-text-secondary/20 uppercase tracking-[0.3em] mt-8 mb-4">Gestão Administrativa</p>
           
           <NavLink to="/vault-hub" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
             <LockIcon className="w-4 h-4 mr-3 text-yellow-500" />
@@ -76,6 +51,12 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ isOpen, currentRole }) => 
           <NavLink to="/register-lab" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
             <TargetIcon className="w-4 h-4 mr-3 text-green-400" />
             <span>Register Lab</span>
+          </NavLink>
+
+          <NavLink to="/profile" className={({ isActive }) => `${navLinkClasses} ${isActive ? activeNavLinkClasses : ''}`}>
+            {/* Fix: Changed UserIcon to UsersIcon */}
+            <UsersIcon className="w-4 h-4 mr-3" />
+            <span>Meu Perfil</span>
           </NavLink>
         </nav>
       </div>
