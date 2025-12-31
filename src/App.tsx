@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './modules/shared/components/Sidebar';
 import Dashboard from './modules/dashboard/Dashboard';

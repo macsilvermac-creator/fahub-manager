@@ -1,77 +1,51 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Activity, 
-  Stethoscope, 
-  DollarSign, 
-  Settings, 
-  X,
-  Users
-} from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 
-interface SidebarProps {
-  isMobileOpen?: boolean;
-  closeMobile?: () => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, closeMobile }) => {
-  const location = useLocation(); // Sabe em qual página estamos
-
+const Sidebar = () => {
   const menuItems = [
-    // AQUI ESTÁ A MUDANÇA: path agora é '/dashboard'
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' }, 
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Users, label: 'Atletas', path: '/athletes' },
-    { icon: Activity, label: 'Performance', path: '/performance' },
-    { icon: Stethoscope, label: 'Médico', path: '/medical' },
-    { icon: DollarSign, label: 'Financeiro', path: '/financial' },
     { icon: Settings, label: 'Configurações', path: '/settings' },
   ];
 
   return (
-    <>
-      {isMobileOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
-          onClick={closeMobile}
-        ></div>
-      )}
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-slate-900 text-white flex flex-col z-50">
+      {/* Logo */}
+      <div className="p-6 border-b border-slate-800">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+          FAHUB
+        </h1>
+        <p className="text-xs text-slate-400 mt-1">Manager v1.0</p>
+      </div>
 
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 z-30
-        w-64 bg-slate-900 text-white transform transition-transform duration-200 ease-in-out
-        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        <div className="h-16 flex items-center justify-between px-6 bg-slate-950">
-          <span className="text-xl font-bold tracking-wider">FAHUB</span>
-          <button onClick={closeMobile} className="lg:hidden text-gray-400 hover:text-white">
-            <X size={24} />
-          </button>
-        </div>
+      {/* Menu de Navegação */}
+      <nav className="flex-1 p-4 space-y-2">
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                isActive
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+              }`
+            }
+          >
+            <item.icon size={20} />
+            <span className="font-medium">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
 
-        <nav className="mt-6 px-4 space-y-2">
-          {menuItems.map((item, index) => {
-            // Verifica se a rota atual começa com o caminho do item (para manter ativo em subpáginas)
-            const isActive = location.pathname.startsWith(item.path);
-            
-            return (
-              <Link
-                key={index}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                  isActive 
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                <item.icon size={20} />
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
-    </>
+      {/* Rodapé / Logout */}
+      <div className="p-4 border-t border-slate-800">
+        <button className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-red-400 hover:bg-slate-800 transition-colors">
+          <LogOut size={20} />
+          <span className="font-medium">Sair</span>
+        </button>
+      </div>
+    </aside>
   );
 };
 
