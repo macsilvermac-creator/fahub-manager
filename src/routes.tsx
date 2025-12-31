@@ -1,4 +1,3 @@
-import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import DashboardLayout from './shared/components/layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard/Dashboard'; // Certifique-se que o Dashboard.tsx está aqui
