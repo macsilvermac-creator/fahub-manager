@@ -1,30 +1,67 @@
-const Dashboard = () => {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">Visão Geral</h2>
-        <span className="text-sm text-gray-500">Última atualização: Hoje, 14:30</span>
-      </div>
-      
-      {/* Grid de Cards Exemplo - Código direto, sem componentes externos */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-gray-500 text-sm font-medium uppercase">Atletas Ativos</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">45</p>
-        </div>
-        
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-gray-500 text-sm font-medium uppercase">Caixa Atual</h3>
-          <p className="text-3xl font-bold text-gray-900 mt-2">R$ 1.250,00</p>
-        </div>
+import React from 'react';
+import { 
+  UserGroupIcon, 
+  CalendarDaysIcon, 
+  BanknotesIcon 
+} from '@heroicons/react/24/outline';
+import StatCard from '../../components/Dashboard/StatCard';
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-gray-500 text-sm font-medium uppercase">Próximo Treino</h3>
-          <p className="text-2xl font-bold text-blue-600 mt-2">Sábado, 14:00</p>
-        </div>
+// Interface para os dados do Dashboard (Mock para o frontend)
+interface DashboardMetrics {
+  totalAthletes: number;
+  upcomingEvents: number;
+  monthlyRevenue: number;
+}
+
+export default function Dashboard() {
+  // TODO: Substituir por chamada real à API (ex: useDashboardMetrics hook)
+  const metrics: DashboardMetrics = {
+    totalAthletes: 150,
+    upcomingEvents: 4,
+    monthlyRevenue: 12500.00,
+  };
+
+  // Helper para formatar moeda
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+        <p className="text-gray-500 text-sm mt-1">Visão geral do seu clube.</p>
+      </div>
+
+      {/* Grid de KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <StatCard
+          title="Total de Atletas"
+          value={metrics.totalAthletes}
+          icon={UserGroupIcon}
+          colorClass="text-blue-600 bg-blue-50"
+        />
+        <StatCard
+          title="Eventos Próximos"
+          value={metrics.upcomingEvents}
+          icon={CalendarDaysIcon}
+          colorClass="text-orange-600 bg-orange-50"
+        />
+        <StatCard
+          title="Receita Mensal"
+          value={formatCurrency(metrics.monthlyRevenue)}
+          icon={BanknotesIcon}
+          colorClass="text-green-600 bg-green-50"
+        />
+      </div>
+
+      {/* Área para expansão futura (Gráficos ou Tabelas Recentes) */}
+      <div className="bg-white rounded-lg shadow p-8 text-center text-gray-400 border-dashed border-2 border-gray-200">
+        <span className="text-sm">Área reservada para gráficos de desempenho ou atividades recentes.</span>
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}

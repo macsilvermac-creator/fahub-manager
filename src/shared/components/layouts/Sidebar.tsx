@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  Activity, // Usaremos para Performance/Atletas por enquanto
+  Activity, 
   Stethoscope, 
   DollarSign, 
   Settings, 
@@ -19,8 +19,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, closeMobile }) => {
   const location = useLocation(); // Sabe em qual página estamos
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-    { icon: Users, label: 'Atletas', path: '/athletes' }, // Novo Link!
+    // AQUI ESTÁ A MUDANÇA: path agora é '/dashboard'
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' }, 
+    { icon: Users, label: 'Atletas', path: '/athletes' },
     { icon: Activity, label: 'Performance', path: '/performance' },
     { icon: Stethoscope, label: 'Médico', path: '/medical' },
     { icon: DollarSign, label: 'Financeiro', path: '/financial' },
@@ -50,7 +51,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, closeMobile }) => {
 
         <nav className="mt-6 px-4 space-y-2">
           {menuItems.map((item, index) => {
-            const isActive = location.pathname === item.path;
+            // Verifica se a rota atual começa com o caminho do item (para manter ativo em subpáginas)
+            const isActive = location.pathname.startsWith(item.path);
+            
             return (
               <Link
                 key={index}
