@@ -1,17 +1,16 @@
-import { LayoutDashboard, Users, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, DollarSign } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
-// ADICIONADO: Interface para aceitar as props do DashboardLayout
 interface SidebarProps {
   isMobileOpen?: boolean;
   closeMobile?: () => void;
 }
 
-// ADICIONADO: Recebendo as props (mesmo que opcionais)
 const Sidebar = ({ isMobileOpen, closeMobile }: SidebarProps) => {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Users, label: 'Atletas', path: '/athletes' },
+    { icon: DollarSign, label: 'Financeiro', path: '/finance' },
     { icon: Settings, label: 'Configurações', path: '/settings' },
   ];
 
