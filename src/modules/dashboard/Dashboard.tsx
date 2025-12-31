@@ -1,4 +1,5 @@
-import { Users, UserCheck, Calendar, DollarSign, ArrowUp, ArrowDown } from 'lucide-react';
+// Removidos ArrowUp e ArrowDown que não eram usados aqui
+import { Users, UserCheck, Calendar, DollarSign } from 'lucide-react';
 import { useDashboardStats } from './useDashboardStats';
 import StatCard from '../../shared/components/StatCard';
 
