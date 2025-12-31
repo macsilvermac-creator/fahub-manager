@@ -1,42 +1,39 @@
-// src/pages/Dashboard/Dashboard.tsx
+// src/pages/Dashboard.tsx
 import React from 'react';
-import MetricCard from '../../components/MetricCard/MetricCard'; // Ajuste o caminho conforme sua estrutura
+import MetricCard from '../components/MetricCard'; // Importa o componente MetricCard
+import Header from '../components/Header'; // Assumimos que o Header já existe
+import Sidebar from '../components/Sidebar'; // Assumimos que o Sidebar já existe
 
 const Dashboard: React.FC = () => {
-  // Dados de exemplo para as métricas
-  const totalAthletes = 150;
-  const upcomingEvents = 4;
-  const monthlyRevenue = "R$ 12.500,00"; // Formato como string para exibição
-
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">Dashboard</h1>
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar /> {/* Componente Sidebar existente */}
+      <div className="flex-1 flex flex-col">
+        <Header /> {/* Componente Header existente */}
+        <main className="flex-1 p-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <MetricCard
-          title="Total de Atletas"
-          value={totalAthletes}
-          description="Atletas cadastrados na plataforma"
-        />
-        <MetricCard
-          title="Eventos Próximos"
-          value={upcomingEvents}
-          description="Próximos eventos agendados"
-        />
-        <MetricCard
-          title="Receita Mensal"
-          value={monthlyRevenue}
-          description="Receita total do mês atual"
-        />
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <MetricCard
+              title="Total de Atletas"
+              value="150"
+              description="Atletas cadastrados"
+            />
+            <MetricCard
+              title="Eventos Próximos"
+              value="4"
+              description="Eventos nos próximos 30 dias"
+            />
+            <MetricCard
+              title="Receita Mensal"
+              value="R$ 12.500,00"
+              description="Faturamento do mês atual"
+              isCurrency={true}
+            />
+          </div>
 
-      {/* Você pode adicionar mais seções do dashboard aqui */}
-      <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Visão Geral</h2>
-        <p className="text-gray-700 dark:text-gray-300">
-          Bem-vindo ao painel de controle do FAHUB Manager. Aqui você encontra um resumo rápido das principais métricas da sua gestão esportiva.
-        </p>
-        {/* Mais conteúdo como gráficos, tabelas recentes, etc. */}
+          {/* Você pode adicionar mais seções aqui, como gráficos, tabelas, etc. */}
+        </main>
       </div>
     </div>
   );
