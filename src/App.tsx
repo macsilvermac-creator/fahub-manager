@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from './utils/supabaseClient'
+import { supabase } from './lib/supabaseClient'
 
 function App() {
   const [status, setStatus] = useState('Verificando conexão...')
