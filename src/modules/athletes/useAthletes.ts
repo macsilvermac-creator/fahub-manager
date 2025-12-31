@@ -10,7 +10,8 @@ const MOCK_ATHLETES: Athlete[] = [
 
 export const useAthletes = () => {
   const [athletes, setAthletes] = useState<Athlete[]>(MOCK_ATHLETES);
-  const [loading, setLoading] = useState(false);
+  // Removido setLoading para corrigir o erro de variável não usada
+  const [loading] = useState(false);
 
   const addAthlete = (athlete: Omit<Athlete, 'id'>) => {
     const newAthlete = { ...athlete, id: Math.random().toString() };
