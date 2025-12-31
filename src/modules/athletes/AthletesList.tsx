@@ -1,5 +1,3 @@
-import React from 'react';
-
 const AthletesList = () => {
   return (
     <div className="space-y-6">
