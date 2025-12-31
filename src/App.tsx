@@ -1,29 +1,34 @@
-import React from 'react';
-import DashboardLayout from './shared/components/layouts/DashboardLayout';
+/ src/App.tsx (ou seu arquivo de rotas principal)
+// ... outras importações
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Dashboard from './pages/Dashboard'; // Importe o novo componente Dashboard
+// ... outros imports de páginas, como Header, Sidebar, etc.
 
-// Um componente temporário só para testar o Layout
-const DashboardHome = () => {
+function App() {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-800">Bem-vindo ao FAHUB</h1>
-      <p className="mt-2 text-gray-600">O sistema está rodando perfeitamente.</p>
-      
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow border border-gray-100">
-          <h3 className="font-bold text-blue-600">Status</h3>
-          <p className="text-2xl font-bold">Online 🟢</p>
+    <Router>
+      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
+        {/* Assumindo que o Sidebar já existe. Importe e use-o aqui se ele for global. */}
+        {/* <Sidebar /> */} 
+
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Assumindo que o Header já existe. Importe e use-o aqui. */}
+          {/* <Header /> */}
+
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
+            <Routes>
+              {/* Adicione esta nova rota para o Dashboard */}
+              <Route path="/dashboard" element={<Dashboard />} /> 
+              
+              {/* ... outras rotas existentes do seu aplicativo */}
+              {/* <Route path="/" element={<Home />} /> */}
+              {/* <Route path="/atletas" element={<AtletasPage />} /> */}
+            </Routes>
+          </main>
         </div>
       </div>
-    </div>
+    </Router>
   );
-};
-
-const App: React.FC = () => {
-  return (
-    <DashboardLayout pageTitle="Visão Geral">
-      <DashboardHome />
-    </DashboardLayout>
-  );
-};
+}
 
 export default App;
