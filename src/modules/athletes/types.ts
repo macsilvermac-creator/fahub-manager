@@ -8,6 +8,4 @@ export interface Athlete {
   status: AthleteStatus;
   height?: string;
   weight?: string;
-  email?: string;
-  phone?: string;
 }

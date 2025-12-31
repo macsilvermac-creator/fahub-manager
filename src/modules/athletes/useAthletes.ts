@@ -1,26 +1,36 @@
 import { useState } from 'react';
 import type { Athlete } from './types';
 
-// Dados fictícios para teste (Mock Data)
 const MOCK_ATHLETES: Athlete[] = [
-  { id: '1', name: 'João Silva', position: 'Quarterback', number: 12, status: 'ACTIVE', height: '1.85m', weight: '90kg' },
-  { id: '2', name: 'Marcos Oliveira', position: 'Linebacker', number: 54, status: 'INJURED', height: '1.92m', weight: '105kg' },
-  { id: '3', name: 'Pedro Santos', position: 'Wide Receiver', number: 88, status: 'ACTIVE', height: '1.80m', weight: '82kg' },
+  { id: '1', name: 'João Silva', position: 'QB', number: 12, status: 'ACTIVE', height: '1.85m', weight: '90kg' },
+  { id: '2', name: 'Marcos Oliveira', position: 'LB', number: 54, status: 'INJURED', height: '1.92m', weight: '105kg' },
 ];
 
 export const useAthletes = () => {
   const [athletes, setAthletes] = useState<Athlete[]>(MOCK_ATHLETES);
-  // Removido setLoading para corrigir o erro de variável não usada
-  const [loading] = useState(false);
 
-  const addAthlete = (athlete: Omit<Athlete, 'id'>) => {
-    const newAthlete = { ...athlete, id: Math.random().toString() };
+  // Criar
+  const addAthlete = (data: Omit<Athlete, 'id'>) => {
+    const newAthlete = { ...data, id: Math.random().toString() };
     setAthletes([...athletes, newAthlete]);
+  };
+
+  // Editar
+  const updateAthlete = (id: string, data: Partial<Athlete>) => {
+    setAthletes((prev) => 
+      prev.map((athlete) => (athlete.id === id ? { ...athlete, ...data } : athlete))
+    );
+  };
+
+  // Excluir
+  const deleteAthlete = (id: string) => {
+    setAthletes((prev) => prev.filter((athlete) => athlete.id !== id));
   };
 
   return {
     athletes,
-    loading,
-    addAthlete
+    addAthlete,
+    updateAthlete,
+    deleteAthlete
   };
 };

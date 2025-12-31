@@ -6,14 +6,40 @@ import AthleteForm from './AthleteForm';
 import type { Athlete } from './types';
 
 const AthletesList = () => {
-  // Pegamos a lista E a função de adicionar
-  const { athletes, addAthlete } = useAthletes();
+  const { athletes, addAthlete, updateAthlete, deleteAthlete } = useAthletes();
+  
+  // Estado para controlar se o formulário está visível
   const [showForm, setShowForm] = useState(false);
+  // Estado para saber QUEM estamos editando (se for null, é criação)
+  const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
 
-  // Essa função roda quando você clica em "Salvar" no formulário
-  const handleSave = (newData: Omit<Athlete, 'id'>) => {
-    addAthlete(newData); // Adiciona na lista
-    setShowForm(false);  // Fecha o formulário
+  // Função chamada ao clicar em "Salvar" no formulário
+  const handleSave = (data: Omit<Athlete, 'id'>) => {
+    if (editingAthlete) {
+      // Se tinha alguém sendo editado, atualiza
+      updateAthlete(editingAthlete.id, data);
+    } else {
+      // Senão, cria um novo
+      addAthlete(data);
+    }
+    handleCloseForm();
+  };
+
+  // Prepara o formulário para criar
+  const handleNew = () => {
+    setEditingAthlete(null);
+    setShowForm(true);
+  };
+
+  // Prepara o formulário para editar (vem da tabela)
+  const handleEdit = (athlete: Athlete) => {
+    setEditingAthlete(athlete);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingAthlete(null);
   };
 
   return (
@@ -24,25 +50,31 @@ const AthletesList = () => {
           <p className="text-gray-500 text-sm">Gerencie os atletas e posições</p>
         </div>
         
-        <button 
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-        >
-          <Plus size={20} />
-          {showForm ? 'Fechar' : 'Novo Atleta'}
-        </button>
+        {!showForm && (
+          <button 
+            onClick={handleNew}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
+            <Plus size={20} />
+            Novo Atleta
+          </button>
+        )}
       </div>
 
-      {/* Se showForm for verdadeiro, mostra o formulário */}
       {showForm && (
         <AthleteForm 
+          initialData={editingAthlete}
           onSubmit={handleSave} 
-          onCancel={() => setShowForm(false)} 
+          onCancel={handleCloseForm} 
         />
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <AthleteTable athletes={athletes} />
+        <AthleteTable 
+          athletes={athletes} 
+          onEdit={handleEdit}
+          onDelete={deleteAthlete}
+        />
       </div>
     </div>
   );
