@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Sidebar from './modules/shared/components/Sidebar';
+import Sidebar from './shared/components/layouts/Sidebar'; // <--- CAMINHO CORRIGIDO AQUI
 import Dashboard from './modules/dashboard/Dashboard';
 import AthletesList from './modules/athletes/AthletesList';
 
