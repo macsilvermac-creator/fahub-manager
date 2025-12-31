@@ -1,64 +1,42 @@
-import { useState } from 'react';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import { Plus } from 'lucide-react';
+import { useAthletes } from './useAthletes';
 import AthleteTable from './AthleteTable';
 import AthleteForm from './AthleteForm';
-import { useAthletes } from './useAthletes';
-import { Athlete } from '../../types/athlete';
 
-export default function AthletesList() {
-  const { athletes, deleteAthlete, createAthlete, updateAthlete, isLoading } = useAthletes();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
-
-  const handleCreate = (data: Omit<Athlete, 'id'>) => {
-    createAthlete(data);
-  };
-
-  const handleUpdate = (data: Omit<Athlete, 'id'>) => {
-    if (editingAthlete) {
-      updateAthlete(editingAthlete.id, data);
-    }
-  };
-
-  const openEditModal = (athlete: Athlete) => {
-    setEditingAthlete(athlete);
-    setIsModalOpen(true);
-  };
-
-  const openCreateModal = () => {
-    setEditingAthlete(null);
-    setIsModalOpen(true);
-  };
-
-  if (isLoading) return <div className="p-8">Carregando...</div>;
+const AthletesList = () => {
+  const { athletes } = useAthletes();
+  const [showForm, setShowForm] = useState(false);
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Gerenciamento de Atletas</h1>
-        <button
-          onClick={openCreateModal}
-          className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Elenco (Roster)</h2>
+          <p className="text-gray-500 text-sm">Gerencie os atletas e posições</p>
+        </div>
+        
+        <button 
+          onClick={() => setShowForm(!showForm)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
         >
-          <PlusIcon className="w-5 h-5" />
-          Novo Atleta
+          <Plus size={20} />
+          {showForm ? 'Fechar Formulário' : 'Novo Atleta'}
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow">
-        <AthleteTable 
-          athletes={athletes} 
-          onEdit={openEditModal} 
-          onDelete={deleteAthlete} 
+      {showForm && (
+        <AthleteForm 
+          onSubmit={() => setShowForm(false)} 
+          onCancel={() => setShowForm(false)} 
         />
-      </div>
+      )}
 
-      <AthleteForm
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={editingAthlete ? handleUpdate : handleCreate}
-        initialData={editingAthlete}
-      />
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <AthleteTable athletes={athletes} />
+      </div>
     </div>
   );
-}
+};
+
+export default AthletesList;

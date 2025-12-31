@@ -1,11 +1,13 @@
-export type AthleteStatus = 'Active' | 'Injured' | 'Suspended' | 'Inactive';
+export type AthleteStatus = 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'INACTIVE';
 
 export interface Athlete {
   id: string;
   name: string;
   position: string;
+  number: number;
   status: AthleteStatus;
-  height: number; // em cm
-  weight: number; // em kg
-  avatarUrl?: string; // Opcional, para uso futuro
+  height?: string;
+  weight?: string;
+  email?: string;
+  phone?: string;
 }
