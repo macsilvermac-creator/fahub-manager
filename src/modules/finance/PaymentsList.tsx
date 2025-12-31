@@ -3,7 +3,6 @@ import { supabase } from '../../lib/supabase';
 import { CheckCircle, DollarSign } from 'lucide-react';
 import type { Payment, Athlete } from '../../types';
 
-// Interface auxiliar para juntar Pagamento + Nome do Atleta
 interface PaymentWithAthlete extends Payment {
   athlete: Athlete | null;
 }
@@ -11,7 +10,7 @@ interface PaymentWithAthlete extends Payment {
 const PaymentsList = () => {
   const [payments, setPayments] = useState<PaymentWithAthlete[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, paid, pending, overdue
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     fetchPayments();
@@ -20,7 +19,6 @@ const PaymentsList = () => {
   const fetchPayments = async () => {
     try {
       setLoading(true);
-      // Busca pagamentos e "junta" com a tabela de atletas para pegar o nome
       const { data, error } = await supabase
         .from('payments')
         .select(`
@@ -30,7 +28,7 @@ const PaymentsList = () => {
         .order('due_date', { ascending: false });
 
       if (error) throw error;
-      setPayments(data as any); // Type cast simples para o MVP
+      setPayments(data as any);
     } catch (error) {
       console.error('Erro ao buscar pagamentos:', error);
     } finally {
@@ -38,7 +36,6 @@ const PaymentsList = () => {
     }
   };
 
-  // Função para Marcar como Pago
   const handleMarkAsPaid = async (id: string) => {
     try {
       const { error } = await supabase
@@ -50,8 +47,6 @@ const PaymentsList = () => {
         .eq('id', id);
 
       if (error) throw error;
-      
-      // Atualiza a lista localmente para ver o efeito na hora
       fetchPayments();
       alert('Pagamento confirmado!');
     } catch (error) {
@@ -59,7 +54,6 @@ const PaymentsList = () => {
     }
   };
 
-  // Filtragem visual
   const filteredPayments = payments.filter(p => {
     if (filter === 'all') return true;
     return p.status === filter;
@@ -94,7 +88,6 @@ const PaymentsList = () => {
         </button>
       </div>
 
-      {/* Filtros */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex gap-4">
         {['all', 'paid', 'pending', 'overdue'].map((f) => (
           <button
@@ -111,7 +104,6 @@ const PaymentsList = () => {
         ))}
       </div>
 
-      {/* Tabela */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
@@ -139,7 +131,7 @@ const PaymentsList = () => {
                       <div className="text-xs text-slate-500">{payment.description}</div>
                     </td>
                     <td className="p-4 font-semibold text-slate-700">
-                      R$ {payment.amount.toFixed(2)}
+                      R$ {payment.amount}
                     </td>
                     <td className="p-4 text-sm text-slate-600">
                       {new Date(payment.due_date).toLocaleDateString('pt-BR')}
@@ -153,7 +145,6 @@ const PaymentsList = () => {
                       {payment.status !== 'paid' && (
                         <button 
                           onClick={() => handleMarkAsPaid(payment.id)}
-                          title="Confirmar Pagamento"
                           className="text-green-600 hover:bg-green-50 p-2 rounded-lg transition-colors"
                         >
                           <CheckCircle size={20} />
