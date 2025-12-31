@@ -1,33 +1,30 @@
 // src/shared/components/layouts/DashboardLayout.tsx
-import React, { FC, ReactNode, useState } from 'react';
-import Header from '@shared/components/Header'; // Assumindo que Header está neste caminho
-import Sidebar from './Sidebar';
+import React, { ReactNode } from 'react';
+import Sidebar from './Sidebar'; // Importa o Sidebar que acabamos de criar
+
+// Assumindo que o componente Header já existe em src/shared/components/common/Header.tsx
+// e que ele aceita um prop 'pageTitle'
+import Header from './Header'; 
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  pageTitle: string; // Adicionado para permitir um título dinâmico na Header
+  pageTitle: string; // Adiciona um prop para o título da página
 }
 
-const DashboardLayout: FC<DashboardLayoutProps> = ({ children, pageTitle }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, pageTitle }) => {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      <Sidebar />
 
-      {/* Conteúdo principal */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Conteúdo Principal (Header + Children) */}
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header */}
-        {/* Assumindo que o Header pode receber um prop para o "Hamburger menu" */}
-        <Header pageTitle={pageTitle} onToggleSidebar={toggleSidebar} />
+        {/* O Header foi movido para o layout para garantir que ele esteja sempre presente acima do conteúdo principal e possa receber o pageTitle */}
+        <Header pageTitle={pageTitle} />
 
-        {/* Área de conteúdo */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 lg:p-6">
+        {/* Área do Conteúdo Renderizado (children) */}
+        <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>
       </div>
