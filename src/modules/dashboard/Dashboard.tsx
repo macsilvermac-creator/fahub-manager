@@ -9,7 +9,6 @@ const Dashboard = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-slate-500">Carregando estatísticas...</span>
       </div>
     );
   }
@@ -26,43 +25,43 @@ const Dashboard = () => {
           title="Total de Atletas"
           value={stats.totalAthletes}
           icon={Users}
-          description="registrados no sistema"
+          description="registrados no banco"
         />
         <StatCard
           title="Atletas Ativos"
           value={stats.activeAthletes}
           icon={UserCheck}
           color="green"
-          description="aptos para treino"
+          description="prontos para treinar"
         />
         <StatCard
           title="Próximos Eventos"
           value={stats.upcomingEvents}
           icon={Calendar}
           color="purple"
-          description="nos próximos dias"
+          description="calendário ativo"
         />
         <StatCard
           title="Receita Mensal"
           value={`R$ ${stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           icon={DollarSign}
           color="yellow"
-          description="mensalidades pagas"
+          description="total recebido este mês"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-4">Frequência nos Treinos</h3>
-          <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-300">
-            <span className="text-slate-400">Gráfico de Frequência (Em Breve)</span>
+          <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-300 text-slate-400">
+            Gráfico em desenvolvimento
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-4">Financeiro Anual</h3>
-          <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-300">
-            <span className="text-slate-400">Gráfico Financeiro (Em Breve)</span>
+          <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-300 text-slate-400">
+            Gráfico em desenvolvimento
           </div>
         </div>
       </div>
