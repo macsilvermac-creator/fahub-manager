@@ -3,10 +3,18 @@ import { Plus } from 'lucide-react';
 import { useAthletes } from './useAthletes';
 import AthleteTable from './AthleteTable';
 import AthleteForm from './AthleteForm';
+import type { Athlete } from './types';
 
 const AthletesList = () => {
-  const { athletes } = useAthletes();
+  // Pegamos a lista E a função de adicionar
+  const { athletes, addAthlete } = useAthletes();
   const [showForm, setShowForm] = useState(false);
+
+  // Essa função roda quando você clica em "Salvar" no formulário
+  const handleSave = (newData: Omit<Athlete, 'id'>) => {
+    addAthlete(newData); // Adiciona na lista
+    setShowForm(false);  // Fecha o formulário
+  };
 
   return (
     <div className="space-y-6">
@@ -21,13 +29,14 @@ const AthletesList = () => {
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
         >
           <Plus size={20} />
-          {showForm ? 'Fechar Formulário' : 'Novo Atleta'}
+          {showForm ? 'Fechar' : 'Novo Atleta'}
         </button>
       </div>
 
+      {/* Se showForm for verdadeiro, mostra o formulário */}
       {showForm && (
         <AthleteForm 
-          onSubmit={() => setShowForm(false)} 
+          onSubmit={handleSave} 
           onCancel={() => setShowForm(false)} 
         />
       )}
