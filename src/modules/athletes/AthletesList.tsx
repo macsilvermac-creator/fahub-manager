@@ -1,75 +1,106 @@
 import React, { useState } from 'react';
+import { Plus, Search, Filter } from 'lucide-react';
+// CORREÇÃO: Adicionado 'type' para importar a interface
+import type { Athlete } from './types';
 import { AthleteTable } from './AthleteTable';
-import { Athlete } from './types';
+import { AthleteForm } from './AthleteForm';
+import { useAthletes } from './useAthletes';
 
-// Mock Data: Simulando resposta da API
-const MOCK_ATHLETES: Athlete[] = [
-  {
-    id: '1',
-    name: 'Carlos Silva',
-    position: 'Quarterback',
-    status: 'Active',
-    height: 188,
-    weight: 95,
-  },
-  {
-    id: '2',
-    name: 'Marcos Oliveira',
-    position: 'Wide Receiver',
-    status: 'Injured',
-    height: 182,
-    weight: 88,
-  },
-  {
-    id: '3',
-    name: 'André Santos',
-    position: 'Linebacker',
-    status: 'Active',
-    height: 190,
-    weight: 105,
-  },
-  {
-    id: '4',
-    name: 'Felipe Costa',
-    position: 'Safety',
-    status: 'Suspended',
-    height: 180,
-    weight: 92,
-  },
-  {
-    id: '5',
-    name: 'João Pedro',
-    position: 'Running Back',
-    status: 'Active',
-    height: 178,
-    weight: 90,
-  },
-];
+export default function AthletesList() {
+  const { athletes, isLoading, createAthlete, updateAthlete, deleteAthlete } = useAthletes();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-const AthletesList: React.FC = () => {
-  // Estado local para futura integração com API
-  const [athletes] = useState<Athlete[]>(MOCK_ATHLETES);
+  const handleEdit = (athlete: Athlete) => {
+    setEditingAthlete(athlete);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir este atleta?')) {
+      await deleteAthlete(id);
+    }
+  };
+
+  const handleSave = async (data: Omit<Athlete, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (editingAthlete) {
+      await updateAthlete(editingAthlete.id, data);
+    } else {
+      await createAthlete(data);
+    }
+    setIsModalOpen(false);
+    setEditingAthlete(null);
+  };
+
+  const filteredAthletes = athletes.filter(athlete => 
+    athlete.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    athlete.position.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header da Página */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gerenciamento de Atletas</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Visualize e gerencie o elenco do time.
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">Atletas</h1>
+          <p className="text-sm text-gray-500">Gerencie o elenco do seu time</p>
         </div>
-        
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition-all flex items-center gap-2">
-          <span>+</span> Novo Atleta
+        <button
+          onClick={() => {
+            setEditingAthlete(null);
+            setIsModalOpen(true);
+          }}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          <Plus size={20} />
+          Novo Atleta
         </button>
       </div>
 
-      {/* Tabela de Dados */}
-      <AthleteTable data={athletes} />
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nome ou posição..."
+            className="w-full rounded-lg border border-gray-300 pl-10 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <button className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <Filter size={20} />
+          Filtros
+        </button>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+        <AthleteTable
+          athletes={filteredAthletes}
+          isLoading={isLoading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="mb-4 text-xl font-bold text-gray-900">
+              {editingAthlete ? 'Editar Atleta' : 'Novo Atleta'}
+            </h2>
+            <AthleteForm
+              initialData={editingAthlete || undefined}
+              onSubmit={handleSave}
+              onCancel={() => {
+                setIsModalOpen(false);
+                setEditingAthlete(null);
+              }}
+              isLoading={isLoading}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default AthletesList;
+}

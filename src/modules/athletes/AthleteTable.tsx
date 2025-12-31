@@ -1,96 +1,108 @@
 import React from 'react';
-import { Athlete, AthleteStatus } from './types';
+import { Edit2, Trash2 } from 'lucide-react';
+// CORREÇÃO: Adicionado 'type' para importar as interfaces
+import type { Athlete, AthleteStatus } from './types';
 
 interface AthleteTableProps {
-  data: Athlete[];
+  athletes: Athlete[];
+  isLoading: boolean;
+  onEdit: (athlete: Athlete) => void;
+  onDelete: (id: string) => void;
 }
 
-const getStatusStyles = (status: AthleteStatus): string => {
+const getStatusColor = (status: AthleteStatus) => {
   switch (status) {
-    case 'Active':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'Injured':
-      return 'bg-red-100 text-red-800 border-red-200';
-    case 'Suspended':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
-    case 'Inactive':
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+    case 'active':
+      return 'bg-green-100 text-green-800';
+    case 'inactive':
+      return 'bg-gray-100 text-gray-800';
+    case 'injured':
+      return 'bg-red-100 text-red-800';
+    case 'suspended':
+      return 'bg-yellow-100 text-yellow-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
 };
 
-export const AthleteTable: React.FC<AthleteTableProps> = ({ data }) => {
-  return (
-    <div className="w-full overflow-hidden rounded-lg border border-gray-200 shadow-sm bg-white">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr>
-              <th className="p-4 border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Nome do Atleta
-              </th>
-              <th className="p-4 border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Posição
-              </th>
-              <th className="p-4 border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">
-                Status
-              </th>
-              <th className="p-4 border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                Altura
-              </th>
-              <th className="p-4 border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                Peso
-              </th>
-              <th className="p-4 border-b border-gray-200 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">
-                Ações
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {data.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
-                  Nenhum atleta encontrado.
-                </td>
-              </tr>
-            ) : (
-              data.map((athlete) => (
-                <tr key={athlete.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="p-4 text-sm font-medium text-gray-900">
-                    {athlete.name}
-                  </td>
-                  <td className="p-4 text-sm text-gray-600">
-                    {athlete.position}
-                  </td>
-                  <td className="p-4 text-center">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyles(
-                        athlete.status
-                      )}`}
-                    >
-                      {athlete.status === 'Active' ? 'Ativo' : 
-                       athlete.status === 'Injured' ? 'Lesionado' :
-                       athlete.status === 'Suspended' ? 'Suspenso' : 'Inativo'}
-                    </span>
-                  </td>
-                  <td className="p-4 text-sm text-gray-600 text-right">
-                    {(athlete.height / 100).toFixed(2)} m
-                  </td>
-                  <td className="p-4 text-sm text-gray-600 text-right">
-                    {athlete.weight} kg
-                  </td>
-                  <td className="p-4 text-center">
-                    <button className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors">
-                      Editar
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+const getStatusLabel = (status: AthleteStatus) => {
+  const labels: Record<AthleteStatus, string> = {
+    active: 'Ativo',
+    inactive: 'Inativo',
+    injured: 'Lesionado',
+    suspended: 'Suspenso',
+  };
+  return labels[status] || status;
+};
+
+export function AthleteTable({ athletes, isLoading, onEdit, onDelete }: AthleteTableProps) {
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        Carregando atletas...
       </div>
+    );
+  }
+
+  if (athletes.length === 0) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        Nenhum atleta encontrado.
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm text-gray-600">
+        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+          <tr>
+            <th className="px-6 py-3">Nome</th>
+            <th className="px-6 py-3">Posição</th>
+            <th className="px-6 py-3">Categoria</th>
+            <th className="px-6 py-3">Status</th>
+            <th className="px-6 py-3 text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {athletes.map((athlete) => (
+            <tr key={athlete.id} className="hover:bg-gray-50">
+              <td className="px-6 py-4 font-medium text-gray-900">
+                {athlete.name}
+              </td>
+              <td className="px-6 py-4">{athlete.position}</td>
+              <td className="px-6 py-4">{athlete.category}</td>
+              <td className="px-6 py-4">
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(
+                    athlete.status
+                  )}`}
+                >
+                  {getStatusLabel(athlete.status)}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-right">
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => onEdit(athlete)}
+                    className="rounded p-1 text-blue-600 hover:bg-blue-50"
+                    title="Editar"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                  <button
+                    onClick={() => onDelete(athlete.id)}
+                    className="rounded p-1 text-red-600 hover:bg-red-50"
+                    title="Excluir"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
-};
+}
