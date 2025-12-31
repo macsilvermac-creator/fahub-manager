@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Trash2, Eye } from 'lucide-react';
+import { Edit2, Trash2 } from 'lucide-react'; // Removi o 'Eye' daqui
 import type { Athlete } from './types';
 
 interface AthleteTableProps {
@@ -49,8 +49,20 @@ const AthleteTable: React.FC<AthleteTableProps> = ({ athletes, onEdit, onDelete 
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
-                <button onClick={() => onEdit(athlete)} className="text-indigo-600 hover:text-indigo-900"><Edit2 size={18} /></button>
-                <button onClick={() => onDelete(athlete.id)} className="text-red-600 hover:text-red-900"><Trash2 size={18} /></button>
+                <button 
+                  onClick={() => onEdit(athlete)} 
+                  className="text-indigo-600 hover:text-indigo-900 p-1 hover:bg-indigo-50 rounded"
+                  title="Editar"
+                >
+                  <Edit2 size={18} />
+                </button>
+                <button 
+                  onClick={() => onDelete(athlete.id)} 
+                  className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded"
+                  title="Excluir"
+                >
+                  <Trash2 size={18} />
+                </button>
               </td>
             </tr>
           ))}
