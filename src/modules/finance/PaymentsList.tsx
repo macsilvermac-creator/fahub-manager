@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { CheckCircle, XCircle, Clock, DollarSign, Search } from 'lucide-react';
+import { CheckCircle, DollarSign } from 'lucide-react';
 import type { Payment, Athlete } from '../../types';
 
 // Interface auxiliar para juntar Pagamento + Nome do Atleta
