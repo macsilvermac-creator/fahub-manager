@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-// Se o seu arquivo de tipos for 'src/types.ts', o import abaixo está correto.
-// Se der erro de "cannot find module types", mude para '../../types.ts' ou o caminho correto.
-import type { DashboardStats } from '../../types'; 
+import type { DashboardStats } from '../../types';
 
 export const useDashboardStats = () => {
   const [stats, setStats] = useState<DashboardStats>({
@@ -19,44 +17,44 @@ export const useDashboardStats = () => {
 
   const fetchStats = async () => {
     try {
-      // 1. Buscando total de Atletas
-      const { count: totalAthletes } = await supabase
+      setLoading(true);
+
+      // 1. Total de Atletas
+      const { count: totalCount } = await supabase
         .from('athletes')
         .select('*', { count: 'exact', head: true });
 
-      // 2. Buscando Atletas Ativos
-      const { count: activeAthletes } = await supabase
+      // 2. Atletas Ativos (Garantindo que a busca não quebre se não houver ativos)
+      const { count: activeCount } = await supabase
         .from('athletes')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'active');
 
-      // 3. Buscando Eventos Futuros (Data >= Hoje)
-      const { count: upcomingEvents } = await supabase
+      // 3. Próximos Eventos
+      const { count: eventsCount } = await supabase
         .from('events')
         .select('*', { count: 'exact', head: true })
         .gte('date', new Date().toISOString());
 
-      // 4. Calculando Receita (Soma dos pagamentos 'paid' deste mês)
+      // 4. Receita (Soma manual para evitar erros de RPC do Supabase)
       const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-      
-      const { data: payments } = await supabase
+      const { data: paymentsData } = await supabase
         .from('payments')
         .select('amount')
         .eq('status', 'paid')
         .gte('payment_date', startOfMonth);
 
-      // Soma simples dos valores
-      const monthlyRevenue = payments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+      const totalRevenue = paymentsData?.reduce((acc, curr) => acc + (curr.amount || 0), 0) || 0;
 
       setStats({
-        totalAthletes: totalAthletes || 0,
-        activeAthletes: activeAthletes || 0,
-        upcomingEvents: upcomingEvents || 0,
-        monthlyRevenue
+        totalAthletes: totalCount || 0,
+        activeAthletes: activeCount || 0,
+        upcomingEvents: eventsCount || 0,
+        monthlyRevenue: totalRevenue
       });
 
     } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
+      console.error('Erro detalhado no Dashboard:', error);
     } finally {
       setLoading(false);
     }
