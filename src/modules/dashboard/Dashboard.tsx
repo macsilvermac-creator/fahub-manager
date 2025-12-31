@@ -1,80 +1,80 @@
-// Removidos ArrowUp e ArrowDown que não eram usados aqui
-import { Users, UserCheck, Calendar, DollarSign } from 'lucide-react';
-import { useDashboardStats } from './useDashboardStats';
-import StatCard from '../../shared/components/StatCard';
+import { LayoutDashboard, Users, Settings, LogOut, DollarSign } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 
-const Dashboard = () => {
-  const { stats, loading } = useDashboardStats();
+interface SidebarProps {
+  isMobileOpen?: boolean;
+  closeMobile?: () => void;
+}
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+const Sidebar = ({ isMobileOpen, closeMobile }: SidebarProps) => {
+  const menuItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Users, label: 'Atletas', path: '/athletes' },
+    { icon: DollarSign, label: 'Financeiro', path: '/finance' },
+    { icon: Settings, label: 'Configurações', path: '/settings' },
+  ];
 
   return (
-    <div className="space-y-8">
-      {/* Cabeçalho */}
-      <div>
-        <h2 className="text-3xl font-bold text-slate-800">Dashboard</h2>
-        <p className="text-slate-500 mt-1">Visão geral do Joinville Gladiators</p>
-      </div>
+    <>
+      {/* Overlay para Mobile (Fundo escuro quando menu abre) */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          onClick={closeMobile}
+        />
+      )}
 
-      {/* Grid de Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total de Atletas"
-          value={stats.totalAthletes}
-          icon={Users}
-          trend="+12%"
-          trendUp={true}
-          description="em relação ao mês passado"
-        />
-        <StatCard
-          title="Atletas Ativos"
-          value={stats.activeAthletes}
-          icon={UserCheck}
-          color="green"
-          description="aptos para jogo"
-        />
-        <StatCard
-          title="Próximos Eventos"
-          value={stats.upcomingEvents}
-          icon={Calendar}
-          color="purple"
-          description="nos próximos 30 dias"
-        />
-        <StatCard
-          title="Receita Mensal"
-          value={`R$ ${stats.monthlyRevenue}`}
-          icon={DollarSign}
-          color="yellow"
-          trend="+5%"
-          trendUp={true}
-          description="mensalidades recebidas"
-        />
-      </div>
-
-      {/* Seção de Gráficos (Placeholder Visual) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Frequência nos Treinos</h3>
-          <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-300">
-            <span className="text-slate-400">Gráfico de Frequência (Em Breve)</span>
+      {/* Sidebar Principal */}
+      <aside className={`
+        fixed left-0 top-0 h-screen w-64 bg-slate-900 text-white flex flex-col z-50 transition-transform duration-300
+        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} 
+        md:translate-x-0
+      `}>
+        {/* Logo */}
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+              FAHUB
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">Manager v1.0</p>
           </div>
+          {/* Botão fechar no mobile */}
+          <button onClick={closeMobile} className="md:hidden text-slate-400 hover:text-white">
+            X
+          </button>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Financeiro Anual</h3>
-          <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-300">
-            <span className="text-slate-400">Gráfico Financeiro (Em Breve)</span>
-          </div>
+        {/* Menu de Navegação */}
+        <nav className="flex-1 p-4 space-y-2">
+          {menuItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={closeMobile} // Fecha menu ao clicar em item (mobile)
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`
+              }
+            >
+              <item.icon size={20} />
+              <span className="font-medium">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Rodapé / Logout */}
+        <div className="p-4 border-t border-slate-800">
+          <button className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-red-400 hover:bg-slate-800 transition-colors">
+            <LogOut size={20} />
+            <span className="font-medium">Sair</span>
+          </button>
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 };
 
-export default Dashboard;
+export default Sidebar;
