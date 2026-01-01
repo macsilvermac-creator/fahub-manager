@@ -1,32 +1,51 @@
-/ src/App.tsx (ou seu arquivo de rotas principal)
-// ... outras importações
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard'; // Importe o novo componente Dashboard
-// ... outros imports de páginas, como Header, Sidebar, etc.
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Sidebar from './shared/components/layouts/Sidebar';
+import StickyEventBanner from './shared/components/layouts/StickyEventBanner';
+import Dashboard from './modules/dashboard/Dashboard';
+import AthletesList from './modules/athletes/AthletesList';
+import PaymentsList from './modules/finance/PaymentsList';
+import Settings from './modules/settings/Settings';
+import NexusPortal from './modules/nexus/NexusPortal';
+import Agenda from './modules/calendar/Agenda';
 
 function App() {
   return (
     <Router>
-      <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-        {/* Assumindo que o Sidebar já existe. Importe e use-o aqui se ele for global. */}
-        {/* <Sidebar /> */} 
+      <Routes>
+        {/* Rota do Portal Nexus - Independente e sem Sidebar ou Banner */}
+        <Route path="/nexus" element={<NexusPortal />} />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Assumindo que o Header já existe. Importe e use-o aqui. */}
-          {/* <Header /> */}
+        {/* Rotas Internas com Layout de Gestão Master */}
+        <Route
+          path="/*"
+          element={
+            <div className="flex min-h-screen bg-gray-50 font-sans">
+              {/* Sidebar Lateral Fixa */}
+              <Sidebar />
 
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
-            <Routes>
-              {/* Adicione esta nova rota para o Dashboard */}
-              <Route path="/dashboard" element={<Dashboard />} /> 
-              
-              {/* ... outras rotas existentes do seu aplicativo */}
-              {/* <Route path="/" element={<Home />} /> */}
-              {/* <Route path="/atletas" element={<AtletasPage />} /> */}
-            </Routes>
-          </main>
-        </div>
-      </div>
+              <div className="flex-1 flex flex-col ml-64 transition-all duration-300">
+                {/* Banner de Próximo Evento (Agenda Nexus) no topo de todas as páginas */}
+                <StickyEventBanner />
+
+                {/* Conteúdo Principal da Skin selecionada */}
+                <main className="flex-1 p-8">
+                  <Routes>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/agenda" element={<Agenda />} />
+                    <Route path="/athletes" element={<AthletesList />} />
+                    <Route path="/finance" element={<PaymentsList />} />
+                    <Route path="/settings" element={<Settings />} />
+
+                    {/* Redirecionamento padrão para o Nexus se a rota não existir */}
+                    <Route path="/" element={<Navigate to="/nexus" replace />} />
+                    <Route path="*" element={<Navigate to="/nexus" replace />} />
+                  </Routes>
+                </main>
+              </div>
+            </div>
+          }
+        />
+      </Routes>
     </Router>
   );
 }

@@ -3,12 +3,15 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './Calendar.css';
 import { supabase } from '../../lib/supabase';
-import { Plus, Clock, Users, Trophy } from 'lucide-react';
+import { Plus } from 'lucide-react';
+
+// Definição de tipo para o Calendar aceitar valores nulos ou datas únicas
+type CalendarValue = Date | null | [Date | null, Date | null];
 
 const Agenda = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const [formData, setFormData] = useState({
     title: '',
@@ -43,7 +46,16 @@ const Agenda = () => {
     }
   };
 
-  const renderTileContent = ({ date, view }: any) => {
+  // Função para lidar com a mudança de data corrigindo o erro TS2322
+  const handleDateChange = (value: CalendarValue) => {
+    if (value instanceof Date) {
+      setSelectedDate(value);
+    } else if (Array.isArray(value) && value[0] instanceof Date) {
+      setSelectedDate(value[0]);
+    }
+  };
+
+  const renderTileContent = ({ date, view }: { date: Date, view: string }) => {
     if (view === 'month') {
       const dayEvents = events.filter(e => 
         new Date(e.date).toDateString() === date.toDateString()
@@ -65,6 +77,7 @@ const Agenda = () => {
         </div>
       );
     }
+    return null;
   };
 
   return (
@@ -84,7 +97,7 @@ const Agenda = () => {
 
       <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100">
         <Calendar 
-          onChange={setSelectedDate} 
+          onChange={handleDateChange} 
           value={selectedDate}
           tileContent={renderTileContent}
           className="rounded-2xl border-none w-full"
@@ -94,7 +107,9 @@ const Agenda = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-slate-200">
-            <h3 className="text-xl font-bold mb-6 text-slate-800">Agendar Compromisso</h3>
+            <h3 className="text-xl font-bold mb-6 text-slate-800 flex items-center gap-2">
+               Agendar Compromisso
+            </h3>
             <form onSubmit={handleCreateEvent} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -125,18 +140,3 @@ const Agenda = () => {
                     <option value="offense">Ataque</option>
                     <option value="defense">Defesa</option>
                   </select>
-                </div>
-              </div>
-              <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-all">
-                Confirmar Agendamento
-              </button>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="w-full text-slate-400 text-sm font-medium">Cancelar</button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default Agenda;
