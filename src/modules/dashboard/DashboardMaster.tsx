@@ -125,29 +125,3 @@ const DashboardMaster = () => {
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{container.subtitle}</p>
                 </div>
               </div>
-              <ArrowRight className="text-slate-200 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" size={20} />
-            </div>
-
-            {/* Conteúdo do Contêiner */}
-            <div className="relative z-10">
-              {container.content}
-            </div>
-
-            {/* Decorativo de Fundo */}
-            <div className="absolute -right-4 -bottom-4 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform">
-              <container.icon size={120} strokeWidth={1} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Espaço para Insight da IA (O Assistente Jules) */}
-      <div className="bg-slate-900 rounded-[2rem] p-5 border border-slate-800 flex items-center gap-4">
-        <div className="bg-blue-600 p-3 rounded-2xl animate-pulse">
-          <Activity size={20} className="text-white" />
-        </div>
-        <div className="flex-1">
-          <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">Assistente Jules / Insight</p>
-          <p className="text-sm text-slate-300 font-medium italic leading-relaxed">
-            "Olá Gestor. Analisei as seletivas de hoje: 12 atletas aprovados pelo HC da Base. Deseja que eu prepare os contratos para sua revisão?"
-          </p
