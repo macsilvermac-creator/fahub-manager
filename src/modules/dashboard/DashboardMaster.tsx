@@ -1,7 +1,21 @@
+import React from 'react';
 import { TrendingUp, Users, Kanban, Activity, ArrowRight } from 'lucide-react';
 
-const DashboardMaster = () => {
-  const containers = [
+/**
+ * Interface para os itens do Dashboard para garantir tipagem sólida
+ */
+interface DashboardContainer {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  content: React.ReactNode;
+}
+
+const DashboardMaster: React.FC = () => {
+  const containers: DashboardContainer[] = [
     {
       id: 'finance',
       title: 'Saúde Financeira',
@@ -88,7 +102,7 @@ const DashboardMaster = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Header com Persona Master */}
+      {/* Header Estrutural */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-800 tracking-tighter italic">
@@ -98,6 +112,7 @@ const DashboardMaster = () => {
             Associação: Joinville Gladiators
           </p>
         </div>
+        
         <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
           <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-black">JG</div>
           <div className="pr-2">
@@ -107,21 +122,60 @@ const DashboardMaster = () => {
         </div>
       </header>
 
-      {/* Grid de 4 Contêineres */}
+      {/* Grid Responsável pelos 4 Contêineres Master */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        {containers.map((container) => (
-          <div 
-            key={container.id}
-            className="group bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-blue-900/10 transition-all cursor-pointer relative overflow-hidden active:scale-[0.98]"
-          >
-            {/* Ícone e Títulos */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div className={`${container.bg} ${container.color} p-3 rounded-2xl`}>
-                  <container.icon size={24} strokeWidth={2.5} />
+        {containers.map((container) => {
+          const IconComponent = container.icon;
+          return (
+            <div 
+              key={container.id}
+              className="group bg-white rounded-[2rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-blue-900/10 transition-all cursor-pointer relative overflow-hidden active:scale-[0.98]"
+            >
+              {/* Topo do Card */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-4">
+                  <div className={`${container.bg} ${container.color} p-3 rounded-2xl`}>
+                    <IconComponent size={24} strokeWidth={2.5} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-800 tracking-tight leading-none">{container.title}</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{container.subtitle}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-black text-slate-800 tracking-tight leading-none">{container.title}</h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{container.subtitle}</p>
-                </div>
+                <ArrowRight className="text-slate-200 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" size={20} />
               </div>
+
+              {/* Renderização do Conteúdo Específico */}
+              <div className="relative z-10">
+                {container.content}
+              </div>
+
+              {/* Marca D'água Decorativa */}
+              <div className="absolute -right-4 -bottom-4 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform">
+                <IconComponent size={120} strokeWidth={1} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Interface do Assistente Jules (Human-in-the-loop) */}
+      <div className="bg-slate-900 rounded-[2rem] p-5 border border-slate-800 flex items-center gap-4">
+        <div className="bg-blue-600 p-3 rounded-2xl animate-pulse">
+          <Activity size={20} className="text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">Assistente Jules / Insight</p>
+          <p className="text-sm text-slate-300 font-medium italic leading-relaxed">
+            "Olá Gestor. Analisei as seletivas de hoje: 12 atletas aprovados pelo HC da Base. Deseja que eu prepare os contratos para sua revisão?"
+          </p>
+        </div>
+        <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap">
+          AUTORIZAR
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardMaster;
