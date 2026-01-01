@@ -1,156 +1,124 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  ArrowLeft, 
-  Search, 
-  UserCheck, 
-  FileWarning, 
-  Stethoscope, 
-  ChevronRight,
-  ShieldCheck,
-  Filter
+  ArrowLeft, Search, Filter, UserPlus, 
+  ChevronRight, MoreVertical, ShieldCheck, Activity 
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 /**
- * Interface para garantir a integridade dos dados do atleta
+ * Módulo de Patrimônio Humano - Persona Master
+ * Listagem estratégica de membros com acesso à Ficha 360º.
  */
-interface AthleteCenso {
-  id: string;
-  name: string;
-  category: 'Professional' | 'Base' | 'Escolhinha';
-  position: string;
-  docStatus: 'complete' | 'pending' | 'expired';
-  healthStatus: 'fit' | 'warning' | 'injured';
-  contractType: 'Scholarship' | 'Full' | 'Prospect';
-}
-
 const HumanCapital: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
 
-  // Simulação de base consolidada de todas as entidades
-  const [athletes] = useState<AthleteCenso[]>([
-    { id: '1', name: 'Carlos Henrique', category: 'Professional', position: 'QB', docStatus: 'complete', healthStatus: 'fit', contractType: 'Full' },
-    { id: '2', name: 'Mateus Lima', category: 'Base', position: 'WR', docStatus: 'pending', healthStatus: 'warning', contractType: 'Scholarship' },
-    { id: '3', name: 'Roberto Souza', category: 'Escolhinha', position: 'RB', docStatus: 'expired', healthStatus: 'fit', contractType: 'Prospect' },
-  ]);
+  // Dados para validação visual do Gestor
+  const members = [
+    { id: 1, name: "Gabriel Silva", role: "Linebacker", status: "Apto", perf: "88%" },
+    { id: 2, name: "Lucas Oliveira", role: "Quarterback", status: "DM", perf: "92%" },
+    { id: 3, name: "Matheus Costa", role: "Wide Receiver", status: "Apto", perf: "75%" }
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 space-y-6">
-      {/* Header de Navegação e Busca */}
-      <nav className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button className="p-3 bg-white rounded-2xl border border-slate-200 text-slate-400 hover:text-blue-600 shadow-sm transition-all">
-            <ArrowLeft size={20} />
+    <div className="min-h-screen bg-white">
+      {/* Header HUD */}
+      <nav className="bg-slate-900 text-white p-4 sticky top-0 z-50 border-b border-slate-800 shadow-xl">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] hover:text-blue-400 transition-all"
+          >
+            <ArrowLeft size={16} /> Dashboard
           </button>
-          <div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tighter italic leading-none">
-              PATRIMÔNIO <span className="text-blue-600">HUMANO</span>
-            </h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
-              Censo Inteligente de Atletas
-            </p>
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={14} className="text-blue-500" />
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] italic text-slate-300">Gestão de Patrimônio</span>
           </div>
-        </div>
-
-        <div className="flex gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Buscar atleta..." 
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <button className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-600">
-            <Filter size={20} />
+          <button className="bg-blue-600 p-2 rounded-xl hover:scale-105 transition-all">
+            <UserPlus size={18} />
           </button>
         </div>
       </nav>
 
-      {/* Grid de Métricas de Elenco (Visão Master) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Atletas', value: '126', icon: UserCheck, color: 'text-blue-600' },
-          { label: 'Docs Pendentes', value: '14', icon: FileWarning, color: 'text-amber-600' },
-          { label: 'Departamento Médico', value: '06', icon: Stethoscope, color: 'text-red-600' },
-          { label: 'Seguros Ativos', value: '100%', icon: ShieldCheck, color: 'text-emerald-600' }
-        ].map((stat, i) => (
-          <div key={i} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
-            <div className={`p-3 rounded-2xl bg-slate-50 ${stat.color}`}>
-              <stat.icon size={24} />
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">{stat.label}</p>
-              <p className="text-xl font-black text-slate-800 tracking-tight">{stat.value}</p>
-            </div>
+      <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8">
+        {/* Barra de Busca e Filtros HUD */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 bg-slate-50 border border-slate-100 rounded-[1.5rem] flex items-center px-6 gap-3 focus-within:border-blue-500/50 transition-all">
+            <Search size={18} className="text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Buscar por nome, posição ou status..." 
+              className="bg-transparent w-full py-4 text-sm font-bold text-slate-700 outline-none"
+            />
           </div>
-        ))}
-      </div>
+          <button className="bg-slate-50 border border-slate-100 p-4 rounded-[1.5rem] text-slate-500 hover:bg-slate-100 transition-all">
+            <Filter size={20} />
+          </button>
+        </div>
 
-      {/* Lista de Atletas - Mobile Ready */}
-      <section className="space-y-3">
-        {athletes.map((athlete) => (
-          <div key={athlete.id} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-md hover:shadow-xl transition-all group cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black text-xs">
-                  {athlete.position}
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-800 tracking-tight">{athlete.name}</h4>
-                  <div className="flex gap-2 mt-1">
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-500">
-                      {athlete.category}
-                    </span>
-                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${
-                      athlete.docStatus === 'complete' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'
-                    }`}>
-                      DOC: {athlete.docStatus}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="hidden md:block text-right">
-                  <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Saúde (MedicAI)</p>
-                  <span className={`text-[9px] font-bold px-3 py-1 rounded-full ${
-                    athlete.healthStatus === 'fit' ? 'bg-emerald-100 text-emerald-700' : 
-                    athlete.healthStatus === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                  }`}>
-                    {athlete.healthStatus.toUpperCase()}
-                  </span>
-                </div>
-                <ChevronRight className="text-slate-200 group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {/* Assistente MedicAI / Jules */}
-      <div className="bg-slate-900 rounded-[2.5rem] p-6 text-white border border-slate-800 shadow-2xl relative overflow-hidden group">
-        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-          <div className="p-4 bg-red-500/20 text-red-400 rounded-3xl border border-red-500/30 animate-pulse">
-            <Stethoscope size={32} />
-          </div>
-          <div className="flex-1 text-center md:text-left">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-red-400 mb-1">Alerta MedicAI / Jules</p>
-            <p className="text-base font-medium leading-relaxed text-slate-300">
-              "Detectei que 3 atletas da <span className="text-white font-bold underline">Escolhinha de Base</span> estão com o atestado médico vencendo em 48h. Deseja que eu notifique os responsáveis via WhatsApp?"
-            </p>
-          </div>
-          <div className="flex gap-3">
-             <button className="bg-white/5 hover:bg-white/10 text-slate-400 px-6 py-3 rounded-2xl text-[10px] font-black transition-all">IGNORAR</button>
-             <button className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-2xl text-[10px] font-black shadow-lg shadow-blue-900/40 transition-all">AUTORIZAR NOTIFICAÇÃO</button>
+        {/* Grid de Membros - Foco em Solidez e Acesso 360º */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <th className="px-8 py-6">Membro</th>
+                  <th className="px-8 py-6">Status / Saúde</th>
+                  <th className="px-8 py-6">Performance</th>
+                  <th className="px-8 py-6 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {members.map((member) => (
+                  <tr 
+                    key={member.id} 
+                    onClick={() => navigate('/perfil-membro')}
+                    className="group hover:bg-blue-50/30 transition-all cursor-pointer"
+                  >
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-black italic text-xs">
+                          {member.name.substring(0,2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-slate-800 tracking-tight italic uppercase">{member.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{member.role}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${member.status === 'Apto' ? 'bg-emerald-500' : 'bg-orange-500'} animate-pulse`} />
+                        <span className="text-[10px] font-black uppercase text-slate-600">{member.status}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-3">
+                        <Activity size={14} className="text-blue-500" />
+                        <span className="text-sm font-black text-slate-800">{member.perf}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <div className="flex items-center justify-end gap-2 text-slate-300 group-hover:text-blue-600 transition-all">
+                        <span className="text-[9px] font-black uppercase tracking-widest">Ver 360º</span>
+                        <ChevronRight size={18} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-        {/* Decorativo de Fundo */}
-        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
-           <ShieldCheck size={120} />
+
+        {/* Insight do Agente Jules */}
+        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white flex items-center gap-6 shadow-2xl border border-slate-800">
+           <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center font-black italic text-xl shadow-lg shadow-blue-500/20">J</div>
+           <p className="text-sm font-medium leading-tight italic text-slate-300">
+             "Você tem <span className="text-white font-bold underline">126 atletas na Base</span>. O engajamento médio subiu 15% após o último treino. Clique em qualquer membro para ver os detalhes individuais."
+           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
