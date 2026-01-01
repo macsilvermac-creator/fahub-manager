@@ -1,4 +1,4 @@
-import { TrendingUp, Users, kanban as KanbanIcon, Activity, ArrowRight } from 'lucide-react';
+import { TrendingUp, Users, Kanban, Activity, ArrowRight } from 'lucide-react';
 
 const DashboardMaster = () => {
   const containers = [
@@ -46,7 +46,7 @@ const DashboardMaster = () => {
       id: 'goals',
       title: 'Evolução Estratégica',
       subtitle: 'Kanban de Metas OKR',
-      icon: KanbanIcon,
+      icon: Kanban,
       color: 'text-orange-500',
       bg: 'bg-orange-500/10',
       content: (
@@ -142,7 +142,7 @@ const DashboardMaster = () => {
       </div>
 
       {/* Espaço para Insight da IA (O Assistente Jules) */}
-      <div className="bg-slate-900 rounded-[2rem] p-5 border border-slate-800 flex items-center gap-4 group">
+      <div className="bg-slate-900 rounded-[2rem] p-5 border border-slate-800 flex items-center gap-4">
         <div className="bg-blue-600 p-3 rounded-2xl animate-pulse">
           <Activity size={20} className="text-white" />
         </div>
@@ -150,14 +150,4 @@ const DashboardMaster = () => {
           <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">Assistente Jules / Insight</p>
           <p className="text-sm text-slate-300 font-medium italic leading-relaxed">
             "Olá Gestor. Analisei as seletivas de hoje: 12 atletas aprovados pelo HC da Base. Deseja que eu prepare os contratos para sua revisão?"
-          </p>
-        </div>
-        <button className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all">
-          AUTORIZAR
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default DashboardMaster;
+          </p
