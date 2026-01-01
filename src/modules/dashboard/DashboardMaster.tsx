@@ -3,6 +3,7 @@ import {
   TrendingUp, Users, Kanban, Activity, ArrowRight, 
   Menu, X, LayoutDashboard, Calendar, Settings, LogOut 
 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 /**
  * Interface para os Pilares de Decisão Master
@@ -14,11 +15,13 @@ interface MasterPillar {
   icon: React.ElementType;
   color: string;
   bg: string;
+  path: string;
   content: React.ReactNode;
 }
 
 const DashboardMaster: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const navigate = useNavigate();
   const goalPercent = 60;
 
   const pillars: MasterPillar[] = [
@@ -29,6 +32,7 @@ const DashboardMaster: React.FC = () => {
       icon: TrendingUp,
       color: 'text-emerald-500',
       bg: 'bg-emerald-500/10',
+      path: '/financeiro',
       content: (
         <div className="space-y-3">
           <div className="flex justify-between items-end">
@@ -48,13 +52,14 @@ const DashboardMaster: React.FC = () => {
       icon: Users,
       color: 'text-blue-500',
       bg: 'bg-blue-500/10',
+      path: '/patrimonio',
       content: (
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100">
+          <div className="bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100 shadow-sm">
             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Profissional</p>
             <p className="text-2xl font-black text-slate-800 italic">84</p>
           </div>
-          <div className="bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100">
+          <div className="bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100 shadow-sm">
             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Base/Escola</p>
             <p className="text-2xl font-black text-slate-800 italic">126</p>
           </div>
@@ -68,6 +73,7 @@ const DashboardMaster: React.FC = () => {
       icon: Kanban,
       color: 'text-orange-500',
       bg: 'bg-orange-500/10',
+      path: '/estrategia',
       content: (
         <div className="flex items-center gap-4">
           <div className="relative w-16 h-16 flex items-center justify-center">
@@ -82,8 +88,8 @@ const DashboardMaster: React.FC = () => {
             <span className="absolute text-xs font-black text-slate-800">{goalPercent}%</span>
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-700 leading-tight">Expansão de Unidades</p>
-            <p className="text-[9px] text-orange-600 font-black uppercase italic mt-1 tracking-widest">Status: Ativo</p>
+            <p className="text-xs font-bold text-slate-700 leading-tight uppercase italic">Expansão Base</p>
+            <p className="text-[9px] text-orange-600 font-black uppercase tracking-widest">Status: Ativo</p>
           </div>
         </div>
       )
@@ -95,13 +101,14 @@ const DashboardMaster: React.FC = () => {
       icon: Activity,
       color: 'text-purple-500',
       bg: 'bg-purple-500/10',
+      path: '/operacoes',
       content: (
         <div className="space-y-4">
-          <div className="flex items-center justify-between bg-purple-50 px-4 py-3 rounded-2xl border border-purple-100">
+          <div className="flex items-center justify-between bg-purple-50 px-4 py-3 rounded-2xl border border-purple-100 shadow-sm">
             <span className="text-[11px] font-black text-purple-700 uppercase italic">Tackle Masculino</span>
             <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping" />
           </div>
-          <p className="text-[10px] text-slate-500 font-bold italic">Jules: "3 treinos realizados hoje."</p>
+          <p className="text-[10px] text-slate-500 font-bold italic">Jules: "Sincronia técnica estável."</p>
         </div>
       )
     }
@@ -110,11 +117,11 @@ const DashboardMaster: React.FC = () => {
   return (
     <div className="min-h-screen bg-white flex overflow-hidden">
       
-      {/* 🏛️ SIDEBAR RETRÁTIL (MOBILE-FIRST) */}
+      {/* 🏛️ SIDEBAR RETRÁTIL E FUNCIONAL */}
       <aside className={`
-        fixed inset-y-0 left-0 z-[60] w-72 bg-slate-950 text-white transform transition-transform duration-300 ease-in-out border-r border-slate-800
+        fixed inset-y-0 left-0 z-[100] w-72 bg-slate-950 text-white transform transition-transform duration-300 ease-in-out border-r border-slate-800
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:relative lg:translate-x-0 lg:flex lg:flex-col
+        lg:translate-x-0 lg:static
       `}>
         <div className="p-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -126,11 +133,11 @@ const DashboardMaster: React.FC = () => {
           </button>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2">
-          <p className="px-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 italic">Menu Presidencial</p>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-blue-600 text-white text-xs font-black italic">
+        <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+          <p className="px-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 italic">Gestão Master</p>
+          <Link to="/dashboard" className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-blue-600 text-white text-xs font-black italic shadow-lg shadow-blue-900/40">
             <LayoutDashboard size={18} /> DASHBOARD
-          </button>
+          </Link>
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-400 hover:bg-white/5 text-xs font-bold transition-all">
             <Calendar size={18} /> AGENDA GERAL
           </button>
@@ -150,32 +157,32 @@ const DashboardMaster: React.FC = () => {
         </div>
       </aside>
 
-      {/* 🏛️ ÁREA PRINCIPAL DO DASHBOARD */}
-      <main className="flex-1 h-screen overflow-y-auto relative">
-        {/* Backdrop (Escurecimento) para Mobile */}
+      {/* 🏛️ ÁREA DO DASHBOARD */}
+      <main className="flex-1 h-screen overflow-y-auto relative bg-white">
+        {/* Backdrop (Fundo escuro ao abrir sidebar no mobile) */}
         {isSidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black/60 z-[55] lg:hidden backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/60 z-[90] lg:hidden backdrop-blur-sm transition-opacity"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
 
-        {/* Sticky Banner FAHUB */}
-        <div className="bg-slate-900 text-white p-3 sticky top-0 z-50 flex items-center justify-between px-6 border-b border-slate-800 shadow-xl">
+        {/* Sticky Banner com Botão de Menu para Celular */}
+        <div className="bg-slate-900 text-white p-3 sticky top-0 z-[80] flex items-center justify-between px-6 border-b border-slate-800 shadow-xl">
           <div className="flex items-center gap-4">
-            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-white hover:text-blue-400 transition-colors">
+            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-white hover:text-blue-400 transition-colors active:scale-90">
               <Menu size={24} />
             </button>
             <div className="flex items-center gap-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Agenda: Treino de Campo - 19:30</span>
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Treino de Campo - 19:30</span>
             </div>
           </div>
           <button className="text-[9px] font-black bg-white/10 px-4 py-1.5 rounded-lg uppercase hover:bg-white/20 transition-all border border-white/5">Detalhes</button>
         </div>
 
         <div className="p-4 md:p-10 space-y-10 max-w-7xl mx-auto">
-          {/* Título de Autoridade */}
+          {/* Título da Presidência */}
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-10 border-b border-slate-100">
             <div>
               <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none uppercase">
@@ -195,13 +202,14 @@ const DashboardMaster: React.FC = () => {
             </div>
           </header>
 
-          {/* Grid de Pilares Master (Adeus cards pequenos das imagens antigas) */}
+          {/* Grid dos 4 Contêineres Master (Interativos) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 pb-20">
             {pillars.map((pillar) => {
               const IconComp = pillar.icon;
               return (
                 <div 
                   key={pillar.id}
+                  onClick={() => navigate(pillar.path)}
                   className="group relative bg-white rounded-[3rem] p-10 border border-slate-100 shadow-2xl shadow-slate-200/40 hover:shadow-blue-900/10 transition-all cursor-pointer overflow-hidden active:scale-[0.98]"
                 >
                   <div className="flex items-start justify-between mb-8 relative z-10">
