@@ -1,13 +1,13 @@
 import React from 'react';
 import { 
-  ArrowLeft, Download, Filter, TrendingUp, TrendingDown, 
+  ArrowLeft, Download, Filter, TrendingUp, 
   DollarSign, PieChart, ArrowUpRight, ArrowDownRight 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 /**
  * Saúde Financeira - Protocolo FAHUB
- * Visual Original Restaurado com Navegação Ativa.
+ * Visual Original Restaurado com Limpeza de Build (TS6133).
  */
 const FinanceConsolidated: React.FC = () => {
   const navigate = useNavigate();
@@ -83,35 +83,4 @@ const FinanceConsolidated: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl group hover:border-rose-500/30 transition-all">
-            <div className="flex items-center justify-between mb-6">
-              <div className="p-3 bg-rose-50 rounded-2xl text-rose-600"><ArrowDownRight size={24} /></div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Saídas</span>
-            </div>
-            <p className="text-4xl font-black text-slate-800 italic leading-none tracking-tighter">R$ 4.120</p>
-          </div>
-
-          <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl group hover:border-blue-500/30 transition-all">
-            <div className="flex items-center justify-between mb-6">
-              <div className="p-3 bg-blue-50 rounded-2xl text-blue-600"><TrendingUp size={24} /></div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Projeção Fev</span>
-            </div>
-            <p className="text-4xl font-black text-slate-800 italic leading-none tracking-tighter">R$ 52.800</p>
-          </div>
-        </div>
-
-        {/* Mensagem do Agente Jules - Persistência de Funcionalidade */}
-        <div className="bg-slate-950 rounded-[3rem] p-8 text-white shadow-2xl border border-slate-800 flex items-center gap-8 group">
-          <div className="w-14 h-14 bg-emerald-600 rounded-[1.8rem] flex items-center justify-center font-black italic shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">J</div>
-          <div className="flex-1">
-            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] mb-2 italic">Jules / Auditoria Master</p>
-            <p className="text-lg font-medium leading-tight italic text-slate-300">
-              "Fluxo de caixa saudável. A retenção de sócios gerou um <span className="text-white font-bold underline">excesso de R$ 8.000</span>. Sugiro alocação estratégica em infraestrutura."
-            </p>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default FinanceConsolidated;
+            <div className="flex items-center justify
