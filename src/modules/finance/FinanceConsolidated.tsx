@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Download, Filter, TrendingUp, TrendingDown, DollarSign, Wallet } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Download, 
+  Filter, 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign, 
+  Wallet,
+  Activity // Adicionado para corrigir o erro TS2304
+} from 'lucide-react';
 
 /**
  * Interface para garantir consistência nos lançamentos financeiros
+ * Estruturada para suportar múltiplas entidades sob a mesma associação
  */
 interface FinancialRecord {
   id: string;
@@ -15,7 +25,7 @@ interface FinancialRecord {
 }
 
 const FinanceConsolidated: React.FC = () => {
-  // Simulação de base de dados consolidada
+  // Simulação de base de dados consolidada para a Persona Master
   const [records] = useState<FinancialRecord[]>([
     { id: '1', category: 'Mensalidades Base', entity: 'Tackle', amount: 1250.00, type: 'income', status: 'paid', date: '2026-01-01' },
     { id: '2', category: 'Patrocínio Master', entity: 'Associação', amount: 5000.00, type: 'income', status: 'pending', date: '2026-01-05' },
@@ -24,15 +34,19 @@ const FinanceConsolidated: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 space-y-8">
-      {/* Header Estratégico */}
+      {/* Header Estratégico com Navegação de Retorno */}
       <nav className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button className="p-3 bg-white rounded-2xl border border-slate-200 text-slate-400 hover:text-blue-600 transition-all shadow-sm">
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tighter italic leading-none">GESTÃO <span className="text-emerald-600">FINANCEIRA</span></h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Consolidado das Entidades</p>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tighter italic leading-none">
+              GESTÃO <span className="text-emerald-600">FINANCEIRA</span>
+            </h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
+              Consolidado das Entidades
+            </p>
           </div>
         </div>
         
@@ -46,7 +60,7 @@ const FinanceConsolidated: React.FC = () => {
         </div>
       </nav>
 
-      {/* Cards de Resumo Rápido (Mobile Friendly) */}
+      {/* Cards de Resumo Consolidado */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50">
           <div className="flex items-center gap-3 mb-4">
@@ -73,7 +87,7 @@ const FinanceConsolidated: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabela de Fluxo de Caixa Revisada */}
+      {/* Seção de Tabela com Scroll Horizontal para Mobile */}
       <section className="bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden">
         <div className="p-6 border-b border-slate-50 flex items-center justify-between">
           <h3 className="text-sm font-black text-slate-800 uppercase tracking-tighter flex items-center gap-2">
@@ -124,7 +138,7 @@ const FinanceConsolidated: React.FC = () => {
         </div>
       </section>
 
-      {/* Assistente Jules Analítico */}
+      {/* Assistente Jules Analítico - Decisão do Humano solicitada */}
       <div className="bg-blue-600 rounded-[2rem] p-6 text-white flex flex-col md:flex-row items-center gap-6 shadow-xl shadow-blue-900/20 border border-blue-500">
         <div className="bg-white/20 p-4 rounded-3xl backdrop-blur-sm">
           <Activity size={32} />
@@ -135,7 +149,7 @@ const FinanceConsolidated: React.FC = () => {
             "Identifiquei que o Tackle está com 15% de inadimplência em relação ao mês anterior. Deseja que eu gere uma lista de cobrança automática para os atletas?"
           </p>
         </div>
-        <button className="bg-white text-blue-600 px-8 py-4 rounded-2xl font-black text-sm hover:bg-slate-100 transition-all shadow-lg active:scale-95">
+        <button className="bg-white text-blue-600 px-8 py-4 rounded-2xl font-black text-sm hover:bg-slate-100 transition-all shadow-lg active:scale-95 whitespace-nowrap">
           GERAR COBRANÇA
         </button>
       </div>
