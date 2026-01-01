@@ -6,17 +6,14 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 /**
- * Gestão Financeira Operacional - Protocolo FAHUB
- * Restauração visual absoluta com tags JSX auditadas e corrigidas.
+ * Gestão Financeira - Protocolo NEXUS
+ * Restauração total do visual master e operacionalidade sólida.
  */
 const FinanceConsolidated: React.FC = () => {
   const navigate = useNavigate();
-  
-  // Estados para funcionalidade real (Ligação dos botões)
   const [isFiltering, setIsFiltering] = useState(false);
-  const [downloadStatus, setDownloadStatus] = useState<'idle' | 'generating'>('idle');
 
-  // Dados para validação visual
+  // Dados fiéis às imagens de referência
   const transactions = [
     { cat: 'Mensalidades Base', date: '2026-01-01', ent: 'TACKLE', entColor: 'bg-blue-50 text-blue-600', val: '+ R$ 1.250,00', valColor: 'text-emerald-500', status: 'EFETIVADO', statusColor: 'bg-emerald-50 text-emerald-600' },
     { cat: 'Patrocínio Master', date: '2026-01-05', ent: 'ASSOCIAÇÃO', entColor: 'bg-slate-50 text-slate-600', val: '+ R$ 5.000,00', valColor: 'text-emerald-500', status: 'AGUARDANDO', statusColor: 'bg-orange-50 text-orange-600' },
@@ -26,7 +23,7 @@ const FinanceConsolidated: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F1F5F9] pb-20">
       {/* Header HUD */}
-      <nav className="bg-white p-6 flex items-center justify-between shadow-sm mb-8">
+      <nav className="bg-white p-6 flex items-center justify-between shadow-sm mb-8 border-b border-slate-100">
         <div className="flex items-center gap-6">
           <button 
             onClick={() => navigate('/dashboard')}
@@ -35,10 +32,10 @@ const FinanceConsolidated: React.FC = () => {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tighter uppercase italic flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-800 tracking-tighter uppercase italic flex items-center gap-2 leading-none">
               Gestão <span className="text-emerald-500">Financeira</span>
             </h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Consolidado das Entidades</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic mt-1">Consolidado das Entidades</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -48,25 +45,21 @@ const FinanceConsolidated: React.FC = () => {
           >
             <Filter size={16} /> {isFiltering ? 'Ativo' : 'Filtrar'}
           </button>
-          <button 
-            onClick={() => setDownloadStatus('generating')}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 text-white text-[10px] font-black uppercase shadow-lg shadow-emerald-200 hover:bg-emerald-600 transition-all outline-none"
-          >
-            {downloadStatus === 'generating' ? <Activity className="animate-spin" size={16} /> : <Download size={16} />}
-            Relatório
+          <button className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 text-white text-[10px] font-black uppercase shadow-lg shadow-emerald-200 hover:bg-emerald-600 transition-all outline-none">
+            <Download size={16} /> Relatório
           </button>
         </div>
       </nav>
 
       <main className="max-w-[1400px] mx-auto px-6 space-y-8">
-        {/* Top Cards */}
+        {/* Top Cards - Solidez Visual Nexus */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-white flex flex-col justify-between min-h-[180px]">
             <div className="flex items-center gap-3 text-emerald-500">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center"><TrendingUp size={20} /></div>
               <span className="text-[10px] font-black uppercase tracking-widest">Total Receitas</span>
             </div>
-            <h2 className="text-4xl font-black text-slate-800 italic tracking-tighter">R$ 6.250,00</h2>
+            <h2 className="text-4xl font-black text-slate-800 italic tracking-tighter leading-none">R$ 6.250,00</h2>
           </div>
 
           <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-white flex flex-col justify-between min-h-[180px]">
@@ -74,7 +67,7 @@ const FinanceConsolidated: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center"><TrendingDown size={20} /></div>
               <span className="text-[10px] font-black uppercase tracking-widest">Total Despesas</span>
             </div>
-            <h2 className="text-4xl font-black text-slate-800 italic tracking-tighter">R$ 800,00</h2>
+            <h2 className="text-4xl font-black text-slate-800 italic tracking-tighter leading-none">R$ 800,00</h2>
           </div>
 
           <div className="bg-[#0F172A] p-8 rounded-[2.5rem] shadow-2xl flex flex-col justify-between min-h-[180px] relative overflow-hidden group">
@@ -82,7 +75,7 @@ const FinanceConsolidated: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center"><Wallet size={20} /></div>
               <span className="text-[10px] font-black uppercase tracking-widest">Saldo em Caixa</span>
             </div>
-            <h2 className="text-4xl font-black text-white italic tracking-tighter relative z-10">R$ 5.450,00</h2>
+            <h2 className="text-4xl font-black text-white italic tracking-tighter relative z-10 leading-none">R$ 5.450,00</h2>
             <DollarSign size={120} className="absolute -right-8 -bottom-8 text-white/5 group-hover:scale-110 transition-transform duration-700" />
           </div>
         </div>
@@ -130,7 +123,7 @@ const FinanceConsolidated: React.FC = () => {
           </div>
         </div>
 
-        {/* Insight Jules */}
+        {/* Insight Jules - HUD Azul Original */}
         <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-200 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
           <Activity size={100} className="absolute -left-5 -bottom-5 text-white/10" />
           <div className="flex items-center gap-6 relative z-10">
@@ -156,4 +149,4 @@ const FinanceConsolidated: React.FC = () => {
   );
 };
 
-export default FinanceConsolidated;         
+export default FinanceConsolidated;
