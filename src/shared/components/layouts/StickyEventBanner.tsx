@@ -1,60 +1,53 @@
 import { useState, useEffect } from 'react';
-import { Calendar as CalIcon, Clock, CheckCircle2 } from 'lucide-react';
+import { Calendar as CalIcon, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 const StickyEventBanner = () => {
   const [event, setEvent] = useState<any>(null);
-  const [confirmed, setConfirmed] = useState(false);
+  const [status, setStatus] = useState<'none' | 'confirmed' | 'excused'>('none');
 
   useEffect(() => {
     const fetchEvent = async () => {
       const today = new Date().toISOString().split('T')[0];
-      const { data } = await supabase.from('events')
-        .select('*')
-        .gte('date', today)
-        .order('date', { ascending: true })
-        .limit(1)
-        .single();
+      const { data } = await supabase.from('events').select('*')
+        .gte('date', today).order('date', { ascending: true }).limit(1).single();
       
       if (data) {
         setEvent(data);
-        checkExistingPresence(data.id);
+        checkStatus(data.id);
       }
     };
     fetchEvent();
   }, []);
 
-  const checkExistingPresence = async (eventId: string) => {
-    const { data } = await supabase.from('event_presences')
-      .select('*')
-      .eq('event_id', eventId)
-      .limit(1);
-    
-    if (data && data.length > 0) setConfirmed(true);
+  const checkStatus = async (eventId: string) => {
+    const { data } = await supabase.from('event_presences').select('status').eq('event_id', eventId).limit(1).single();
+    if (data) setStatus(data.status as any);
   };
 
-  const handlePresence = async () => {
-    if (!event) return;
-
-    // Obtém o primeiro atleta para simulação de teste
+  const updatePresence = async (newStatus: 'confirmed' | 'excused') => {
     const athleteRes = await supabase.from('athletes').select('id').limit(1).single();
     if (!athleteRes.data) return;
+
+    let justification = '';
+    if (newStatus === 'excused') {
+      justification = prompt('Por favor, informe o motivo da ausência:') || 'Não informado';
+    }
 
     const { error } = await supabase.from('event_presences').upsert({
       event_id: event.id,
       athlete_id: athleteRes.data.id,
-      status: 'confirmed'
+      status: newStatus,
+      justification: justification
     });
 
-    if (!error) {
-      setConfirmed(true);
-    }
+    if (!error) setStatus(newStatus);
   };
 
   if (!event) return null;
 
   return (
-    <div className="bg-[#0f172a] border-b border-slate-800 text-white px-6 py-2 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
+    <div className="bg-[#0f172a] border-b border-slate-800 text-white px-6 py-2 flex items-center justify-between sticky top-0 z-40 backdrop-blur-md">
       <div className="flex items-center gap-4">
         <div className="bg-blue-500/20 p-1.5 rounded-lg border border-blue-500/40">
           <CalIcon size={14} className="text-blue-400" />
@@ -68,16 +61,31 @@ const StickyEventBanner = () => {
         </div>
       </div>
 
-      <button 
-        onClick={handlePresence}
-        disabled={confirmed}
-        className={`${
-          confirmed ? 'bg-slate-700 opacity-50 cursor-default' : 'bg-green-600 hover:bg-green-700 shadow-green-900/20 active:scale-95'
-        } text-white px-5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-2 shadow-lg`}
-      >
-        <CheckCircle2 size={14} /> 
-        {confirmed ? 'PRESENÇA CONFIRMADA' : 'CONFIRMAR PRESENÇA'}
-      </button>
+      <div className="flex gap-2">
+        {status === 'none' ? (
+          <>
+            <button 
+              onClick={() => updatePresence('confirmed')}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-2"
+            >
+              <CheckCircle2 size={14} /> CONFIRMAR
+            </button>
+            <button 
+              onClick={() => updatePresence('excused')}
+              className="bg-slate-800 hover:bg-red-900/40 text-slate-300 hover:text-red-400 border border-slate-700 px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-2"
+            >
+              <AlertCircle size={14} /> JUSTIFICAR
+            </button>
+          </>
+        ) : (
+          <div className={`px-4 py-1.5 rounded-lg text-[10px] font-black flex items-center gap-2 border ${
+            status === 'confirmed' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-orange-500/10 text-orange-500 border-orange-500/20'
+          }`}>
+            {status === 'confirmed' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+            {status === 'confirmed' ? 'PRESENÇA CONFIRMADA' : 'AUSÊNCIA JUSTIFICADA'}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
