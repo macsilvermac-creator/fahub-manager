@@ -1,14 +1,27 @@
 import React, { useState } from 'react';
 import { 
   TrendingUp, Users, Kanban, Activity, ArrowRight, 
-  Menu, X, LayoutDashboard, Calendar, Settings, LogOut, Search 
+  Menu, X, LayoutDashboard, Calendar, Settings, LogOut 
 } from 'lucide-react';
+
+/**
+ * Interface para os Pilares de Decisão Master
+ */
+interface MasterPillar {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  content: React.ReactNode;
+}
 
 const DashboardMaster: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const goalPercent = 60;
 
-  const pillars = [
+  const pillars: MasterPillar[] = [
     {
       id: 'finance',
       title: 'Saúde Financeira',
@@ -38,11 +51,11 @@ const DashboardMaster: React.FC = () => {
       content: (
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100">
-            <p className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1 tracking-widest">Profissional</p>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Profissional</p>
             <p className="text-2xl font-black text-slate-800 italic">84</p>
           </div>
           <div className="bg-slate-50 p-4 rounded-[1.5rem] border border-slate-100">
-            <p className="text-[9px] font-black text-slate-400 uppercase leading-none mb-1 tracking-widest">Base/Escola</p>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Base/Escola</p>
             <p className="text-2xl font-black text-slate-800 italic">126</p>
           </div>
         </div>
@@ -70,7 +83,7 @@ const DashboardMaster: React.FC = () => {
           </div>
           <div>
             <p className="text-xs font-bold text-slate-700 leading-tight">Expansão de Unidades</p>
-            <p className="text-[9px] text-orange-600 font-black uppercase italic mt-1">Status: Ativo</p>
+            <p className="text-[9px] text-orange-600 font-black uppercase italic mt-1 tracking-widest">Status: Ativo</p>
           </div>
         </div>
       )
@@ -86,7 +99,7 @@ const DashboardMaster: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-purple-50 px-4 py-3 rounded-2xl border border-purple-100">
             <span className="text-[11px] font-black text-purple-700 uppercase italic">Tackle Masculino</span>
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping" />
           </div>
           <p className="text-[10px] text-slate-500 font-bold italic">Jules: "3 treinos realizados hoje."</p>
         </div>
@@ -97,7 +110,7 @@ const DashboardMaster: React.FC = () => {
   return (
     <div className="min-h-screen bg-white flex overflow-hidden">
       
-      {/* 🏛️ SIDEBAR RETRÁTIL (HIDDEN ON MOBILE BY DEFAULT) */}
+      {/* 🏛️ SIDEBAR RETRÁTIL (MOBILE-FIRST) */}
       <aside className={`
         fixed inset-y-0 left-0 z-[60] w-72 bg-slate-950 text-white transform transition-transform duration-300 ease-in-out border-r border-slate-800
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -114,6 +127,7 @@ const DashboardMaster: React.FC = () => {
         </div>
 
         <nav className="flex-1 px-4 space-y-2">
+          <p className="px-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-4 italic">Menu Presidencial</p>
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-blue-600 text-white text-xs font-black italic">
             <LayoutDashboard size={18} /> DASHBOARD
           </button>
@@ -126,10 +140,10 @@ const DashboardMaster: React.FC = () => {
         </nav>
 
         <div className="p-4 mt-auto">
-          <button className="w-full flex items-center justify-between bg-white/5 p-4 rounded-[2rem] hover:bg-white/10 transition-all">
+          <button className="w-full flex items-center justify-between bg-white/5 p-4 rounded-[2rem] hover:bg-white/10 transition-all border border-white/5">
             <div className="flex items-center gap-3">
-               <div className="w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center text-[10px] font-black">JG</div>
-               <span className="text-[10px] font-black uppercase tracking-widest">Sair</span>
+               <div className="w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center text-[10px] font-black shadow-inner">JG</div>
+               <span className="text-[10px] font-black uppercase tracking-widest italic text-slate-300">Sair</span>
             </div>
             <LogOut size={16} className="text-slate-500" />
           </button>
@@ -138,15 +152,15 @@ const DashboardMaster: React.FC = () => {
 
       {/* 🏛️ ÁREA PRINCIPAL DO DASHBOARD */}
       <main className="flex-1 h-screen overflow-y-auto relative">
-        {/* Overlay para mobile quando sidebar está aberto */}
+        {/* Backdrop (Escurecimento) para Mobile */}
         {isSidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black/50 z-[55] lg:hidden backdrop-blur-sm"
+            className="fixed inset-0 bg-black/60 z-[55] lg:hidden backdrop-blur-sm transition-opacity"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
 
-        {/* Sticky Banner com Botão de Menu para Mobile */}
+        {/* Sticky Banner FAHUB */}
         <div className="bg-slate-900 text-white p-3 sticky top-0 z-50 flex items-center justify-between px-6 border-b border-slate-800 shadow-xl">
           <div className="flex items-center gap-4">
             <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-white hover:text-blue-400 transition-colors">
@@ -161,7 +175,7 @@ const DashboardMaster: React.FC = () => {
         </div>
 
         <div className="p-4 md:p-10 space-y-10 max-w-7xl mx-auto">
-          {/* Header de Autoridade */}
+          {/* Título de Autoridade */}
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-10 border-b border-slate-100">
             <div>
               <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none uppercase">
@@ -181,7 +195,7 @@ const DashboardMaster: React.FC = () => {
             </div>
           </header>
 
-          {/* Grid de Pilares Master */}
+          {/* Grid de Pilares Master (Adeus cards pequenos das imagens antigas) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 pb-20">
             {pillars.map((pillar) => {
               const IconComp = pillar.icon;
