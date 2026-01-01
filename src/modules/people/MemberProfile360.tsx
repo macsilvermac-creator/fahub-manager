@@ -1,146 +1,156 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  ArrowLeft, Shield, Activity, FileText, 
-  TrendingUp, AlertCircle, CheckCircle2, Clock, User
+  ArrowLeft, Activity, ShieldAlert, TrendingUp, 
+  Award, Calendar, FileText, CheckCircle2 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * Ficha Individual 360º - Protocolo FAHUB Nexus
- * Visão profunda para Gestão Master com estética HUD e KPIs integrados.
+ * Ficha 360º Operacional - Protocolo FAHUB
+ * Consolidação de KPIs de Caráter e Habilidade (Gladiators Fit).
  */
 const MemberProfile360: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Estado para controle de abas operacionais
+  const [activeTab, setActiveTab] = useState<'stats' | 'health' | 'docs'>('stats');
 
-  const member = {
-    name: "Gabriel 'Gladiador' Silva",
-    position: "Linebacker / Capitão",
-    status: "Ativo",
-    healthStatus: "Apto com restrições",
-    lastUpdate: "01/01/2026",
-    stats: [
-      { label: "Performance Técnica", value: 88, color: "bg-blue-600" },
-      { label: "Presença em Treinos", value: 95, color: "bg-emerald-500" },
-      { label: "Engajamento Tático", value: 72, color: "bg-orange-500" }
-    ]
+  // Dados do Atleta - Integração com o Blueprint College 
+  const memberData = {
+    name: "Gabriel Silva",
+    position: "Linebacker",
+    number: "52",
+    stats: { physical: "92%", tactical: "85%", character: "95%" },
+    healthStatus: "Apto para Contato",
+    lastUpdate: "01/01/2026"
   };
 
   return (
-    <div className="min-h-screen bg-white pb-20">
-      {/* Barra de Navegação HUD */}
-      <nav className="bg-slate-900 text-white p-4 sticky top-0 z-50 border-b border-slate-800 shadow-2xl">
-        <div className="max-w-6xl mx-auto flex items-center justify-between px-4">
+    <div className="min-h-screen bg-[#F1F5F9] pb-20">
+      {/* Header Profile HUD */}
+      <div className="bg-slate-900 h-64 relative">
+        <nav className="p-6 flex items-center justify-between relative z-10">
           <button 
-            onClick={() => navigate('/patrimonio')}
-            className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] hover:text-blue-400 transition-all"
+            onClick={() => navigate('/human-capital')}
+            className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all outline-none"
           >
-            <ArrowLeft size={16} /> Voltar ao Patrimônio
+            <ArrowLeft size={20} />
           </button>
-          <div className="flex items-center gap-2">
-            <Shield size={14} className="text-blue-500" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] italic text-slate-300">Perfil Nexus 360º</span>
+          <div className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase italic shadow-lg">
+            Gladiators Fit: Elite
+          </div>
+        </nav>
+
+        {/* Avatar e Infos Centrais */}
+        <div className="absolute -bottom-16 left-10 flex items-end gap-8">
+          <div className="w-40 h-40 rounded-[2.5rem] bg-slate-800 border-8 border-[#F1F5F9] shadow-2xl flex items-center justify-center overflow-hidden">
+             <span className="text-4xl font-black text-white italic">GS</span>
+          </div>
+          <div className="pb-4">
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
+              {memberData.name} <span className="text-blue-600">#{memberData.number}</span>
+            </h1>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.3em] mt-2 italic">{memberData.position}</p>
           </div>
         </div>
-      </nav>
+      </div>
 
-      <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-10">
-        
-        {/* HUD de Identidade - Master Persona */}
-        <section className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden group">
-          <User size={300} strokeWidth={1} className="absolute -right-20 -bottom-20 opacity-[0.03] text-white group-hover:scale-110 transition-transform duration-1000" />
-          
-          <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
-            <div className="w-40 h-40 rounded-[3rem] bg-blue-600 flex items-center justify-center text-5xl font-black italic shadow-2xl shadow-blue-500/20 border-4 border-white/10">
-              GS
-            </div>
-            
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-4xl font-black tracking-tighter italic uppercase leading-none">{member.name}</h1>
-              <p className="text-blue-400 font-bold text-base uppercase tracking-[0.3em] mt-3">{member.position}</p>
-              <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-6">
-                <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase italic">Sócio Ativo</span>
-                <span className="bg-white/5 text-slate-400 border border-white/10 px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase italic">Vencimento: Out/2026</span>
-              </div>
-            </div>
-
-            {/* KPI de Saúde HUD */}
-            <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 backdrop-blur-xl min-w-[250px]">
-              <div className="flex items-center gap-3 mb-3">
-                <Activity className="text-orange-500 animate-pulse" size={20} />
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Health KPI</span>
-              </div>
-              <p className="text-2xl font-black italic text-orange-500 uppercase leading-none">{member.healthStatus}</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Visão 360º de Performance e Burocracia */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          
-          {/* Módulo de Performance HUD */}
-          <div className="lg:col-span-2 space-y-10">
-            <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-2xl shadow-slate-200/50 relative overflow-hidden group">
-              <TrendingUp size={200} className="absolute -right-10 -bottom-10 opacity-[0.02] text-slate-900 group-hover:rotate-12 transition-transform duration-700" />
-              <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-4 italic uppercase tracking-tighter">
-                <TrendingUp className="text-blue-600" size={24} /> Performance Estratégica
-              </h3>
-              <div className="space-y-8">
-                {member.stats.map((stat, idx) => (
-                  <div key={idx} className="space-y-3">
-                    <div className="flex justify-between text-[11px] font-black text-slate-500 uppercase tracking-widest">
-                      <span>{stat.label}</span>
-                      <span className="text-slate-900">{stat.value}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden shadow-inner">
-                      <div className={`${stat.color} h-full transition-all duration-1000 shadow-lg`} style={{ width: `${stat.value}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Relatório Jules Integrado */}
-            <div className="bg-slate-950 rounded-[3rem] p-8 text-white shadow-2xl border border-slate-800 flex items-center gap-8">
-              <div className="w-14 h-14 bg-blue-600 rounded-[1.5rem] flex items-center justify-center font-black italic shadow-lg shadow-blue-500/20">J</div>
-              <div className="flex-1">
-                <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] mb-2 italic">Análise de IA / Patrimônio</p>
-                <p className="text-lg font-medium leading-tight italic text-slate-300">
-                  "Gabriel apresenta um declínio de 12% no engajamento tático. Sugiro reunião com o <span className="text-white font-bold underline">HC de Defesa</span> para alinhar expectativas."
-                </p>
-              </div>
+      <main className="max-w-[1400px] mx-auto px-10 pt-24 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Coluna de Status e Saúde  */}
+        <div className="space-y-6">
+          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+              <ShieldAlert size={14} className="text-emerald-500" /> Status de Disponibilidade
+            </h3>
+            <div className="flex items-center gap-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+              <CheckCircle2 className="text-emerald-600" size={24} />
+              <span className="text-sm font-black text-emerald-900 uppercase italic">{memberData.healthStatus}</span>
             </div>
           </div>
 
-          {/* Módulo Burocrático HUD */}
-          <div className="space-y-10">
-            <div className="bg-white rounded-[3rem] p-10 border border-slate-100 shadow-2xl shadow-slate-200/50">
-              <h3 className="text-sm font-black text-slate-400 mb-8 italic uppercase tracking-[0.3em]">Compliance Jurídico</h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-5 rounded-[2rem] bg-emerald-50 border border-emerald-100 text-emerald-700">
-                  <div className="flex items-center gap-3">
-                    <FileText size={18} />
-                    <span className="text-[10px] font-black uppercase italic tracking-widest">Termo Imagem</span>
+          <div className="bg-[#0F172A] p-8 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden">
+             <TrendingUp size={120} className="absolute -right-10 -bottom-10 text-white/5" />
+             <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-6 italic">Métricas Pro-Style</h3>
+             <div className="space-y-6 relative z-10">
+                <div>
+                  <div className="flex justify-between text-[10px] font-black uppercase mb-2">
+                    <span>Força e Condição</span>
+                    <span>{memberData.stats.physical}</span>
                   </div>
-                  <CheckCircle2 size={18} />
+                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 rounded-full" style={{ width: memberData.stats.physical }} />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-5 rounded-[2rem] bg-orange-50 border border-orange-100 text-orange-700">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle size={18} />
-                    <span className="text-[10px] font-black uppercase italic tracking-widest">Seguro Atleta</span>
+                <div>
+                  <div className="flex justify-between text-[10px] font-black uppercase mb-2">
+                    <span>QI Tático (Playbook)</span>
+                    <span>{memberData.stats.tactical}</span>
                   </div>
-                  <span className="text-[9px] font-black uppercase">Expirando</span>
+                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: memberData.stats.tactical }} />
+                  </div>
                 </div>
-              </div>
+             </div>
+          </div>
+        </div>
+
+        {/* Painel Central Operacional */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+            <div className="flex border-b border-slate-50">
+              <button 
+                onClick={() => setActiveTab('stats')}
+                className={`flex-1 py-6 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'stats' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/20' : 'text-slate-400'}`}
+              >
+                Histórico de Performance
+              </button>
+              <button 
+                onClick={() => setActiveTab('docs')}
+                className={`flex-1 py-6 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'docs' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/20' : 'text-slate-400'}`}
+              >
+                Contratos e Docs
+              </button>
             </div>
 
-            <div className="bg-slate-50 rounded-[3rem] p-8 border border-slate-100 text-center">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 italic">Última Sincronização</p>
-              <p className="text-xs font-bold text-slate-800 flex items-center justify-center gap-2 italic">
-                <Clock size={14} className="text-blue-500" /> {member.lastUpdate} - 13:13
-              </p>
+            <div className="p-8">
+              {activeTab === 'stats' ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-blue-200 transition-all cursor-pointer">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                          <Award className="text-blue-600" size={18} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black uppercase italic text-slate-800">Avaliação Técnica - Semana {i}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Responsável: HC Jules</p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-black text-blue-600 italic">Grade: A-</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 cursor-pointer transition-all">
+                    <FileText size={24} className="mb-2" />
+                    <span className="text-[9px] font-black uppercase italic">Termo de Atleta</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Banner de Engajamento 360º  */}
+          <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white flex items-center justify-between shadow-xl shadow-blue-200 relative overflow-hidden">
+            <div className="relative z-10">
+              <h4 className="text-xs font-black uppercase tracking-[0.2em] mb-2 italic">Ação Recomendada</h4>
+              <p className="text-sm font-bold italic opacity-90">O atleta atingiu o ápice físico. Iniciar transição para o Time Especial?</p>
+            </div>
+            <button className="bg-white text-blue-600 px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-lg hover:scale-105 active:scale-95 transition-all outline-none">
+              Aprovar Transição
+            </button>
+          </div>
         </div>
       </main>
     </div>
