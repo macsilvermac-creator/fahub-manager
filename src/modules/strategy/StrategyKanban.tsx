@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Plus, MoreVertical, MessageSquare, AlertCircle, LayoutKanban } from 'lucide-react';
+import { ArrowLeft, Plus, MoreVertical, MessageSquare, AlertCircle, Columns3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const StrategyKanban: React.FC = () => {
@@ -33,7 +33,7 @@ const StrategyKanban: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Barra de Navegação Superior Superior */}
+      {/* Barra de Navegação Superior */}
       <nav className="bg-white border-b border-slate-200 p-4 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <button 
@@ -43,7 +43,7 @@ const StrategyKanban: React.FC = () => {
             <ArrowLeft size={16} /> Voltar ao Dash
           </button>
           <div className="flex items-center gap-2">
-            <LayoutKanban size={18} className="text-blue-600" />
+            <Columns3 size={18} className="text-blue-600" />
             <h1 className="text-sm font-black text-slate-800 tracking-tighter italic uppercase">Evolução Estratégica</h1>
           </div>
           <button className="bg-blue-600 text-white p-2 rounded-xl shadow-lg shadow-blue-200 hover:scale-105 active:scale-95 transition-all">
@@ -54,7 +54,7 @@ const StrategyKanban: React.FC = () => {
 
       {/* Grid do Kanban - Responsivo com Scroll Horizontal */}
       <main className="p-4 md:p-8 overflow-x-auto">
-        <div className="flex gap-6 min-w-[1000px] md:min-w-full h-[calc(100-120px)]">
+        <div className="flex gap-6 min-w-[1000px] md:min-w-full">
           {columns.map(col => (
             <div key={col.id} className="flex-1 flex flex-col gap-4">
               <div className={`p-4 rounded-3xl ${col.color} border border-slate-200/50 flex items-center justify-between shadow-sm`}>
@@ -110,9 +110,9 @@ const StrategyKanban: React.FC = () => {
 
       {/* Assistente Jules Analítico */}
       <div className="fixed bottom-6 right-6 left-6 md:left-auto md:w-[400px] z-40">
-        <div className="bg-slate-900 p-5 rounded-[2.5rem] shadow-2xl border border-slate-800 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="bg-slate-900 p-5 rounded-[2.5rem] shadow-2xl border border-slate-800 flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-             <AlertCircle size={24} className="text-white animate-pulse" />
+             <AlertCircle size={24} className="text-white" />
           </div>
           <div className="flex-1">
             <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1 italic">Jules / Estratégia</p>
