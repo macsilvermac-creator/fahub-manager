@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   ArrowLeft, Search, Filter, UserPlus, 
-  ChevronRight, MoreVertical, ShieldCheck, Activity 
+  ChevronRight, ShieldCheck, Activity 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 const HumanCapital: React.FC = () => {
   const navigate = useNavigate();
 
-  // Dados para validação visual do Gestor
+  // Dados simulados para validação visual e técnica do Gestor
   const members = [
     { id: 1, name: "Gabriel Silva", role: "Linebacker", status: "Apto", perf: "88%" },
     { id: 2, name: "Lucas Oliveira", role: "Quarterback", status: "DM", perf: "92%" },
@@ -88,7 +88,7 @@ const HumanCapital: React.FC = () => {
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${member.status === 'Apto' ? 'bg-emerald-500' : 'bg-orange-500'} animate-pulse`} />
+                        <div className={`w-2 h-2 rounded-full ${member.status === 'Apto' ? 'bg-emerald-500' : 'bg-orange-500'} animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.3)]`} />
                         <span className="text-[10px] font-black uppercase text-slate-600">{member.status}</span>
                       </div>
                     </td>
@@ -112,11 +112,15 @@ const HumanCapital: React.FC = () => {
         </div>
 
         {/* Insight do Agente Jules */}
-        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white flex items-center gap-6 shadow-2xl border border-slate-800">
-           <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center font-black italic text-xl shadow-lg shadow-blue-500/20">J</div>
-           <p className="text-sm font-medium leading-tight italic text-slate-300">
-             "Você tem <span className="text-white font-bold underline">126 atletas na Base</span>. O engajamento médio subiu 15% após o último treino. Clique em qualquer membro para ver os detalhes individuais."
-           </p>
+        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white flex items-center gap-6 shadow-2xl border border-slate-800 relative overflow-hidden group">
+          <Activity size={100} className="absolute -right-5 -bottom-5 text-white/5 group-hover:scale-110 transition-transform duration-700" />
+           <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center font-black italic text-xl shadow-lg shadow-blue-500/20 relative z-10">J</div>
+           <div className="flex-1 relative z-10">
+             <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1 italic">Jules / Inteligência Patrimonial</p>
+             <p className="text-sm font-medium leading-tight italic text-slate-300">
+               "Você tem <span className="text-white font-bold underline">126 atletas na Base</span>. Clique em qualquer linha para auditar os dados de performance individual no Modo 360º."
+             </p>
+           </div>
         </div>
       </main>
     </div>
