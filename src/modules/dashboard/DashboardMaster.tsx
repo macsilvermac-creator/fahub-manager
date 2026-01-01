@@ -2,9 +2,9 @@ import React from 'react';
 import { TrendingUp, Users, Kanban, Activity, ArrowRight } from 'lucide-react';
 
 /**
- * Interface rigorosa para os 4 Contêineres Master
+ * Interface para os 4 Pilares de Decisão da Presidência
  */
-interface MasterContainer {
+interface MasterPillar {
   id: string;
   title: string;
   subtitle: string;
@@ -15,86 +15,84 @@ interface MasterContainer {
 }
 
 const DashboardMaster: React.FC = () => {
-  const containers: MasterContainer[] = [
+  const pillars: MasterPillar[] = [
     {
       id: 'finance',
-      title: 'Gestão Financeira',
-      subtitle: 'Entidade & Projeção',
+      title: 'Saúde Financeira',
+      subtitle: 'Consolidado da Entidade',
       icon: TrendingUp,
       color: 'text-emerald-500',
       bg: 'bg-emerald-500/10',
       content: (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex justify-between items-end">
-            <span className="text-3xl font-black text-slate-800 tracking-tighter">R$ 45,2k</span>
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Superávit</span>
+            <span className="text-3xl font-black text-slate-800 tracking-tighter">R$ 45.200</span>
+            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">SUPERÁVIT</span>
           </div>
           <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-            <div className="bg-emerald-500 h-full w-[70%]" />
+            <div className="bg-emerald-500 h-full w-[72%]" />
           </div>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Saúde de Caixa: 70%</p>
+          <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.1em]">Atingimento de Meta: 72%</p>
         </div>
       )
     },
     {
       id: 'patrimony',
       title: 'Patrimônio Humano',
-      subtitle: 'Censo Geral de Atletas',
+      subtitle: 'Atletas & Membros Ativos',
       icon: Users,
       color: 'text-blue-500',
       bg: 'bg-blue-500/10',
       content: (
-        <div className="grid grid-cols-2 gap-3 mt-1">
-          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-            <p className="text-[9px] font-black text-slate-400 uppercase">Profissional</p>
-            <p className="text-xl font-black text-slate-700">84</p>
+        <div className="grid grid-cols-2 gap-4 mt-1">
+          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Profissional</p>
+            <p className="text-2xl font-black text-slate-800">84</p>
           </div>
-          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-            <p className="text-[9px] font-black text-slate-400 uppercase">Base/Escolha</p>
-            <p className="text-xl font-black text-slate-700">126</p>
+          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Base/Escola</p>
+            <p className="text-2xl font-black text-slate-800">126</p>
           </div>
         </div>
       )
     },
     {
-      id: 'goals',
+      id: 'strategy',
       title: 'Evolução Estratégica',
-      subtitle: 'Metas & OKRs Ativos',
+      subtitle: 'Kanban de Metas OKR',
       icon: Kanban,
       color: 'text-orange-500',
       bg: 'bg-orange-500/10',
       content: (
         <div className="flex items-center gap-4">
-          <div className="relative w-12 h-12 flex items-center justify-center">
+          <div className="relative w-14 h-14 flex items-center justify-center">
             <svg className="w-full h-full rotate-[-90deg]">
-              <circle cx="24" cy="24" r="20" fill="none" stroke="#f1f5f9" strokeWidth="5" />
-              <circle cx="24" cy="24" r="20" fill="none" stroke="#f97316" strokeWidth="5" strokeDasharray="125" strokeDashoffset="50" />
+              <circle cx="28" cy="28" r="24" fill="none" stroke="#f1f5f9" strokeWidth="6" />
+              <circle cx="28" cy="28" r="24" fill="none" stroke="#f97316" strokeWidth="6" strokeDasharray="150" strokeDashoffset="60" />
             </svg>
-            <span className="absolute text-[10px] font-black text-slate-800">60%</span>
+            <span className="absolute text-[11px] font-black text-slate-800">60%</span>
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-xs font-bold text-slate-700 leading-tight">Expansão de Unidades</p>
-            <p className="text-[9px] text-orange-600 font-black uppercase italic">Jules: "Atenção a prazos"</p>
+            <p className="text-[9px] text-orange-600 font-black uppercase italic mt-1">Status: Crítico</p>
           </div>
         </div>
       )
     },
     {
-      id: 'operations',
-      title: 'Status Operacional',
-      subtitle: 'Monitoramento Cross-Entity',
+      id: 'ops',
+      title: 'Monitoramento Operacional',
+      subtitle: 'Status em Tempo Real',
       icon: Activity,
       color: 'text-purple-500',
       bg: 'bg-purple-500/10',
       content: (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between bg-purple-50 px-4 py-2 rounded-xl border border-purple-100">
-            <span className="text-[11px] font-black text-purple-700">Tackle em Campo</span>
-            <div className="flex gap-1">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-            </div>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between bg-purple-50 px-4 py-3 rounded-2xl border border-purple-100">
+            <span className="text-[11px] font-black text-purple-700">Tackle em Treino</span>
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
           </div>
-          <p className="text-[10px] text-slate-500 font-medium italic">Relatório de hoje: "Foco em Drills Técnicos"</p>
+          <p className="text-[10px] text-slate-500 font-medium italic">IA: "Carga física elevada detectada hoje."</p>
         </div>
       )
     }
@@ -102,87 +100,80 @@ const DashboardMaster: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* 1. Sticky Banner (Protocolo FAHUB) */}
-      <div className="bg-slate-900 text-white p-3 sticky top-0 z-50 flex items-center justify-between px-6 shadow-lg border-b border-slate-800">
+      {/* 1. Sticky Banner (Unica Informação Temporal do Dash) */}
+      <div className="bg-slate-900 text-white p-3 sticky top-0 z-50 flex items-center justify-between px-6 border-b border-slate-800 shadow-xl">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
-          <span className="text-[10px] font-black uppercase tracking-widest italic">PRÓXIMO EVENTO: Treino de Campo - 19:30</span>
+          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Agenda: Treino de Campo - 19:30</span>
         </div>
-        <div className="flex gap-2">
-          <button className="text-[9px] font-black bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg transition-all uppercase">Acessar Agenda</button>
-        </div>
+        <button className="text-[9px] font-black bg-white/10 px-4 py-1.5 rounded-lg uppercase hover:bg-white/20 transition-all">Ver Detalhes</button>
       </div>
 
-      <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
-        {/* 2. Título da Tela */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-50 pb-8">
+      <div className="p-4 md:p-10 space-y-10 max-w-7xl mx-auto">
+        {/* 2. Título de Autoridade */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-10 border-b border-slate-100">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none">
-              DASHBOARD <span className="text-blue-600">PRESIDÊNCIA</span>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none uppercase">
+              Dashboard <span className="text-blue-600">Presidência</span>
             </h1>
-            <p className="text-slate-400 text-[11px] font-bold uppercase tracking-[0.3em] mt-3 flex items-center gap-2">
-              <span className="w-6 h-[1px] bg-slate-200" /> Joinville Gladiators / Nexus Portal
+            <p className="text-slate-400 text-[11px] font-bold uppercase tracking-[0.4em] mt-4 flex items-center gap-3">
+              <span className="w-8 h-[1px] bg-slate-300" /> Joinville Gladiators / Nexus Portal
             </p>
           </div>
-          
-          <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-[1.5rem] border border-slate-100">
+          <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-[2rem] border border-slate-100">
             <div className="text-right">
-              <p className="text-[10px] font-black text-slate-800 leading-none">Gestão Master</p>
-              <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Nível de Acesso 01</p>
+              <p className="text-xs font-black text-slate-800 leading-none">Gestão Master</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Presidente</p>
             </div>
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-200">
-              JG
-            </div>
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-xl shadow-blue-200">JG</div>
           </div>
         </header>
 
-        {/* 3. Os 4 Contêineres Master (Lógica 2x2 ou 1x1) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
-          {containers.map((item) => {
-            const Icon = item.icon;
+        {/* 3. Os 4 Contêineres Master (Eliminados os Cards Pequenos) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+          {pillars.map((pillar) => {
+            const Icon = pillar.icon;
             return (
               <div 
-                key={item.id}
-                className="group relative bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl shadow-slate-200/30 hover:shadow-2xl hover:shadow-blue-900/10 transition-all cursor-pointer overflow-hidden active:scale-[0.98]"
+                key={pillar.id}
+                className="group relative bg-white rounded-[3rem] p-10 border border-slate-100 shadow-2xl shadow-slate-200/40 hover:shadow-blue-900/10 transition-all cursor-pointer overflow-hidden active:scale-[0.98]"
               >
-                <div className="flex items-start justify-between mb-6 relative z-10">
-                  <div className="flex items-center gap-4">
-                    <div className={`${item.bg} ${item.color} p-4 rounded-3xl`}>
-                      <Icon size={32} strokeWidth={2.5} />
+                <div className="flex items-start justify-between mb-8 relative z-10">
+                  <div className="flex items-center gap-6">
+                    <div className={`${pillar.bg} ${pillar.color} p-5 rounded-[2rem]`}>
+                      <Icon size={36} strokeWidth={2.5} />
                     </div>
                     <div>
-                      <h3 className="text-xl font-black text-slate-800 tracking-tight">{item.title}</h3>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 opacity-70">{item.subtitle}</p>
+                      <h3 className="text-2xl font-black text-slate-800 tracking-tight">{pillar.title}</h3>
+                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1 opacity-80">{pillar.subtitle}</p>
                     </div>
                   </div>
-                  <ArrowRight className="text-slate-200 group-hover:text-blue-500 group-hover:translate-x-2 transition-all" size={24} />
+                  <ArrowRight className="text-slate-200 group-hover:text-blue-500 group-hover:translate-x-3 transition-all" size={28} />
                 </div>
 
-                <div className="relative z-10 mt-2">
-                  {item.content}
+                <div className="relative z-10">
+                  {pillar.content}
                 </div>
 
-                {/* Marca D'água Estilizada */}
-                <div className="absolute -right-8 -bottom-8 opacity-[0.03] text-slate-900 group-hover:scale-125 transition-transform duration-700">
-                  <Icon size={200} strokeWidth={1} />
-                </div>
+                {/* Marca D'água Estilizada para Profundidade */}
+                <Icon size={250} strokeWidth={1} className="absolute -right-12 -bottom-12 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform duration-1000" />
               </div>
             );
           })}
         </div>
 
-        {/* 4. Assistente Jules (Human-in-the-loop) */}
-        <div className="bg-slate-900 rounded-[2.5rem] p-6 text-white border border-slate-800 flex flex-col md:flex-row items-center gap-6 shadow-2xl relative overflow-hidden group">
-          <div className="p-4 bg-blue-600 rounded-3xl animate-pulse shadow-lg shadow-blue-500/20">
-            <Activity size={32} />
+        {/* 4. Assistente Jules (Insight Estratégico) */}
+        <div className="bg-slate-950 rounded-[3rem] p-8 text-white border border-slate-800 flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden group">
+          <div className="p-5 bg-blue-600 rounded-[2rem] shadow-lg shadow-blue-500/20">
+            <Activity size={36} className="animate-pulse" />
           </div>
           <div className="flex-1 text-center md:text-left relative z-10">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400 mb-2">Jules / Insight Estratégico</p>
-            <p className="text-lg font-medium leading-snug italic text-slate-300">
-              "Presidente, o relatório financeiro do mês indica uma folga de caixa. Sugiro alocar R$ 2k para a meta de uniformes da Base. <span className="text-white font-bold underline">Autoriza?</span>"
+            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-blue-400 mb-3">Jules / Insight de Governança</p>
+            <p className="text-xl font-medium leading-tight italic text-slate-300">
+              "Presidente, identifiquei um excedente de caixa no <span className="text-white font-bold underline">Flag Feminino</span>. Sugiro reinvestir na meta de equipamentos. <span className="text-white font-black">Autoriza a transação?</span>"
             </p>
           </div>
-          <button className="w-full md:w-auto bg-white text-slate-900 px-10 py-4 rounded-2xl font-black text-sm hover:bg-blue-50 transition-all shadow-xl active:scale-95 whitespace-nowrap z-10">
+          <button className="w-full md:w-auto bg-white text-slate-900 px-12 py-5 rounded-[2rem] font-black text-sm hover:bg-blue-50 transition-all shadow-2xl active:scale-95 z-10 whitespace-nowrap">
             AUTORIZAR AGORA
           </button>
         </div>
