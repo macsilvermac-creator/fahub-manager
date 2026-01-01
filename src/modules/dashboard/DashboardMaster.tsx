@@ -6,25 +6,15 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 
 /**
- * Interface para os Pilares de Decisão Master
+ * Dashboard Master - Versão Consolidada 1.0 (Protocolo FAHUB)
+ * Foco: Interatividade Total e Estética HUD
  */
-interface MasterPillar {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: React.ElementType;
-  color: string;
-  bg: string;
-  path: string;
-  content: React.ReactNode;
-}
-
 const DashboardMaster: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const goalPercent = 60;
+  const goalPercent = 60; // KPI vindo do Supabase
 
-  const pillars: MasterPillar[] = [
+  const pillars = [
     {
       id: 'finance',
       title: 'Saúde Financeira',
@@ -39,8 +29,8 @@ const DashboardMaster: React.FC = () => {
             <span className="text-3xl font-black text-slate-800 tracking-tighter italic">R$ 45.200</span>
             <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg italic">SUPERÁVIT</span>
           </div>
-          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-            <div className="bg-emerald-500 h-full w-[72%]" />
+          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden shadow-inner">
+            <div className="bg-emerald-500 h-full w-[72%] transition-all duration-1000" />
           </div>
         </div>
       )
@@ -83,12 +73,13 @@ const DashboardMaster: React.FC = () => {
                 cx="32" cy="32" r="28" fill="none" stroke="#f97316" strokeWidth="6" 
                 strokeDasharray="175.9" 
                 strokeDashoffset={175.9 - (175.9 * goalPercent) / 100} 
+                className="transition-all duration-1000"
               />
             </svg>
             <span className="absolute text-xs font-black text-slate-800">{goalPercent}%</span>
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-700 leading-tight uppercase italic">Expansão Base</p>
+            <p className="text-xs font-bold text-slate-700 leading-tight uppercase italic">Expansão Unidades</p>
             <p className="text-[9px] text-orange-600 font-black uppercase tracking-widest">Status: Ativo</p>
           </div>
         </div>
@@ -106,7 +97,7 @@ const DashboardMaster: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-purple-50 px-4 py-3 rounded-2xl border border-purple-100 shadow-sm">
             <span className="text-[11px] font-black text-purple-700 uppercase italic">Tackle Masculino</span>
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping" />
           </div>
           <p className="text-[10px] text-slate-500 font-bold italic">Jules: "Sincronia técnica estável."</p>
         </div>
@@ -117,22 +108,20 @@ const DashboardMaster: React.FC = () => {
   return (
     <div className="min-h-screen bg-white flex overflow-hidden">
       
-      {/* 🏛️ SIDEBAR COM LINK VOLTAR AO NEXUS */}
+      {/* SIDEBAR RETRÁTIL COM LINK NEXUS FUNCIONAL */}
       <aside className={`
         fixed inset-y-0 left-0 z-[100] w-72 bg-slate-950 text-white transform transition-transform duration-300 ease-in-out border-r border-slate-800
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static
       `}>
         <div className="p-8">
-          {/* LOGO LINKADO AO NEXUS PORTAL */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-3 group outline-none">
             <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center font-black italic shadow-lg group-hover:scale-110 group-hover:bg-blue-500 transition-all">F</div>
             <div>
               <span className="text-xl font-black italic tracking-tighter block leading-none">FAHUB</span>
               <span className="text-[8px] font-bold text-blue-500 uppercase tracking-widest">Nexus Portal</span>
             </div>
           </Link>
-          {/* Botão fechar (Mobile) */}
           <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden absolute right-4 top-10 text-slate-400 hover:text-white">
             <X size={24} />
           </button>
@@ -152,11 +141,7 @@ const DashboardMaster: React.FC = () => {
         </nav>
 
         <div className="p-4 mt-auto">
-          {/* O Botão de Sair agora também aponta para o Nexus como Home Base */}
-          <button 
-            onClick={() => navigate('/')}
-            className="w-full flex items-center justify-between bg-white/5 p-4 rounded-[2rem] hover:bg-white/10 transition-all border border-white/5"
-          >
+          <button onClick={() => navigate('/')} className="w-full flex items-center justify-between bg-white/5 p-4 rounded-[2rem] hover:bg-white/10 transition-all border border-white/5">
             <div className="flex items-center gap-3">
                <div className="w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center text-[10px] font-black shadow-inner">JG</div>
                <span className="text-[10px] font-black uppercase tracking-widest italic text-slate-300">Nexus Home</span>
@@ -166,19 +151,16 @@ const DashboardMaster: React.FC = () => {
         </div>
       </aside>
 
-      {/* 🏛️ ÁREA DO DASHBOARD */}
+      {/* ÁREA PRINCIPAL DO DASHBOARD */}
       <main className="flex-1 h-screen overflow-y-auto relative bg-white">
         {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black/60 z-[90] lg:hidden backdrop-blur-sm transition-opacity"
-            onClick={() => setIsSidebarOpen(false)}
-          />
+          <div className="fixed inset-0 bg-black/60 z-[90] lg:hidden backdrop-blur-sm transition-opacity" onClick={() => setIsSidebarOpen(false)} />
         )}
 
-        {/* Sticky Banner */}
+        {/* STICKY BANNER HUD */}
         <div className="bg-slate-900 text-white p-3 sticky top-0 z-[80] flex items-center justify-between px-6 border-b border-slate-800 shadow-xl">
           <div className="flex items-center gap-4">
-            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-white hover:text-blue-400 transition-colors active:scale-90">
+            <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-white active:scale-90 transition-transform">
               <Menu size={24} />
             </button>
             <div className="flex items-center gap-3">
@@ -192,14 +174,11 @@ const DashboardMaster: React.FC = () => {
         <div className="p-4 md:p-10 space-y-10 max-w-7xl mx-auto">
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-10 border-b border-slate-100">
             <div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none uppercase">
-                Dashboard <span className="text-blue-600">Presidência</span>
-              </h1>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none uppercase">Dashboard <span className="text-blue-600">Presidência</span></h1>
               <p className="text-slate-400 text-[11px] font-bold uppercase tracking-[0.4em] mt-4 flex items-center gap-3 italic">
                 <span className="w-8 h-[1px] bg-slate-300" /> Joinville Gladiators / Portal Nexus
               </p>
             </div>
-            
             <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-[2rem] border border-slate-100 shadow-sm">
               <div className="text-right">
                 <p className="text-xs font-black text-slate-800 leading-none">Gestão Master</p>
