@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 /**
  * Ficha 360º Operacional - Protocolo FAHUB
- * Build corrigido (TS6133) com manutenção integral do visual master.
+ * Revisão Total de Estrutura JSX para Build de Produção.
  */
 const MemberProfile360: React.FC = () => {
   const navigate = useNavigate();
@@ -58,7 +58,7 @@ const MemberProfile360: React.FC = () => {
         {/* Coluna de Status e Saúde */}
         <div className="space-y-6">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2 italic">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2 italic text-center">
               <ShieldAlert size={14} className="text-emerald-500" /> Status de Disponibilidade
             </h3>
             <div className="flex items-center gap-4 p-5 bg-emerald-50 rounded-3xl border border-emerald-100">
@@ -94,4 +94,69 @@ const MemberProfile360: React.FC = () => {
         </div>
 
         {/* Painel Central Operacional */}
-        <div className="lg:col-span-2 space-y-8"></div>
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+            <div className="flex border-b border-slate-50">
+              <button 
+                onClick={() => setActiveTab('stats')}
+                className={`flex-1 py-6 text-[10px] font-black uppercase tracking-widest transition-all italic outline-none ${activeTab === 'stats' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/20' : 'text-slate-400 hover:bg-slate-50'}`}
+              >
+                Histórico de Performance
+              </button>
+              <button 
+                onClick={() => setActiveTab('docs')}
+                className={`flex-1 py-6 text-[10px] font-black uppercase tracking-widest transition-all italic outline-none ${activeTab === 'docs' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/20' : 'text-slate-400 hover:bg-slate-50'}`}
+              >
+                Contratos e Docs
+              </button>
+            </div>
+
+            <div className="p-8">
+              {activeTab === 'stats' ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-[2rem] border border-slate-100 hover:border-blue-200 transition-all cursor-pointer group">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
+                          <Award size={20} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black uppercase italic text-slate-800">Avaliação Técnica - Semana {i}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 italic tracking-widest">Responsável: HC Jules</p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-black text-blue-600 italic group-hover:scale-110 transition-transform">Grade: A-</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 hover:border-blue-400 cursor-pointer transition-all group">
+                    <FileText size={32} className="mb-3 group-hover:text-blue-600 transition-colors" />
+                    <span className="text-[10px] font-black uppercase italic tracking-widest">Termo de Atleta.pdf</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Banner Master Operacional */}
+          <div className="bg-blue-600 rounded-[2.5rem] p-10 text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl shadow-blue-200 relative overflow-hidden">
+            <div className="relative z-10">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 italic text-blue-100 opacity-80">Ação Master Recomendada</h4>
+              <p className="text-lg font-bold italic leading-tight max-w-lg">O atleta atingiu o ápice físico. Iniciar transição para o Time Especial?</p>
+            </div>
+            <button 
+              onClick={() => alert("Transição aprovada.")}
+              className="bg-white text-blue-600 px-10 py-5 rounded-2xl text-[10px] font-black uppercase shadow-lg hover:bg-slate-50 active:scale-95 transition-all outline-none relative z-10"
+            >
+              Aprovar Transição
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default MemberProfile360;
