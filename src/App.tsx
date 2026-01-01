@@ -1,15 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-/** * PROTOCOLO NEXUS - PLACA-MÃE DO SISTEMA
- * Ponto de entrada para simulação de personas e validação de skins.
+/** * PROTOCOLO NEXUS - INFRAESTRUTURA MASTER
+ * Ponto de entrada central para validação de fluxos, personas e stress visual.
  */
 
-// Importação dos componentes de página conforme a estrutura de diretórios definida
+// Importações Mandatárias das Páginas de Controle
 import NexusPortal from './pages/NexusPortal';
 import Dashboard from './pages/Dashboard';
 
-// Módulos operacionais integrados ao Portal Nexus
+// Módulos Operacionais de Perspectiva
 import FinanceConsolidated from './modules/finance/FinanceConsolidated';
 import CalendarMaster from './modules/calendar/CalendarMaster';
 import HumanCapital from './modules/people/HumanCapital';
@@ -20,10 +20,10 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Ponto Central de Simulação Master */}
+        {/* Rota Raiz: Portal Nexus para troca de Skin e Persona */}
         <Route path="/" element={<NexusPortal />} />
         
-        {/* Ambientes Reais para Teste de Stress e Fluxo */}
+        {/* Perspectivas Reais de Gestão para Análise e Teste */}
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/financeiro" element={<FinanceConsolidated />} />
         <Route path="/agenda" element={<CalendarMaster />} />
@@ -31,7 +31,7 @@ const App: React.FC = () => {
         <Route path="/perfil-membro" element={<MemberProfile360 />} />
         <Route path="/configuracoes" element={<EntitySettings />} />
         
-        {/* Fallback de Segurança: Retorno obrigatório ao Nexus */}
+        {/* Fallback de Segurança: Retorno ao Ponto de Simulação Master */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
