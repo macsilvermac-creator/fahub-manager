@@ -1,13 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { TrendingUp, Users, Kanban, Activity, ArrowRight } from 'lucide-react';
-// Importação fictícia do cliente supabase - ajuste conforme seu projeto
-// import { supabase } from '../../shared/lib/supabaseClient'; 
+
+/**
+ * Interface rigorosa para os 4 Pilares de Decisão da Presidência
+ */
+interface MasterPillar {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  content: React.ReactNode;
+}
 
 const DashboardMaster: React.FC = () => {
-  // Estado para garantir que os dados do banco populam os contêineres
-  const [goalPercent, setGoalPercent] = useState(60); 
+  // Valor fixo temporário para o build passar sem erro de variáveis não lidas
+  const goalPercent = 60; 
 
-  const pillars = [
+  const pillars: MasterPillar[] = [
     {
       id: 'finance',
       title: 'Saúde Financeira',
@@ -22,7 +33,7 @@ const DashboardMaster: React.FC = () => {
             <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg italic">SUPERÁVIT</span>
           </div>
           <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-            <div className="bg-emerald-500 h-full w-[72%] transition-all duration-1000" />
+            <div className="bg-emerald-500 h-full w-[72%]" />
           </div>
           <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.1em]">Atingimento de Meta: 72%</p>
         </div>
@@ -60,10 +71,13 @@ const DashboardMaster: React.FC = () => {
           <div className="relative w-16 h-16 flex items-center justify-center">
             <svg className="w-full h-full rotate-[-90deg]">
               <circle cx="32" cy="32" r="28" fill="none" stroke="#f1f5f9" strokeWidth="6" />
-              <circle cx="32" cy="32" r="28" fill="none" stroke="#f97316" strokeWidth="6" 
+              <circle 
+                cx="32" cy="32" r="28" 
+                fill="none" 
+                stroke="#f97316" 
+                strokeWidth="6" 
                 strokeDasharray="175.9" 
                 strokeDashoffset={175.9 - (175.9 * goalPercent) / 100} 
-                className="transition-all duration-1000"
               />
             </svg>
             <span className="absolute text-xs font-black text-slate-800">{goalPercent}%</span>
@@ -86,9 +100,9 @@ const DashboardMaster: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-purple-50 px-4 py-3 rounded-2xl border border-purple-100">
             <span className="text-[11px] font-black text-purple-700 uppercase italic">Tackle Masculino</span>
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping" />
           </div>
-          <p className="text-[10px] text-slate-500 font-bold italic leading-tight">Jules: "3 treinos realizados, 0 lesões relatadas."</p>
+          <p className="text-[10px] text-slate-500 font-bold italic leading-tight">Jules: "3 treinos realizados hoje."</p>
         </div>
       )
     }
@@ -96,17 +110,17 @@ const DashboardMaster: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* 1. Sticky Banner FAHUB (Substituindo os botões de confirmar/justificar da imagem) */}
-      <div className="bg-slate-900 text-white p-3 sticky top-0 z-50 flex items-center justify-between px-6 border-b border-slate-800">
+      {/* 1. Sticky Banner (Protocolo FAHUB) */}
+      <div className="bg-slate-900 text-white p-3 sticky top-0 z-50 flex items-center justify-between px-6 border-b border-slate-800 shadow-xl">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
           <span className="text-[10px] font-black uppercase tracking-[0.2em] italic">Agenda: Treino de Campo - 19:30</span>
         </div>
-        <button className="text-[9px] font-black bg-white/10 px-4 py-1.5 rounded-lg uppercase hover:bg-white/20 transition-all border border-white/5">Visualizar Detalhes</button>
+        <button className="text-[9px] font-black bg-white/10 px-4 py-1.5 rounded-lg uppercase hover:bg-white/20 transition-all border border-white/5">Detalhes</button>
       </div>
 
       <div className="p-4 md:p-10 space-y-10 max-w-7xl mx-auto">
-        {/* 2. Cabeçalho de Autoridade */}
+        {/* 2. Título de Autoridade */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-10 border-b border-slate-100">
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic leading-none uppercase">
@@ -120,7 +134,7 @@ const DashboardMaster: React.FC = () => {
           <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-[2rem] border border-slate-100 shadow-sm">
             <div className="text-right">
               <p className="text-xs font-black text-slate-800 leading-none">Gestão Master</p>
-              <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Nível de Acesso 01</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Presidente</p>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-200">JG</div>
           </div>
@@ -129,7 +143,7 @@ const DashboardMaster: React.FC = () => {
         {/* 3. Grid de Pilares Master (Adeus cards pequenos) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           {pillars.map((pillar) => {
-            const Icon = pillar.icon;
+            const IconComponent = pillar.icon;
             return (
               <div 
                 key={pillar.id}
@@ -138,7 +152,7 @@ const DashboardMaster: React.FC = () => {
                 <div className="flex items-start justify-between mb-8 relative z-10">
                   <div className="flex items-center gap-6">
                     <div className={`${pillar.bg} ${pillar.color} p-5 rounded-[1.8rem]`}>
-                      <Icon size={36} strokeWidth={2.5} />
+                      <IconComponent size={36} strokeWidth={2.5} />
                     </div>
                     <div>
                       <h3 className="text-2xl font-black text-slate-800 tracking-tight italic">{pillar.title}</h3>
