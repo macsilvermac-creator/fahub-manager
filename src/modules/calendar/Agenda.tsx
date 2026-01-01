@@ -5,7 +5,7 @@ import './Calendar.css';
 import { supabase } from '../../lib/supabase';
 import { Plus } from 'lucide-react';
 
-// Definição de tipo para o Calendar aceitar valores nulos ou datas únicas
+// Tipo para suportar os diferentes retornos do componente Calendar
 type CalendarValue = Date | null | [Date | null, Date | null];
 
 const Agenda = () => {
@@ -46,7 +46,6 @@ const Agenda = () => {
     }
   };
 
-  // Função para lidar com a mudança de data corrigindo o erro TS2322
   const handleDateChange = (value: CalendarValue) => {
     if (value instanceof Date) {
       setSelectedDate(value);
@@ -107,36 +106,73 @@ const Agenda = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-slate-200">
-            <h3 className="text-xl font-bold mb-6 text-slate-800 flex items-center gap-2">
-               Agendar Compromisso
-            </h3>
+            <h3 className="text-xl font-bold mb-6 text-slate-800">Agendar Compromisso</h3>
             <form onSubmit={handleCreateEvent} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Título</label>
-                  <input className="w-full border-slate-200 rounded-xl p-3 bg-slate-50" required
-                    onChange={e => setFormData({...formData, title: e.target.value})} />
+                  <input 
+                    className="w-full border border-slate-200 rounded-xl p-3 bg-slate-50" 
+                    required
+                    onChange={e => setFormData({...formData, title: e.target.value})} 
+                  />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Horário</label>
-                  <input type="time" className="w-full border-slate-200 rounded-xl p-3 bg-slate-50"
-                    value={formData.start_time} onChange={e => setFormData({...formData, start_time: e.target.value})} />
+                  <input 
+                    type="time" 
+                    className="w-full border border-slate-200 rounded-xl p-3 bg-slate-50"
+                    value={formData.start_time} 
+                    onChange={e => setFormData({...formData, start_time: e.target.value})} 
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Modalidade</label>
-                  <select className="w-full border-slate-200 rounded-xl p-3 bg-slate-50 font-bold"
-                    onChange={e => setFormData({...formData, modality: e.target.value})}>
+                  <select 
+                    className="w-full border border-slate-200 rounded-xl p-3 bg-slate-50 font-bold"
+                    onChange={e => setFormData({...formData, modality: e.target.value})}
+                  >
                     <option value="tackle">Tackle</option>
                     <option value="flag">Flag Football</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Público</label>
-                  <select className="w-full border-slate-200 rounded-xl p-3 bg-slate-50"
-                    onChange={e => setFormData({...formData, target_audience: e.target.value})}>
+                  <select 
+                    className="w-full border border-slate-200 rounded-xl p-3 bg-slate-50"
+                    onChange={e => setFormData({...formData, target_audience: e.target.value})}
+                  >
                     <option value="all">Todos</option>
                     <option value="offense">Ataque</option>
                     <option value="defense">Defesa</option>
                   </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Descrição</label>
+                <textarea 
+                  className="w-full border border-slate-200 rounded-xl p-3 bg-slate-50 h-24"
+                  onChange={e => setFormData({...formData, description: e.target.value})}
+                />
+              </div>
+              <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-all">
+                Confirmar Agendamento
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setIsModalOpen(false)} 
+                className="w-full text-slate-400 text-sm font-medium mt-2"
+              >
+                Cancelar
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Agenda;
