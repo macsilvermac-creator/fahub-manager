@@ -21,8 +21,9 @@ const StickyEventBanner = () => {
   }, []);
 
   const checkStatus = async (eventId: string) => {
-    const { data } = await supabase.from('event_presences').select('status').eq('event_id', eventId).limit(1).single();
-    if (data) setStatus(data.status as any);
+    // Simulação: Aqui buscaria o status do usuário LOGADO
+    const { data } = await supabase.from('event_presences').select('status').eq('event_id', eventId).limit(1);
+    if (data && data.length > 0) setStatus(data[0].status as any);
   };
 
   const updatePresence = async (newStatus: 'confirmed' | 'excused') => {
@@ -31,7 +32,7 @@ const StickyEventBanner = () => {
 
     let justification = '';
     if (newStatus === 'excused') {
-      justification = prompt('Por favor, informe o motivo da ausência:') || 'Não informado';
+      justification = prompt('Informe o motivo da ausência:') || 'Não informado';
     }
 
     const { error } = await supabase.from('event_presences').upsert({
@@ -64,16 +65,10 @@ const StickyEventBanner = () => {
       <div className="flex gap-2">
         {status === 'none' ? (
           <>
-            <button 
-              onClick={() => updatePresence('confirmed')}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-2"
-            >
+            <button onClick={() => updatePresence('confirmed')} className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-2 shadow-lg shadow-green-900/20">
               <CheckCircle2 size={14} /> CONFIRMAR
             </button>
-            <button 
-              onClick={() => updatePresence('excused')}
-              className="bg-slate-800 hover:bg-red-900/40 text-slate-300 hover:text-red-400 border border-slate-700 px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-2"
-            >
+            <button onClick={() => updatePresence('excused')} className="bg-slate-800 hover:bg-red-900/40 text-slate-300 hover:text-red-400 border border-slate-700 px-4 py-1.5 rounded-lg text-[10px] font-black transition-all flex items-center gap-2">
               <AlertCircle size={14} /> JUSTIFICAR
             </button>
           </>
