@@ -1,31 +1,33 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-
-import NexusPortal from './modules/nexus/NexusPortal';
-import DashboardMaster from './modules/dashboard/DashboardMaster';
-import StrategyKanban from './modules/strategy/StrategyKanban';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// Importação dos Módulos Operacionais que consolidamos
 import FinanceConsolidated from './modules/finance/FinanceConsolidated';
+import CalendarMaster from './modules/calendar/CalendarMaster';
+import StrategyKanban from './modules/strategy/StrategyKanban';
 import HumanCapital from './modules/people/HumanCapital';
-import TeamSupervision from './modules/operations/TeamSupervision';
 import MemberProfile360 from './modules/people/MemberProfile360';
-import CalendarMaster from './modules/calendar/CalendarMaster'; // Peça nova encaixada
+import EntitySettings from './modules/settings/EntitySettings';
+import Dashboard from './pages/Dashboard'; // Sua página principal
 
-const App: React.FC = () => {
+const AppRoutes = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<NexusPortal />} />
-        <Route path="/dashboard" element={<DashboardMaster />} />
-        <Route path="/agenda" element={<CalendarMaster />} /> {/* Rota ativada */}
-        <Route path="/estrategia" element={<StrategyKanban />} />
+        {/* Rota Raiz */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Rotas da Persona Master - Ligação Operacional */}
         <Route path="/financeiro" element={<FinanceConsolidated />} />
-        <Route path="/patrimonio" element={<HumanCapital />} />
-        <Route path="/operacoes" element={<TeamSupervision />} />
+        <Route path="/agenda" element={<CalendarMaster />} />
+        <Route path="/estrategia" element={<StrategyKanban />} />
+        <Route path="/human-capital" element={<HumanCapital />} />
         <Route path="/perfil-membro" element={<MemberProfile360 />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/configuracoes" element={<EntitySettings />} />
+        
+        {/* Redirecionamento de segurança */}
+        <Route path="*" element={<Dashboard />} />
       </Routes>
     </Router>
   );
 };
 
-export default App;
+export default AppRoutes;
