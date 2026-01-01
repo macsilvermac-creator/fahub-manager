@@ -1,90 +1,45 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
-
-export interface Database {
-  public: {
-    Tables: {
-      athletes: {
-        Row: {
-          id: number // ou string, dependendo do seu setup
-          name: string
-          // adicione outros campos aqui conforme sua tabela real
-          created_at?: string
-        }
-        Insert: {
-          id?: number
-          name: string
-          created_at?: string
-        }
-        Update: {
-          id?: number
-          name?: string
-          created_at?: string
-        }
-      }
-      finance_transactions: {
-        Row: {
-          id: number
-          description: string
-          amount: number
-          type: 'income' | 'expense'
-          date: string
-        }
-        Insert: {
-          id?: number
-          description: string
-          amount: number
-          type: 'income' | 'expense'
-          date: string
-        }
-        Update: {
-          description?: string
-          amount?: number
-          type?: 'income' | 'expense'
-          date?: string
-        }
-      }
-      calendar_events: {
-        Row: {
-          id: number
-          title: string
-          start_time: string
-          end_time: string
-        }
-        Insert: {
-          id?: number
-          title: string
-          start_time: string
-          end_time: string
-        }
-        Update: {
-          title?: string
-          start_time?: string
-          end_time?: string
-        }
-      }
-      // Adicionei as tabelas que vi na sua imagem:
-      strategy_okrs: {
-        Row: { id: number; title: string; status: string }
-        Insert: { id?: number; title: string; status: string }
-        Update: { id?: number; title?: string; status?: string }
-      }
-    }
-  }
+// --- 1. ATLETAS (Base do Sistema) ---
+export interface Athlete {
+  id: string;
+  name: string;
+  position: string;      // Ex: QB, WR, LB
+  number: string | number;
+  status: 'active' | 'injured' | 'inactive';
+  photo_url?: string;    // Opcional (URL da imagem no Storage)
+  email?: string;
+  phone?: string;
+  height?: string;
+  weight?: string;
+  created_at?: string;
 }
-Passo 2: Volte no seu arquivo src/lib/supabase.ts e faça essa pequena alteração para "iluminar" o código:
 
-import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/database.types'; // Importe o arquivo que criamos acima
+// --- 2. EVENTOS (Calendário) ---
+export interface Event {
+  id: string;
+  title: string;
+  description?: string;
+  date: string;          // Supabase retorna data como string ISO
+  location?: string;
+  type: 'game' | 'training' | 'meeting' | 'social';
+  created_at?: string;
+}
 
-// Substitua suas strings pelas variáveis de ambiente se estiver usando
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// --- 3. FINANCEIRO (Mensalidades) ---
+export interface Payment {
+  id: string;
+  athlete_id?: string;   // Relacionado ao atleta (pode ser null se for avulso)
+  amount: number;
+  status: 'paid' | 'pending' | 'overdue';
+  due_date: string;
+  payment_date?: string;
+  description: string;
+  created_at?: string;
+}
 
-// AQUI ESTÁ O SEGREDO: Adicione <Database>
-export const supabase = createClient<Database>(supabaseUrl
+// --- 4. DASHBOARD (Estatísticas Gerais) ---
+export interface DashboardStats {
+  totalAthletes: number;
+  activeAthletes: number;
+  monthlyRevenue: number;
+  upcomingEvents: number;
+}
