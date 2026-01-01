@@ -3,7 +3,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './Calendar.css';
 import { supabase } from '../../lib/supabase';
-import { Plus, ShieldAlert } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 type CalendarValue = Date | null | [Date | null, Date | null];
 
@@ -12,7 +12,7 @@ const Agenda = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   
-  // Controle de Perfil (Altere para 'atleta' para testar o bloqueio)
+  // Controle de Perfil: 'gestor' pode criar, 'atleta' apenas visualiza
   const [userRole] = useState<'gestor' | 'atleta'>('gestor');
 
   const [formData, setFormData] = useState({
@@ -50,6 +50,9 @@ const Agenda = () => {
     if (value instanceof Date) {
       setSelectedDate(value);
       setFormData(prev => ({ ...prev, date: value.toISOString().split('T')[0] }));
+    } else if (Array.isArray(value) && value[0] instanceof Date) {
+      setSelectedDate(value[0]);
+      setFormData(prev => ({ ...prev, date: (value[0] as Date).toISOString().split('T')[0] }));
     }
   };
 
@@ -106,20 +109,20 @@ const Agenda = () => {
             <h3 className="text-xl font-bold mb-6 text-slate-800">Novo Evento na Agenda</h3>
             <form onSubmit={handleCreateEvent} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1 tracking-tighter">Título</label>
-                <input className="w-full border border-slate-200 rounded-xl p-3 bg-slate-50" required
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Título</label>
+                <input className="w-full border border-slate-200 rounded-xl p-3 bg-slate-50 outline-none" required
                   onChange={e => setFormData({...formData, title: e.target.value})} />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <input type="date" className="border border-slate-200 rounded-xl p-3 bg-slate-50" value={formData.date} 
+                <input type="date" className="border border-slate-200 rounded-xl p-3 bg-slate-50 outline-none font-sans" value={formData.date} 
                   onChange={e => setFormData({...formData, date: e.target.value})} />
-                <input type="time" className="border border-slate-200 rounded-xl p-3 bg-slate-50" value={formData.start_time} 
+                <input type="time" className="border border-slate-200 rounded-xl p-3 bg-slate-50 outline-none font-sans" value={formData.start_time} 
                   onChange={e => setFormData({...formData, start_time: e.target.value})} />
               </div>
-              <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-all active:scale-95">
+              <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-900/20">
                 SALVAR EVENTO
               </button>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="w-full text-slate-400 text-xs font-bold mt-2">CANCELAR</button>
+              <button type="button" onClick={() => setIsModalOpen(false)} className="w-full text-slate-400 text-xs font-bold mt-2 hover:text-slate-600 transition-colors uppercase">Cancelar</button>
             </form>
           </div>
         </div>
