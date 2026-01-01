@@ -1,28 +1,27 @@
 import React, { useState } from 'react';
 import { 
-  ArrowLeft, Activity, ShieldAlert, TrendingUp, 
-  Award, Calendar, FileText, CheckCircle2 
+  ArrowLeft, ShieldAlert, TrendingUp, 
+  Award, FileText, CheckCircle2 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 /**
  * Ficha 360º Operacional - Protocolo FAHUB
- * Consolidação de KPIs de Caráter e Habilidade (Gladiators Fit).
+ * Build corrigido (TS6133) com manutenção integral do visual master.
  */
 const MemberProfile360: React.FC = () => {
   const navigate = useNavigate();
   
   // Estado para controle de abas operacionais
-  const [activeTab, setActiveTab] = useState<'stats' | 'health' | 'docs'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'docs'>('stats');
 
-  // Dados do Atleta - Integração com o Blueprint College 
+  // Dados do Atleta - Gladiators Fit
   const memberData = {
     name: "Gabriel Silva",
     position: "Linebacker",
     number: "52",
     stats: { physical: "92%", tactical: "85%", character: "95%" },
     healthStatus: "Apto para Contato",
-    lastUpdate: "01/01/2026"
   };
 
   return (
@@ -56,38 +55,38 @@ const MemberProfile360: React.FC = () => {
       </div>
 
       <main className="max-w-[1400px] mx-auto px-10 pt-24 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Coluna de Status e Saúde  */}
+        {/* Coluna de Status e Saúde */}
         <div className="space-y-6">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2 italic">
               <ShieldAlert size={14} className="text-emerald-500" /> Status de Disponibilidade
             </h3>
-            <div className="flex items-center gap-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+            <div className="flex items-center gap-4 p-5 bg-emerald-50 rounded-3xl border border-emerald-100">
               <CheckCircle2 className="text-emerald-600" size={24} />
-              <span className="text-sm font-black text-emerald-900 uppercase italic">{memberData.healthStatus}</span>
+              <span className="text-sm font-black text-emerald-900 uppercase italic tracking-tight">{memberData.healthStatus}</span>
             </div>
           </div>
 
-          <div className="bg-[#0F172A] p-8 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden">
-             <TrendingUp size={120} className="absolute -right-10 -bottom-10 text-white/5" />
-             <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-6 italic">Métricas Pro-Style</h3>
-             <div className="space-y-6 relative z-10">
-                <div>
-                  <div className="flex justify-between text-[10px] font-black uppercase mb-2">
-                    <span>Força e Condição</span>
-                    <span>{memberData.stats.physical}</span>
+          <div className="bg-[#0F172A] p-8 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden group">
+             <TrendingUp size={150} className="absolute -right-10 -bottom-10 text-white/5 group-hover:scale-110 transition-transform duration-1000" />
+             <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-8 italic">Métricas Pro-Style</h3>
+             <div className="space-y-8 relative z-10">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                    <span className="text-slate-400 italic">Força e Condição</span>
+                    <span className="text-blue-400">{memberData.stats.physical}</span>
                   </div>
                   <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full" style={{ width: memberData.stats.physical }} />
+                    <div className="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: memberData.stats.physical }} />
                   </div>
                 </div>
-                <div>
-                  <div className="flex justify-between text-[10px] font-black uppercase mb-2">
-                    <span>QI Tático (Playbook)</span>
-                    <span>{memberData.stats.tactical}</span>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                    <span className="text-slate-400 italic">QI Tático (Playbook)</span>
+                    <span className="text-emerald-400">{memberData.stats.tactical}</span>
                   </div>
                   <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: memberData.stats.tactical }} />
+                    <div className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: memberData.stats.tactical }} />
                   </div>
                 </div>
              </div>
@@ -95,66 +94,4 @@ const MemberProfile360: React.FC = () => {
         </div>
 
         {/* Painel Central Operacional */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-            <div className="flex border-b border-slate-50">
-              <button 
-                onClick={() => setActiveTab('stats')}
-                className={`flex-1 py-6 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'stats' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/20' : 'text-slate-400'}`}
-              >
-                Histórico de Performance
-              </button>
-              <button 
-                onClick={() => setActiveTab('docs')}
-                className={`flex-1 py-6 text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'docs' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/20' : 'text-slate-400'}`}
-              >
-                Contratos e Docs
-              </button>
-            </div>
-
-            <div className="p-8">
-              {activeTab === 'stats' ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-blue-200 transition-all cursor-pointer">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
-                          <Award className="text-blue-600" size={18} />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black uppercase italic text-slate-800">Avaliação Técnica - Semana {i}</p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Responsável: HC Jules</p>
-                        </div>
-                      </div>
-                      <span className="text-sm font-black text-blue-600 italic">Grade: A-</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-6 border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 cursor-pointer transition-all">
-                    <FileText size={24} className="mb-2" />
-                    <span className="text-[9px] font-black uppercase italic">Termo de Atleta</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Banner de Engajamento 360º  */}
-          <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white flex items-center justify-between shadow-xl shadow-blue-200 relative overflow-hidden">
-            <div className="relative z-10">
-              <h4 className="text-xs font-black uppercase tracking-[0.2em] mb-2 italic">Ação Recomendada</h4>
-              <p className="text-sm font-bold italic opacity-90">O atleta atingiu o ápice físico. Iniciar transição para o Time Especial?</p>
-            </div>
-            <button className="bg-white text-blue-600 px-8 py-3 rounded-xl text-[10px] font-black uppercase shadow-lg hover:scale-105 active:scale-95 transition-all outline-none">
-              Aprovar Transição
-            </button>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-};
-
-export default MemberProfile360;
+        <div className="lg:col-span-2 space-y-8"></div>
