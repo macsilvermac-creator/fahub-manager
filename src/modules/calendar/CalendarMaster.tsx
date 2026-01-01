@@ -1,96 +1,67 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus, CheckCircle, XCircle } from 'lucide-react';
+import { 
+  ArrowLeft, ChevronLeft, ChevronRight, Filter, 
+  Calendar as CalendarIcon, CheckCircle2, XCircle, Clock
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-/**
- * CalendarMaster - Peça LEGO: Gestão de Tempo
- * Interface HUD para confirmação e justificativa de agenda.
- */
 const CalendarMaster: React.FC = () => {
   const navigate = useNavigate();
-  const [view, setView] = useState<'semana' | 'dia'>('semana');
+  const [currentMonth, setCurrentMonth] = useState("JANEIRO 2026");
 
-  // Dados para validação de interface
   const events = [
-    { id: 1, time: '19:30', title: 'Treino de Campo', category: 'Técnico' },
-    { id: 2, time: '21:00', title: 'Reunião Diretoria', category: 'Admin' }
+    { time: '09:00', title: 'Treino Técnico - Tackle', ent: 'TACKLE', color: 'border-blue-500 text-blue-600', status: 'confirmado' },
+    { time: '14:30', title: 'Reunião de Diretoria', ent: 'ASSOCIAÇÃO', color: 'border-slate-500 text-slate-600', status: 'pendente' },
+    { time: '19:00', title: 'Workshop Flag Football', ent: 'FLAG', color: 'border-orange-500 text-orange-600', status: 'confirmado' }
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-10">
-      {/* HUD de Navegação Superior */}
-      <nav className="bg-slate-900 text-white p-4 sticky top-0 z-50 border-b border-slate-800 flex items-center justify-between shadow-2xl">
-        <button 
-          onClick={() => navigate('/dashboard')} 
-          className="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-blue-400 transition-all"
-        >
-          <ArrowLeft size={16} /> Voltar ao Dash
-        </button>
-
-        <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 backdrop-blur-md">
-          <button 
-            onClick={() => setView('semana')}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${view === 'semana' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-          >
-            Semana
+    <div className="min-h-screen bg-[#F8FAFC] pb-20">
+      <nav className="bg-white p-6 flex items-center justify-between shadow-sm mb-8">
+        <div className="flex items-center gap-6">
+          <button onClick={() => navigate('/dashboard')} className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 transition-all outline-none">
+            <ArrowLeft size={20} />
           </button>
-          <button 
-            onClick={() => setView('dia')}
-            className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${view === 'dia' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-          >
-            Dia
-          </button>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tighter uppercase italic">Agenda <span className="text-blue-600">Master</span></h1>
         </div>
-
-        <button className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
-          <Plus size={20} />
-        </button>
+        <div className="flex items-center gap-4 bg-slate-100 p-2 rounded-2xl">
+          <button onClick={() => setCurrentMonth("DEZEMBRO 2025")} className="p-2 hover:bg-white rounded-xl transition-all"><ChevronLeft size={20}/></button>
+          <span className="text-[10px] font-black uppercase tracking-widest px-4">{currentMonth}</span>
+          <button onClick={() => setCurrentMonth("FEVEREIRO 2026")} className="p-2 hover:bg-white rounded-xl transition-all"><ChevronRight size={20}/></button>
+        </div>
       </nav>
 
-      <main className="max-w-6xl mx-auto p-4 md:p-10 space-y-8">
-        {/* Controle de Data Centralizado */}
-        <div className="flex items-center justify-between bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-xl">
-          <button className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:text-blue-600 transition-all">
-            <ChevronLeft size={24} />
-          </button>
-          <div className="text-center">
-            <h2 className="text-2xl font-black text-slate-900 italic tracking-tighter uppercase leading-none">Janeiro 2026</h2>
-            <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mt-2 italic">Joinville Gladiators / Nexus Time</p>
+      <main className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
+          <div className="grid grid-cols-7 gap-4 mb-4 text-center">
+            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'].map(day => (
+              <span key={day} className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{day}</span>
+            ))}
           </div>
-          <button className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:text-blue-600 transition-all">
-            <ChevronRight size={24} />
-          </button>
+          <div className="grid grid-cols-7 gap-4">
+            {Array.from({ length: 31 }).map((_, i) => (
+              <div key={i} className={`h-24 rounded-3xl border flex flex-col p-3 transition-all cursor-pointer hover:border-blue-400 ${i === 0 ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'bg-slate-50/50 border-transparent'}`}>
+                <span className="text-xs font-black italic">{i + 1}</span>
+                {i === 0 && <div className="mt-2 w-2 h-2 rounded-full bg-white animate-pulse" />}
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Lista de Atividades */}
         <div className="space-y-6">
-          <p className="px-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] italic">Compromissos do Dia</p>
-          
-          {events.map((event) => (
-            <div key={event.id} className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-blue-900/10 transition-all group overflow-hidden">
-              <div className="flex items-center gap-8">
-                <div className="text-center min-w-[80px]">
-                  <p className="text-3xl font-black text-slate-900 italic leading-none tracking-tighter">{event.time}</p>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-2">Horário</p>
+          <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+              <Clock size={16} className="text-blue-400"/> Próximos Eventos
+            </h3>
+            <div className="space-y-4">
+              {events.map((ev, i) => (
+                <div key={i} className={`p-4 rounded-2xl border-l-4 bg-white/5 hover:bg-white/10 transition-all cursor-pointer ${ev.color}`}>
+                  <p className="text-[10px] font-black opacity-60 uppercase">{ev.time} - {ev.ent}</p>
+                  <p className="text-sm font-bold italic mt-1">{ev.title}</p>
                 </div>
-                <div className="w-[1px] h-12 bg-slate-100 hidden md:block" />
-                <div>
-                  <h4 className="text-xl font-black text-slate-800 italic uppercase leading-tight group-hover:text-blue-600 transition-colors">{event.title}</h4>
-                  <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg uppercase tracking-widest mt-2 inline-block italic border border-blue-100">{event.category}</span>
-                </div>
-              </div>
-
-              {/* Botões de Ação Funcionais */}
-              <div className="flex items-center gap-4 border-t md:border-t-0 pt-6 md:pt-0 border-slate-50">
-                <button className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-emerald-500 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase hover:bg-emerald-600 transition-all shadow-lg active:scale-95">
-                  <CheckCircle size={16} /> Confirmar
-                </button>
-                <button className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-500 px-6 py-3 rounded-2xl text-[10px] font-black uppercase hover:bg-slate-50 transition-all active:scale-95">
-                  <XCircle size={16} /> Justificar
-                </button>
-              </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </main>
     </div>
