@@ -27,7 +27,7 @@ const NexusPortal: React.FC = () => {
       items: [
         { label: "Presidente", icon: Shield, path: "/dashboard" },
         { label: "Vice-presidente", icon: Shield, path: "/dashboard" },
-        { label: "Diretora Financeira", icon: Briefcase, path: "/dashboard" },
+        { label: "Diretora Financeira", icon: Briefcase, path: "/financeiro" },
         { label: "Diretor de Marketing", icon: Briefcase, path: "/dashboard" },
         { label: "Diretor Comercial", icon: Briefcase, path: "/dashboard" }
       ]
@@ -35,17 +35,17 @@ const NexusPortal: React.FC = () => {
     {
       title: "3. OPERACIONAL",
       items: [
-        { label: "HC", icon: Activity, path: "/dashboard" },
-        { label: "Cord. Ataque", icon: Activity, path: "/dashboard" },
-        { label: "Cord. Defesa", icon: Activity, path: "/dashboard" },
-        { label: "Auxiliares de CT", icon: Activity, path: "/dashboard" },
-        { label: "Funcionários", icon: Activity, path: "/dashboard" }
+        { label: "HC", icon: Activity, path: "/agenda" },
+        { label: "Cord. Ataque", icon: Activity, path: "/agenda" },
+        { label: "Cord. Defesa", icon: Activity, path: "/agenda" },
+        { label: "Auxiliares de CT", icon: Activity, path: "/agenda" },
+        { label: "Funcionários", icon: Activity, path: "/human-capital" }
       ]
     },
     {
       title: "4. USUÁRIOS",
       items: [
-        { label: "Atletas", icon: Users, path: "/dashboard" },
+        { label: "Atletas", icon: Users, path: "/perfil-membro" },
         { label: "Alunos", icon: GraduationCap, path: "/dashboard" }
       ]
     }
@@ -73,7 +73,7 @@ const NexusPortal: React.FC = () => {
                 <button
                   key={i}
                   onClick={() => navigate(item.path)}
-                  className="w-full bg-[#111827] border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:bg-blue-600/10 hover:border-blue-500/50 transition-all text-left"
+                  className="w-full bg-[#111827] border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:bg-blue-600/10 hover:border-blue-500/50 transition-all text-left outline-none"
                 >
                   <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">
                     {item.label}
