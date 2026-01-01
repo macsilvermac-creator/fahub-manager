@@ -1,75 +1,42 @@
 import { LayoutDashboard, Users, Settings, LogOut, DollarSign, Calendar } from 'lucide-react';
 import { NavLink, Link } from 'react-router-dom';
+import { useUserRole } from '../../hooks/useUserRole';
 
-// Interface para resolver o erro TS2322 no DashboardLayout
 interface SidebarProps {
   isMobileOpen?: boolean;
   closeMobile?: () => void;
 }
 
 const Sidebar = ({ isMobileOpen, closeMobile }: SidebarProps) => {
-  // Simulação de Perfil (Altere para 'atleta' para testar restrições)
-  const userRole = 'gestor'; 
+  const { role } = useUserRole();
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['gestor'] },
-    { icon: Calendar, label: 'Agenda', path: '/agenda', roles: ['gestor', 'atleta'] },
+    { icon: Calendar, label: 'Agenda', path: '/agenda', roles: ['gestor'] }, // Removido 'atleta' daqui
     { icon: Users, label: 'Atletas', path: '/athletes', roles: ['gestor'] },
     { icon: DollarSign, label: 'Financeiro', path: '/finance', roles: ['gestor'] },
     { icon: Settings, label: 'Configurações', path: '/settings', roles: ['gestor'] },
   ];
 
-  const filteredItems = menuItems.filter(item => item.roles.includes(userRole));
+  const filteredItems = menuItems.filter(item => item.roles.includes(role));
 
   return (
     <>
-      {/* Overlay Mobile */}
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={closeMobile} />
-      )}
-
-      <aside className={`
-        fixed left-0 top-0 h-screen w-64 bg-slate-900 text-white flex flex-col z-50 transition-transform duration-300
-        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
-      `}>
+      {isMobileOpen && <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={closeMobile} />}
+      <aside className={`fixed left-0 top-0 h-screen w-64 bg-slate-900 text-white flex flex-col z-50 transition-transform ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="p-6 border-b border-slate-800">
-          <Link to="/nexus" className="block group">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-              FAHUB
-            </h1>
-            <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-widest font-bold font-sans">Manager v1.0</p>
-          </Link>
+          <Link to="/nexus" className="block"><h1 className="text-2xl font-bold text-blue-500">FAHUB</h1></Link>
         </div>
-
         <nav className="flex-1 p-4 space-y-2">
           {filteredItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={closeMobile}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                }`
-              }
-            >
-              <item.icon size={20} />
-              <span className="font-medium">{item.label}</span>
+            <NavLink key={item.path} to={item.path} onClick={closeMobile}
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-3 rounded-lg ${isActive ? 'bg-blue-600' : 'text-slate-400 hover:bg-slate-800'}`}>
+              <item.icon size={20} /> <span className="font-medium">{item.label}</span>
             </NavLink>
           ))}
         </nav>
-
-        <div className="p-4 border-t border-slate-800">
-          <button className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-red-400 hover:bg-slate-800 transition-colors font-sans">
-            <LogOut size={20} />
-            <span className="font-medium">Sair</span>
-          </button>
-        </div>
       </aside>
     </>
   );
 };
-
 export default Sidebar;
