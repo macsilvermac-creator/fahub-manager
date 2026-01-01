@@ -1,13 +1,13 @@
 import React from 'react';
 import { 
   ArrowLeft, Download, Filter, TrendingUp, TrendingDown, 
-  Wallet, DollarSign, ArrowUpRight, ArrowDownRight, Activity
+  Wallet, DollarSign, Activity
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 /**
  * Gestão Financeira - Protocolo FAHUB
- * Restauração absoluta do visual master conforme documentação visual.
+ * Restauração absoluta com correção de importações para Build Sólido (TS6133).
  */
 const FinanceConsolidated: React.FC = () => {
   const navigate = useNavigate();
@@ -19,7 +19,7 @@ const FinanceConsolidated: React.FC = () => {
         <div className="flex items-center gap-6">
           <button 
             onClick={() => navigate('/dashboard')}
-            className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 transition-all"
+            className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 transition-all outline-none"
           >
             <ArrowLeft size={20} />
           </button>
@@ -75,7 +75,7 @@ const FinanceConsolidated: React.FC = () => {
           </div>
         </div>
 
-        {/* Fluxo Recente - Engenharia de Dados */}
+        {/* Fluxo Recente */}
         <div className="bg-white rounded-[2.5rem] shadow-sm border border-white overflow-hidden">
           <div className="p-8 border-b border-slate-50 flex items-center gap-3">
             <DollarSign size={18} className="text-blue-600" />
@@ -122,7 +122,7 @@ const FinanceConsolidated: React.FC = () => {
           </div>
         </div>
 
-        {/* Insight do Agente Jules - HUD Azul */}
+        {/* Insight Jules HUD Azul */}
         <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-200 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
           <Activity size={100} className="absolute -left-5 -bottom-5 text-white/10" />
           <div className="flex items-center gap-6 relative z-10">
@@ -136,7 +136,7 @@ const FinanceConsolidated: React.FC = () => {
               </p>
             </div>
           </div>
-          <button className="bg-white text-blue-600 px-10 py-4 rounded-2xl text-[10px] font-black uppercase shadow-lg hover:scale-105 transition-all relative z-10 whitespace-nowrap">
+          <button className="bg-white text-blue-600 px-10 py-4 rounded-2xl text-[10px] font-black uppercase shadow-lg hover:scale-105 transition-all relative z-10 whitespace-nowrap outline-none">
             Gerar Cobrança
           </button>
         </div>
