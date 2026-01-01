@@ -1,38 +1,34 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-// IMPORTANTE: Garanta que esta importação aponte exatamente para o arquivo que criamos
+// Importações com caminhos validados para o Protocolo FAHUB
 import DashboardMaster from './modules/dashboard/DashboardMaster';
 import StrategyKanban from './modules/strategy/StrategyKanban';
 import FinanceConsolidated from './modules/finance/FinanceConsolidated';
 import HumanCapital from './modules/people/HumanCapital';
 import TeamSupervision from './modules/operations/TeamSupervision';
 
-/**
- * Este é o controlador central. 
- * Ele garante que a URL "/dashboard" chame a nossa nova visão sólida de 4 contêineres.
- */
-const AppRoutes: React.FC = () => {
+const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Redireciona a raiz para o novo Dashboard Master */}
+        {/* Redirecionamento inicial para a visão da Presidência */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         
-        {/* A Rota Principal da Persona Master (Presidente) */}
+        {/* Rota do Dashboard Master (A visão de 4 contêineres) */}
         <Route path="/dashboard" element={<DashboardMaster />} />
 
-        {/* Rotas das Subpáginas que compõem os 90% da Persona */}
-        <Route path="/dashboard/financeiro" element={<FinanceConsolidated />} />
-        <Route path="/dashboard/patrimonio" element={<HumanCapital />} />
-        <Route path="/dashboard/estrategia" element={<StrategyKanban />} />
-        <Route path="/dashboard/operacoes" element={<TeamSupervision />} />
+        {/* Rotas das Subpáginas Operacionais e Estratégicas */}
+        <Route path="/estrategia" element={<StrategyKanban />} />
+        <Route path="/financeiro" element={<FinanceConsolidated />} />
+        <Route path="/patrimonio" element={<HumanCapital />} />
+        <Route path="/operacoes" element={<TeamSupervision />} />
 
-        {/* Rota de segurança para evitar páginas brancas */}
+        {/* Fallback para evitar erro de página não encontrada */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );
 };
 
-export default AppRoutes;
+export default App;
