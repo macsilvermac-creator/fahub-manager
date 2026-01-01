@@ -1,90 +1,88 @@
-import { Shield, Users, Trophy, Briefcase, Activity, Landmark } from 'lucide-react';
+import React from 'react';
+import { 
+  Trophy, Building2, Landmark, 
+  Shield, Briefcase, 
+  Activity, Users, User, GraduationCap 
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const NexusPortal = () => {
+const NexusPortal: React.FC = () => {
   const navigate = useNavigate();
-
-  // Função para "encarnar" a persona e ir para o Dashboard real
-  const enterSkin = (role: string, path: string) => {
-    console.log(`Injetando contexto de: ${role}`);
-    // No futuro, aqui salvaremos o role no sessionStorage/localStorage
-    navigate(path);
-  };
 
   const sections = [
     {
       title: "1. ENTIDADES",
       items: [
-        { label: "Confederação", path: "/dashboard", icon: Trophy },
-        { label: "Ligas", path: "/dashboard", icon: Trophy },
-        { label: "Equipe / Clubes", path: "/dashboard", icon: Landmark },
+        { label: "Confederação", icon: Trophy, path: "/dashboard" },
+        { label: "Ligas", icon: Trophy, path: "/dashboard" },
+        { label: "Equipe / Clubes", icon: Landmark, path: "/dashboard" }
       ]
     },
     {
       title: "2. CONSELHO ADMINISTRATIVO",
       items: [
-        { label: "Presidente", path: "/dashboard", icon: Shield },
-        { label: "Vice-presidente", path: "/dashboard", icon: Shield },
-        { label: "Diretora Financeira", path: "/finance", icon: Briefcase },
-        { label: "Diretor de Marketing", path: "/dashboard", icon: Briefcase },
-        { label: "Diretor Comercial", path: "/dashboard", icon: Briefcase },
+        { label: "Presidente", icon: Shield, path: "/dashboard" },
+        { label: "Vice-presidente", icon: Shield, path: "/dashboard" },
+        { label: "Diretora Financeira", icon: Briefcase, path: "/dashboard" },
+        { label: "Diretor de Marketing", icon: Briefcase, path: "/dashboard" },
+        { label: "Diretor Comercial", icon: Briefcase, path: "/dashboard" }
       ]
     },
     {
       title: "3. OPERACIONAL",
       items: [
-        { label: "HC", path: "/dashboard", icon: Activity },
-        { label: "Cord. Ataque", path: "/dashboard", icon: Activity },
-        { label: "Cord. Defesa", path: "/dashboard", icon: Activity },
-        { label: "Auxiliares de CT", path: "/dashboard", icon: Activity },
-        { label: "Funcionários", path: "/dashboard", icon: Activity },
+        { label: "HC", icon: Activity, path: "/dashboard" },
+        { label: "Cord. Ataque", icon: Activity, path: "/dashboard" },
+        { label: "Cord. Defesa", icon: Activity, path: "/dashboard" },
+        { label: "Auxiliares de CT", icon: Activity, path: "/dashboard" },
+        { label: "Funcionários", icon: Activity, path: "/dashboard" }
       ]
     },
     {
       title: "4. USUÁRIOS",
       items: [
-        { label: "Atletas", path: "/athletes", icon: Users },
-        { label: "Alunos", path: "/athletes", icon: Users },
+        { label: "Atletas", icon: Users, path: "/atleta/dashboard" },
+        { label: "Alunos", icon: GraduationCap, path: "/atleta/dashboard" }
       ]
     }
   ];
 
   return (
     <div className="min-h-screen bg-[#050a18] text-white p-8 font-sans">
-      <div className="max-w-7xl mx-auto">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-black tracking-tighter italic">
-            FAHUB <span className="text-blue-500">NEXUS</span>
-          </h1>
-          <p className="text-slate-400 text-sm tracking-widest uppercase mt-2">
-            PROTOCOLO DE SIMULAÇÃO MASTER DEVELOPER
-          </p>
-        </header>
+      {/* Header Centralizado */}
+      <header className="text-center mb-16">
+        <h1 className="text-4xl font-black italic tracking-tighter mb-2">
+          FAHUB <span className="text-blue-500">NEXUS</span>
+        </h1>
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.4em]">
+          Protocolo de Simulação Master Developer
+        </p>
+      </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {sections.map((section, idx) => (
-            <div key={idx} className="bg-[#0a1229] rounded-3xl p-6 border border-slate-800/50 shadow-2xl">
-              <h2 className="text-blue-400 text-xs font-bold mb-6 tracking-widest uppercase">
-                {section.title}
-              </h2>
-              <div className="space-y-3">
-                {section.items.map((item, i) => (
-                  <button
-                    key={i}
-                    onClick={() => enterSkin(item.label, item.path)}
-                    className="w-full bg-[#131c3a] hover:bg-blue-600/20 hover:border-blue-500/50 border border-transparent p-4 rounded-2xl text-left transition-all duration-200 group flex items-center justify-between"
-                  >
-                    <span className="text-slate-300 group-hover:text-white font-medium">
-                      {item.label}
-                    </span>
-                    <item.icon size={16} className="text-slate-500 group-hover:text-blue-400" />
-                  </button>
-                ))}
-              </div>
+      {/* Grid de 4 Colunas */}
+      <main className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {sections.map((section, idx) => (
+          <div key={idx} className="space-y-4">
+            <h2 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-6">
+              {section.title}
+            </h2>
+            <div className="space-y-3">
+              {section.items.map((item, i) => (
+                <button
+                  key={i}
+                  onClick={() => navigate(item.path)}
+                  className="w-full bg-[#111827] border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:bg-blue-600/10 hover:border-blue-500/50 transition-all text-left"
+                >
+                  <span className="text-xs font-bold text-slate-300 group-hover:text-white transition-colors">
+                    {item.label}
+                  </span>
+                  <item.icon size={16} className="text-slate-600 group-hover:text-blue-500 transition-colors" />
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        ))}
+      </main>
     </div>
   );
 };
