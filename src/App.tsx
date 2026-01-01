@@ -1,53 +1,38 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Sidebar from './shared/components/layouts/Sidebar';
-import StickyEventBanner from './shared/components/layouts/StickyEventBanner';
-import Dashboard from './modules/dashboard/Dashboard';
-import AthletesList from './modules/athletes/AthletesList';
-import PaymentsList from './modules/finance/PaymentsList';
-import Settings from './modules/settings/Settings';
-import NexusPortal from './modules/nexus/NexusPortal';
-import Agenda from './modules/calendar/Agenda';
 
-function App() {
+// IMPORTANTE: Garanta que esta importação aponte exatamente para o arquivo que criamos
+import DashboardMaster from './modules/dashboard/DashboardMaster';
+import StrategyKanban from './modules/strategy/StrategyKanban';
+import FinanceConsolidated from './modules/finance/FinanceConsolidated';
+import HumanCapital from './modules/people/HumanCapital';
+import TeamSupervision from './modules/operations/TeamSupervision';
+
+/**
+ * Este é o controlador central. 
+ * Ele garante que a URL "/dashboard" chame a nossa nova visão sólida de 4 contêineres.
+ */
+const AppRoutes: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Rota do Portal Nexus - Independente e sem Sidebar ou Banner */}
-        <Route path="/nexus" element={<NexusPortal />} />
+        {/* Redireciona a raiz para o novo Dashboard Master */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        
+        {/* A Rota Principal da Persona Master (Presidente) */}
+        <Route path="/dashboard" element={<DashboardMaster />} />
 
-        {/* Rotas Internas com Layout de Gestão Master */}
-        <Route
-          path="/*"
-          element={
-            <div className="flex min-h-screen bg-gray-50 font-sans">
-              {/* Sidebar Lateral Fixa */}
-              <Sidebar />
+        {/* Rotas das Subpáginas que compõem os 90% da Persona */}
+        <Route path="/dashboard/financeiro" element={<FinanceConsolidated />} />
+        <Route path="/dashboard/patrimonio" element={<HumanCapital />} />
+        <Route path="/dashboard/estrategia" element={<StrategyKanban />} />
+        <Route path="/dashboard/operacoes" element={<TeamSupervision />} />
 
-              <div className="flex-1 flex flex-col ml-64 transition-all duration-300">
-                {/* Banner de Próximo Evento (Agenda Nexus) no topo de todas as páginas */}
-                <StickyEventBanner />
-
-                {/* Conteúdo Principal da Skin selecionada */}
-                <main className="flex-1 p-8">
-                  <Routes>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/agenda" element={<Agenda />} />
-                    <Route path="/athletes" element={<AthletesList />} />
-                    <Route path="/finance" element={<PaymentsList />} />
-                    <Route path="/settings" element={<Settings />} />
-
-                    {/* Redirecionamento padrão para o Nexus se a rota não existir */}
-                    <Route path="/" element={<Navigate to="/nexus" replace />} />
-                    <Route path="*" element={<Navigate to="/nexus" replace />} />
-                  </Routes>
-                </main>
-              </div>
-            </div>
-          }
-        />
+        {/* Rota de segurança para evitar páginas brancas */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Router>
   );
-}
+};
 
-export default App;
+export default AppRoutes;
