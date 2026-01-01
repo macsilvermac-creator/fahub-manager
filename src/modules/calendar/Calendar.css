@@ -1,44 +1,17 @@
-/* Ajuste de Layout Master do Calendário */
 .react-calendar {
   width: 100% !important;
-  max-width: 100%;
-  background: white;
   border: none !important;
   font-family: inherit;
-  line-height: 1.125em;
 }
 
-/* Esconde a borda padrão */
-.react-calendar__viewContainer {
-  padding: 10px;
-}
-
-/* Dias da semana */
-.react-calendar__month-view__weekdays {
-  text-align: center;
-  text-transform: uppercase;
-  font-weight: 800;
-  font-size: 0.7rem;
-  color: #94a3b8;
-  padding-bottom: 15px;
-}
-
-/* Estilo das Células (Dias) */
 .react-calendar__tile {
-  height: 140px !important; /* Altura para caber os eventos */
+  height: 130px !important;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: flex-start;
-  padding: 12px !important;
+  padding: 10px !important;
   border: 1px solid #f1f5f9 !important;
-  transition: all 0.2s ease;
   border-radius: 8px;
-}
-
-.react-calendar__tile:hover {
-  background-color: #f8fafc !important;
-  border-color: #cbd5e1 !important;
 }
 
 .react-calendar__tile--now {
@@ -46,40 +19,8 @@
   border: 2px solid #3b82f6 !important;
 }
 
-.react-calendar__tile--now abbr {
-  color: #2563eb;
-  font-weight: 900;
-}
-
-.react-calendar__tile--active {
-  background: #f1f5f9 !important;
-  color: #0f172a !important;
-}
-
-/* Números dos dias */
-.react-calendar__tile abbr {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #64748b;
-}
-
-/* Botões de Navegação (Mês/Ano) */
-.react-calendar__navigation {
-  display: flex;
-  height: 50px;
-  margin-bottom: 20px;
-}
-
 .react-calendar__navigation button {
-  min-width: 44px;
-  background: none;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 800;
   color: #1e293b;
-  border-radius: 12px;
-}
-
-.react-calendar__navigation button:hover {
-  background-color: #f1f5f9;
+  font-size: 1.1rem;
 }
