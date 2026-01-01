@@ -1,11 +1,15 @@
 import React from 'react';
 import { 
-  Trophy, Building2, Landmark, 
+  Trophy, Landmark, 
   Shield, Briefcase, 
-  Activity, Users, User, GraduationCap 
+  Activity, Users, GraduationCap 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+/**
+ * Portal Nexus - Protocolo de Simulação Master
+ * Ponto central de troca de personas da entidade.
+ */
 const NexusPortal: React.FC = () => {
   const navigate = useNavigate();
 
@@ -41,15 +45,14 @@ const NexusPortal: React.FC = () => {
     {
       title: "4. USUÁRIOS",
       items: [
-        { label: "Atletas", icon: Users, path: "/atleta/dashboard" },
-        { label: "Alunos", icon: GraduationCap, path: "/atleta/dashboard" }
+        { label: "Atletas", icon: Users, path: "/dashboard" },
+        { label: "Alunos", icon: GraduationCap, path: "/dashboard" }
       ]
     }
   ];
 
   return (
     <div className="min-h-screen bg-[#050a18] text-white p-8 font-sans">
-      {/* Header Centralizado */}
       <header className="text-center mb-16">
         <h1 className="text-4xl font-black italic tracking-tighter mb-2">
           FAHUB <span className="text-blue-500">NEXUS</span>
@@ -59,7 +62,6 @@ const NexusPortal: React.FC = () => {
         </p>
       </header>
 
-      {/* Grid de 4 Colunas */}
       <main className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {sections.map((section, idx) => (
           <div key={idx} className="space-y-4">
