@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import DashboardSidebar from '../dashboard/components/DashboardSidebar'; // Reaproveitando a Sidebar
+import DashboardSidebar from '../dashboard/components/DashboardSidebar';
 
 const FinanceConsolidated: React.FC = () => {
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Dados Mockados para visualização (depois conectamos ao Supabase)
