@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Landmark, Upload, Download, 
-  Search, Filter, TrendingUp, TrendingDown,
-  RefreshCw, FileCheck
+  TrendingUp, TrendingDown, RefreshCw, FileCheck
 } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
+
+/** * FLUXO DE CAIXA OPERACIONAL - PROTOCOLO FAHUB
+ * Interface de Conciliação Bancária com Sidebar Padrão.
+ */
 
 const FinanceCashFlow: React.FC = () => {
   const navigate = useNavigate();
@@ -22,13 +25,16 @@ const FinanceCashFlow: React.FC = () => {
       {/* SIDEBAR PADRÃO FAHUB */}
       <aside className="w-64 bg-[#0a0f1e] border-r border-white/5 flex flex-col shrink-0">
         <div className="p-8">
-          <div className="w-12 h-12 bg-emerald-600 rounded-2xl shadow-lg mb-4 flex items-center justify-center">
+          <div className="w-12 h-12 bg-emerald-600 rounded-2xl shadow-lg mb-4 flex items-center justify-center shadow-emerald-500/20">
             <Landmark size={24} className="text-white" />
           </div>
           <h2 className="text-[10px] font-black uppercase tracking-widest italic text-slate-500">Fluxo de Caixa</h2>
         </div>
         <nav className="flex-1 px-4 space-y-2">
-          <button onClick={() => navigate('/financeiro')} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/5 text-white font-bold italic text-xs uppercase border border-white/5 hover:bg-white/10 transition-all">
+          <button 
+            onClick={() => navigate('/financeiro')} 
+            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/5 text-white font-bold italic text-xs uppercase border border-white/5 hover:bg-white/10 transition-all"
+          >
             <ArrowLeft size={18} /> Dashboard Master
           </button>
           <div className="pt-6 pb-2 px-4 text-[9px] font-black uppercase text-slate-600 tracking-widest italic">Operações de Banco</div>
@@ -56,7 +62,7 @@ const FinanceCashFlow: React.FC = () => {
           </div>
         </header>
 
-        <div className="flex-1 p-8 space-y-6 overflow-y-auto">
+        <div className="flex-1 p-8 space-y-6 overflow-y-auto custom-scrollbar">
           {/* CARDS DE LIQUIDEZ */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatusCard icon={TrendingUp} label="Entradas (Mês)" value="R$ 15.420,00" color="text-emerald-500" />
@@ -65,8 +71,8 @@ const FinanceCashFlow: React.FC = () => {
           </div>
 
           {/* ÁREA DE IMPORTAÇÃO/CONCILIAÇÃO */}
-          <div className="flex-1 bg-[#0a0f1e] border-2 border-dashed border-white/10 rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center group hover:border-emerald-500/30 transition-all">
-             <div className="p-6 bg-white/5 rounded-full mb-6 group-hover:scale-110 transition-transform">
+          <div className="flex-1 bg-[#0a0f1e] border-2 border-dashed border-white/10 rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center group hover:border-emerald-500/30 transition-all min-h-[300px]">
+             <div className="p-6 bg-white/5 rounded-full mb-6 group-hover:scale-110 transition-transform border border-white/5">
                 <Upload size={48} className="text-emerald-500" />
              </div>
              <h3 className="text-xl font-black italic uppercase tracking-tighter mb-2">Importar Extrato OFX</h3>
@@ -76,6 +82,7 @@ const FinanceCashFlow: React.FC = () => {
           </div>
         </div>
       </main>
+
       <JulesAgent context="FINANCE" />
     </div>
   );
@@ -88,8 +95,8 @@ const SidebarLink = ({ icon: Icon, label }: { icon: any, label: string }) => (
 );
 
 const StatusCard = ({ icon: Icon, label, value, color }: { icon: any, label: string, value: string, color: string }) => (
-  <div className="bg-[#0a0f1e] border border-white/5 p-6 rounded-3xl flex items-center gap-6">
-    <div className="p-4 bg-white/5 rounded-2xl"><Icon size={24} className={color} /></div>
+  <div className="bg-[#0a0f1e] border border-white/5 p-6 rounded-3xl flex items-center gap-6 shadow-xl">
+    <div className="p-4 bg-white/5 rounded-2xl border border-white/5"><Icon size={24} className={color} /></div>
     <div>
       <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest mb-1 italic">{label}</p>
       <p className={`text-2xl font-black italic tracking-tighter ${color}`}>{value}</p>
