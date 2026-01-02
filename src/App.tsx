@@ -1,30 +1,21 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-/** * PROTOCOLO NEXUS - INFRAESTRUTURA DE ALTA DISPONIBILIDADE
- * Estrutura mapeada conforme árvore de arquivos consolidada.
- */
-
-// 1. Módulos Core (Nexus e Dashboard)
+// 1. Módulos Core
 import NexusPortal from './modules/nexus/NexusPortal';
 import Dashboard from './modules/dashboard/Dashboard'; 
 
-// 2. Módulos Operacionais - Financeiro & Agenda
+// 2. Módulos Financeiros (Dashboard + Operacional)
 import FinanceConsolidated from './modules/finance/FinanceConsolidated';
-import CalendarMaster from './modules/calendar/CalendarMaster';
+import FinancePayables from './modules/finance/FinancePayables';
+import FinanceReceivables from './modules/finance/FinanceReceivables'; // Nova Subpágina
 
-// 3. Módulos de Pessoas (Capital Humano)
+// 3. Outros Módulos Preservados
 import HumanCapital from './modules/people/HumanCapital';
 import MemberProfile360 from './modules/people/MemberProfile360';
 import AthletesList from './modules/athletes/AthletesList'; 
-
-// 4. Módulo de Recrutamento (Tryout Lab)
 import TryoutLab from './modules/tryout/TryoutLab';
-
-// 5. Configurações
 import EntitySettings from './modules/settings/EntitySettings';
-
-// 6. Módulos de Marketing
 import CreativeLab from './modules/marketing/CreativeLab'; 
 import MarketingProjectsGoals from './modules/marketing/MarketingProjectsGoals';
 
@@ -32,30 +23,25 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* COMANDO CENTRAL: Seletor de Personas e Skins */}
         <Route path="/" element={<NexusPortal />} />
-        
-        {/* ROTAS OPERACIONAIS */}
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/financeiro" element={<FinanceConsolidated />} />
-        <Route path="/agenda" element={<CalendarMaster />} />
         
-        {/* GESTÃO DE PESSOAS */}
+        {/* NAVEGAÇÃO FINANCEIRA ATIVA */}
+        <Route path="/financeiro" element={<FinanceConsolidated />} />
+        <Route path="/financeiro/pagar" element={<FinancePayables />} />
+        <Route path="/financeiro/receber" element={<FinanceReceivables />} />
+        
+        {/* Redirecionam para o dashboard enquanto as outras 2 subpáginas não são criadas */}
+        <Route path="/financeiro/fluxo" element={<FinanceConsolidated />} />
+        <Route path="/financeiro/patrimonio" element={<FinanceConsolidated />} />
+
         <Route path="/human-capital" element={<HumanCapital />} />
         <Route path="/perfil-membro" element={<MemberProfile360 />} />
         <Route path="/elenco" element={<AthletesList />} />
-        
-        {/* RECRUTAMENTO E SELEÇÃO */}
         <Route path="/tryout-lab" element={<TryoutLab />} />
-        
-        {/* MARKETING: Hub Criativo e Gestão de Metas */}
         <Route path="/creative-lab" element={<CreativeLab />} />
         <Route path="/marketing/projetos-metas" element={<MarketingProjectsGoals />} />
-        
-        {/* SISTEMA */}
         <Route path="/configuracoes" element={<EntitySettings />} />
-        
-        {/* CINTURÃO DE SEGURANÇA: Redireciona falhas para o Nexus */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
