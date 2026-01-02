@@ -9,8 +9,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 // 1. Módulos Core (Nexus e Dashboard)
 import NexusPortal from './modules/nexus/NexusPortal';
 import Dashboard from './modules/dashboard/Dashboard'; 
-// Obs: Vi que existe um 'DashboardMaster.tsx'. Se 'Dashboard.tsx' for apenas um componente interno,
-// troque a linha acima por: import Dashboard from './modules/dashboard/DashboardMaster';
+// (Nota: O Dashboard.tsx é o wrapper que chama o DashboardMaster.tsx)
 
 // 2. Módulos Operacionais - Financeiro & Agenda
 import FinanceConsolidated from './modules/finance/FinanceConsolidated';
@@ -20,11 +19,11 @@ import CalendarMaster from './modules/calendar/CalendarMaster';
 import HumanCapital from './modules/people/HumanCapital';
 import MemberProfile360 from './modules/people/MemberProfile360';
 
-// 4. Configurações
-import EntitySettings from './modules/settings/EntitySettings';
+// 4. Módulo de Recrutamento (Tryout Lab) - NOVO
+import TryoutLab from './modules/tryout/TryoutLab';
 
-// Nota: Vi nos prints módulos extras como 'operations', 'strategy' e 'athletes'.
-// Não os incluí nas rotas ainda para não quebrar o que já existia, mas podemos adicionar depois.
+// 5. Configurações
+import EntitySettings from './modules/settings/EntitySettings';
 
 const App: React.FC = () => {
   return (
@@ -41,6 +40,9 @@ const App: React.FC = () => {
         {/* GESTÃO DE PESSOAS */}
         <Route path="/human-capital" element={<HumanCapital />} />
         <Route path="/perfil-membro" element={<MemberProfile360 />} />
+        
+        {/* RECRUTAMENTO E SELEÇÃO */}
+        <Route path="/tryout-lab" element={<TryoutLab />} />
         
         {/* SISTEMA */}
         <Route path="/configuracoes" element={<EntitySettings />} />
