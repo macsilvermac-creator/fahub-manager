@@ -1,65 +1,55 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
-// 1. CORE
+/** 
+ * PROTOCOLO NEXUS - INFRAESTRUTURA DE ALTA DISPONIBILIDADE
+ */
+
+// 1. Módulos Core
 import NexusPortal from './modules/nexus/NexusPortal';
 import Dashboard from './modules/dashboard/Dashboard'; 
 
-// 2. FINANCEIRO
+// 2. Módulos Operacionais
 import FinanceConsolidated from './modules/finance/FinanceConsolidated';
-import FinancePayables from './modules/finance/FinancePayables';
-import FinanceReceivables from './modules/finance/FinanceReceivables';
-import FinanceCashFlow from './modules/finance/FinanceCashFlow';
-import FinancePatrimony from './modules/finance/FinancePatrimony';
-import BillingFactory from './modules/finance/BillingFactory';
+import CalendarMaster from './modules/calendar/CalendarMaster';
 
-// 3. CAPITAL HUMANO
+// 3. Módulos de Pessoas
 import HumanCapital from './modules/people/HumanCapital';
 import MemberProfile360 from './modules/people/MemberProfile360';
-import AthletesList from './modules/athletes/AthletesList'; 
+import AthletesList from './modules/athletes/AthletesList';
 
-// 4. COMERCIAL (OS NOVOS ARQUIVOS)
-import CommercialDashboard from './modules/commercial/CommercialDashboard';
-import SponsorLab from './modules/commercial/SponsorLab';
-
-// 5. MARKETING & OUTROS
-import CreativeLab from './modules/marketing/CreativeLab'; 
-import MarketingProjectsGoals from './modules/marketing/MarketingProjectsGoals';
+// 4. Módulo de Recrutamento
 import TryoutLab from './modules/tryout/TryoutLab';
+
+// 5. Configurações
 import EntitySettings from './modules/settings/EntitySettings';
+
+// 6. Módulos de Marketing
+import CreativeLab from './modules/marketing/CreativeLab';
+import MarketingProjectsGoals from './modules/marketing/MarketingProjectsGoals';
+
+// 7. Módulos Comerciais (CCO)
+import SponsorLab from './modules/commercial/SponsorLab'; // <--- NOVO IMPORT
 
 const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* PORTAL INICIAL */}
         <Route path="/" element={<NexusPortal />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        
-        {/* ROTAS FINANCEIRAS */}
         <Route path="/financeiro" element={<FinanceConsolidated />} />
-        <Route path="/financeiro/fluxo" element={<FinanceCashFlow />} />
-        <Route path="/financeiro/receber" element={<FinanceReceivables />} />
-        <Route path="/financeiro/pagar" element={<FinancePayables />} />
-        <Route path="/financeiro/patrimonio" element={<FinancePatrimony />} />
-        <Route path="/financeiro/factory" element={<BillingFactory />} />
-        
-        {/* ROTAS DE CAPITAL HUMANO */}
+        <Route path="/agenda" element={<CalendarMaster />} />
         <Route path="/human-capital" element={<HumanCapital />} />
         <Route path="/perfil-membro" element={<MemberProfile360 />} />
         <Route path="/elenco" element={<AthletesList />} />
-        
-        {/* ROTAS COMERCIAIS (VALIDAÇÃO AQUI) */}
-        <Route path="/comercial" element={<CommercialDashboard />} />
-        <Route path="/comercial/sponsor-lab" element={<SponsorLab />} />
-        
-        {/* ROTAS DE MARKETING E CONFIGURAÇÕES */}
+        <Route path="/tryout-lab" element={<TryoutLab />} />
         <Route path="/creative-lab" element={<CreativeLab />} />
         <Route path="/marketing/projetos-metas" element={<MarketingProjectsGoals />} />
-        <Route path="/tryout-lab" element={<TryoutLab />} />
+        
+        {/* ROTA COMERCIAL */}
+        <Route path="/sponsor-lab" element={<SponsorLab />} /> {/* <--- ROTA ATIVADA */}
+        
         <Route path="/configuracoes" element={<EntitySettings />} />
-
-        {/* FALLBACK */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
