@@ -1,20 +1,32 @@
 import React, { useState } from 'react';
 import DashboardSidebar from '../dashboard/components/DashboardSidebar';
-import JulesAgent from '../../lib/Jules'; // <--- CORREÇÃO AQUI (Estava ../../components/Jules)
+import JulesAgent from '../../lib/Jules';
 
 const TryoutLab: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  // Estado Mockado da Integração Google
+  // ESTADO DO FLUXO DE MARKETING (Link do Forms)
+  const [formLink, setFormLink] = useState('');
+  const [isLinkActive, setIsLinkActive] = useState(false);
+
+  // Estado Mockado da Integração Google (Planilha de Respostas)
   const googleStatus = { connected: true, spreadsheet: 'Inscritos_Seletiva_2026_v1' };
 
-  // Dados Mockados dos Inscritos (Vindos da Planilha)
+  // Dados Mockados dos Inscritos
   const candidates = [
     { id: 101, name: 'Marcos Vinicius', age: 19, height: '1.92m', weight: '125kg', exp: 'Nenhuma', status: 'NEW', score: 8.5 },
     { id: 102, name: 'João Pedro', age: 24, height: '1.80m', weight: '85kg', exp: 'Flag 2 anos', status: 'NEW', score: 7.2 },
     { id: 103, name: 'Carlos Edu', age: 21, height: '1.75m', weight: '70kg', exp: 'Nenhuma', status: 'NEW', score: 5.0 },
     { id: 104, name: 'Rafael Souza', age: 26, height: '1.88m', weight: '110kg', exp: 'Full Pads 3 anos', status: 'EVALUATED', score: 9.1 },
   ];
+
+  // Função para simular o envio ao Marketing
+  const handleActivateLink = () => {
+    if (!formLink) return;
+    setIsLinkActive(true);
+    // Aqui no futuro haveria uma chamada ao Supabase para salvar esse link na tabela 'campaigns'
+    console.log("Link enviado para o Módulo de Marketing:", formLink);
+  };
 
   return (
     <div className="flex flex-col h-screen bg-[#020617] overflow-hidden text-white font-sans">
@@ -68,14 +80,61 @@ const TryoutLab: React.FC = () => {
                   <p className="text-3xl font-black text-yellow-400">4</p>
                </div>
                
-               {/* AÇÃO DE MARKETING */}
-               <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex flex-col justify-center gap-2">
-                  <button className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded transition flex items-center justify-center gap-2">
-                    <span>🔗</span> Copiar Link do Form
-                  </button>
-                  <button className="w-full py-2 bg-transparent border border-slate-600 hover:border-white text-slate-300 hover:text-white text-xs font-bold rounded transition">
-                    ✉️ Enviar p/ Marketing
-                  </button>
+               {/* --- FLUXO DE MARKETING (ALTERADO) --- */}
+               <div className={`border p-4 rounded-xl flex flex-col justify-center gap-2 transition-all duration-500 ${isLinkActive ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-800/50 border-slate-700'}`}>
+                  
+                  {!isLinkActive ? (
+                    <>
+                      <p className="text-[10px] text-slate-400 uppercase font-bold">Campanha: Inscrições</p>
+                      
+                      {/* Passo 1: Ir ao Google */}
+                      <button 
+                        onClick={() => window.open('https://docs.google.com/forms', '_blank')}
+                        className="w-full py-1.5 bg-white text-slate-900 hover:bg-slate-200 text-[10px] font-bold rounded transition flex items-center justify-center gap-1"
+                      >
+                         1. Criar no Google Forms ↗
+                      </button>
+
+                      {/* Passo 2: Colar Link */}
+                      <input 
+                        type="text" 
+                        placeholder="2. Cole o link gerado aqui..." 
+                        value={formLink}
+                        onChange={(e) => setFormLink(e.target.value)}
+                        className="w-full bg-black/30 border border-slate-600 rounded px-2 py-1 text-[10px] text-white focus:border-indigo-500 outline-none"
+                      />
+
+                      {/* Passo 3: Enviar */}
+                      <button 
+                        onClick={handleActivateLink}
+                        disabled={!formLink}
+                        className={`w-full py-1.5 text-[10px] font-bold rounded transition flex items-center justify-center gap-1
+                          ${formLink ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/20' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}
+                        `}
+                      >
+                         3. Ativar & Enviar p/ MKT
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {/* Estado: Link Ativo e Enviado */}
+                      <div className="flex justify-between items-center">
+                        <p className="text-[10px] text-indigo-400 uppercase font-bold animate-pulse">● Link Ativo</p>
+                        <button onClick={() => setIsLinkActive(false)} className="text-[9px] text-slate-500 underline hover:text-white">Editar</button>
+                      </div>
+                      
+                      <div className="bg-black/30 p-2 rounded border border-indigo-500/30 truncate text-[10px] text-slate-300 font-mono select-all">
+                        {formLink}
+                      </div>
+
+                      <button 
+                        onClick={() => navigator.clipboard.writeText(formLink)}
+                        className="w-full py-2 bg-indigo-600/20 border border-indigo-500/50 text-indigo-300 hover:bg-indigo-600 hover:text-white text-xs font-bold rounded transition"
+                      >
+                        COPIAR LINK
+                      </button>
+                    </>
+                  )}
                </div>
             </div>
 
