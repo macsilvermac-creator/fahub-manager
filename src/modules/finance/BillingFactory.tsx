@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Sparkles, Send, Archive, 
-  Users, Calendar, DollarSign, CheckCircle,
-  Clock, Trash2, Filter
+  Users, Calendar, Clock, Trash2, Filter
 } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
+
+/** * BILLING FACTORY - PROTOCOLO NEXUS
+ * Geração de Lotes de Cobrança com Visual de Máquina de Geração.
+ */
 
 const BillingFactory: React.FC = () => {
   const navigate = useNavigate();
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Mock de Cobranças no Arquivo (Aguardando Envio)
   const [drafts] = useState([
     { id: 1, target: 'Ataque (Tackle)', type: 'Mensalidade', value: 'R$ 150,00', qty: 22 },
     { id: 2, target: 'Staff Técnico', type: 'Ajuda de Custo', value: 'R$ 200,00', qty: 8 },
@@ -33,20 +35,21 @@ const BillingFactory: React.FC = () => {
           </div>
           <h2 className="text-[10px] font-black uppercase tracking-widest italic text-slate-500">Billing Factory</h2>
         </div>
-        <nav className="flex-1 px-4 space-y-2">
-          <button onClick={() => navigate('/financeiro')} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/5 text-white font-black italic text-xs uppercase border border-white/5 hover:bg-white/10 transition-all">
+        <nav className="flex-1 px-4">
+          <button 
+            onClick={() => navigate('/financeiro')} 
+            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white/5 text-white font-black italic text-xs uppercase border border-white/5 hover:bg-white/10 transition-all"
+          >
             <ArrowLeft size={18} /> Dashboard Master
           </button>
         </nav>
       </aside>
 
-      {/* ÁREA DE OPERAÇÃO (2 CONTAINERS) */}
+      {/* ÁREA DE OPERAÇÃO (2 CONTAINERS SIMÉTRICOS) */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="p-8 border-b border-white/5 bg-[#0a0f1e]/50 backdrop-blur-md flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-black italic uppercase tracking-tighter">Billing <span className="text-blue-500">Factory</span></h1>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic mt-1">Geração de Lotes e Cobrança em Massa</p>
-          </div>
+        <header className="p-8 border-b border-white/5 bg-[#0a0f1e]/50 backdrop-blur-md">
+          <h1 className="text-2xl font-black italic uppercase tracking-tighter">Billing <span className="text-blue-500">Factory</span></h1>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic mt-1 font-sans">Geração de Lotes e Cobrança em Massa</p>
         </header>
 
         <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-2 gap-8 overflow-hidden">
@@ -55,41 +58,25 @@ const BillingFactory: React.FC = () => {
           <div className="bg-[#0f172a] border border-white/5 rounded-[2.5rem] flex flex-col overflow-hidden shadow-2xl">
             <div className="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">1. Parâmetros de Geração</h3>
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
             </div>
             
             <div className="p-8 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
-              <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase text-slate-500 ml-1">Público Alvo</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button className="p-3 bg-white/5 rounded-xl border border-blue-500/30 text-[10px] font-bold uppercase flex items-center gap-2">
-                    <Users size={14} className="text-blue-400" /> Todos Atletas
-                  </button>
-                  <button className="p-3 bg-white/5 rounded-xl border border-white/5 text-[10px] font-bold uppercase flex items-center gap-2 opacity-50">
-                    <Filter size={14} /> Por Categoria
-                  </button>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button className="p-3 bg-white/5 rounded-xl border border-blue-500/30 text-[10px] font-bold uppercase flex items-center gap-2">
+                  <Users size={14} className="text-blue-400" /> Todos Atletas
+                </button>
+                <button className="p-3 bg-white/5 rounded-xl border border-white/5 text-[10px] font-bold uppercase flex items-center gap-2 opacity-50">
+                  <Filter size={14} /> Por Categoria
+                </button>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[9px] font-black uppercase text-slate-500 ml-1">Tipo de Título</label>
-                <select className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs font-bold uppercase outline-none focus:border-blue-500 transition-colors">
-                  <option>Mensalidade Padrão</option>
-                  <option>Taxa de Equipamento</option>
-                  <option>Anuidade Sócio-Torcedor</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase text-slate-500 ml-1">Valor Unitário</label>
-                  <div className="relative">
-                    <DollarSign size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input type="text" placeholder="150,00" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 pl-10 text-xs font-bold outline-none" />
-                  </div>
+                  <input type="text" placeholder="R$ 150,00" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-xs font-bold outline-none focus:border-blue-500 transition-colors" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase text-slate-500 ml-1">Vencimento</label>
+                  <label className="text-[9px] font-black uppercase text-slate-500 ml-1">Data de Vencimento</label>
                   <div className="relative">
                     <Calendar size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input type="text" placeholder="10/01/2026" className="w-full bg-black/40 border border-white/10 rounded-xl p-4 pl-10 text-xs font-bold outline-none" />
@@ -116,7 +103,7 @@ const BillingFactory: React.FC = () => {
               <Archive size={16} className="text-slate-500" />
             </div>
 
-            <div className="p-6 flex-1 overflow-y-auto space-y-4 custom-scrollbar">
+            <div className="p-6 flex-1 overflow-y-auto space-y-4 custom-scrollbar font-sans">
               {drafts.map((draft) => (
                 <div key={draft.id} className="bg-white/5 border border-white/10 rounded-2xl p-5 group hover:border-blue-500/50 transition-all">
                   <div className="flex justify-between items-start mb-4">
@@ -124,10 +111,7 @@ const BillingFactory: React.FC = () => {
                       <h4 className="text-sm font-black italic uppercase tracking-tight text-white">{draft.target}</h4>
                       <p className="text-[9px] font-bold text-slate-500 uppercase">{draft.type} • {draft.qty} Títulos</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-black text-blue-400 italic leading-none">{draft.value}</p>
-                      <p className="text-[8px] text-slate-600 font-bold uppercase">Total Unit.</p>
-                    </div>
+                    <p className="text-lg font-black text-blue-400 italic leading-none">{draft.value}</p>
                   </div>
                   <div className="flex gap-2">
                     <button className="flex-1 py-2 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 rounded-lg text-[9px] font-black uppercase tracking-widest text-blue-400 flex items-center justify-center gap-2 transition-all">
