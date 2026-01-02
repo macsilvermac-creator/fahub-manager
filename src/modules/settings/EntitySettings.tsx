@@ -1,107 +1,167 @@
 import React, { useState } from 'react';
-import { 
-  ArrowLeft, Settings, Shield, Globe, 
-  RefreshCw, Edit3, ChevronRight, Save
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import DashboardSidebar from '../dashboard/components/DashboardSidebar';
 
-/**
- * Gestão de Entidades Operacional - Protocolo FAHUB
- * Interface para controle de CNPJs e Unidades sem alteração visual.
- */
 const EntitySettings: React.FC = () => {
-  const navigate = useNavigate();
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Simulação de Sincronização de Dados
-  const handleSync = () => {
-    setIsSyncing(true);
-    setTimeout(() => setIsSyncing(false), 2000);
-  };
-
+  // Mock das Entidades (Baseado na sua imagem)
   const entities = [
-    { id: 1, name: "Tackle Pro", type: "Unidade Esportiva", status: "Ativo", color: "text-blue-500" },
-    { id: 2, name: "Flag Football", type: "Unidade Esportiva", status: "Ativo", color: "text-orange-500" },
-    { id: 3, name: "Associação Gladiators", type: "Administrativo", status: "Regular", color: "text-emerald-500" }
+    { 
+      id: 1, 
+      name: 'TACKLE PRO', 
+      type: 'Unidade Esportiva', 
+      status: 'ATIVO', 
+      color: 'blue',
+      icon: '🛡️'
+    },
+    { 
+      id: 2, 
+      name: 'FLAG FOOTBALL', 
+      type: 'Unidade Esportiva', 
+      status: 'ATIVO', 
+      color: 'orange',
+      icon: '🏈'
+    },
+    { 
+      id: 3, 
+      name: 'ASSOCIAÇÃO GLADIATORS', 
+      type: 'Administrativo', 
+      status: 'REGULAR', 
+      color: 'emerald',
+      icon: '🏛️'
+    }
   ];
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] pb-20">
-      {/* Header HUD */}
-      <nav className="bg-white p-6 flex items-center justify-between shadow-sm mb-8 border-b border-slate-100">
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 transition-all outline-none"
-          >
-            <ArrowLeft size={20} />
+    <div className="flex h-screen bg-[#020617] overflow-hidden text-white font-sans">
+      
+      {/* 1. NAVEGAÇÃO LATERAL */}
+      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* 2. CONTEÚDO PRINCIPAL */}
+      <div className="flex-1 flex flex-col overflow-y-auto relative">
+        
+        {/* HEADER */}
+        <header className="p-4 border-b border-slate-800 bg-[#0f172a]/50 backdrop-blur flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden p-2 text-gray-300 bg-slate-800 rounded-lg"
+            >
+              ☰
+            </button>
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold text-white flex items-center gap-2">
+                <span className="text-purple-500">⚙️</span> CONFIGURAÇÕES DE ENTIDADE
+              </h1>
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest">Parâmetros do Ecossistema</p>
+            </div>
+          </div>
+          
+          <button className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-[#1e293b] border border-slate-700 hover:border-purple-500 text-white rounded transition shadow-lg">
+            <span className="animate-spin text-purple-400">↻</span> SINCRONIZAR CLOUD
           </button>
-          <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tighter uppercase italic leading-none">
-              Configurações de <span className="text-blue-600">Entidade</span>
-            </h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 italic">Parâmetros do Ecossistema</p>
-          </div>
-        </div>
-        <button 
-          onClick={handleSync}
-          disabled={isSyncing}
-          className="bg-slate-900 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase flex items-center gap-3 shadow-lg hover:bg-slate-800 transition-all disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} />
-          {isSyncing ? "Sincronizando..." : "Sincronizar Cloud"}
-        </button>
-      </nav>
+        </header>
 
-      <main className="max-w-[1400px] mx-auto px-6 space-y-8">
-        {/* Grid de Entidades */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {entities.map((entity) => (
-            <div key={entity.id} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 group hover:shadow-xl transition-all">
-              <div className="flex justify-between items-start mb-6">
-                <div className={`w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center ${entity.color}`}>
-                  <Shield size={28} />
+        <main className="p-4 md:p-8 max-w-7xl mx-auto w-full">
+
+          {/* SECTION 1: ENTIDADES (GRID COMPACTO) */}
+          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 pl-1">
+            Unidades Gerenciadas
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {entities.map((ent) => (
+              <div 
+                key={ent.id}
+                className={`
+                  relative bg-[#1e293b]/40 border border-slate-800 rounded-xl p-6 
+                  hover:bg-[#1e293b] transition duration-300 group cursor-pointer
+                  ${ent.color === 'blue' ? 'hover:border-blue-500/50' : ''}
+                  ${ent.color === 'orange' ? 'hover:border-orange-500/50' : ''}
+                  ${ent.color === 'emerald' ? 'hover:border-emerald-500/50' : ''}
+                `}
+              >
+                {/* Ícone Flutuante */}
+                <div className={`
+                  h-12 w-12 rounded-lg flex items-center justify-center text-2xl mb-4 border
+                  ${ent.color === 'blue' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : ''}
+                  ${ent.color === 'orange' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : ''}
+                  ${ent.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : ''}
+                `}>
+                  {ent.icon}
                 </div>
-                <button className="text-slate-300 hover:text-blue-600 transition-colors">
-                  <Edit3 size={18} />
-                </button>
-              </div>
-              <h3 className="text-xl font-black text-slate-800 uppercase italic tracking-tighter">{entity.name}</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 mb-6">{entity.type}</p>
-              <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
-                <span className="text-[9px] font-black bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg uppercase tracking-widest">
-                  {entity.status}
-                </span>
-                <ChevronRight size={18} className="text-slate-300" />
-              </div>
-            </div>
-          ))}
-        </div>
 
-        {/* Painel de Integração Master */}
-        <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden group shadow-2xl">
-          <Globe size={200} className="absolute -right-10 -bottom-10 opacity-[0.03] text-white group-hover:scale-110 transition-transform duration-1000" />
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div>
-              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-blue-400 mb-4 italic">Conexão API Supabase</h3>
-              <p className="text-lg font-bold italic leading-tight text-slate-300 mb-8">
-                O seu ecossistema está <span className="text-white underline">integrado em tempo real</span>. Todas as alterações em Unidades Esportivas refletem no Consolidado Financeiro.
-              </p>
-              <div className="flex gap-4">
-                <button className="bg-blue-600 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase shadow-lg hover:bg-blue-500 transition-all outline-none flex items-center gap-2">
-                  <Save size={16} /> Salvar Parâmetros
-                </button>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-black italic text-white group-hover:tracking-wide transition-all">
+                      {ent.name}
+                    </h3>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mt-1">
+                      {ent.type}
+                    </p>
+                  </div>
+                  
+                  {/* Badge de Status */}
+                  <span className={`
+                    text-[9px] px-2 py-0.5 rounded border uppercase font-bold
+                    ${ent.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-slate-700 text-slate-300 border-slate-600'}
+                  `}>
+                    {ent.status}
+                  </span>
+                </div>
+
+                {/* Botão de Edição (Hover Only) */}
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition">
+                  <span className="text-slate-400 hover:text-white text-xs">✏️ Editar</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* SECTION 2: CONSOLE DE SISTEMA (Substitui o rodapé grande) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Coluna 1: Status da API */}
+            <div className="lg:col-span-2 bg-[#0f172a] border border-slate-800 rounded-xl p-6 relative overflow-hidden">
+               {/* Background Tech */}
+               <div className="absolute top-0 right-0 p-4 opacity-5">
+                 <svg className="w-32 h-32" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/></svg>
+               </div>
+
+               <h3 className="text-blue-400 font-bold text-sm mb-2 flex items-center gap-2">
+                 <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                 CONEXÃO API SUPABASE
+               </h3>
+               <p className="text-slate-400 text-xs mb-4 max-w-lg leading-relaxed">
+                 O ecossistema está <span className="text-white font-bold underline decoration-blue-500/50">integrado em tempo real</span>. 
+                 Todas as alterações em Unidades Esportivas refletem no Consolidado Financeiro e na gestão de atletas.
+                 <br/><br/>
+                 <span className="font-mono text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-300">
+                   Latency: 24ms • Region: sa-east-1 • Build: v2.4.0
+                 </span>
+               </p>
+            </div>
+
+            {/* Coluna 2: Logs Ativos (Estilo Terminal) */}
+            <div className="bg-black/40 border border-slate-800 rounded-xl p-4 font-mono text-[10px]">
+              <div className="flex items-center justify-between mb-2 border-b border-slate-800 pb-2">
+                <span className="text-slate-500 font-bold">SYSTEM LOGS</span>
+                <span className="text-emerald-500">● LIVE</span>
+              </div>
+              <div className="space-y-1.5 text-slate-400">
+                <p><span className="text-blue-500">[12:01:42]</span> Sync initiated by User_Admin...</p>
+                <p><span className="text-emerald-500">[12:01:44]</span> Data fetch success (3 entities).</p>
+                <p><span className="text-yellow-500">[12:02:10]</span> Cache invalidated for /dashboard.</p>
+                <p><span className="text-blue-500">[12:05:00]</span> Listening for realtime changes...</p>
+                <p className="animate-pulse text-slate-600">_</p>
               </div>
             </div>
-            <div className="bg-white/5 rounded-[2rem] border border-white/10 p-8 flex items-center justify-center">
-               <div className="text-center">
-                 <Settings size={40} className="text-blue-500 mx-auto mb-4 opacity-50" />
-                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Logs de Sistema Ativos</p>
-               </div>
-            </div>
+
           </div>
-        </div>
-      </main>
+
+        </main>
+      </div>
     </div>
   );
 };
