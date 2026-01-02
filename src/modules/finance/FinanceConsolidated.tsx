@@ -1,132 +1,222 @@
 import React, { useState } from 'react';
-import DashboardSidebar from '../dashboard/components/DashboardSidebar';
+import { useNavigate } from 'react-router-dom';
+import { 
+  DollarSign, TrendingUp, TrendingDown, 
+  Target, Download, Filter, ArrowUpRight, 
+  ArrowDownRight, CreditCard, Landmark, 
+  Search, Calendar, FileText
+} from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
 
-const FinanceConsolidated: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+/** * DIRETORIA FINANCEIRA - PROTOCOLO FAHUB
+ * Interface de Alta Performance para Gestão de Caixa e Projeções.
+ */
 
-  // Dados Mockados
-  const transactions = [
-    { id: 1, desc: 'Mensalidades Base (Tackle)', entity: 'Tackle', date: '01/01/2026', amount: 1250.00, type: 'in', status: 'Efetivado' },
-    { id: 2, desc: 'Patrocínio Master', entity: 'Associação', date: '28/12/2025', amount: 5000.00, type: 'in', status: 'Efetivado' },
-    { id: 3, desc: 'Compra Equipamentos (Cones)', entity: 'Flag', date: '20/12/2025', amount: -450.00, type: 'out', status: 'Pendente' },
-    { id: 4, desc: 'Manutenção do Campo', entity: 'Associação', date: '15/12/2025', amount: -350.00, type: 'out', status: 'Efetivado' },
-    { id: 5, desc: 'Venda de Kits Torcedor', entity: 'Comercial', date: '10/12/2025', amount: 800.00, type: 'in', status: 'Efetivado' },
+const FinanceConsolidated: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // MOCK DATA: Fluxo de Caixa Crucial
+  const stats = [
+    { label: "Saldo Consolidado", value: "R$ 42.150,00", trend: "+12%", color: "text-emerald-400" },
+    { label: "Receitas Previstas", value: "R$ 12.800,00", trend: "Mensal", color: "text-blue-400" },
+    { label: "Despesas Pendentes", value: "R$ 4.320,00", trend: "Venc. 48h", color: "text-red-400" },
+    { label: "Burn Rate (Mensal)", value: "R$ 8.150,00", trend: "-5%", color: "text-orange-400" }
+  ];
+
+  const recentTransactions = [
+    { id: 1, type: 'IN', title: 'Mensalidades Tackle', value: 'R$ 2.450,00', category: 'Membership', status: 'COMPLETED', date: '01/01/2026' },
+    { id: 2, type: 'OUT', title: 'Aluguel Campo', value: 'R$ 1.200,00', category: 'Infra', status: 'PENDING', date: '05/01/2026' },
+    { id: 3, type: 'IN', title: 'Patrocínio Red Zone', value: 'R$ 5.000,00', category: 'Marketing', status: 'COMPLETED', date: '28/12/2025' },
+    { id: 4, type: 'OUT', title: 'Equipamento Importado', value: 'R$ 3.800,00', category: 'Material', status: 'COMPLETED', date: '20/12/2025' }
   ];
 
   return (
-    <div className="flex h-screen bg-[#020617] overflow-hidden text-white font-sans">
+    <div className="min-h-screen bg-[#020617] text-white font-sans overflow-x-hidden selection:bg-blue-500/30">
       
-      {/* 1. NAVEGAÇÃO LATERAL */}
-      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* HEADER GESTÃO FINANCEIRA (Protocolo Nexus) */}
+      <header className="p-6 border-b border-white/5 bg-[#0a0f1e]/80 backdrop-blur-xl flex justify-between items-center sticky top-0 z-50">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/')} className="text-slate-500 hover:text-white transition-all text-xs font-black uppercase tracking-widest italic">← Nexus Portal</button>
+          <div>
+            <h1 className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-2">
+              <DollarSign className="text-emerald-500" size={24} />
+              Gestão <span className="text-emerald-500">Financeira</span>
+            </h1>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">Diretoria de Tesouraria & Investimentos</p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <button className="bg-white/5 p-3 rounded-xl border border-white/10 hover:bg-white/10 transition-all"><Download size={18} /></button>
+          <button className="bg-emerald-600 hover:bg-emerald-500 px-6 py-2 rounded-xl font-black italic text-xs uppercase shadow-lg shadow-emerald-500/20">Novo Lançamento</button>
+        </div>
+      </header>
 
-      {/* 2. ÁREA DE CONTEÚDO */}
-      <div className="flex-1 flex flex-col overflow-y-auto relative">
+      {/* GRID DE 4 CONTAINERS */}
+      <main className="p-6 max-w-[1920px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 pb-24">
         
-        {/* HEADER */}
-        <header className="p-4 border-b border-slate-800 bg-[#0f172a]/50 backdrop-blur flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setSidebarOpen(true)}
-              className="md:hidden p-2 text-gray-300 bg-slate-800 rounded-lg"
-            >
-              ☰
-            </button>
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="text-emerald-400">💎</span> GESTÃO FINANCEIRA
-              </h1>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest">Consolidado das Entidades</p>
-            </div>
-          </div>
+        {/* CONTAINER 1: VISÃO GERAL DE CAIXA (LARGURA 8) */}
+        <div className="lg:col-span-8 bg-[#0a0f1e] border border-white/5 rounded-[2.5rem] p-8 flex flex-col gap-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
           
-          <div className="flex gap-2">
-            <button className="px-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded hover:bg-slate-700 transition">
-              Filtros
-            </button>
-            <button className="px-3 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded hover:bg-emerald-500 transition shadow-lg shadow-emerald-500/20">
-              + Nova Receita
-            </button>
-          </div>
-        </header>
-
-        <main className="p-4 max-w-7xl mx-auto w-full pb-24">
-          
-          {/* KPIS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-            <div className="bg-[#1e293b]/40 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-slate-400 font-bold uppercase mb-1">Total Receitas</p>
-                <h3 className="text-2xl font-bold text-emerald-400">R$ 6.250,00</h3>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">↗</div>
-            </div>
-            <div className="bg-[#1e293b]/40 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-slate-400 font-bold uppercase mb-1">Total Despesas</p>
-                <h3 className="text-2xl font-bold text-rose-400">R$ 800,00</h3>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">↘</div>
-            </div>
-             <div className="bg-gradient-to-r from-indigo-900/40 to-[#1e293b]/40 border border-indigo-500/30 rounded-xl p-4 flex items-center justify-between relative overflow-hidden">
-              <div className="relative z-10">
-                <p className="text-xs text-indigo-300 font-bold uppercase mb-1">Saldo em Caixa</p>
-                <h3 className="text-2xl font-bold text-white">R$ 5.450,00</h3>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 border border-indigo-500/50">$</div>
+          <div className="flex justify-between items-center">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">1. Snapshot de Performance</h3>
+            <div className="flex gap-2">
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20 font-bold italic">CAIXA POSITIVO</span>
             </div>
           </div>
 
-          {/* LISTA */}
-          <div className="bg-[#1e293b]/30 border border-slate-800 rounded-xl overflow-hidden">
-            <div className="p-3 border-b border-slate-800 flex justify-between items-center bg-[#0f172a]/50">
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Fluxo Recente</h3>
-              <span className="text-[10px] text-slate-500">Últimos 30 dias</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-800 text-[10px] uppercase text-slate-500 bg-[#0f172a]/30">
-                    <th className="p-3 font-semibold">Descrição</th>
-                    <th className="p-3 font-semibold hidden md:table-cell">Entidade</th>
-                    <th className="p-3 font-semibold hidden md:table-cell">Data</th>
-                    <th className="p-3 font-semibold text-right">Valor</th>
-                    <th className="p-3 font-semibold text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="text-xs md:text-sm">
-                  {transactions.map((t) => (
-                    <tr key={t.id} className="border-b border-slate-800/50 hover:bg-white/5 transition-colors">
-                      <td className="p-3">
-                        <div className="font-bold text-slate-200">{t.desc}</div>
-                        <div className="md:hidden text-[10px] text-slate-500">{t.date} • {t.entity}</div>
-                      </td>
-                      <td className="p-3 text-slate-400 hidden md:table-cell">
-                        <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px]">{t.entity}</span>
-                      </td>
-                      <td className="p-3 text-slate-400 hidden md:table-cell">{t.date}</td>
-                      <td className={`p-3 text-right font-mono font-bold ${t.type === 'in' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {t.type === 'in' ? '+' : '-'} R$ {Math.abs(t.amount).toFixed(2)}
-                      </td>
-                      <td className="p-3 text-center">
-                        <span className={`text-[9px] uppercase px-2 py-1 rounded-full font-bold border ${t.status === 'Efetivado' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}`}>
-                          {t.status}
-                        </span>
-                      </td>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {stats.map((stat, i) => (
+              <div key={i} className="bg-white/5 p-6 rounded-3xl border border-white/5 group hover:border-emerald-500/30 transition-all">
+                <p className="text-[10px] font-black text-slate-500 uppercase mb-2">{stat.label}</p>
+                <h4 className={`text-xl font-black italic ${stat.color}`}>{stat.value}</h4>
+                <p className="text-[10px] font-bold text-slate-400 mt-2">{stat.trend}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Gráfico Mockup de Fluxo */}
+          <div className="flex-1 bg-black/40 rounded-3xl border border-white/5 p-6 flex flex-col gap-4">
+             <div className="flex justify-between items-end h-32 gap-2">
+                {[40, 70, 45, 90, 65, 80, 50, 60, 95, 40].map((h, i) => (
+                  <div key={i} className="flex-1 bg-emerald-500/20 rounded-t-lg relative group overflow-hidden">
+                     <div style={{ height: `${h}%` }} className="absolute bottom-0 w-full bg-emerald-500 transition-all group-hover:bg-emerald-400"></div>
+                  </div>
+                ))}
+             </div>
+             <p className="text-[9px] text-center text-slate-600 font-bold uppercase tracking-widest">Projeção de Fluxo de Caixa - Janeiro/2026</p>
+          </div>
+        </div>
+
+        {/* CONTAINER 2: STATUS DE INVESTIMENTOS (LARGURA 4) */}
+        <div className="lg:col-span-4 bg-[#0a0f1e] border border-white/5 rounded-[2.5rem] p-8 flex flex-col gap-6 shadow-2xl">
+           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic mb-2">2. Reservas & Metas</h3>
+           
+           <div className="space-y-6">
+              <div className="bg-white/5 p-5 rounded-3xl border border-white/5">
+                 <div className="flex justify-between mb-4">
+                    <span className="text-[10px] font-black uppercase text-white tracking-widest">Fundo de Emergência</span>
+                    <span className="text-[10px] font-bold text-emerald-400 tracking-widest">85%</span>
+                 </div>
+                 <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden">
+                    <div className="bg-emerald-500 w-[85%] h-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                 </div>
+              </div>
+
+              <div className="bg-white/5 p-5 rounded-3xl border border-white/5">
+                 <div className="flex justify-between mb-4">
+                    <span className="text-[10px] font-black uppercase text-white tracking-widest">Expansão CT</span>
+                    <span className="text-[10px] font-bold text-blue-400 tracking-widest">42%</span>
+                 </div>
+                 <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden">
+                    <div className="bg-blue-500 w-[42%] h-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                 </div>
+              </div>
+           </div>
+
+           <div className="mt-auto bg-emerald-950/20 border border-emerald-500/20 rounded-3xl p-6">
+              <div className="flex items-center gap-3 mb-2">
+                 <Target className="text-emerald-400" size={20} />
+                 <span className="text-xs font-black italic uppercase text-white">Objetivo Trimestral</span>
+              </div>
+              <p className="text-[10px] text-emerald-200/50 leading-relaxed italic">Atingir saldo em conta de R$ 60.000,00 para garantir aquisição de novos capacetes Riddell SpeedFlex.</p>
+           </div>
+        </div>
+
+        {/* CONTAINER 3: EXTRATO EM TEMPO REAL (LARGURA 8) */}
+        <div className="lg:col-span-8 bg-[#0a0f1e] border border-white/5 rounded-[2.5rem] p-8 flex flex-col gap-6 shadow-2xl overflow-hidden">
+           <div className="flex justify-between items-center">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">3. Movimentações Recentes</h3>
+              <div className="flex bg-black/40 border border-white/5 rounded-xl px-3 py-1 items-center gap-2">
+                 <Search size={14} className="text-slate-600" />
+                 <input 
+                   placeholder="Buscar transação..." 
+                   className="bg-transparent border-none outline-none text-[10px] font-bold w-32"
+                   value={searchTerm}
+                   onChange={e => setSearchTerm(e.target.value)}
+                 />
+              </div>
+           </div>
+
+           <div className="overflow-x-auto">
+              <table className="w-full text-left border-separate border-spacing-y-3">
+                 <thead>
+                    <tr className="text-[9px] font-black uppercase text-slate-600 tracking-widest italic">
+                       <th className="px-4">Data</th>
+                       <th className="px-4">Descrição</th>
+                       <th className="px-4">Categoria</th>
+                       <th className="px-4">Valor</th>
+                       <th className="px-4 text-right">Status</th>
                     </tr>
-                  ))}
-                </tbody>
+                 </thead>
+                 <tbody className="text-xs">
+                    {recentTransactions.map(tx => (
+                       <tr key={tx.id} className="bg-white/5 hover:bg-white/10 transition-colors group cursor-pointer">
+                          <td className="px-4 py-4 first:rounded-l-2xl font-mono text-slate-500 text-[10px]">{tx.date}</td>
+                          <td className="px-4 py-4 font-bold italic uppercase tracking-tight flex items-center gap-2">
+                             {tx.type === 'IN' ? <ArrowUpRight size={14} className="text-emerald-400" /> : <ArrowDownRight size={14} className="text-red-400" />}
+                             {tx.title}
+                          </td>
+                          <td className="px-4 py-4 text-slate-400 font-bold uppercase text-[9px]">{tx.category}</td>
+                          <td className={`px-4 py-4 font-black italic ${tx.type === 'IN' ? 'text-emerald-400' : 'text-white'}`}>{tx.value}</td>
+                          <td className="px-4 py-4 last:rounded-r-2xl text-right">
+                             <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-md ${tx.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'}`}>
+                                {tx.status}
+                             </span>
+                          </td>
+                       </tr>
+                    ))}
+                 </tbody>
               </table>
-            </div>
-            <div className="p-2 text-center border-t border-slate-800">
-               <button className="text-xs text-indigo-400 hover:text-indigo-300 font-bold transition">Ver Extrato Completo ↓</button>
-            </div>
-          </div>
-        </main>
+           </div>
+        </div>
 
-        {/* JULES AGENT */}
-        <JulesAgent context="FINANCE" />
+        {/* CONTAINER 4: CONTROLE PATRIMONIAL (LARGURA 4) */}
+        <div className="lg:col-span-4 bg-[#0a0f1e] border border-white/5 rounded-[2.5rem] p-8 flex flex-col gap-6 shadow-2xl">
+           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">4. Contas Cadastradas</h3>
+           
+           <div className="space-y-4 flex-1">
+              <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-3xl relative overflow-hidden group shadow-lg">
+                 <div className="relative z-10 flex flex-col h-full justify-between min-h-[100px]">
+                    <div className="flex justify-between items-start">
+                       <Landmark size={24} className="text-white/30" />
+                       <span className="text-[9px] font-black uppercase tracking-widest text-white/50 italic">Conta Principal</span>
+                    </div>
+                    <div>
+                       <p className="text-[9px] text-white/50 uppercase font-black mb-1">Saldo Atual</p>
+                       <h5 className="text-xl font-black italic text-white">R$ 38.420,00</h5>
+                    </div>
+                 </div>
+                 <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all"></div>
+              </div>
 
+              <div className="bg-white/5 border border-white/10 p-5 rounded-3xl flex justify-between items-center hover:border-white/30 transition-all">
+                 <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-black/40 rounded-full flex items-center justify-center border border-white/5 text-slate-500"><CreditCard size={18} /></div>
+                    <div>
+                       <p className="text-[10px] font-black uppercase text-white italic">Caixa Físico</p>
+                       <p className="text-[9px] font-bold text-slate-500">Saldo Emergencial</p>
+                    </div>
+                 </div>
+                 <span className="text-sm font-black italic text-white">R$ 3.730,00</span>
+              </div>
+           </div>
+
+           <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest italic text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+              Gerenciar Contas
+           </button>
+        </div>
+
+      </main>
+
+      {/* JULES AGENT */}
+      <JulesAgent context="FINANCE" />
+
+      {/* Botão Flutuante de Retorno ao Nexus */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#0a0f1e]/80 backdrop-blur border border-white/10 px-6 py-2 rounded-full flex items-center gap-4 shadow-2xl z-50 animate-fade-in-up">
+         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 italic">Financial Master Mode Active</span>
       </div>
     </div>
   );
