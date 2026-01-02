@@ -1,146 +1,159 @@
 import React, { useState } from 'react';
-import { 
-  ArrowLeft, Search, Filter, UserPlus, 
-  ChevronRight, ShieldCheck, Activity 
-} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import DashboardSidebar from '../dashboard/components/DashboardSidebar';
 
-/**
- * Patrimônio Humano Operacional - Protocolo FAHUB
- * Ativação de busca e navegação para Ficha 360º sem alterar o visual.
- */
 const HumanCapital: React.FC = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Dados operacionais para teste de fluxo
+  // Dados Mockados baseados na sua imagem
   const members = [
-    { id: 1, name: "Gabriel Silva", role: "Linebacker", status: "Apto", perf: "88%", trend: "up" },
-    { id: 2, name: "Lucas Oliveira", role: "Quarterback", status: "DM", perf: "92%", trend: "up" },
-    { id: 3, name: "Matheus Costa", role: "Wide Receiver", status: "Apto", perf: "75%", trend: "down" }
+    { id: 1, name: 'Gabriel Silva', role: 'Linebacker', status: 'APTO', health: 100, perf: 88, initials: 'GS' },
+    { id: 2, name: 'Lucas Oliveira', role: 'Quarterback', status: 'DM', health: 45, perf: 92, initials: 'LO' },
+    { id: 3, name: 'Matheus Costa', role: 'Wide Receiver', status: 'APTO', health: 95, perf: 75, initials: 'MC' },
+    { id: 4, name: 'André Santos', role: 'Safety', status: 'SUSPENSO', health: 100, perf: 60, initials: 'AS' },
+    { id: 5, name: 'Felipe Rocha', role: 'Offensive Line', status: 'APTO', health: 88, perf: 82, initials: 'FR' },
+    { id: 6, name: 'Bruno Lima', role: 'Running Back', status: 'APTO', health: 92, perf: 89, initials: 'BL' },
   ];
 
-  // Filtro funcional para validar a busca
+  // Lógica simples de filtro
   const filteredMembers = members.filter(m => 
-    m.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    m.role.toLowerCase().includes(searchQuery.toLowerCase())
+    m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] pb-20">
-      {/* Header HUD Operacional */}
-      <nav className="bg-slate-900 text-white p-6 sticky top-0 z-50 border-b border-slate-800 flex items-center justify-between shadow-2xl">
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="w-12 h-12 rounded-full border border-slate-700 flex items-center justify-center text-slate-400 hover:text-blue-400 transition-all outline-none"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div className="flex items-center gap-3">
-            <ShieldCheck size={18} className="text-blue-500" />
-            <div>
-              <h1 className="text-xl font-black uppercase italic leading-none tracking-tighter">Patrimônio <span className="text-blue-500">Humano</span></h1>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Gestão de Ativos e Talentos</p>
+    <div className="flex h-screen bg-[#020617] overflow-hidden text-white font-sans">
+      
+      {/* 1. NAVEGAÇÃO LATERAL */}
+      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* 2. CONTEÚDO PRINCIPAL */}
+      <div className="flex-1 flex flex-col overflow-y-auto relative">
+        
+        {/* HEADER */}
+        <header className="p-4 border-b border-slate-800 bg-[#0f172a]/50 backdrop-blur flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden p-2 text-gray-300 bg-slate-800 rounded-lg"
+            >
+              ☰
+            </button>
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold text-white flex items-center gap-2">
+                <span className="text-blue-500">🛡️</span> PATRIMÔNIO HUMANO
+              </h1>
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest">Gestão de Ativos e Talentos</p>
             </div>
           </div>
-        </div>
-        <button 
-          onClick={() => alert("Abrindo formulário de novo membro...")}
-          className="bg-blue-600 p-3 rounded-2xl hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95 outline-none"
-        >
-          <UserPlus size={20} />
-        </button>
-      </nav>
-
-      <main className="max-w-[1400px] mx-auto p-6 md:p-10 space-y-8">
-        {/* Barra de Busca Funcional */}
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 bg-white border border-slate-200 rounded-[1.8rem] flex items-center px-6 gap-3 focus-within:border-blue-500/50 shadow-sm transition-all">
-            <Search size={18} className="text-slate-400" />
-            <input 
-              type="text" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por nome, posição ou status..." 
-              className="bg-transparent w-full py-5 text-sm font-bold text-slate-700 outline-none italic"
-            />
-          </div>
-          <button 
-            onClick={() => alert("Filtros avançados em desenvolvimento...")}
-            className="bg-white border border-slate-200 p-5 rounded-[1.8rem] text-slate-500 hover:bg-slate-50 shadow-sm transition-all outline-none"
-          >
-            <Filter size={20} />
+          
+          {/* Botão de Ação Rápida */}
+          <button className="px-4 py-2 text-xs font-bold bg-blue-600 text-white rounded hover:bg-blue-500 transition shadow-lg shadow-blue-500/20">
+            + Novo Membro
           </button>
-        </div>
+        </header>
 
-        {/* Listagem com Engate para Ficha 360º */}
-        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  <th className="px-10 py-8">Membro</th>
-                  <th className="px-10 py-8">Status / Saúde</th>
-                  <th className="px-10 py-8">Performance</th>
-                  <th className="px-10 py-8 text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {filteredMembers.map((member) => (
-                  <tr 
-                    key={member.id} 
-                    onClick={() => navigate('/perfil-membro')}
-                    className="group hover:bg-blue-50/30 transition-all cursor-pointer"
-                  >
-                    <td className="px-10 py-8">
-                      <div className="flex items-center gap-5">
-                        <div className="w-12 h-12 rounded-[1.2rem] bg-slate-900 flex items-center justify-center text-white font-black italic text-sm shadow-lg">
-                          {member.name.substring(0,2).toUpperCase()}
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-slate-800 tracking-tight italic uppercase leading-none">{member.name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">{member.role}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-10 py-8">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2.5 h-2.5 rounded-full ${member.status === 'Apto' ? 'bg-emerald-500' : 'bg-orange-500'} animate-pulse shadow-sm`} />
-                        <span className="text-[10px] font-black uppercase text-slate-600 italic">{member.status}</span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-8">
-                      <div className="flex items-center gap-3">
-                        <Activity size={16} className="text-blue-500" />
-                        <span className="text-sm font-black text-slate-800 italic">{member.perf}</span>
-                      </div>
-                    </td>
-                    <td className="px-10 py-8 text-right">
-                      <div className="flex items-center justify-end gap-3 text-slate-300 group-hover:text-blue-600 transition-all">
-                        <span className="text-[9px] font-black uppercase tracking-widest italic">Ver 360º</span>
-                        <ChevronRight size={20} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <main className="p-4 max-w-7xl mx-auto w-full">
+
+          {/* BARRA DE BUSCA E FILTROS (Estilo Command Center) */}
+          <div className="flex gap-3 mb-6">
+            <div className="flex-1 relative">
+              <input 
+                type="text" 
+                placeholder="Buscar por nome, posição ou status..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-[#1e293b]/50 border border-slate-700 text-sm text-white rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+              />
+              <span className="absolute left-3 top-3.5 text-slate-500">🔍</span>
+            </div>
+            <button className="px-4 py-2 bg-[#1e293b] border border-slate-700 rounded-xl text-slate-300 hover:text-white hover:border-blue-500 transition">
+              <span className="text-lg">⚡</span>
+            </button>
           </div>
-        </div>
 
-        {/* Insight Jules Master */}
-        <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white flex items-center gap-8 shadow-2xl relative overflow-hidden group">
-           <Activity size={120} className="absolute -right-5 -bottom-5 text-white/5 group-hover:scale-110 transition-transform duration-1000" />
-           <div className="w-14 h-14 bg-blue-600 rounded-[1.5rem] flex items-center justify-center font-black italic text-xl shadow-lg shadow-blue-500/20 relative z-10">J</div>
-           <div className="relative z-10">
-             <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.4em] mb-2 italic">Jules / Inteligência Patrimonial</p>
-             <p className="text-sm font-medium leading-tight italic text-slate-300">
-               "Você tem <span className="text-white font-bold underline italic">126 atletas na Base</span>. O engajamento médio subiu 15%. Clique em qualquer membro para validar os KPIs individuais."
-             </p>
-           </div>
-        </div>
-      </main>
+          {/* LISTA DE MEMBROS (Compacta e Estilizada) */}
+          <div className="bg-[#1e293b]/30 border border-slate-800 rounded-xl overflow-hidden">
+            
+            {/* Cabeçalho da Lista */}
+            <div className="grid grid-cols-12 gap-4 p-3 border-b border-slate-800 bg-[#0f172a]/50 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+              <div className="col-span-5 md:col-span-4 pl-2">Membro / Posição</div>
+              <div className="col-span-3 md:col-span-3 text-center">Status / Saúde</div>
+              <div className="col-span-2 md:col-span-3 text-center">Performance</div>
+              <div className="col-span-2 md:col-span-2 text-right pr-2">Ação</div>
+            </div>
+
+            {/* Linhas da Lista */}
+            <div className="divide-y divide-slate-800/50">
+              {filteredMembers.map((member) => (
+                <div 
+                  key={member.id} 
+                  className="grid grid-cols-12 gap-4 p-3 items-center hover:bg-white/5 transition duration-200 group"
+                >
+                  
+                  {/* Coluna 1: Avatar e Nome */}
+                  <div className="col-span-5 md:col-span-4 flex items-center gap-3 pl-2">
+                    <div className="h-10 w-10 rounded-full bg-[#0f172a] border border-slate-700 flex items-center justify-center text-xs font-bold text-blue-400 group-hover:border-blue-500 transition">
+                      {member.initials}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-200 group-hover:text-white">{member.name}</h3>
+                      <p className="text-[10px] text-slate-500 uppercase font-mono">{member.role}</p>
+                    </div>
+                  </div>
+
+                  {/* Coluna 2: Status (Badge) */}
+                  <div className="col-span-3 md:col-span-3 flex flex-col items-center justify-center">
+                    <span className={`
+                      text-[9px] px-2 py-0.5 rounded-full font-bold uppercase border mb-1
+                      ${member.status === 'APTO' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : ''}
+                      ${member.status === 'DM' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : ''}
+                      ${member.status === 'SUSPENSO' ? 'bg-red-500/10 text-red-400 border-red-500/20' : ''}
+                    `}>
+                      {member.status === 'APTO' ? '● APTO' : member.status}
+                    </span>
+                    {/* Barra de Saúde Miniatura */}
+                    <div className="w-16 h-1 bg-slate-700 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${member.health > 80 ? 'bg-emerald-500' : 'bg-orange-500'}`} 
+                        style={{ width: `${member.health}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Coluna 3: Performance (Gráfico Texto) */}
+                  <div className="col-span-2 md:col-span-3 flex items-center justify-center gap-2">
+                    <span className="text-xs font-mono font-bold text-indigo-400">
+                      ⚡ {member.perf}%
+                    </span>
+                  </div>
+
+                  {/* Coluna 4: Ação */}
+                  <div className="col-span-2 md:col-span-2 flex justify-end pr-2">
+                    <button 
+                      onClick={() => navigate('/perfil-membro')}
+                      className="text-[10px] font-bold text-slate-400 hover:text-white border border-slate-700 hover:border-blue-500 rounded px-3 py-1.5 transition flex items-center gap-1 bg-[#0f172a]"
+                    >
+                      VER 360° <span className="text-blue-500">›</span>
+                    </button>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+
+            {/* Empty State se filtro não achar nada */}
+            {filteredMembers.length === 0 && (
+              <div className="p-8 text-center text-slate-500 text-sm">
+                Nenhum membro encontrado com este termo.
+              </div>
+            )}
+
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
