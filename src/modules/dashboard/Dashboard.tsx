@@ -1,71 +1,15 @@
-import { Users, UserCheck, Calendar, DollarSign } from 'lucide-react';
-import { useDashboardStats } from './useDashboardStats';
-import StatCard from '../../shared/components/StatCard';
+import React from 'react';
+import DashboardMaster from './DashboardMaster';
 
-const Dashboard = () => {
-  const { stats, loading } = useDashboardStats();
+/**
+ * PONTO DE ENTRADA DO DASHBOARD
+ * Este arquivo funciona apenas como uma "Ponte" (Wrapper).
+ * Ele garante que o App.tsx consiga carregar a nova interface do DashboardMaster.
+ */
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
+const Dashboard: React.FC = () => {
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold text-slate-800">Dashboard</h2>
-        <p className="text-slate-500 mt-1">Visão geral do Joinville Gladiators</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Total de Atletas"
-          value={stats.totalAthletes}
-          icon={Users}
-          description="registrados no banco"
-        />
-        <StatCard
-          title="Atletas Ativos"
-          value={stats.activeAthletes}
-          icon={UserCheck}
-          color="green"
-          description="prontos para treinar"
-        />
-        <StatCard
-          title="Próximos Eventos"
-          value={stats.upcomingEvents}
-          icon={Calendar}
-          color="purple"
-          description="calendário ativo"
-        />
-        <StatCard
-          title="Receita Mensal"
-          value={`R$ ${stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-          icon={DollarSign}
-          color="yellow"
-          description="total recebido este mês"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Frequência nos Treinos</h3>
-          <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-300 text-slate-400">
-            Gráfico em desenvolvimento
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4">Financeiro Anual</h3>
-          <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-300 text-slate-400">
-            Gráfico em desenvolvimento
-          </div>
-        </div>
-      </div>
-    </div>
+    <DashboardMaster />
   );
 };
 
