@@ -11,7 +11,7 @@ const NexusPortal: React.FC = () => {
   const perspectives = [
     { id: 'presidency', title: 'Presidência', icon: Shield, path: '/dashboard', color: 'from-slate-800 to-slate-900' },
     { id: 'finance', title: 'Dir. Financeira', icon: Landmark, path: '/financeiro', color: 'from-emerald-900/40 to-slate-900' },
-    { id: 'commercial', title: 'Dir. Comercial', icon: Target, path: '/comercial', color: 'from-blue-900/40 to-slate-900' }, // VALIDAÇÃO AQUI
+    { id: 'commercial', title: 'Dir. Comercial', icon: Target, path: '/dashboard', color: 'from-blue-900/40 to-slate-900' },
     { id: 'human-capital', title: 'Cap. Humano', icon: Users, path: '/human-capital', color: 'from-indigo-900/40 to-slate-900' },
     { id: 'marketing', title: 'Creative Lab', icon: Zap, path: '/creative-lab', color: 'from-purple-900/40 to-slate-900' },
     { id: 'operations', title: 'Operações', icon: LayoutDashboard, path: '/dashboard', color: 'from-slate-800 to-slate-900' },
@@ -41,7 +41,7 @@ const NexusPortal: React.FC = () => {
                   <p.icon size={32} className="text-white group-hover:text-blue-400" />
                 </div>
               </div>
-              <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-100 transition-opacity">
                 <p.icon size={160} />
               </div>
             </div>
