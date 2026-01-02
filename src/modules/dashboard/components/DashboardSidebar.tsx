@@ -11,26 +11,36 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
   const [persona, setPersona] = useState<string>('VISITANTE');
 
-  // Recupera a persona para definir permissões
+  // Recupera a persona para definir permissões na sidebar
   useEffect(() => {
     const saved = localStorage.getItem('nexus_persona');
     if (saved) setPersona(saved);
   }, []);
 
-  // PERMISSÃO: Quem pode ver o TRYOUT LAB?
-  // Apenas Nível Executivo (Presidente, Vice, Diretor Executivo)
-  const canAccessTryout = ['PRESIDENTE', 'VICE_PRES', 'DIRETOR', 'MASTER'].includes(persona);
+  // Define tipos de persona para controle de acesso/itens de menu
+  const isExecutiveOrSports = ['PRESIDENTE', 'VICE_PRES', 'DIRETOR', 'HC', 'COORD_ATQ', 'COORD_DEF', 'COORD_ST', 'AUX_CT', 'MASTER'].includes(persona);
+  const isMarketingPersona = ['CMO', 'CCO'].includes(persona);
+  const canAccessTryout = ['PRESIDENTE', 'VICE_PRES', 'DIRETOR', 'MASTER', 'HC', 'COORD_ATQ', 'COORD_DEF'].includes(persona); // Quem pode gerenciar Tryout
 
   // Função para checar se o link está ativo
   const isActive = (path: string) => location.pathname === path;
 
-  // Lista de Navegação
-  const menuItems = [
+  // Itens de menu padrão (para Executive/Sports)
+  const defaultMenuItems = [
     { label: 'Visão Geral', path: '/dashboard', icon: '⚡' },
     { label: 'Financeiro', path: '/financeiro', icon: '💎' },
     { label: 'Capital Humano', path: '/human-capital', icon: '👥' },
     { label: 'Agenda / Operações', path: '/agenda', icon: '📅' },
-    { label: 'Estratégia & OKRs', path: '/configuracoes', icon: '🎯' },
+    { label: 'Estratégia & OKRs', path: '/configuracoes', icon: '🎯' }, // Entidade Settings está aqui por enquanto
+    { label: 'Elenco (Legacy)', path: '/elenco', icon: '🎽' }, // Adicionado para teste do módulo Athletes Light Mode
+  ];
+
+  // Itens de menu para a persona de Marketing
+  const marketingMenuItems = [
+    { label: 'Visão Geral (CMO)', path: '/dashboard', icon: '⚡' }, // Link para o Dashboard Marketing
+    { label: 'Agenda / Coberturas', path: '/agenda', icon: '📅' },
+    { label: 'Projetos & Metas', path: '/marketing/projetos-metas', icon: '🚀' }, // Futuro módulo Monday-like
+    { label: 'Creative Lab', path: '/creative-lab', icon: '🎨' },
   ];
 
   const handleNavigate = (path: string) => {
@@ -68,26 +78,46 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <button onClick={onClose} className="md:hidden text-gray-400">✕</button>
           </div>
 
-          {/* Links Principais */}
+          {/* Links de Navegação */}
           <nav className="flex-1 space-y-2">
-            {menuItems.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => handleNavigate(item.path)}
-                className={`
-                  w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all
-                  ${isActive(item.path) 
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'}
-                `}
-              >
-                <span className="text-lg">{item.icon}</span>
-                {item.label}
-              </button>
-            ))}
+            {isMarketingPersona ? (
+              // Itens de menu para Marketing
+              marketingMenuItems.map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => handleNavigate(item.path)}
+                  className={`
+                    w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all
+                    ${isActive(item.path) 
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' // Cor de destaque do Marketing
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'}
+                  `}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  {item.label}
+                </button>
+              ))
+            ) : (
+              // Itens de menu padrão (para outras personas)
+              defaultMenuItems.map((item) => (
+                <button
+                  key={item.path}
+                  onClick={() => handleNavigate(item.path)}
+                  className={`
+                    w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all
+                    ${isActive(item.path) 
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'}
+                  `}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  {item.label}
+                </button>
+              ))
+            )}
 
             {/* SEÇÃO ESPECIAL: TRYOUT LAB (Restrita) */}
-            {canAccessTryout && (
+            {canAccessTryout && !isMarketingPersona && ( // Não exibir Tryout Lab para Marketing, pois ele tem o Creative Lab
               <div className="pt-4 mt-4 border-t border-slate-800">
                 <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
                   Área Restrita
@@ -111,7 +141,7 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           {/* Footer */}
           <div className="mt-auto pt-6 border-t border-slate-800">
             <button 
-              onClick={() => navigate('/')}
+              onClick={() => handleNavigate('/')} // Volta para o NexusPortal para trocar de persona
               className="w-full flex items-center justify-center gap-2 py-3 border border-slate-700 rounded-xl text-xs font-bold text-slate-400 hover:text-white hover:border-indigo-500 transition-colors"
             >
               🔄 TROCAR PERSONA
@@ -122,5 +152,5 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     </>
   );
 };
-<button onClick={() => navigate('/creative-lab')}>🎨 Creative Lab</button>
+
 export default DashboardSidebar;
