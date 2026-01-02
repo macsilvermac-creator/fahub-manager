@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-
+import CreativeLab from './modules/marketing/CreativeLab';
+// ...
+<Route path="/creative-lab" element={<CreativeLab />} />
 /** 
  * PROTOCOLO NEXUS - INFRAESTRUTURA DE ALTA DISPONIBILIDADE
  * Estrutura mapeada conforme árvore de arquivos (modules/...)

@@ -122,5 +122,5 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     </>
   );
 };
-
+<button onClick={() => navigate('/creative-lab')}>🎨 Creative Lab</button>
 export default DashboardSidebar;
