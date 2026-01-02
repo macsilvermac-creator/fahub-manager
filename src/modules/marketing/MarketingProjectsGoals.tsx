@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Edit, Trash2, RotateCcw, Search, ExternalLink, 
-  AlertTriangle, Target, Clock 
+  AlertTriangle, Target 
 } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
 
@@ -105,14 +105,14 @@ const MarketingProjectsGoals: React.FC = () => {
             <h1 className="text-2xl font-bold text-orange-500 italic uppercase">Projetos & Metas (CMO)</h1>
           </div>
         </div>
-        <button onClick={() => { setShowForm(!showForm); setEditingProject(null); }} className="bg-green-600 px-4 py-2 rounded-lg font-bold hover:bg-green-500">
+        <button onClick={() => { setShowForm(!showForm); setEditingProject(null); }} className="bg-green-600 px-4 py-2 rounded-lg font-bold hover:bg-green-500 transition-all active:scale-95 shadow-lg shadow-green-500/20">
           {showForm ? 'Fechar' : '+ Novo Projeto'}
         </button>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-6 space-y-6">
+      <main className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
         {showForm && (
-          <div className="bg-[#1e293b]/50 border border-slate-700 rounded-xl p-6">
+          <div className="bg-[#1e293b]/50 border border-slate-700 rounded-[2.5rem] p-8 animate-in fade-in slide-in-from-top-4 duration-500 shadow-2xl">
             <ProjectForm 
               initialData={editingProject} 
               onSubmit={handleSaveProject} 
@@ -121,16 +121,16 @@ const MarketingProjectsGoals: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-[#0f172a] border border-slate-800 rounded-xl p-4 shadow-xl">
-          <div className="flex justify-between mb-4">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Kanban Tático</h3>
-            <div className="flex items-center gap-2 bg-black/20 px-3 py-1 rounded-md border border-slate-800">
+        <div className="bg-[#0f172a] border border-slate-800 rounded-[2.5rem] p-6 shadow-xl relative overflow-hidden">
+          <div className="flex justify-between items-center mb-6 relative z-10">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">Kanban Tático</h3>
+            <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-xl border border-white/5">
               <Search size={14} className="text-slate-500" />
-              <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Filtrar..." className="bg-transparent outline-none text-xs w-32" />
+              <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Filtrar por nome..." className="bg-transparent outline-none text-xs w-48 font-bold italic" />
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
             {kanbanColumns.map(status => (
               <KanbanColumn 
                 key={status} 
@@ -146,18 +146,18 @@ const MarketingProjectsGoals: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-[#0f172a] border border-slate-800 rounded-xl p-4">
-          <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Biblioteca de Concluídos</h3>
-          <div className="space-y-2">
+        <div className="bg-[#0f172a] border border-slate-800 rounded-[2.5rem] p-6 shadow-xl">
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic mb-6">Biblioteca de Concluídos</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {completedProjects.map(proj => (
-              <div key={proj.id} className="bg-white/5 p-3 rounded-lg flex justify-between items-center border border-white/5">
+              <div key={proj.id} className="bg-white/5 p-4 rounded-2xl flex justify-between items-center border border-white/5 hover:border-blue-500/30 transition-all group">
                 <div>
-                  <h5 className="text-sm font-bold italic">{proj.name}</h5>
-                  <p className="text-[10px] text-slate-500 italic"><Target size={10} className="inline mr-1" /> {proj.kpis}</p>
+                  <h5 className="text-sm font-black italic tracking-tight text-white">{proj.name}</h5>
+                  <p className="text-[10px] text-slate-500 italic mt-1 font-bold"><Target size={10} className="inline mr-1 text-blue-500" /> {proj.kpis}</p>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleReactivateProject(proj)} className="p-1 text-slate-400 hover:text-white"><RotateCcw size={16} /></button>
-                  <button className="p-1 text-slate-400 hover:text-white"><ExternalLink size={16} /></button>
+                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => handleReactivateProject(proj)} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"><RotateCcw size={16} /></button>
+                  <button className="p-2 bg-white/5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"><ExternalLink size={16} /></button>
                 </div>
               </div>
             ))}
@@ -181,35 +181,63 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ initialData, onSubmit, onCanc
   const [responsable] = useState(initialData?.responsable || 'CMO');
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit({ name, description, type, priority, startDate, endDate, kpis, responsable }); }} className="grid grid-cols-2 gap-4">
-      <div className="col-span-2"><input placeholder="Nome" value={name} onChange={e => setName(e.target.value)} className="w-full bg-slate-900 p-2 rounded border border-slate-700" /></div>
-      <div className="col-span-2"><textarea placeholder="Descrição" value={description} onChange={e => setDescription(e.target.value)} className="w-full bg-slate-900 p-2 rounded border border-slate-700" /></div>
-      <select value={type} onChange={e => setType(e.target.value as any)} className="bg-slate-900 p-2 rounded border border-slate-700">
-        <option value="CAMPAIGN">Campanha</option><option value="GROWTH">Crescimento</option>
-      </select>
-      <select value={priority} onChange={e => setPriority(e.target.value as any)} className="bg-slate-900 p-2 rounded border border-slate-700">
-        <option value="LOW">Baixa</option><option value="HIGH">Alta</option>
-      </select>
-      <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-slate-900 p-2 rounded border border-slate-700" />
-      <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-slate-900 p-2 rounded border border-slate-700" />
-      <div className="col-span-2"><input placeholder="KPIs" value={kpis} onChange={e => setKpis(e.target.value)} className="w-full bg-slate-900 p-2 rounded border border-slate-700" /></div>
-      <div className="col-span-2 flex justify-end gap-2"><button type="button" onClick={onCancel}>Cancelar</button><button type="submit" className="bg-green-600 px-4 py-1 rounded">Salvar</button></div>
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit({ name, description, type, priority, startDate, endDate, kpis, responsable }); }} className="grid grid-cols-2 gap-6">
+      <div className="col-span-2">
+        <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Nome da Iniciativa</label>
+        <input required value={name} onChange={e => setName(e.target.value)} className="w-full bg-slate-900/50 p-3 rounded-xl border border-slate-700 text-white font-bold outline-none focus:border-orange-500 transition-colors" />
+      </div>
+      <div className="col-span-2">
+        <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Descrição Estratégica</label>
+        <textarea required value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-slate-900/50 p-3 rounded-xl border border-slate-700 text-white font-bold outline-none focus:border-orange-500 transition-colors resize-none" />
+      </div>
+      <div>
+        <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Tipo</label>
+        <select value={type} onChange={e => setType(e.target.value as any)} className="w-full bg-slate-900/50 p-3 rounded-xl border border-slate-700 text-white font-bold outline-none">
+          <option value="CAMPAIGN">Campanha</option><option value="GROWTH">Crescimento</option>
+          <option value="EVENT">Evento</option><option value="PARTNERSHIP">Parceria</option>
+        </select>
+      </div>
+      <div>
+        <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">Prioridade</label>
+        <select value={priority} onChange={e => setPriority(e.target.value as any)} className="w-full bg-slate-900/50 p-3 rounded-xl border border-slate-700 text-white font-bold outline-none">
+          <option value="LOW">Baixa</option><option value="MEDIUM">Média</option><option value="HIGH">Alta</option><option value="CRITICAL">Crítica</option>
+        </select>
+      </div>
+      <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-slate-900/50 p-3 rounded-xl border border-slate-700 text-white font-bold outline-none" />
+      <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-slate-900/50 p-3 rounded-xl border border-slate-700 text-white font-bold outline-none" />
+      <div className="col-span-2">
+        <label className="text-[10px] font-black uppercase text-slate-500 mb-2 block">KPIs de Sucesso</label>
+        <input placeholder="Ex: 200 novos sócios" value={kpis} onChange={e => setKpis(e.target.value)} className="w-full bg-slate-900/50 p-3 rounded-xl border border-slate-700 text-white font-bold outline-none" />
+      </div>
+      <div className="col-span-2 flex justify-end gap-3 pt-4 border-t border-white/5">
+        <button type="button" onClick={onCancel} className="px-6 py-2 text-xs font-black uppercase text-slate-400 hover:text-white transition-colors italic">Cancelar</button>
+        <button type="submit" className="bg-green-600 px-8 py-2 rounded-xl text-xs font-black uppercase italic shadow-lg shadow-green-500/10">Confirmar Projeto</button>
+      </div>
     </form>
   );
 };
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({ title, status, projects, onEdit, onDelete, onDrop, onMoveToCompleted }) => {
   return (
-    <div onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e.dataTransfer.getData('projectId'), status)} className="bg-white/5 rounded-xl p-4 min-h-[300px] border-t-2 border-orange-500">
-      <h4 className="text-[10px] font-black uppercase text-slate-500 mb-4">{title}</h4>
-      <div className="space-y-3">
+    <div onDragOver={e => e.preventDefault()} onDrop={e => onDrop(e.dataTransfer.getData('projectId'), status)} className="bg-white/5 rounded-2xl p-4 min-h-[400px] border border-white/5 flex flex-col">
+      <h4 className="text-[9px] font-black uppercase text-slate-500 mb-6 tracking-widest flex items-center justify-between pl-1">
+        {title} <span className="bg-white/5 px-2 py-0.5 rounded-md text-white">{projects.length}</span>
+      </h4>
+      <div className="space-y-4 flex-1">
         {projects.map(proj => (
-          <div key={proj.id} draggable onDragStart={e => e.dataTransfer.setData('projectId', proj.id)} className="bg-[#0f172a] p-3 rounded-lg border border-slate-700 group cursor-grab">
-            <div className="flex justify-between"><h5 className="text-xs font-bold italic">{proj.name}</h5><AlertTriangle size={10} className="text-orange-500" /></div>
-            <div className="flex justify-between mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => onEdit(proj)}><Edit size={12}/></button>
-              <button onClick={() => onDelete(proj.id)}><Trash2 size={12}/></button>
-              <button onClick={() => onMoveToCompleted(proj)} className="text-[9px] font-bold text-emerald-500 uppercase italic">Arquivar</button>
+          <div key={proj.id} draggable onDragStart={e => e.dataTransfer.setData('projectId', proj.id)} className="bg-[#0f172a] p-4 rounded-xl border border-white/10 group cursor-grab active:cursor-grabbing hover:border-orange-500/50 transition-all shadow-lg">
+            <div className="flex justify-between items-start">
+              <h5 className="text-[11px] font-black italic tracking-tight text-white uppercase">{proj.name}</h5>
+              {proj.priority === 'CRITICAL' && <AlertTriangle size={12} className="text-red-500 animate-pulse" />}
+            </div>
+            <p className="text-[9px] text-slate-500 italic mt-2 leading-relaxed">{proj.description.slice(0, 60)}...</p>
+            <div className="flex justify-between items-center mt-4">
+              <span className="text-[8px] font-black text-slate-600 uppercase">Prazo: {proj.endDate}</span>
+              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => onEdit(proj)} className="p-1 hover:text-orange-500 transition-colors"><Edit size={12}/></button>
+                <button onClick={() => onDelete(proj.id)} className="p-1 hover:text-red-500 transition-colors"><Trash2 size={12}/></button>
+                <button onClick={() => onMoveToCompleted(proj)} className="text-[9px] font-black text-emerald-500 uppercase italic hover:underline">Arquivar</button>
+              </div>
             </div>
           </div>
         ))}
@@ -218,7 +246,6 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({ title, status, projects, on
   );
 };
 
-// Types omitidos para brevidade no bloco, mas mantidos na lógica do componente.
 interface ProjectFormProps { initialData?: ProjectGoal | null; onSubmit: (data: Omit<ProjectGoal, 'id' | 'status'>) => void; onCancel: () => void; }
 interface KanbanColumnProps { title: string; status: ProjectGoal['status']; projects: ProjectGoal[]; onEdit: (p: ProjectGoal) => void; onDelete: (id: string) => void; onDrop: (id: string, s: ProjectGoal['status']) => void; onMoveToCompleted: (p: ProjectGoal) => void; }
 
