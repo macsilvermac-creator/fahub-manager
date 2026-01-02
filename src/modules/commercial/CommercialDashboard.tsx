@@ -2,9 +2,13 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, Beaker, Briefcase, Users, 
-  ShoppingBag, Landmark, ArrowRight, Search, Sparkles
+  ShoppingBag, Landmark, ArrowRight, Sparkles
 } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
+
+/** * GROWTH MACHINE - PROTOCOLO FAHUB
+ * Dashboard de Execução Comercial e Expansão de Receita.
+ */
 
 const CommercialDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -20,7 +24,7 @@ const CommercialDashboard: React.FC = () => {
     <div className="flex h-screen bg-[#020617] text-white font-sans overflow-hidden italic">
       <aside className="w-64 bg-[#0a0f1e] border-r border-white/5 flex flex-col shrink-0">
         <div className="p-8">
-          <div className="w-12 h-12 bg-blue-600 rounded-2xl shadow-lg mb-4 flex items-center justify-center shadow-blue-500/20 italic">
+          <div className="w-12 h-12 bg-blue-600 rounded-2xl shadow-lg mb-4 flex items-center justify-center shadow-blue-500/20">
             <LayoutDashboard size={24} className="text-white" />
           </div>
           <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Módulo Comercial</h2>
@@ -65,7 +69,7 @@ const CommercialDashboard: React.FC = () => {
           ))}
         </div>
       </main>
-      <JulesAgent context="COMMERCIAL" />
+      <JulesAgent context="DASHBOARD" />
     </div>
   );
 };
