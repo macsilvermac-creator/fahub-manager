@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  DollarSign, Landmark, CreditCard, Receipt, 
-  Settings, FileSearch, Download, PieChart,
-  ArrowRight, TrendingUp, AlertCircle, Wallet
+  DollarSign, Landmark, Settings, FileSearch, 
+  Download, PieChart, ArrowRight, TrendingUp, 
+  AlertCircle, Wallet
 } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
 
@@ -60,8 +60,8 @@ const FinanceConsolidated: React.FC = () => {
       {/* SIDEBAR DE APOIO (Funcionalidades Secundárias) */}
       <aside className="w-20 hover:w-64 bg-[#0a0f1e] border-r border-white/5 flex flex-col transition-all duration-300 group z-50">
         <div className="p-6 flex items-center justify-center group-hover:justify-start gap-4">
-          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex-shrink-0"></div>
-          <span className="font-black italic text-xs uppercase opacity-0 group-hover:opacity-100 transition-opacity">Financeiro Dir.</span>
+          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex-shrink-0 shadow-[0_0_15px_rgba(5,150,105,0.4)]"></div>
+          <span className="font-black italic text-xs uppercase opacity-0 group-hover:opacity-100 transition-opacity">Financeiro Master</span>
         </div>
         
         <nav className="flex-1 px-4 space-y-2 mt-8">
@@ -134,7 +134,7 @@ const FinanceConsolidated: React.FC = () => {
 
               {/* Elemento Decorativo HUD */}
               <div className="absolute bottom-6 right-6 opacity-5 font-black text-8xl italic uppercase pointer-events-none select-none">
-                {container.id.slice(0, 4)}
+                {container.id.slice(0, 3)}
               </div>
             </div>
           ))}
