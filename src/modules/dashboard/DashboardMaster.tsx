@@ -1,36 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import DashboardSidebar from './components/DashboardSidebar';
+import JulesAgent from '../shared/components/JulesAgent';
 
 const DashboardMaster: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [persona, setPersona] = useState<string>('VISITANTE');
   const [modality, setModality] = useState<string>('TODOS');
-  
-  // Estado do Jules (O Insight da IA)
-  const [julesInsight, setJulesInsight] = useState<{visible: boolean, type: string, message: string} | null>(null);
 
-  // Carrega a Persona e Simula um Insight do Jules após 2 segundos
+  // Carrega a Persona ao iniciar
   useEffect(() => {
     const savedPersona = localStorage.getItem('nexus_persona');
     if (savedPersona) {
       setPersona(savedPersona);
     }
-
-    // SIMULAÇÃO: Jules detectando algo crítico após o login
-    setTimeout(() => {
-      setJulesInsight({
-        visible: true,
-        type: 'FINANCE_ALERT',
-        message: 'Detectei um padrão de atraso de 15% nas mensalidades da Base este mês. Deseja disparar lembretes automáticos via WhatsApp?'
-      });
-    }, 1500);
   }, []);
-
-  const handleJulesAction = (action: 'APPROVE' | 'IGNORE') => {
-    console.log(`[JULES] Ação do Humano: ${action}`);
-    // Aqui conectaremos com a API (Vertex AI / Edge Function)
-    setJulesInsight(null); // Fecha o insight após decisão
-  };
 
   return (
     <div className="flex h-screen bg-[#020617] overflow-hidden text-white font-sans">
@@ -75,7 +58,7 @@ const DashboardMaster: React.FC = () => {
         </header>
 
         {/* 3. GRID 2x2 DO PROTOCOLO FAHUB */}
-        <main className="p-4 md:p-8 max-w-7xl mx-auto w-full mb-24"> {/* mb-24 para dar espaço ao Jules */}
+        <main className="p-4 md:p-8 max-w-7xl mx-auto w-full mb-24">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 h-full">
             
@@ -143,54 +126,15 @@ const DashboardMaster: React.FC = () => {
           </div>
         </main>
 
-        {/* 4. COMPONENTE JULES (IA AGENT) - RODAPÉ INTELIGENTE */}
-        {julesInsight && (
-          <div className="absolute bottom-6 left-0 right-0 px-4 flex justify-center z-50 animate-slide-up">
-            <div className="bg-[#0f172a]/90 backdrop-blur-xl border border-indigo-500/50 p-1 rounded-2xl shadow-[0_0_30px_rgba(99,102,241,0.3)] max-w-3xl w-full flex flex-col md:flex-row items-center gap-4 pr-2">
-              
-              {/* Avatar Jules (Animado) */}
-              <div className="p-3 bg-indigo-600/20 rounded-xl border border-indigo-500/30 flex-shrink-0 relative group">
-                <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-20 group-hover:opacity-40 transition"></div>
-                <span className="text-2xl relative z-10">🤖</span>
-              </div>
-
-              {/* Texto do Insight */}
-              <div className="flex-1 py-2 text-center md:text-left">
-                <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest mb-1 flex items-center gap-2 justify-center md:justify-start">
-                  <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
-                  JULES INSIGHT
-                </p>
-                <p className="text-sm text-white font-medium leading-snug">
-                  {julesInsight.message}
-                </p>
-              </div>
-
-              {/* Botões de Decisão (Human-in-the-Loop) */}
-              <div className="flex gap-2 w-full md:w-auto">
-                <button 
-                  onClick={() => handleJulesAction('IGNORE')}
-                  className="flex-1 md:flex-none px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700 transition"
-                >
-                  IGNORAR
-                </button>
-                <button 
-                  onClick={() => handleJulesAction('APPROVE')}
-                  className="flex-1 md:flex-none px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold border border-indigo-400 shadow-lg shadow-indigo-500/20 transition transform hover:scale-105 flex items-center justify-center gap-2"
-                >
-                  <span>✓</span> AUTORIZAR
-                </button>
-              </div>
-
-            </div>
-          </div>
-        )}
+        {/* 4. JULES AGENT (GLOBAL) */}
+        <JulesAgent context="DASHBOARD" />
 
       </div>
     </div>
   );
 };
 
-// --- SUB-COMPONENTES VISUAIS ---
+// --- SUB-COMPONENTES ---
 
 const DashboardCard: React.FC<{title: string, color: string, children: React.ReactNode}> = ({ title, color, children }) => (
   <div className={`bg-[#1e293b]/60 backdrop-blur border ${color} rounded-2xl p-5 hover:bg-[#1e293b] transition duration-300 flex flex-col shadow-lg`}>
