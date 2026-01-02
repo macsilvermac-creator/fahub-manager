@@ -1,4 +1,4 @@
-type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -11,20 +11,46 @@ export interface Database {
     Tables: {
       athletes: {
         Row: {
-          id: number // ou string, dependendo do seu setup
+          id: string // Ajustado para string para bater com o UUID do Supabase e seu frontend
+          created_at: string
           name: string
-          // adicione outros campos aqui conforme sua tabela real
-          created_at?: string
+          position: string | null
+          number: number | null
+          status: string // 'ACTIVE', 'INJURED', etc.
+          height: string | null
+          weight: string | null
+          category: string | null // 'FULLPADS' ou 'FLAG'
+          photo_url: string | null
+          email: string | null
+          phone: string | null
         }
         Insert: {
-          id?: number
-          name: string
+          id?: string
           created_at?: string
+          name: string
+          position?: string | null
+          number?: number | null
+          status?: string
+          height?: string | null
+          weight?: string | null
+          category?: string | null
+          photo_url?: string | null
+          email?: string | null
+          phone?: string | null
         }
         Update: {
-          id?: number
-          name?: string
+          id?: string
           created_at?: string
+          name?: string
+          position?: string | null
+          number?: number | null
+          status?: string
+          height?: string | null
+          weight?: string | null
+          category?: string | null
+          photo_url?: string | null
+          email?: string | null
+          phone?: string | null
         }
       }
       finance_transactions: {
@@ -68,23 +94,23 @@ export interface Database {
           end_time?: string
         }
       }
-      // Adicionei as tabelas que vi na sua imagem:
       strategy_okrs: {
-        Row: { id: number; title: string; status: string }
-        Insert: { id?: number; title: string; status: string }
-        Update: { id?: number; title?: string; status?: string }
+        Row: { 
+          id: number
+          title: string
+          status: string 
+        }
+        Insert: { 
+          id?: number
+          title: string
+          status: string 
+        }
+        Update: { 
+          id?: number
+          title?: string
+          status?: string 
+        }
       }
     }
   }
 }
-Passo 2: Volte no seu arquivo src/lib/supabase.ts e faça essa pequena alteração para "iluminar" o código:
-
-import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/database.types'; // Importe o arquivo que criamos acima
-
-// Substitua suas strings pelas variáveis de ambiente se estiver usando
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-// AQUI ESTÁ O SEGREDO: Adicione <Database>
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
