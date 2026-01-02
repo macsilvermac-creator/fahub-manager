@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import DashboardSidebar from './components/DashboardSidebar';
-import { useNavigate } from 'react-router-dom';
 
 const DashboardMaster: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
