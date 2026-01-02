@@ -1,168 +1,155 @@
-import React, { useState, useEffect } from 'react';
-import { Save, X, UserPlus, Fingerprint, Activity } from 'lucide-react';
-import type { Athlete } from './types';
+import React, { useState } from 'react';
+import { 
+  User, Mail, Phone, Calendar, Shield, 
+  MapPin, Hash, Save, X 
+} from 'lucide-react';
+
+/** * FORMULÁRIO DE ATLETA - PROTOCOLO NEXUS
+ * Interface de cadastro e edição preservando a estética HUD Dark.
+ */
 
 interface AthleteFormProps {
-  initialData?: Athlete | null;
-  onSubmit: (data: Omit<Athlete, 'id'>) => void;
+  initialData?: any;
+  onSubmit: (data: any) => void;
   onCancel: () => void;
 }
 
-/**
- * COMPONENTE: WORKSHOP DE CADASTRO (FORMULÁRIO)
- * Padrão: Nexus Bio-Data Entry
- */
 const AthleteForm: React.FC<AthleteFormProps> = ({ initialData, onSubmit, onCancel }) => {
-  const [name, setName] = useState('');
-  const [position, setPosition] = useState('QB');
-  const [number, setNumber] = useState(0);
-  const [status, setStatus] = useState<Athlete['status']>('ACTIVE');
-  const [height, setHeight] = useState('');
-  const [weight, setWeight] = useState('');
-
-  // Efeito de Carregamento para Edição
-  useEffect(() => {
-    if (initialData) {
-      setName(initialData.name);
-      setPosition(initialData.position);
-      setNumber(initialData.number);
-      setStatus(initialData.status);
-      setHeight(initialData.height || '');
-      setWeight(initialData.weight || '');
-    }
-  }, [initialData]);
+  const [formData, setFormData] = useState(initialData || {
+    name: '',
+    email: '',
+    phone: '',
+    birthDate: '',
+    position: '',
+    number: '',
+    category: 'TACKLE',
+    status: 'ACTIVE'
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ name, position, number: Number(number), status, height, weight });
+    onSubmit(formData);
   };
 
-  const inputClass = "mt-1 block w-full bg-[#020617] border border-slate-700 rounded-xl p-3 text-sm text-white placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all";
-  const labelClass = "text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1";
-
   return (
-    <div className="p-6 md:p-8">
-      <div className="flex items-center gap-3 mb-8 border-b border-slate-800 pb-4">
-        <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
-          {initialData ? <Fingerprint size={24} /> : <UserPlus size={24} />}
+    <form onSubmit={handleSubmit} className="space-y-6 bg-[#0f172a] p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+      <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
+        <h3 className="text-xl font-black italic text-white flex items-center gap-2 uppercase tracking-tighter">
+          <User className="text-blue-500" size={24} /> 
+          {initialData ? 'Editar Registro' : 'Novo Atleta'}
+        </h3>
+        <button type="button" onClick={onCancel} className="text-slate-500 hover:text-white transition-colors">
+          <X size={24} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Informações Pessoais */}
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-2">Dados Cadastrais</label>
+          
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+            <input 
+              required
+              placeholder="Nome Completo"
+              value={formData.name}
+              onChange={e => setFormData({...formData, name: e.target.value})}
+              className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pl-12 text-sm font-bold text-white outline-none focus:border-blue-500 transition-all"
+            />
+          </div>
+
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+            <input 
+              required
+              type="email"
+              placeholder="E-mail"
+              value={formData.email}
+              onChange={e => setFormData({...formData, email: e.target.value})}
+              className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pl-12 text-sm font-bold text-white outline-none focus:border-blue-500 transition-all"
+            />
+          </div>
+
+          <div className="relative">
+            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+            <input 
+              placeholder="Telefone/WhatsApp"
+              value={formData.phone}
+              onChange={e => setFormData({...formData, phone: e.target.value})}
+              className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pl-12 text-sm font-bold text-white outline-none focus:border-blue-500 transition-all"
+            />
+          </div>
         </div>
-        <div>
-          <h3 className="text-xl font-black italic text-white uppercase tracking-tight">
-            {initialData ? 'Atualizar Perfil' : 'Ingressar Novo Atleta'}
-          </h3>
-          <p className="text-[10px] text-slate-500 uppercase font-mono">Registro de Ativo em Tempo Real</p>
+
+        {/* Informações Técnicas */}
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-2">Dados de Campo</label>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="relative">
+              <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+              <input 
+                placeholder="Posição (Ex: QB)"
+                value={formData.position}
+                onChange={e => setFormData({...formData, position: e.target.value})}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pl-12 text-sm font-bold text-white outline-none focus:border-blue-500 transition-all"
+              />
+            </div>
+            <div className="relative">
+              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+              <input 
+                placeholder="Nº Camisa"
+                value={formData.number}
+                onChange={e => setFormData({...formData, number: e.target.value})}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pl-12 text-sm font-bold text-white outline-none focus:border-blue-500 transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="relative">
+            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+            <input 
+              type="date"
+              value={formData.birthDate}
+              onChange={e => setFormData({...formData, birthDate: e.target.value})}
+              className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pl-12 text-sm font-bold text-white outline-none focus:border-blue-500 transition-all"
+            />
+          </div>
+
+          <div className="relative">
+            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+            <select 
+              value={formData.category}
+              onChange={e => setFormData({...formData, category: e.target.value})}
+              className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pl-12 text-sm font-bold text-white outline-none focus:border-blue-500 transition-all appearance-none"
+            >
+              <option value="TACKLE">Equipe Tackle</option>
+              <option value="FLAG">Equipe Flag</option>
+              <option value="DEVELOPMENT">Escola / Base</option>
+            </select>
+          </div>
         </div>
       </div>
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* NOME COMPLETO */}
-          <div className="md:col-span-2">
-            <label className={labelClass}>Nome Completo / Nickname</label>
-            <input 
-              required 
-              type="text" 
-              placeholder="Ex: Gabriel 'Tank' Silva"
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
-              className={inputClass} 
-            />
+
+      <div className="flex gap-4 pt-6 border-t border-white/5">
+        <button 
+          type="button" 
+          onClick={onCancel}
+          className="flex-1 py-4 rounded-2xl bg-white/5 text-slate-400 font-black uppercase italic tracking-widest hover:bg-white/10 transition-all"
+        >
+          Cancelar
+        </button>
+        <button 
+          type="submit"
+          className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black uppercase italic tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-blue-500/20"
+        >
+          <div className="flex items-center justify-center gap-2">
+            <Save size={18} /> Confirmar Cadastro
           </div>
-
-          {/* NÚMERO DA JERSEY */}
-          <div>
-            <label className={labelClass}>Número (#)</label>
-            <input 
-              required 
-              type="number" 
-              placeholder="00"
-              value={number} 
-              onChange={(e) => setNumber(Number(e.target.value))} 
-              className={inputClass} 
-            />
-          </div>
-
-          {/* POSIÇÃO TÁTICA */}
-          <div>
-            <label className={labelClass}>Posição Principal</label>
-            <select 
-              value={position} 
-              onChange={(e) => setPosition(e.target.value)} 
-              className={inputClass}
-            >
-              <option value="QB">QUARTERBACK (QB)</option>
-              <option value="WR">WIDE RECEIVER (WR)</option>
-              <option value="RB">RUNNING BACK (RB)</option>
-              <option value="TE">TIGHT END (TE)</option>
-              <option value="OL">OFFENSIVE LINE (OL)</option>
-              <option value="DL">DEFENSIVE LINE (DL)</option>
-              <option value="LB">LINEBACKER (LB)</option>
-              <option value="DB">DEFENSIVE BACK (DB)</option>
-              <option value="K">KICKER (K)</option>
-            </select>
-          </div>
-
-          {/* STATUS OPERACIONAL */}
-          <div>
-            <label className={labelClass}>Status de Prontidão</label>
-            <select 
-              value={status} 
-              onChange={(e) => setStatus(e.target.value as any)} 
-              className={inputClass}
-            >
-              <option value="ACTIVE">● ATIVO (DISPONÍVEL)</option>
-              <option value="INJURED">● D.M (LESIONADO)</option>
-              <option value="SUSPENDED">● SUSPENSO</option>
-              <option value="INACTIVE">● INATIVO</option>
-            </select>
-          </div>
-
-          {/* BIO-MÉTRICAS */}
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className={labelClass}>Altura</label>
-              <input 
-                type="text" 
-                placeholder="1.85m" 
-                value={height} 
-                onChange={(e) => setHeight(e.target.value)} 
-                className={inputClass} 
-              />
-            </div>
-            <div className="flex-1">
-              <label className={labelClass}>Peso</label>
-              <input 
-                type="text" 
-                placeholder="105kg" 
-                value={weight} 
-                onChange={(e) => setWeight(e.target.value)} 
-                className={inputClass} 
-              />
-            </div>
-          </div>
-
-        </div>
-
-        {/* BARRA DE AÇÕES */}
-        <div className="flex flex-col md:flex-row justify-end gap-4 mt-8 pt-6 border-t border-slate-800">
-          <button 
-            type="button" 
-            onClick={onCancel} 
-            className="px-6 py-3 rounded-xl border border-slate-700 text-slate-400 font-bold text-xs hover:bg-slate-800 hover:text-white transition-all flex items-center justify-center gap-2"
-          >
-            <X size={16} /> CANCELAR
-          </button>
-          <button 
-            type="submit" 
-            className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl font-bold text-xs transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 transform active:scale-95"
-          >
-            <Save size={16} /> 
-            {initialData ? 'CONFIRMAR ALTERAÇÕES' : 'EFETIVAR CADASTRO'}
-          </button>
-        </div>
-      </form>
-    </div>
+        </button>
+      </div>
+    </form>
   );
 };
 
