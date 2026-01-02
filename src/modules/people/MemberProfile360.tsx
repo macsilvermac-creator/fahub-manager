@@ -1,160 +1,201 @@
 import React, { useState } from 'react';
-import { 
-  ArrowLeft, ShieldAlert, TrendingUp, 
-  Award, FileText, CheckCircle2 
-} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import DashboardSidebar from '../dashboard/components/DashboardSidebar';
 
-/**
- * Ficha 360º Operacional - Protocolo FAHUB
- * Revisão Total de Estrutura JSX para Build de Produção.
- */
 const MemberProfile360: React.FC = () => {
   const navigate = useNavigate();
-  
-  // Estado para controle de abas operacionais
-  const [activeTab, setActiveTab] = useState<'stats' | 'docs'>('stats');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'performance' | 'docs'>('performance');
 
-  // Dados do Atleta - Gladiators Fit
-  const memberData = {
-    name: "Gabriel Silva",
-    position: "Linebacker",
-    number: "52",
-    stats: { physical: "92%", tactical: "85%", character: "95%" },
-    healthStatus: "Apto para Contato",
+  // Dados Mockados do Atleta
+  const athlete = {
+    name: 'Gabriel Silva',
+    number: '52',
+    role: 'Linebacker (LB)',
+    status: 'APTO',
+    height: '1.88m',
+    weight: '102kg',
+    category: 'Full Pads',
+    badge: 'Elite Squad'
   };
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] pb-20">
-      {/* Header Profile HUD */}
-      <div className="bg-slate-900 h-64 relative">
-        <nav className="p-6 flex items-center justify-between relative z-10">
+    <div className="flex h-screen bg-[#020617] overflow-hidden text-white font-sans">
+      
+      {/* 1. NAVEGAÇÃO LATERAL */}
+      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* 2. CONTEÚDO PRINCIPAL */}
+      <div className="flex-1 flex flex-col overflow-y-auto relative">
+        
+        {/* HEADER / CAPA DO PERFIL */}
+        <div className="relative h-48 w-full bg-gradient-to-r from-slate-900 via-[#0f172a] to-blue-900/20 border-b border-slate-800">
+          
+          {/* Botão Voltar (Absoluto) */}
           <button 
             onClick={() => navigate('/human-capital')}
-            className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all outline-none"
+            className="absolute top-4 left-4 z-10 p-2 bg-black/30 hover:bg-black/60 rounded-full text-white backdrop-blur border border-white/10 transition"
           >
-            <ArrowLeft size={20} />
+            ← Voltar
           </button>
-          <div className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase italic shadow-lg">
-            Gladiators Fit: Elite
-          </div>
-        </nav>
 
-        {/* Avatar e Infos Centrais */}
-        <div className="absolute -bottom-16 left-10 flex items-end gap-8">
-          <div className="w-40 h-40 rounded-[2.5rem] bg-slate-800 border-8 border-[#F1F5F9] shadow-2xl flex items-center justify-center overflow-hidden">
-             <span className="text-4xl font-black text-white italic">GS</span>
+          {/* Badge de Nível (Top Right) */}
+          <div className="absolute top-4 right-4 bg-emerald-600/20 border border-emerald-500/50 text-emerald-400 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+            {athlete.badge}
           </div>
-          <div className="pb-4">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">
-              {memberData.name} <span className="text-blue-600">#{memberData.number}</span>
-            </h1>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.3em] mt-2 italic">{memberData.position}</p>
+
+          {/* Container do Avatar e Nome (Sobreposto) */}
+          <div className="absolute -bottom-12 left-6 md:left-10 flex items-end gap-6">
+            
+            {/* Avatar Quadrado com Glow */}
+            <div className="h-32 w-32 bg-[#020617] rounded-2xl border-2 border-slate-700 shadow-2xl flex items-center justify-center relative overflow-hidden group">
+               <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-transparent"></div>
+               <span className="text-4xl font-black italic text-slate-600 group-hover:text-blue-500 transition">GS</span>
+            </div>
+            
+            {/* Texto de Identidade */}
+            <div className="mb-2">
+              <h1 className="text-3xl md:text-4xl font-black italic text-white leading-none flex items-center gap-2">
+                {athlete.name} 
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">#{athlete.number}</span>
+              </h1>
+              <p className="text-xs text-slate-400 uppercase tracking-[0.2em] font-bold mt-1 pl-1">
+                {athlete.role} • {athlete.category}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <main className="max-w-[1400px] mx-auto px-10 pt-24 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Coluna de Status e Saúde */}
-        <div className="space-y-6">
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2 italic text-center">
-              <ShieldAlert size={14} className="text-emerald-500" /> Status de Disponibilidade
-            </h3>
-            <div className="flex items-center gap-4 p-5 bg-emerald-50 rounded-3xl border border-emerald-100">
-              <CheckCircle2 className="text-emerald-600" size={24} />
-              <span className="text-sm font-black text-emerald-900 uppercase italic tracking-tight">{memberData.healthStatus}</span>
+        {/* CORPO DO PERFIL (Grid Layout) */}
+        <main className="p-4 md:p-8 mt-12 max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* COLUNA ESQUERDA: STATUS & BIO (30%) */}
+          <div className="space-y-4">
+            
+            {/* Card de Disponibilidade */}
+            <div className="bg-[#1e293b]/40 border border-emerald-500/30 rounded-xl p-5 shadow-lg relative overflow-hidden">
+               <div className="absolute right-0 top-0 p-2 opacity-10">
+                 <svg className="w-16 h-16 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+               </div>
+               <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mb-2">Status Oficial</p>
+               <div className="flex items-center gap-2">
+                 <span className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                 <h2 className="text-xl font-bold text-white">APTO PARA CONTATO</h2>
+               </div>
+            </div>
+
+            {/* Card Métricas Físicas (Pro-Style) */}
+            <div className="bg-[#1e293b]/40 border border-slate-800 rounded-xl p-5">
+              <h3 className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4 border-b border-slate-700 pb-2">
+                Métricas Físicas
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-[#0f172a] p-3 rounded-lg border border-slate-700/50">
+                   <p className="text-[10px] text-slate-500">ALTURA</p>
+                   <p className="text-lg font-mono font-bold text-blue-300">{athlete.height}</p>
+                </div>
+                <div className="bg-[#0f172a] p-3 rounded-lg border border-slate-700/50">
+                   <p className="text-[10px] text-slate-500">PESO</p>
+                   <p className="text-lg font-mono font-bold text-blue-300">{athlete.weight}</p>
+                </div>
+                <div className="bg-[#0f172a] p-3 rounded-lg border border-slate-700/50">
+                   <p className="text-[10px] text-slate-500">40 YARDS</p>
+                   <p className="text-lg font-mono font-bold text-white">4.8s</p>
+                </div>
+                <div className="bg-[#0f172a] p-3 rounded-lg border border-slate-700/50">
+                   <p className="text-[10px] text-slate-500">BENCH</p>
+                   <p className="text-lg font-mono font-bold text-white">100kg</p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="bg-[#0F172A] p-8 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden group">
-             <TrendingUp size={150} className="absolute -right-10 -bottom-10 text-white/5 group-hover:scale-110 transition-transform duration-1000" />
-             <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-8 italic">Métricas Pro-Style</h3>
-             <div className="space-y-8 relative z-10">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                    <span className="text-slate-400 italic">Força e Condição</span>
-                    <span className="text-blue-400">{memberData.stats.physical}</span>
-                  </div>
-                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" style={{ width: memberData.stats.physical }} />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
-                    <span className="text-slate-400 italic">QI Tático (Playbook)</span>
-                    <span className="text-emerald-400">{memberData.stats.tactical}</span>
-                  </div>
-                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: memberData.stats.tactical }} />
-                  </div>
-                </div>
-             </div>
-          </div>
-        </div>
-
-        {/* Painel Central Operacional */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-            <div className="flex border-b border-slate-50">
+          {/* COLUNA DIREITA: HISTÓRICO & ABAS (70%) */}
+          <div className="md:col-span-2">
+            
+            {/* TABS SWITCHER */}
+            <div className="flex border-b border-slate-800 mb-6">
               <button 
-                onClick={() => setActiveTab('stats')}
-                className={`flex-1 py-6 text-[10px] font-black uppercase tracking-widest transition-all italic outline-none ${activeTab === 'stats' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/20' : 'text-slate-400 hover:bg-slate-50'}`}
+                onClick={() => setActiveTab('performance')}
+                className={`px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2 
+                  ${activeTab === 'performance' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-300'}
+                `}
               >
                 Histórico de Performance
               </button>
               <button 
                 onClick={() => setActiveTab('docs')}
-                className={`flex-1 py-6 text-[10px] font-black uppercase tracking-widest transition-all italic outline-none ${activeTab === 'docs' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/20' : 'text-slate-400 hover:bg-slate-50'}`}
+                className={`px-6 py-3 text-xs font-bold uppercase tracking-wider transition-all border-b-2
+                  ${activeTab === 'docs' ? 'border-blue-500 text-blue-400' : 'border-transparent text-slate-500 hover:text-slate-300'}
+                `}
               >
                 Contratos e Docs
               </button>
             </div>
 
-            <div className="p-8">
-              {activeTab === 'stats' ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-6 bg-slate-50 rounded-[2rem] border border-slate-100 hover:border-blue-200 transition-all cursor-pointer group">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm group-hover:bg-blue-600 group-hover:text-white transition-all">
-                          <Award size={20} />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black uppercase italic text-slate-800">Avaliação Técnica - Semana {i}</p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase mt-1 italic tracking-widest">Responsável: HC Jules</p>
-                        </div>
-                      </div>
-                      <span className="text-sm font-black text-blue-600 italic group-hover:scale-110 transition-transform">Grade: A-</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 hover:border-blue-400 cursor-pointer transition-all group">
-                    <FileText size={32} className="mb-3 group-hover:text-blue-600 transition-colors" />
-                    <span className="text-[10px] font-black uppercase italic tracking-widest">Termo de Atleta.pdf</span>
+            {/* CONTEÚDO DAS ABAS */}
+            <div className="bg-[#1e293b]/20 rounded-xl min-h-[300px]">
+              
+              {activeTab === 'performance' && (
+                <div className="space-y-3">
+                  {/* Item de Histórico 1 */}
+                  <div className="p-4 bg-[#1e293b]/40 border border-slate-800 rounded-lg flex justify-between items-center hover:bg-[#1e293b] transition group cursor-pointer">
+                     <div className="flex items-start gap-4">
+                       <div className="h-10 w-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 group-hover:border-indigo-500 transition">
+                         🏆
+                       </div>
+                       <div>
+                         <h4 className="text-sm font-bold text-white">Avaliação Técnica - Semana 1</h4>
+                         <p className="text-[10px] text-slate-500 uppercase">Responsável: HC Jules</p>
+                       </div>
+                     </div>
+                     <div className="text-right">
+                       <span className="block text-xl font-black text-indigo-400">A-</span>
+                       <span className="text-[10px] text-slate-500">Grade</span>
+                     </div>
+                  </div>
+
+                  {/* Item de Histórico 2 */}
+                  <div className="p-4 bg-[#1e293b]/40 border border-slate-800 rounded-lg flex justify-between items-center hover:bg-[#1e293b] transition group cursor-pointer">
+                     <div className="flex items-start gap-4">
+                       <div className="h-10 w-10 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20 group-hover:border-blue-500 transition">
+                         📹
+                       </div>
+                       <div>
+                         <h4 className="text-sm font-bold text-white">Análise de Vídeo (Game 3)</h4>
+                         <p className="text-[10px] text-slate-500 uppercase">Responsável: Coord. Defesa</p>
+                       </div>
+                     </div>
+                     <div className="text-right">
+                       <span className="block text-xl font-black text-blue-400">92%</span>
+                       <span className="text-[10px] text-slate-500">Grade</span>
+                     </div>
                   </div>
                 </div>
               )}
+
+              {activeTab === 'docs' && (
+                <div className="space-y-3">
+                  {/* Item de Documento */}
+                  <div className="p-4 bg-[#1e293b]/40 border border-slate-800 rounded-lg flex justify-between items-center hover:bg-[#1e293b] transition">
+                     <div className="flex items-center gap-4">
+                       <span className="text-2xl">📄</span>
+                       <div>
+                         <h4 className="text-sm font-bold text-white">Contrato de Imagem 2026.pdf</h4>
+                         <p className="text-[10px] text-slate-500 uppercase">Assinado em 10/01/2026</p>
+                       </div>
+                     </div>
+                     <button className="text-xs text-blue-400 font-bold hover:underline">Baixar</button>
+                  </div>
+                </div>
+              )}
+
             </div>
+
           </div>
 
-          {/* Banner Master Operacional */}
-          <div className="bg-blue-600 rounded-[2.5rem] p-10 text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl shadow-blue-200 relative overflow-hidden">
-            <div className="relative z-10">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-2 italic text-blue-100 opacity-80">Ação Master Recomendada</h4>
-              <p className="text-lg font-bold italic leading-tight max-w-lg">O atleta atingiu o ápice físico. Iniciar transição para o Time Especial?</p>
-            </div>
-            <button 
-              onClick={() => alert("Transição aprovada.")}
-              className="bg-white text-blue-600 px-10 py-5 rounded-2xl text-[10px] font-black uppercase shadow-lg hover:bg-slate-50 active:scale-95 transition-all outline-none relative z-10"
-            >
-              Aprovar Transição
-            </button>
-          </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };
