@@ -18,14 +18,14 @@ const DashboardSidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   }, []);
 
   // Define tipos de persona para controle de acesso/itens de menu
-  const isExecutiveOrSports = ['PRESIDENTE', 'VICE_PRES', 'DIRETOR', 'HC', 'COORD_ATQ', 'COORD_DEF', 'COORD_ST', 'AUX_CT', 'MASTER'].includes(persona);
   const isMarketingPersona = ['CMO', 'CCO'].includes(persona);
-  const canAccessTryout = ['PRESIDENTE', 'VICE_PRES', 'DIRETOR', 'MASTER', 'HC', 'COORD_ATQ', 'COORD_DEF'].includes(persona); // Quem pode gerenciar Tryout
+  // O acesso ao Tryout Lab também é definido por personas específicas
+  const canAccessTryout = ['PRESIDENTE', 'VICE_PRES', 'DIRETOR', 'MASTER', 'HC', 'COORD_ATQ', 'COORD_DEF'].includes(persona);
 
   // Função para checar se o link está ativo
   const isActive = (path: string) => location.pathname === path;
 
-  // Itens de menu padrão (para Executive/Sports)
+  // Itens de menu padrão (para Executive/Sports e outros não Márketing)
   const defaultMenuItems = [
     { label: 'Visão Geral', path: '/dashboard', icon: '⚡' },
     { label: 'Financeiro', path: '/financeiro', icon: '💎' },
