@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Share2, Users, Calendar, DollarSign, X, Upload, Camera, BarChart2 } from 'lucide-react';
+import { Share2, Users, DollarSign, X, Upload, Camera, BarChart2 } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
 
 // --- TIPOS MOCKADOS PARA O MARKETING ---
@@ -315,7 +315,7 @@ const DashboardMarketing: React.FC = () => {
         </div>
       )}
 
-      <JulesAgent context="SETTINGS" /> {/* Contexto Marketing ainda não existe no Jules, usando Settings por enquanto */}
+      <JulesAgent context="SETTINGS" />
     </div>
   );
 };
