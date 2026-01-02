@@ -1,115 +1,268 @@
-import React, { useState } from 'react';
-import { 
-  ArrowLeft, ChevronLeft, ChevronRight, Clock
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import DashboardSidebar from '../dashboard/components/DashboardSidebar';
+import JulesAgent from '../../lib/Jules';
 
-/**
- * CalendarMaster - Peça LEGO Operacional
- * Interface de Agenda com navegação de meses e eventos integrada.
- */
+// Tipos
+interface CalendarEvent {
+  id: number;
+  title: string;
+  type: 'TRAINING' | 'GAME' | 'MEETING' | 'EVENT';
+  date: number; // Dia do mês (simplificado para demo)
+  time: string;
+  location: string;
+  entity: string;
+  rsvpStats: { confirmed: number; total: number }; // A métrica 100/38
+}
+
 const CalendarMaster: React.FC = () => {
-  const navigate = useNavigate();
-  const [currentMonth, setCurrentMonth] = useState("JANEIRO 2026");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Estado para o "Jules Auditor" no Modal
+  const [julesWarning, setJulesWarning] = useState<string | null>(null);
+  const [newEvent, setNewEvent] = useState({ title: '', type: 'TRAINING', time: '19:00', location: 'Campo 1' });
 
-  // Dados para validação visual e operacional
-  const events = [
-    { time: '09:00', title: 'Treino Técnico - Tackle', ent: 'TACKLE', color: 'border-blue-500 text-blue-600' },
-    { time: '14:30', title: 'Reunião de Diretoria', ent: 'ASSOCIAÇÃO', color: 'border-slate-500 text-slate-600' },
-    { time: '19:00', title: 'Workshop Flag Football', ent: 'FLAG', color: 'border-orange-500 text-orange-600' }
-  ];
+  // Dados Mockados (Eventos Existentes)
+  const [events, setEvents] = useState<CalendarEvent[]>([
+    { id: 1, title: 'Treino Full Pads', type: 'TRAINING', date: 2, time: '19:00', location: 'Campo 1', entity: 'Tackle', rsvpStats: { confirmed: 38, total: 55 } },
+    { id: 2, title: 'Reunião Diretoria', type: 'MEETING', date: 5, time: '14:00', location: 'Sala Zoom', entity: 'Admin', rsvpStats: { confirmed: 5, total: 6 } },
+    { id: 3, title: 'Gladiators vs Steamrollers', type: 'GAME', date: 12, time: '10:00', location: 'Estádio Municipal', entity: 'Tackle', rsvpStats: { confirmed: 50, total: 55 } },
+  ]);
+
+  // Dias do Mês (Simulação)
+  const days = Array.from({ length: 30 }, (_, i) => i + 1);
+
+  // IA JULES: Validação em Tempo Real ao tentar criar evento
+  useEffect(() => {
+    if (isModalOpen) {
+      setJulesWarning(null); // Reseta
+      
+      // Simula verificação inteligente
+      const timer = setTimeout(() => {
+        // Regra 1: Choque de Horário (Simulado no dia 2)
+        if (selectedDate === 2 && newEvent.time === '19:00') {
+          setJulesWarning('Conflito Detectado: O "Campo 1" já está ocupado pelo Treino Full Pads neste horário. Sugiro mudar para 21:00 ou Campo 2.');
+        }
+        // Regra 2: Carga Excessiva (Simulado no dia 13 pos-jogo)
+        else if (selectedDate === 13 && newEvent.type === 'TRAINING') {
+          setJulesWarning('Alerta de Fisiologia: O elenco teve Jogo ontem (Dia 12). Marcar treino hoje aumenta risco de lesão. Sugiro "Vídeo/Regenerativo".');
+        }
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [newEvent, selectedDate, isModalOpen]);
+
+  const handleDateClick = (day: number) => {
+    setSelectedDate(day);
+    setIsModalOpen(true);
+    setJulesWarning(null); // Limpa avisos anteriores
+  };
+
+  const handleCreateEvent = () => {
+    if (julesWarning) {
+      const confirm = window.confirm("O Jules detectou um risco. Deseja ignorar e criar mesmo assim?");
+      if (!confirm) return;
+    }
+    // Lógica de salvar (Mock)
+    const newId = events.length + 1;
+    setEvents([...events, {
+      id: newId,
+      title: newEvent.title || 'Novo Evento',
+      type: newEvent.type as any,
+      date: selectedDate!,
+      time: newEvent.time,
+      location: newEvent.location,
+      entity: 'Tackle', // Default
+      rsvpStats: { confirmed: 0, total: 50 }
+    }]);
+    setIsModalOpen(false);
+  };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-20">
-      {/* Header HUD */}
-      <nav className="bg-white p-6 flex items-center justify-between shadow-sm mb-8 border-b border-slate-100">
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={() => navigate('/dashboard')} 
-            className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 transition-all outline-none"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tighter uppercase italic leading-none">
-            Agenda <span className="text-blue-600">Master</span>
-          </h1>
-        </div>
+    <div className="flex h-screen bg-[#020617] overflow-hidden text-white font-sans">
+      
+      {/* 1. NAVEGAÇÃO LATERAL */}
+      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* 2. CONTEÚDO PRINCIPAL */}
+      <div className="flex-1 flex flex-col overflow-y-auto relative">
         
-        {/* Controle de Navegação Temporal */}
-        <div className="flex items-center gap-4 bg-slate-100 p-2 rounded-2xl border border-slate-200">
-          <button 
-            onClick={() => setCurrentMonth("DEZEMBRO 2025")} 
-            className="p-2 bg-white rounded-xl shadow-sm hover:text-blue-600 transition-all outline-none"
-          >
-            <ChevronLeft size={20}/>
-          </button>
-          <span className="text-[10px] font-black uppercase tracking-widest px-6 italic text-slate-700">{currentMonth}</span>
-          <button 
-            onClick={() => setCurrentMonth("FEVEREIRO 2026")} 
-            className="p-2 bg-white rounded-xl shadow-sm hover:text-blue-600 transition-all outline-none"
-          >
-            <ChevronRight size={20}/>
-          </button>
-        </div>
-      </nav>
-
-      <main className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Grid de Calendário */}
-        <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
-          <div className="grid grid-cols-7 gap-4 mb-8 text-center border-b border-slate-50 pb-4">
-            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'].map(day => (
-              <span key={day} className="text-[9px] font-black uppercase text-slate-400 tracking-[0.3em]">{day}</span>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-4">
-            {Array.from({ length: 31 }).map((_, i) => (
-              <div 
-                key={i} 
-                className={`h-24 rounded-3xl border flex flex-col p-4 transition-all cursor-pointer hover:border-blue-400 ${i === 0 ? 'bg-blue-600 border-blue-600 text-white shadow-xl scale-105 z-10' : 'bg-slate-50/50 border-transparent text-slate-400'}`}
-              >
-                <span className="text-sm font-black italic">{i + 1}</span>
-                {i === 0 && (
-                  <div className="mt-auto flex justify-between items-center">
-                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    <span className="text-[8px] font-black uppercase tracking-tighter">Hoje</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Painel de Eventos HUD */}
-        <div className="space-y-6">
-          <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
-            <Clock size={200} className="absolute -right-10 -bottom-10 opacity-[0.03] text-white group-hover:scale-110 transition-transform duration-1000" />
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-2 relative z-10">
-              <Clock size={16} className="text-blue-400"/> Próximos Eventos
-            </h3>
-            <div className="space-y-4 relative z-10">
-              {events.map((ev, i) => (
-                <div 
-                  key={i} 
-                  className={`p-6 rounded-[2rem] border-l-4 bg-white/5 border border-white/5 hover:bg-white/10 transition-all cursor-pointer group/item ${ev.color}`}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-[10px] font-black opacity-60 uppercase tracking-widest">{ev.time}</p>
-                    <span className="text-[8px] font-black uppercase bg-white/10 px-2 py-1 rounded-md">{ev.ent}</span>
-                  </div>
-                  <p className="text-sm font-bold italic uppercase leading-tight group-hover/item:text-white transition-colors">{ev.title}</p>
-                </div>
-              ))}
+        {/* HEADER */}
+        <header className="p-4 border-b border-slate-800 bg-[#0f172a]/50 backdrop-blur flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 text-gray-300 bg-slate-800 rounded-lg">☰</button>
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold text-white flex items-center gap-2">
+                <span className="text-orange-500">📅</span> CENTRO DE COMANDO: AGENDA
+              </h1>
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest">Planejamento Tático & Mobilização</p>
             </div>
           </div>
-
-          <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-900/10">
-             <p className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-80 italic text-blue-100">Insight Agenda</p>
-             <p className="text-sm font-bold italic leading-tight text-white">
-               Você tem 12 compromissos confirmados para esta semana. 2 reuniões aguardam justificativa.
-             </p>
+          <div className="flex gap-2">
+            <button className="px-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded hover:bg-slate-700 transition">Filtros</button>
+            <button className="px-3 py-1.5 text-xs font-bold bg-orange-600 text-white rounded hover:bg-orange-500 transition shadow-lg shadow-orange-500/20">+ Novo Evento</button>
           </div>
-        </div>
-      </main>
+        </header>
+
+        <main className="p-4 max-w-7xl mx-auto w-full pb-24">
+
+          {/* CONTROLES DE MÊS */}
+          <div className="flex justify-between items-center mb-6">
+            <button className="p-2 hover:bg-white/10 rounded-full">←</button>
+            <h2 className="text-2xl font-black italic text-white tracking-wider">JANEIRO <span className="text-slate-600">2026</span></h2>
+            <button className="p-2 hover:bg-white/10 rounded-full">→</button>
+          </div>
+
+          {/* GRID DO CALENDÁRIO */}
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
+            {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'].map(day => (
+              <div key={day} className="text-center text-[10px] font-bold text-slate-500 uppercase py-2 tracking-widest">{day}</div>
+            ))}
+
+            {days.map(day => {
+              const dayEvents = events.filter(e => e.date === day);
+              const isToday = day === 1; // Mock "Hoje" é dia 1
+
+              return (
+                <div 
+                  key={day} 
+                  onClick={() => handleDateClick(day)}
+                  className={`
+                    min-h-[120px] bg-[#1e293b]/30 border border-slate-800 rounded-xl p-2 
+                    hover:bg-[#1e293b]/60 hover:border-orange-500/30 transition cursor-pointer group relative flex flex-col
+                    ${isToday ? 'ring-1 ring-blue-500 bg-blue-900/10' : ''}
+                  `}
+                >
+                  <div className="flex justify-between items-start">
+                    <span className={`text-xs font-bold ${isToday ? 'text-blue-400' : 'text-slate-500 group-hover:text-white'}`}>{day}</span>
+                    <span className="opacity-0 group-hover:opacity-100 text-[10px] text-slate-400">+ Criar</span>
+                  </div>
+                  
+                  {/* Lista de Eventos no Dia */}
+                  <div className="mt-2 space-y-1.5 flex-1">
+                    {dayEvents.map(ev => {
+                      // Cálculo de Adesão (Ex: 38/55)
+                      const percent = Math.round((ev.rsvpStats.confirmed / ev.rsvpStats.total) * 100);
+                      
+                      return (
+                        <div key={ev.id} className="bg-black/40 rounded p-1.5 border-l-2 border-orange-500 hover:bg-black/60 transition">
+                          <p className="text-[10px] font-bold text-slate-200 truncate leading-none mb-1">{ev.time} {ev.title}</p>
+                          
+                          {/* Barra de Adesão (O "100/38") */}
+                          <div className="flex items-center gap-1">
+                            <div className="flex-1 h-1 bg-slate-700 rounded-full overflow-hidden">
+                              <div className={`h-full ${percent > 70 ? 'bg-emerald-500' : percent > 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
+                            </div>
+                            <span className="text-[8px] font-mono text-slate-400">{ev.rsvpStats.confirmed}/{ev.rsvpStats.total}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </main>
+
+        {/* MODAL DE CRIAÇÃO (FULL SCREEN / OVERLAY) */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+            <div className="bg-[#0f172a] border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl relative overflow-hidden">
+              
+              {/* Header Modal */}
+              <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-[#1e293b]/50">
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span className="text-orange-500">⚡</span> Nova Missão: Dia {selectedDate}
+                </h3>
+                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white text-xl">✕</button>
+              </div>
+
+              {/* Body Modal */}
+              <div className="p-6 space-y-6">
+                
+                {/* 1. Templates Rápidos */}
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Templates Rápidos</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => setNewEvent({...newEvent, title: 'TREINO TÁTICO', type: 'TRAINING'})}
+                      className={`p-3 rounded-lg border text-sm font-bold transition ${newEvent.type === 'TRAINING' ? 'bg-orange-600/20 border-orange-500 text-orange-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
+                    >
+                      🏈 Treino Tático
+                    </button>
+                    <button 
+                      onClick={() => setNewEvent({...newEvent, title: 'SESSÃO DE VÍDEO', type: 'MEETING'})}
+                      className={`p-3 rounded-lg border text-sm font-bold transition ${newEvent.type === 'MEETING' ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
+                    >
+                      📹 Vídeo / Aula
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Detalhes */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Horário</label>
+                    <input 
+                      type="time" 
+                      value={newEvent.time}
+                      onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                      className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-3 text-white focus:border-orange-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Local</label>
+                    <input 
+                      type="text" 
+                      value={newEvent.location}
+                      onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
+                      className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-3 text-white focus:border-orange-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. JULES AUDITOR (FEEDBACK IA) */}
+                <div className={`p-4 rounded-xl border transition-all duration-500 ${julesWarning ? 'bg-yellow-900/20 border-yellow-600/50' : 'bg-slate-800/50 border-slate-700'}`}>
+                  <div className="flex gap-3">
+                    <div className="mt-1">
+                      {julesWarning ? <span className="text-2xl animate-bounce">⚠️</span> : <span className="text-2xl opacity-50 grayscale">🤖</span>}
+                    </div>
+                    <div>
+                      <h4 className={`text-xs font-bold uppercase mb-1 ${julesWarning ? 'text-yellow-400' : 'text-slate-500'}`}>
+                        {julesWarning ? 'JULES: ALERTA TÁTICO' : 'JULES: AUDITORIA EM ANDAMENTO...'}
+                      </h4>
+                      <p className={`text-xs leading-relaxed ${julesWarning ? 'text-yellow-100' : 'text-slate-400'}`}>
+                        {julesWarning || "Estou analisando conflitos de agenda, previsão do tempo e carga física dos atletas..."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Footer Actions */}
+              <div className="p-6 pt-0 flex gap-3">
+                <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-xl border border-slate-700 text-slate-400 font-bold hover:bg-slate-800 transition">Cancelar</button>
+                <button 
+                  onClick={handleCreateEvent}
+                  className={`flex-1 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition
+                    ${julesWarning ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}
+                  `}
+                >
+                  {julesWarning ? 'IGNORAR E SALVAR' : 'CONFIRMAR MISSÃO'}
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* JULES AGENT (GLOBAL) */}
+        <JulesAgent context="DASHBOARD" /> 
+
+      </div>
     </div>
   );
 };
