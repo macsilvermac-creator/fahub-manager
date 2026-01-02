@@ -39,6 +39,11 @@ const FinancePayables: React.FC = () => {
           <SidebarLink icon={FileText} label="Notas Fiscais" />
           <SidebarLink icon={Search} label="Busca Avançada" />
         </nav>
+        <div className="p-6 border-t border-white/5">
+           <button onClick={() => navigate('/')} className="flex items-center gap-4 text-slate-500 hover:text-white transition-colors">
+              <span className="text-[10px] font-black uppercase tracking-widest">Nexus Portal</span>
+           </button>
+        </div>
       </aside>
 
       {/* ÁREA OPERACIONAL */}
@@ -73,7 +78,6 @@ const FinancePayables: React.FC = () => {
         </header>
 
         <div className="flex-1 overflow-y-auto p-8 space-y-6">
-          {/* TABELA DE EXECUÇÃO */}
           <div className="bg-[#0a0f1e] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -81,7 +85,6 @@ const FinancePayables: React.FC = () => {
                   <th className="px-8 py-6">Fornecedor / Descrição</th>
                   <th className="px-8 py-6">Vencimento</th>
                   <th className="px-8 py-6">Valor</th>
-                  <th className="px-8 py-6">Prioridade</th>
                   <th className="px-8 py-6">Status</th>
                   <th className="px-8 py-6 text-right">Ações</th>
                 </tr>
@@ -101,15 +104,6 @@ const FinancePayables: React.FC = () => {
                     </td>
                     <td className="px-8 py-6 font-black italic text-white text-lg">{item.value}</td>
                     <td className="px-8 py-6">
-                      <span className={`text-[8px] font-black px-2 py-1 rounded border ${
-                        item.priority === 'CRITICAL' ? 'border-red-500/50 text-red-400 bg-red-500/5' : 
-                        item.priority === 'HIGH' ? 'border-orange-500/50 text-orange-400 bg-orange-500/5' : 
-                        'border-blue-500/50 text-blue-400 bg-blue-500/5'
-                      }`}>
-                        {item.priority}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6">
                       <div className="flex items-center gap-2">
                         {item.status === 'AUTHORIZED' ? (
                           <CheckCircle2 size={16} className="text-emerald-500" />
@@ -121,10 +115,10 @@ const FinancePayables: React.FC = () => {
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-2 bg-white/5 rounded-lg hover:bg-emerald-500/20 text-emerald-400 border border-white/5 transition-all shadow-sm" title="Autorizar">
+                        <button className="p-2 bg-white/5 rounded-lg hover:bg-emerald-500/20 text-emerald-400 border border-white/5 transition-all">
                           <CheckCircle2 size={18} />
                         </button>
-                        <button className="p-2 bg-white/5 rounded-lg hover:bg-blue-500/20 text-blue-400 border border-white/5 transition-all shadow-sm" title="Ver Documento">
+                        <button className="p-2 bg-white/5 rounded-lg hover:bg-blue-500/20 text-blue-400 border border-white/5 transition-all">
                           <ExternalLink size={18} />
                         </button>
                         <button className="p-2 bg-white/5 rounded-lg hover:bg-white/10 text-slate-400 border border-white/5 transition-all">
@@ -138,32 +132,29 @@ const FinancePayables: React.FC = () => {
             </table>
           </div>
 
-          {/* ÁREA DE AUDITORIA JULES */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
              <div className="md:col-span-2 bg-blue-900/10 border border-blue-500/20 rounded-3xl p-6 flex items-start gap-4">
                 <AlertCircle className="text-blue-400 flex-shrink-0" size={24} />
                 <div>
                    <h4 className="text-xs font-black uppercase italic text-blue-400 mb-1">Atenção da Diretoria</h4>
                    <p className="text-[10px] text-slate-400 leading-relaxed font-bold">
-                      Existem <span className="text-white">R$ 2.020,00</span> em contas atrasadas que podem gerar multas contratuais. 
-                      A autorização de pagamento para o fornecedor 'Riddell' está pendente de anexo da Nota Fiscal de Importação.
+                      Existem registros de atraso que requerem ação imediata para evitar multas contratuais.
                    </p>
                 </div>
              </div>
              <div className="bg-emerald-900/10 border border-emerald-500/20 rounded-3xl p-6 flex flex-col justify-center text-center">
-                <p className="text-[9px] font-black uppercase text-slate-500 tracking-[0.2em] mb-2 italic">Total Autorizado Hoje</p>
+                <p className="text-[9px] font-black uppercase text-slate-500 tracking-[0.2em] mb-2 italic">Autorizado Hoje</p>
                 <p className="text-2xl font-black italic text-emerald-400">R$ 800,00</p>
              </div>
           </div>
         </div>
       </main>
 
-      <JulesAgent context="FINANCE_OPERATIONAL" />
+      <JulesAgent context="FINANCE" />
     </div>
   );
 };
 
-// Componente Interno Sidebar
 const SidebarLink = ({ icon: Icon, label }: { icon: any, label: string }) => (
   <button className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-white/5 text-slate-500 hover:text-white transition-all">
     <Icon size={18} />
