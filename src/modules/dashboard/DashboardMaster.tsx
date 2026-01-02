@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardSidebar from './components/DashboardSidebar';
 import DashboardMarketing from './DashboardMarketing';
-import DashboardCommercial from '../commercial/DashboardCommercial'; // <--- NOVO IMPORT
+import DashboardCommercial from '../commercial/DashboardCommercial'; 
 import JulesAgent from '../../lib/Jules';
 import EventTicker from '../../components/EventTicker';
 
@@ -15,11 +15,10 @@ const DashboardMaster: React.FC = () => {
     if (savedPersona) setPersona(savedPersona);
   }, []);
 
-  // Lógica de Segmentação de Personas
   const isExecutiveView = ['PRESIDENTE', 'VICE_PRES', 'CFO', 'MASTER'].includes(persona);
   const isSportsView = ['DIRETOR', 'HC', 'COORD_ATQ', 'COORD_DEF', 'COORD_ST', 'AUX_CT'].includes(persona);
-  const isMarketingView = persona === 'CMO'; // <--- APENAS CMO
-  const isCommercialView = persona === 'CCO'; // <--- NOVA LOGICA CCO
+  const isMarketingView = persona === 'CMO';
+  const isCommercialView = persona === 'CCO';
 
   return (
     <div className="flex flex-col h-screen bg-[#020617] overflow-hidden text-white font-sans">
@@ -52,11 +51,9 @@ const DashboardMaster: React.FC = () => {
           </header>
 
           <main className="p-4 md:p-8 max-w-7xl mx-auto w-full mb-24 flex-1">
-            {/* INJEÇÃO DE DASHBOARDS ESPECÍFICOS */}
             {isCommercialView && <DashboardCommercial />}
             {isMarketingView && <DashboardMarketing />}
 
-            {/* VISÃO EXECUTIVA (PRESIDENTE / CFO) */}
             {isExecutiveView && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
                 <DashboardCard title="Saúde Financeira" color="border-emerald-500/30">
@@ -66,7 +63,7 @@ const DashboardMaster: React.FC = () => {
                   <h3 className="text-2xl font-bold text-white">142 Atletas</h3>
                 </DashboardCard>
                 <DashboardCard title="Radar Operacional" color="border-orange-500/30">
-                  <p className="text-xs text-slate-400">Nenhuma pendência urgente.</p>
+                  <p className="text-xs text-slate-400">Monitorando atividades...</p>
                 </DashboardCard>
                 <DashboardCard title="Diretrizes & OKRs" color="border-purple-500/30">
                   <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded">Campanha Sócios</span>
@@ -74,7 +71,6 @@ const DashboardMaster: React.FC = () => {
               </div>
             )}
 
-            {/* VISÃO ESPORTIVA (HC) */}
             {isSportsView && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
                 <DashboardCard title="Status do Plantel" color="border-emerald-500/30">
@@ -93,7 +89,6 @@ const DashboardMaster: React.FC = () => {
   );
 };
 
-// Sub-componente visual básico
 const DashboardCard: React.FC<{title: string, color: string, children: React.ReactNode}> = ({ title, color, children }) => (
   <div className={`bg-[#1e293b]/60 backdrop-blur border ${color} rounded-2xl p-5 flex flex-col shadow-lg`}>
     <h3 className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4 border-b border-slate-700/50 pb-2">{title}</h3>

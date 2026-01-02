@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layers, Cpu, Database, Play, Save, Trash2, ArrowLeft, Plus, Zap, TrendingUp, Target, BarChart2 } from 'lucide-react';
+import { Layers, Cpu, Database, Play, Save, Trash2, ArrowLeft, Zap, Target, BarChart2, RotateCcw } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
 
 // --- TIPOS ---
@@ -37,13 +37,11 @@ const SponsorLab: React.FC = () => {
     { id: 'n7', label: 'Networking B2B', category: 'PAIN' },
   ];
 
-  // MOCK: Biblioteca de Memória
   const memoryLibrary = [
     { id: 'mem1', title: 'Análise Mercado Têxtil (Out/25)', result: 'Fechado: R$ 12k' },
     { id: 'mem2', title: 'Prospecção Software House (Jan/26)', result: 'Em negociação' },
   ];
 
-  // LOGICA: Adicionar/Remover Nódulo
   const toggleNode = (node: DataNode) => {
     if (activeNodes.find(n => n.id === node.id)) {
       setActiveNodes(activeNodes.filter(n => n.id !== node.id));
@@ -52,7 +50,6 @@ const SponsorLab: React.FC = () => {
     }
   };
 
-  // LOGICA: Executar Agente Prospector
   const handleRunAnalysis = () => {
     if (activeNodes.length === 0) return;
     setIsAnalyzing(true);
@@ -71,8 +68,6 @@ const SponsorLab: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-[#020617] overflow-hidden text-white font-sans">
-      
-      {/* HEADER TÉCNICO */}
       <header className="p-4 border-b border-indigo-900/30 bg-[#0f172a]/50 backdrop-blur flex justify-between items-center sticky top-0 z-20">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="p-2 text-slate-400 hover:text-white transition">
@@ -91,20 +86,14 @@ const SponsorLab: React.FC = () => {
         </div>
       </header>
 
-      {/* ÁREA DE TRABALHO: 3 ZONAS */}
       <main className="flex-1 overflow-hidden p-4 md:p-6 grid grid-cols-1 md:grid-cols-12 gap-6">
-
-        {/* --- ZONA 1: INTERROGAÇÃO (1/3 DA TELA) --- */}
         <section className="md:col-span-4 flex flex-col gap-4 h-full">
            <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-6 flex-1 flex flex-col shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-5"><Layers size={80} /></div>
-              
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                  <Zap size={14} className="text-yellow-400" /> 1. Configurar Nódulos
               </h3>
-
               <div className="flex-1 space-y-6">
-                 {/* Seleção de Nódulos por Categoria */}
                  <div className="space-y-3">
                     <p className="text-[10px] text-slate-500 uppercase font-bold">Inventário Comercial</p>
                     <div className="flex flex-wrap gap-2">
@@ -122,8 +111,6 @@ const SponsorLab: React.FC = () => {
                        ))}
                     </div>
                  </div>
-
-                 {/* Custom Context */}
                  <div className="space-y-2">
                     <p className="text-[10px] text-slate-500 uppercase font-bold">Contexto Adicional</p>
                     <textarea 
@@ -134,8 +121,6 @@ const SponsorLab: React.FC = () => {
                     />
                  </div>
               </div>
-
-              {/* Botão Gerar */}
               <button 
                 onClick={handleRunAnalysis}
                 disabled={isAnalyzing || activeNodes.length === 0}
@@ -147,11 +132,7 @@ const SponsorLab: React.FC = () => {
            </div>
         </section>
 
-
-        {/* --- COLUNA DIREITA (2/3 DA TELA) --- */}
         <section className="md:col-span-8 flex flex-col gap-6 h-full">
-           
-           {/* --- ZONA 2: PROCESSAMENTO (ANÁLISE PROFUNDA) - 65% ALTURA --- */}
            <div className="flex-[2] bg-[#1e293b]/20 border border-slate-800 rounded-2xl overflow-hidden flex flex-col shadow-xl">
               <div className="p-4 border-b border-slate-800 bg-[#0f172a]/50 flex justify-between items-center">
                  <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-2">
@@ -159,7 +140,6 @@ const SponsorLab: React.FC = () => {
                  </h3>
                  {analysis && <button className="text-[10px] font-bold text-emerald-400 hover:underline flex items-center gap-1"><Save size={12}/> SALVAR ATIVO</button>}
               </div>
-
               <div className="flex-1 p-8 relative overflow-y-auto custom-scrollbar">
                  {!analysis && !isAnalyzing && (
                    <div className="h-full flex flex-col items-center justify-center text-slate-600 text-center">
@@ -167,17 +147,14 @@ const SponsorLab: React.FC = () => {
                       <p className="text-sm font-mono uppercase tracking-widest">Aguardando injeção de nódulos comerciais...</p>
                    </div>
                  )}
-
                  {isAnalyzing && (
                    <div className="h-full flex flex-col items-center justify-center space-y-4">
                       <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                       <p className="text-indigo-400 font-mono text-xs animate-pulse tracking-widest">CRUZANDO DADOS DE AUDIÊNCIA COM PERFIL DO PATROCINADOR...</p>
                    </div>
                  )}
-
                  {analysis && (
                    <div className="space-y-8 animate-fade-in">
-                      {/* ROI e Match Score */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div className="bg-slate-900/50 border border-slate-700 p-6 rounded-2xl">
                             <p className="text-[10px] text-slate-500 uppercase font-bold mb-2">ROI Estimado</p>
@@ -193,16 +170,12 @@ const SponsorLab: React.FC = () => {
                             </div>
                          </div>
                       </div>
-
-                      {/* Pitch Estratégico */}
                       <div className="bg-indigo-900/10 border border-indigo-500/20 p-6 rounded-2xl">
                          <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Zap size={14} /> The Sales Pitch (IA Suggested)
                          </h4>
                          <p className="text-slate-300 leading-relaxed italic">"{analysis.pitch}"</p>
                       </div>
-
-                      {/* Lista de Benefícios */}
                       <div>
                          <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Entregáveis Sugeridos</h4>
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -218,15 +191,12 @@ const SponsorLab: React.FC = () => {
               </div>
            </div>
 
-
-           {/* --- ZONA 3: MEMÓRIA (BIBLIOTECA) - 35% ALTURA --- */}
            <div className="flex-1 bg-[#0f172a] border border-slate-800 rounded-2xl overflow-hidden flex flex-col shadow-xl">
               <div className="p-4 border-b border-slate-800 bg-[#1e293b]/50 flex justify-between items-center">
                  <h3 className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
                     <Database size={14} /> 3. Memória de Inteligência Comercial
                  </h3>
               </div>
-
               <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
                  {memoryLibrary.map(item => (
                    <div key={item.id} className="bg-[#1e293b]/30 border border-transparent hover:border-slate-700 p-3 rounded-xl flex justify-between items-center group transition-all cursor-pointer">
@@ -247,11 +217,8 @@ const SponsorLab: React.FC = () => {
                  ))}
               </div>
            </div>
-
         </section>
-
       </main>
-
       <JulesAgent context="FINANCE" />
     </div>
   );
