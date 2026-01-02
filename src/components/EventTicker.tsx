@@ -14,7 +14,6 @@ interface EventData {
 const EventTicker: React.FC = () => {
   // Estado simulando dados do banco
   const [event, setEvent] = useState<EventData | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false); // Para mostrar detalhes/upload
 
   // Simula o carregamento do "Próximo Evento"
   useEffect(() => {
@@ -37,7 +36,7 @@ const EventTicker: React.FC = () => {
     if (!event) return;
     
     if (action === 'JUSTIFY') {
-      // Abriria modal de upload
+      // Futuramente aqui abriremos o Modal
       alert("Abrir câmera/galeria para anexar atestado.");
       setEvent({ ...event, status: 'JUSTIFIED' });
     } else {
@@ -89,7 +88,7 @@ const EventTicker: React.FC = () => {
                 <span className="md:hidden">✓</span>
               </button>
 
-              {/* Botão Justificar (abre expandido) */}
+              {/* Botão Justificar */}
               <button 
                 onClick={() => handleAction('JUSTIFY')}
                 className="bg-black/20 hover:bg-black/30 text-white font-bold px-3 py-1.5 rounded border border-white/20 transition"
