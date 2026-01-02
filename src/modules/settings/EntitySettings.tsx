@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import DashboardSidebar from '../dashboard/components/DashboardSidebar';
-import JulesAgent from '../../components/Jules';
+import JulesAgent from '../../lib/Jules';
 
 const EntitySettings: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
