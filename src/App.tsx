@@ -1,8 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import CreativeLab from './modules/marketing/CreativeLab';
-// ...
-<Route path="/creative-lab" element={<CreativeLab />} />
+
 /** 
  * PROTOCOLO NEXUS - INFRAESTRUTURA DE ALTA DISPONIBILIDADE
  * Estrutura mapeada conforme árvore de arquivos (modules/...)
@@ -20,12 +18,17 @@ import CalendarMaster from './modules/calendar/CalendarMaster';
 // 3. Módulos de Pessoas (Capital Humano)
 import HumanCapital from './modules/people/HumanCapital';
 import MemberProfile360 from './modules/people/MemberProfile360';
+// Módulos Legados de Atletas (Light Mode)
+import AthletesList from './modules/athletes/AthletesList'; // Importe o AthletesList
 
-// 4. Módulo de Recrutamento (Tryout Lab) - NOVO
+// 4. Módulo de Recrutamento (Tryout Lab)
 import TryoutLab from './modules/tryout/TryoutLab';
 
 // 5. Configurações
 import EntitySettings from './modules/settings/EntitySettings';
+
+// 6. Módulos de Marketing (Novos)
+import CreativeLab from './modules/marketing/CreativeLab'; // Importe o CreativeLab
 
 const App: React.FC = () => {
   return (
@@ -42,9 +45,15 @@ const App: React.FC = () => {
         {/* GESTÃO DE PESSOAS */}
         <Route path="/human-capital" element={<HumanCapital />} />
         <Route path="/perfil-membro" element={<MemberProfile360 />} />
+        <Route path="/elenco" element={<AthletesList />} /> {/* Rota para o Elenco em Light Mode */}
         
         {/* RECRUTAMENTO E SELEÇÃO */}
         <Route path="/tryout-lab" element={<TryoutLab />} />
+        
+        {/* MARKETING */}
+        <Route path="/creative-lab" element={<CreativeLab />} /> {/* Rota para o Creative Lab */}
+        {/* Placeholder para o futuro módulo de Projetos e Metas do Marketing */}
+        <Route path="/marketing/projetos-metas" element={<div>Módulo de Projetos & Metas (Marketing) em construção...</div>} />
         
         {/* SISTEMA */}
         <Route path="/configuracoes" element={<EntitySettings />} />
