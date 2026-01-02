@@ -1,40 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Sparkles, Save, Trash2, Maximize2, RotateCcw, 
-  Image as ImageIcon, Copy, Share2 
+  Save, Maximize2, Image as ImageIcon
 } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
 
 /** * CREATIVE LAB - PROTOCOLO NEXUS
  * Interface para Geração de Conteúdo IA (Pronta para integração Gemini/Imagen).
  */
-interface CreativeAsset {
-  id: string;
-  title: string;
-  type: 'STORY' | 'FEED' | 'REELS';
-  platform: 'INSTAGRAM' | 'TIKTOK' | 'YOUTUBE';
-  date: string;
-  imageUrl: string;
-  promptUsed: string;
-}
 
 const CreativeLab: React.FC = () => {
   const navigate = useNavigate();
   
   const [platform, setPlatform] = useState('INSTAGRAM');
   const [format, setFormat] = useState('STORY');
-  const [tone, setTone] = useState('EPIC');
-  const [sponsor, setSponsor] = useState('NONE');
   const [promptText, setPromptText] = useState('');
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedResult, setGeneratedResult] = useState<{image: string, caption: string} | null>(null);
-
-  const library: CreativeAsset[] = [
-    { id: '1', title: 'Vitória vs Steamrollers', type: 'FEED', platform: 'INSTAGRAM', date: '12/01/2026', imageUrl: '🏆', promptUsed: 'Foto épica do time comemorando...' },
-    { id: '2', title: 'Promoção Red Zone', type: 'STORY', platform: 'INSTAGRAM', date: '10/01/2026', imageUrl: '⚡', promptUsed: 'Garrafa de energético com fundo neon...' }
-  ];
 
   const handleGenerate = () => {
     if (!promptText) return;
@@ -44,7 +27,7 @@ const CreativeLab: React.FC = () => {
     setTimeout(() => {
       setGeneratedResult({
         image: '🏈',
-        caption: `🔥 PREPARE-SE PARA A BATALHA! 🔥\n\nNeste domingo, o Gladiators entra em campo!\n\n#GoGladiators ${sponsor !== 'NONE' ? '#Parceria' : ''}`
+        caption: `🔥 PREPARE-SE PARA A BATALHA! 🔥\n\nNeste domingo, o Gladiators entra em campo!\n\n#GoGladiators`
       });
       setIsGenerating(false);
     }, 2000);
