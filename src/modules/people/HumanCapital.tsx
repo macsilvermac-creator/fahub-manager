@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardSidebar from '../dashboard/components/DashboardSidebar';
-import JulesAgent from '../shared/components/JulesAgent';
+import JulesAgent from '../shared/components/Jules';
 
 const HumanCapital: React.FC = () => {
   const navigate = useNavigate();

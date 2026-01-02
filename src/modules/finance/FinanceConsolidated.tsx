@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import DashboardSidebar from '../dashboard/components/DashboardSidebar';
-import JulesAgent from '../shared/components/JulesAgent';
+import JulesAgent from '../shared/components/Jules';
 
 const FinanceConsolidated: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
