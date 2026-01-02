@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardSidebar from './components/DashboardSidebar';
-import JulesAgent from '../shared/components/Jules';
+import JulesAgent from '.src/shared/components/Jules.tsx';
 const DashboardMaster: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [persona, setPersona] = useState<string>('VISITANTE');
