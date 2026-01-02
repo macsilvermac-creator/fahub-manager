@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import DashboardSidebar from '../dashboard/components/DashboardSidebar';
-import JulesAgent from '../../components/Jules'; // Usando o Jules Global
+import JulesAgent from '../../lib/Jules'; // <--- CORREÇÃO AQUI (Estava ../../components/Jules)
 
 const TryoutLab: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -157,7 +157,6 @@ const TryoutLab: React.FC = () => {
           </main>
 
           {/* JULES AGENT (Contexto Tryout) */}
-          {/* Atualize o JulesAgent.tsx para aceitar 'TRYOUT' se quiser mensagem específica */}
           <JulesAgent context="SETTINGS" /> 
 
         </div>
