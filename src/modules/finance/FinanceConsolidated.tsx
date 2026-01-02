@@ -1,150 +1,154 @@
 import React, { useState } from 'react';
-import { 
-  ArrowLeft, Download, Filter, TrendingUp, TrendingDown, 
-  Wallet, DollarSign, Activity 
-} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import DashboardSidebar from '../dashboard/components/DashboardSidebar'; // Reaproveitando a Sidebar
 
-/**
- * Gestão Financeira - Protocolo NEXUS
- * Restauração total do visual master e operacionalidade sólida.
- */
 const FinanceConsolidated: React.FC = () => {
   const navigate = useNavigate();
-  const [isFiltering, setIsFiltering] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Dados fiéis às imagens de referência
+  // Dados Mockados para visualização (depois conectamos ao Supabase)
   const transactions = [
-    { cat: 'Mensalidades Base', date: '2026-01-01', ent: 'TACKLE', entColor: 'bg-blue-50 text-blue-600', val: '+ R$ 1.250,00', valColor: 'text-emerald-500', status: 'EFETIVADO', statusColor: 'bg-emerald-50 text-emerald-600' },
-    { cat: 'Patrocínio Master', date: '2026-01-05', ent: 'ASSOCIAÇÃO', entColor: 'bg-slate-50 text-slate-600', val: '+ R$ 5.000,00', valColor: 'text-emerald-500', status: 'AGUARDANDO', statusColor: 'bg-orange-50 text-orange-600' },
-    { cat: 'Aluguel de Campo', date: '2026-01-02', ent: 'FLAG', entColor: 'bg-orange-50 text-orange-600', val: '- R$ 800,00', valColor: 'text-rose-500', status: 'EFETIVADO', statusColor: 'bg-emerald-50 text-emerald-600' }
+    { id: 1, desc: 'Mensalidades Base (Tackle)', entity: 'Tackle', date: '01/01/2026', amount: 1250.00, type: 'in', status: 'Efetivado' },
+    { id: 2, desc: 'Patrocínio Master', entity: 'Associação', date: '28/12/2025', amount: 5000.00, type: 'in', status: 'Efetivado' },
+    { id: 3, desc: 'Compra Equipamentos (Cones)', entity: 'Flag', date: '20/12/2025', amount: -450.00, type: 'out', status: 'Pendente' },
+    { id: 4, desc: 'Manutenção do Campo', entity: 'Associação', date: '15/12/2025', amount: -350.00, type: 'out', status: 'Efetivado' },
+    { id: 5, desc: 'Venda de Kits Torcedor', entity: 'Comercial', date: '10/12/2025', amount: 800.00, type: 'in', status: 'Efetivado' },
   ];
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] pb-20">
-      {/* Header HUD */}
-      <nav className="bg-white p-6 flex items-center justify-between shadow-sm mb-8 border-b border-slate-100">
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 transition-all outline-none"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tighter uppercase italic flex items-center gap-2 leading-none">
-              Gestão <span className="text-emerald-500">Financeira</span>
-            </h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic mt-1">Consolidado das Entidades</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsFiltering(!isFiltering)}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl border border-slate-200 text-[10px] font-black uppercase text-slate-500 hover:bg-slate-50 transition-all outline-none"
-          >
-            <Filter size={16} /> {isFiltering ? 'Ativo' : 'Filtrar'}
-          </button>
-          <button className="flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 text-white text-[10px] font-black uppercase shadow-lg shadow-emerald-200 hover:bg-emerald-600 transition-all outline-none">
-            <Download size={16} /> Relatório
-          </button>
-        </div>
-      </nav>
+    <div className="flex h-screen bg-[#020617] overflow-hidden text-white font-sans">
+      
+      {/* 1. NAVEGAÇÃO LATERAL (Mantendo a consistência) */}
+      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="max-w-[1400px] mx-auto px-6 space-y-8">
-        {/* Top Cards - Solidez Visual Nexus */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-white flex flex-col justify-between min-h-[180px]">
-            <div className="flex items-center gap-3 text-emerald-500">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center"><TrendingUp size={20} /></div>
-              <span className="text-[10px] font-black uppercase tracking-widest">Total Receitas</span>
+      {/* 2. ÁREA DE CONTEÚDO */}
+      <div className="flex-1 flex flex-col overflow-y-auto relative">
+        
+        {/* HEADER SIMPLES */}
+        <header className="p-4 border-b border-slate-800 bg-[#0f172a]/50 backdrop-blur flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden p-2 text-gray-300 bg-slate-800 rounded-lg"
+            >
+              ☰
+            </button>
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold text-white flex items-center gap-2">
+                <span className="text-emerald-400">💎</span> GESTÃO FINANCEIRA
+              </h1>
+              <p className="text-[10px] text-slate-400 uppercase tracking-widest">Consolidado das Entidades</p>
             </div>
-            <h2 className="text-4xl font-black text-slate-800 italic tracking-tighter leading-none">R$ 6.250,00</h2>
           </div>
+          
+          <div className="flex gap-2">
+            <button className="px-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded hover:bg-slate-700 transition">
+              Filtros
+            </button>
+            <button className="px-3 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded hover:bg-emerald-500 transition shadow-lg shadow-emerald-500/20">
+              + Nova Receita
+            </button>
+          </div>
+        </header>
 
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-white flex flex-col justify-between min-h-[180px]">
-            <div className="flex items-center gap-3 text-rose-500">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center"><TrendingDown size={20} /></div>
-              <span className="text-[10px] font-black uppercase tracking-widest">Total Despesas</span>
+        <main className="p-4 max-w-7xl mx-auto w-full">
+          
+          {/* SECTION 1: KPIS (Reduzidos em 20%) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            
+            {/* CARD 1: RECEITAS */}
+            <div className="bg-[#1e293b]/40 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-400 font-bold uppercase mb-1">Total Receitas</p>
+                <h3 className="text-2xl font-bold text-emerald-400">R$ 6.250,00</h3>
+              </div>
+              <div className="h-8 w-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                ↗
+              </div>
             </div>
-            <h2 className="text-4xl font-black text-slate-800 italic tracking-tighter leading-none">R$ 800,00</h2>
-          </div>
 
-          <div className="bg-[#0F172A] p-8 rounded-[2.5rem] shadow-2xl flex flex-col justify-between min-h-[180px] relative overflow-hidden group">
-            <div className="flex items-center gap-3 text-blue-400 relative z-10">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center"><Wallet size={20} /></div>
-              <span className="text-[10px] font-black uppercase tracking-widest">Saldo em Caixa</span>
+            {/* CARD 2: DESPESAS */}
+            <div className="bg-[#1e293b]/40 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-slate-400 font-bold uppercase mb-1">Total Despesas</p>
+                <h3 className="text-2xl font-bold text-rose-400">R$ 800,00</h3>
+              </div>
+              <div className="h-8 w-8 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">
+                ↘
+              </div>
             </div>
-            <h2 className="text-4xl font-black text-white italic tracking-tighter relative z-10 leading-none">R$ 5.450,00</h2>
-            <DollarSign size={120} className="absolute -right-8 -bottom-8 text-white/5 group-hover:scale-110 transition-transform duration-700" />
-          </div>
-        </div>
 
-        {/* Fluxo Recente */}
-        <div className="bg-white rounded-[2.5rem] shadow-sm border border-white overflow-hidden">
-          <div className="p-8 border-b border-slate-50 flex items-center gap-3">
-            <DollarSign size={18} className="text-blue-600" />
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-800 italic">Fluxo Recente</h3>
+             {/* CARD 3: SALDO (Destaque) */}
+             <div className="bg-gradient-to-r from-indigo-900/40 to-[#1e293b]/40 border border-indigo-500/30 rounded-xl p-4 flex items-center justify-between relative overflow-hidden">
+              <div className="relative z-10">
+                <p className="text-xs text-indigo-300 font-bold uppercase mb-1">Saldo em Caixa</p>
+                <h3 className="text-2xl font-bold text-white">R$ 5.450,00</h3>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 border border-indigo-500/50">
+                $
+              </div>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50/50">
-                  <th className="px-8 py-6">Categoria</th>
-                  <th className="px-8 py-6 text-center">Entidade</th>
-                  <th className="px-8 py-6 text-right">Valor</th>
-                  <th className="px-8 py-6 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {transactions.map((item, i) => (
-                  <tr key={i} className="hover:bg-slate-50/50 transition-all group">
-                    <td className="px-8 py-6">
-                      <p className="text-[11px] font-black text-slate-800 italic uppercase leading-none">{item.cat}</p>
-                      <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">{item.date}</p>
-                    </td>
-                    <td className="px-8 py-6 text-center">
-                      <span className={`px-3 py-1 rounded-md text-[8px] font-black uppercase border border-current/10 ${item.entColor}`}>
-                        {item.ent}
-                      </span>
-                    </td>
-                    <td className={`px-8 py-6 text-right font-black text-xs italic ${item.valColor}`}>
-                      {item.val}
-                    </td>
-                    <td className="px-8 py-6 text-center">
-                      <span className={`px-3 py-1 rounded-md text-[8px] font-black uppercase ${item.statusColor}`}>
-                        {item.status}
-                      </span>
-                    </td>
+
+          {/* SECTION 2: LISTA DE TRANSAÇÕES (Compactada em 10%) */}
+          <div className="bg-[#1e293b]/30 border border-slate-800 rounded-xl overflow-hidden">
+            <div className="p-3 border-b border-slate-800 flex justify-between items-center bg-[#0f172a]/50">
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Fluxo Recente</h3>
+              <span className="text-[10px] text-slate-500">Últimos 30 dias</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-[10px] uppercase text-slate-500 bg-[#0f172a]/30">
+                    <th className="p-3 font-semibold">Descrição</th>
+                    <th className="p-3 font-semibold hidden md:table-cell">Entidade</th>
+                    <th className="p-3 font-semibold hidden md:table-cell">Data</th>
+                    <th className="p-3 font-semibold text-right">Valor</th>
+                    <th className="p-3 font-semibold text-center">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="text-xs md:text-sm">
+                  {transactions.map((t) => (
+                    <tr key={t.id} className="border-b border-slate-800/50 hover:bg-white/5 transition-colors">
+                      <td className="p-3">
+                        <div className="font-bold text-slate-200">{t.desc}</div>
+                        <div className="md:hidden text-[10px] text-slate-500">{t.date} • {t.entity}</div>
+                      </td>
+                      <td className="p-3 text-slate-400 hidden md:table-cell">
+                        <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px]">
+                          {t.entity}
+                        </span>
+                      </td>
+                      <td className="p-3 text-slate-400 hidden md:table-cell">{t.date}</td>
+                      <td className={`p-3 text-right font-mono font-bold ${t.type === 'in' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {t.type === 'in' ? '+' : '-'} R$ {Math.abs(t.amount).toFixed(2)}
+                      </td>
+                      <td className="p-3 text-center">
+                        <span className={`
+                          text-[9px] uppercase px-2 py-1 rounded-full font-bold border
+                          ${t.status === 'Efetivado' 
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                            : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'}
+                        `}>
+                          {t.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="p-2 text-center border-t border-slate-800">
+               <button className="text-xs text-indigo-400 hover:text-indigo-300 font-bold transition">
+                 Ver Extrato Completo ↓
+               </button>
+            </div>
           </div>
-        </div>
 
-        {/* Insight Jules - HUD Azul Original */}
-        <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-200 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
-          <Activity size={100} className="absolute -left-5 -bottom-5 text-white/10" />
-          <div className="flex items-center gap-6 relative z-10">
-            <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-              <Activity size={24} />
-            </div>
-            <div className="max-w-2xl">
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-blue-200 mb-2 italic">Jules / Análise de Caixa</p>
-              <p className="text-sm font-bold italic leading-tight">
-                "Identifiquei que o Tackle está com 15% de inadimplência em relação ao mês anterior. Deseja que eu gere uma lista de cobrança automática para os atletas?"
-              </p>
-            </div>
-          </div>
-          <button 
-            onClick={() => alert("Gerando lista de cobrança...")}
-            className="bg-white text-blue-600 px-10 py-4 rounded-2xl text-[10px] font-black uppercase shadow-lg hover:bg-slate-50 transition-all relative z-10 outline-none active:scale-95"
-          >
-            Gerar Cobrança
-          </button>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };
