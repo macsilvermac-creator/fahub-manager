@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import DashboardSidebar from '../dashboard/components/DashboardSidebar';
 import JulesAgent from '../../lib/Jules';
+import { Calendar, Plus, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// Tipos
+/**
+ * AGENDA MESTRE - PROTOCOLO NEXUS
+ * Módulo Full-Screen integrado ao DashboardLayout
+ */
+
 interface CalendarEvent {
   id: number;
   title: string;
@@ -15,7 +19,6 @@ interface CalendarEvent {
 }
 
 const CalendarMaster: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [persona, setPersona] = useState<string>('VISITANTE');
@@ -28,7 +31,6 @@ const CalendarMaster: React.FC = () => {
   // DEFINIÇÃO DE PERMISSÕES (Quem pode criar?)
   const CREATORS = ['PRESIDENTE', 'VICE_PRES', 'DIRETOR', 'CFO', 'CMO', 'CCO', 'HC', 'COORD_ATQ', 'COORD_DEF', 'COORD_ST'];
 
-  // Carrega Persona e Define Permissões
   useEffect(() => {
     const savedPersona = localStorage.getItem('nexus_persona') || 'VISITANTE';
     setPersona(savedPersona);
@@ -61,17 +63,13 @@ const CalendarMaster: React.FC = () => {
   }, [newEvent, selectedDate, isModalOpen]);
 
   const handleDateClick = (day: number) => {
-    // Só abre o modal se tiver permissão
     if (canCreate) {
       setSelectedDate(day);
       setIsModalOpen(true);
       setJulesWarning(null);
-      // Reseta o form com base na persona (Contexto)
       if (persona === 'CMO') setNewEvent({ title: 'ATIVAÇÃO DE MARCA', type: 'MARKETING', time: '10:00', location: 'Shopping' });
       else if (persona === 'CFO') setNewEvent({ title: 'REUNIÃO FINANCEIRA', type: 'FINANCE', time: '14:00', location: 'Escritório' });
       else setNewEvent({ title: 'TREINO TÁTICO', type: 'TRAINING', time: '19:00', location: 'Campo 1' });
-    } else {
-      alert("Apenas Gestores e Treinadores podem criar eventos na Agenda Oficial.");
     }
   };
 
@@ -90,9 +88,8 @@ const CalendarMaster: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  // Renderiza Templates baseados na Persona
   const renderTemplates = () => {
-    if (persona === 'CMO' || persona === 'CCO') { // Marketing/Comercial
+    if (persona === 'CMO' || persona === 'CCO') {
       return (
         <>
           <button onClick={() => setNewEvent({...newEvent, title: 'AÇÃO SOCIAL', type: 'MARKETING'})} className="p-3 rounded-lg border text-sm font-bold bg-pink-600/20 border-pink-500 text-pink-400">🎉 Ação Social</button>
@@ -100,7 +97,7 @@ const CalendarMaster: React.FC = () => {
         </>
       );
     } 
-    else if (persona === 'PRESIDENTE' || persona === 'DIRETOR' || persona === 'CFO') { // Diretoria
+    else if (persona === 'PRESIDENTE' || persona === 'DIRETOR' || persona === 'CFO') {
       return (
         <>
           <button onClick={() => setNewEvent({...newEvent, title: 'REUNIÃO DE CONSELHO', type: 'MEETING'})} className="p-3 rounded-lg border text-sm font-bold bg-slate-700 border-slate-500 text-white">⚖️ Conselho</button>
@@ -108,7 +105,7 @@ const CalendarMaster: React.FC = () => {
         </>
       );
     }
-    else { // Treinadores (HC, Coordinators)
+    else {
       return (
         <>
           <button onClick={() => setNewEvent({...newEvent, title: 'TREINO TÁTICO', type: 'TRAINING'})} className="p-3 rounded-lg border text-sm font-bold bg-orange-600/20 border-orange-500 text-orange-400">🏈 Treino Tático</button>
@@ -119,176 +116,177 @@ const CalendarMaster: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-[#020617] overflow-hidden text-white font-sans">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500 pb-20">
       
-      {/* 1. NAVEGAÇÃO LATERAL */}
-      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* 2. CONTEÚDO PRINCIPAL */}
-      <div className="flex-1 flex flex-col overflow-y-auto relative">
-        
-        {/* HEADER */}
-        <header className="p-4 border-b border-slate-800 bg-[#0f172a]/50 backdrop-blur flex items-center justify-between sticky top-0 z-20">
-          <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 text-gray-300 bg-slate-800 rounded-lg">☰</button>
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="text-orange-500">📅</span> AGENDA OPERACIONAL
+      {/* HEADER DE FERRAMENTAS */}
+      <div className="flex flex-col md:flex-row justify-between items-end md:items-center p-6 bg-[#0a0f1e]/50 border border-white/5 rounded-[2rem] backdrop-blur-sm">
+         <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-orange-500/10 rounded-lg">
+                 <Calendar size={20} className="text-orange-500" />
+              </div>
+              <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">
+                 Agenda <span className="text-orange-500">Operacional</span>
               </h1>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest">
-                {canCreate ? 'Modo Gestão Ativado' : 'Visualização de Cronograma'}
-              </p>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <button className="px-3 py-1.5 text-xs font-bold bg-slate-800 border border-slate-700 rounded hover:bg-slate-700 transition">Filtros</button>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic ml-1">
+              {canCreate ? 'Modo Gestão Ativado' : 'Visualização de Cronograma'}
+            </p>
+         </div>
+
+         <div className="flex gap-3 mt-4 md:mt-0">
+            <button className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#0a0f1e] border border-white/10 hover:border-white/30 text-slate-400 hover:text-white font-bold text-xs uppercase tracking-widest transition-all">
+               <Filter size={16} /> Filtros
+            </button>
             {canCreate && (
-              <button className="px-3 py-1.5 text-xs font-bold bg-orange-600 text-white rounded hover:bg-orange-500 transition shadow-lg shadow-orange-500/20">+ Novo Evento</button>
+               <button 
+                  onClick={() => setIsModalOpen(true)}
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-black text-xs uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(234,88,12,0.3)]"
+               >
+                  <Plus size={16} /> Novo Evento
+               </button>
             )}
-          </div>
-        </header>
+         </div>
+      </div>
 
-        <main className="p-4 max-w-7xl mx-auto w-full pb-24">
+      {/* CONTROLES DE NAVEGAÇÃO */}
+      <div className="flex justify-between items-center px-4">
+        <button className="p-3 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition-colors">
+           <ChevronLeft size={24} />
+        </button>
+        <h2 className="text-3xl font-black italic text-white tracking-wider uppercase">
+           Janeiro <span className="text-slate-700">2026</span>
+        </h2>
+        <button className="p-3 hover:bg-white/5 rounded-full text-slate-400 hover:text-white transition-colors">
+           <ChevronRight size={24} />
+        </button>
+      </div>
 
-          {/* CONTROLES DE MÊS */}
-          <div className="flex justify-between items-center mb-6">
-            <button className="p-2 hover:bg-white/10 rounded-full">←</button>
-            <h2 className="text-2xl font-black italic text-white tracking-wider">JANEIRO <span className="text-slate-600">2026</span></h2>
-            <button className="p-2 hover:bg-white/10 rounded-full">→</button>
-          </div>
+      {/* GRID DO CALENDÁRIO (RESPONSIVA) */}
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+        {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'].map(day => (
+          <div key={day} className="text-center text-[10px] font-black text-slate-600 uppercase py-2 tracking-[0.2em]">{day}</div>
+        ))}
 
-          {/* GRID DO CALENDÁRIO */}
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
-            {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'].map(day => (
-              <div key={day} className="text-center text-[10px] font-bold text-slate-500 uppercase py-2 tracking-widest">{day}</div>
-            ))}
+        {days.map(day => {
+          const dayEvents = events.filter(e => e.date === day);
+          const isToday = day === 1; // Mock: Dia 1 é "Hoje"
 
-            {days.map(day => {
-              const dayEvents = events.filter(e => e.date === day);
-              const isToday = day === 1;
-
-              return (
-                <div 
-                  key={day} 
-                  onClick={() => handleDateClick(day)}
-                  className={`
-                    min-h-[120px] bg-[#1e293b]/30 border border-slate-800 rounded-xl p-2 
-                    transition group relative flex flex-col
-                    ${canCreate ? 'cursor-pointer hover:bg-[#1e293b]/60 hover:border-orange-500/30' : 'cursor-default'}
-                    ${isToday ? 'ring-1 ring-blue-500 bg-blue-900/10' : ''}
-                  `}
-                >
-                  <div className="flex justify-between items-start">
-                    <span className={`text-xs font-bold ${isToday ? 'text-blue-400' : 'text-slate-500 group-hover:text-white'}`}>{day}</span>
-                    {canCreate && <span className="opacity-0 group-hover:opacity-100 text-[10px] text-slate-400">+ Criar</span>}
-                  </div>
-                  
-                  {/* Lista de Eventos no Dia */}
-                  <div className="mt-2 space-y-1.5 flex-1">
-                    {dayEvents.map(ev => {
-                      const percent = ev.rsvpStats.total > 0 ? Math.round((ev.rsvpStats.confirmed / ev.rsvpStats.total) * 100) : 0;
-                      
-                      return (
-                        <div key={ev.id} className={`
-                          bg-black/40 rounded p-1.5 border-l-2 hover:bg-black/60 transition
-                          ${ev.type === 'MARKETING' ? 'border-pink-500' : ev.type === 'FINANCE' ? 'border-green-500' : 'border-orange-500'}
-                        `}>
-                          <p className="text-[10px] font-bold text-slate-200 truncate leading-none mb-1">{ev.time} {ev.title}</p>
-                          <div className="flex items-center gap-1">
-                            <div className="flex-1 h-1 bg-slate-700 rounded-full overflow-hidden">
-                              <div className={`h-full ${percent > 70 ? 'bg-emerald-500' : percent > 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
-                            </div>
-                            <span className="text-[8px] font-mono text-slate-400">{ev.rsvpStats.confirmed}/{ev.rsvpStats.total}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </main>
-
-        {/* MODAL DE CRIAÇÃO INTELIGENTE */}
-        {isModalOpen && canCreate && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-            <div className="bg-[#0f172a] border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl relative overflow-hidden">
+          return (
+            <div 
+              key={day} 
+              onClick={() => handleDateClick(day)}
+              className={`
+                min-h-[140px] bg-[#0a0f1e]/40 border border-white/5 rounded-2xl p-3
+                transition-all duration-300 group relative flex flex-col backdrop-blur-sm
+                ${canCreate ? 'cursor-pointer hover:bg-[#0a0f1e] hover:border-orange-500/30 hover:scale-[1.02] hover:shadow-xl' : 'cursor-default'}
+                ${isToday ? 'bg-indigo-900/10 border-indigo-500/30 shadow-[inset_0_0_20px_rgba(79,70,229,0.1)]' : ''}
+              `}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <span className={`text-sm font-black ${isToday ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-300'}`}>{day}</span>
+                {canCreate && <Plus size={14} className="opacity-0 group-hover:opacity-100 text-orange-500 transition-opacity" />}
+              </div>
               
-              <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-[#1e293b]/50">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <span className="text-orange-500">⚡</span> Novo Evento: {persona}
-                </h3>
-                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white text-xl">✕</button>
+              <div className="space-y-2 flex-1">
+                {dayEvents.map(ev => {
+                  const percent = ev.rsvpStats.total > 0 ? Math.round((ev.rsvpStats.confirmed / ev.rsvpStats.total) * 100) : 0;
+                  
+                  return (
+                    <div key={ev.id} className={`
+                      bg-[#050510] rounded-lg p-2 border-l-2 transition-all hover:translate-x-1
+                      ${ev.type === 'MARKETING' ? 'border-pink-500' : ev.type === 'FINANCE' ? 'border-emerald-500' : 'border-orange-500'}
+                    `}>
+                      <p className="text-[9px] font-bold text-slate-300 truncate leading-tight mb-1">{ev.time} {ev.title}</p>
+                      
+                      {/* Barra de RSVP */}
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                          <div className={`h-full ${percent > 70 ? 'bg-emerald-500' : percent > 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${percent}%` }} />
+                        </div>
+                        <span className="text-[8px] font-mono text-slate-500">{ev.rsvpStats.confirmed}/{ev.rsvpStats.total}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* MODAL DE CRIAÇÃO (MANTIDO E INTEGRADO AO TEMA) */}
+      {isModalOpen && canCreate && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-[#0a0f1e] border border-white/10 rounded-[2rem] w-full max-w-lg shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
+            
+            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-[#050510]">
+              <h3 className="text-xl font-black text-white flex items-center gap-2 italic uppercase tracking-tighter">
+                <span className="text-orange-500">⚡</span> Novo Evento
+              </h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-500 hover:text-white text-xl font-bold">✕</button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block">Sugestões Rápidas</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {renderTemplates()}
+                </div>
               </div>
 
-              <div className="p-6 space-y-6">
-                
-                {/* TEMPLATES CONTEXTUAIS */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">Sugestões para seu Cargo</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {renderTemplates()}
-                  </div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Horário</label>
+                  <input 
+                    type="time" 
+                    value={newEvent.time}
+                    onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
+                    className="w-full bg-[#050510] border border-white/10 rounded-xl p-3 text-white focus:border-orange-500/50 outline-none transition-colors"
+                  />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Horário</label>
-                    <input 
-                      type="time" 
-                      value={newEvent.time}
-                      onChange={(e) => setNewEvent({...newEvent, time: e.target.value})}
-                      className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-3 text-white focus:border-orange-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Local</label>
-                    <input 
-                      type="text" 
-                      value={newEvent.location}
-                      onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
-                      className="w-full bg-[#1e293b] border border-slate-700 rounded-lg p-3 text-white focus:border-orange-500 outline-none"
-                    />
-                  </div>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Local</label>
+                  <input 
+                    type="text" 
+                    value={newEvent.location}
+                    onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
+                    className="w-full bg-[#050510] border border-white/10 rounded-xl p-3 text-white focus:border-orange-500/50 outline-none transition-colors"
+                  />
                 </div>
-
-                {/* JULES AUDITOR */}
-                <div className={`p-4 rounded-xl border transition-all duration-500 ${julesWarning ? 'bg-yellow-900/20 border-yellow-600/50' : 'bg-slate-800/50 border-slate-700'}`}>
-                  <div className="flex gap-3">
-                    <div className="mt-1">
-                      {julesWarning ? <span className="text-2xl animate-bounce">⚠️</span> : <span className="text-2xl opacity-50 grayscale">🤖</span>}
-                    </div>
-                    <div>
-                      <h4 className={`text-xs font-bold uppercase mb-1 ${julesWarning ? 'text-yellow-400' : 'text-slate-500'}`}>
-                        {julesWarning ? 'JULES: ALERTA DE CONFLITO' : 'JULES: VALIDANDO AGENDA...'}
-                      </h4>
-                      <p className={`text-xs leading-relaxed ${julesWarning ? 'text-yellow-100' : 'text-slate-400'}`}>
-                        {julesWarning || "Verificando disponibilidade de local, previsão do tempo e conflitos com outras diretorias..."}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
               </div>
 
-              <div className="p-6 pt-0 flex gap-3">
-                <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-xl border border-slate-700 text-slate-400 font-bold hover:bg-slate-800 transition">Cancelar</button>
-                <button onClick={handleCreateEvent} className={`flex-1 py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 transition
+              {/* JULES AUDITOR */}
+              <div className={`p-4 rounded-xl border transition-all duration-500 ${julesWarning ? 'bg-yellow-900/10 border-yellow-500/30' : 'bg-[#050510] border-white/5'}`}>
+                <div className="flex gap-3">
+                  <div className="mt-1">
+                    {julesWarning ? <span className="text-xl animate-bounce">⚠️</span> : <span className="text-xl grayscale opacity-50">🤖</span>}
+                  </div>
+                  <div>
+                    <h4 className={`text-[10px] font-black uppercase mb-1 ${julesWarning ? 'text-yellow-500' : 'text-slate-500'}`}>
+                      {julesWarning ? 'Jules: Alerta de Conflito' : 'Jules: Validando Agenda...'}
+                    </h4>
+                    <p className={`text-xs leading-relaxed ${julesWarning ? 'text-yellow-200' : 'text-slate-400'}`}>
+                      {julesWarning || "Verificando disponibilidade de local e conflitos..."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button onClick={() => setIsModalOpen(false)} className="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 font-bold hover:bg-white/5 transition uppercase text-xs tracking-widest">Cancelar</button>
+                <button onClick={handleCreateEvent} className={`flex-1 py-3 rounded-xl font-black uppercase text-xs tracking-widest shadow-lg flex items-center justify-center gap-2 transition
                     ${julesWarning ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white'}
                   `}>
-                  {julesWarning ? 'IGNORAR E CRIAR' : 'CONFIRMAR EVENTO'}
+                  {julesWarning ? 'Ignorar e Criar' : 'Confirmar Evento'}
                 </button>
               </div>
-
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* JULES AGENT */}
-        <JulesAgent context="DASHBOARD" /> 
-
-      </div>
+      <JulesAgent context="CALENDAR" /> 
     </div>
   );
 };
