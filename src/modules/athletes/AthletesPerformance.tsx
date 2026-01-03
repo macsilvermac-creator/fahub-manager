@@ -16,14 +16,14 @@ import { useNavigate } from 'react-router-dom';
 /**
  * ATHLETES PERFORMANCE - PROTOCOLO NEXUS
  * Subpágina do Container 02 (Cúpula Administrativa / Dir. Esportes)
- * CORREÇÃO: Removido import 'Award' não utilizado para sanar erro TS6133.
+ * CORREÇÃO: Restauração da integridade das tags JSX e fechamento de blocos (TS17008).
  */
 
 interface PerformanceMember {
   id: string;
   full_name: string;
   category: 'ELITE' | 'BASE' | 'ESCOLINHA';
-  readiness: number; // 0-100
+  readiness: number;
   skills: {
     tactical: number;
     physical: number;
@@ -68,7 +68,7 @@ export default function AthletesPerformance() {
     }
   };
 
-  const handleUpdatePerformance = async () => {
+  const handleUpdatePerformance = () => {
     if (!selectedAthlete) return;
     alert(`[NEXUS] Performance de ${selectedAthlete.full_name} salva com sucesso.`);
     setSelectedAthlete(null);
@@ -80,6 +80,7 @@ export default function AthletesPerformance() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans selection:bg-indigo-100">
+      {/* HEADER TÉCNICO */}
       <header className="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center sticky top-0 z-30">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-all">
@@ -100,6 +101,7 @@ export default function AthletesPerformance() {
       </header>
 
       <main className="p-8 max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-8">
+        {/* LISTAGEM LATERAL */}
         <div className="flex-1 space-y-6">
           <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={18} />
@@ -145,6 +147,7 @@ export default function AthletesPerformance() {
           </div>
         </div>
 
+        {/* LAB DE EVOLUÇÃO */}
         <div className="w-full lg:w-[450px]">
           {selectedAthlete ? (
             <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-xl sticky top-28 animate-in slide-in-from-right-8 duration-500">
@@ -171,7 +174,7 @@ export default function AthletesPerformance() {
                   <PerformanceSlider label="Foco & Disciplina" value={selectedAthlete.skills.discipline} icon={<Star size={14} />} />
                 </div>
 
-                <div className="pt-6 space-y-3">
+                <div className="pt-6">
                   <button onClick={handleUpdatePerformance} className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-xl shadow-indigo-900/20">
                     <Save size={18} /> Salvar Performance
                   </button>
@@ -186,4 +189,27 @@ export default function AthletesPerformance() {
               <h3 className="text-slate-900 font-black uppercase tracking-tighter italic mb-2">Aguardando Seleção</h3>
               <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed">
                 Selecione um atleta na matriz lateral <br /> para iniciar o protocolo de análise.
-              </
+              </p>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// Componente Auxiliar Fechado Corretamente
+function PerformanceSlider({ label, value, icon }: { label: string, value: number, icon: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-between items-center px-1">
+        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
+          {icon} {label}
+        </span>
+        <span className="text-xs font-black text-indigo-600 italic">{value}%</span>
+      </div>
+      <div className="h-2 bg-slate-100 rounded-full overflow-hidden p-0.5">
+        <div 
+          className="h-full bg-indigo-600 rounded-full shadow-[0_0_10px_rgba(79,70,229,0.3)] transition-all duration-1000" 
+          style={{ width: `${value}%` }} 
+        />
