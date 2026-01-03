@@ -5,5 +5,4 @@ export interface Athlete {
   position: string;
   status: 'active' | 'inactive';
   created_at?: string;
-  entity_id?: string; // Vinculação com a tabela entities que vimos no seu Supabase
 }
