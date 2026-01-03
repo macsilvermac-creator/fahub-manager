@@ -19,7 +19,7 @@ import { useNavigate } from 'react-router-dom';
 /**
  * DASHBOARD MASTER - PROTOCOLO NEXUS
  * Interface Unificada e Inviolável para a Cúpula Administrativa.
- * Restaura acessos do Presidente/Vice e integra Diretor de Esportes.
+ * CORREÇÃO: Removida variável 'loading' não utilizada para sanar erro TS6133.
  */
 
 interface DashboardCardProps {
@@ -34,7 +34,6 @@ const DashboardMaster: React.FC = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [persona, setPersona] = useState<string>('VISITANTE');
-  const [loading, setLoading] = useState(true);
   
   // Estado Unificado de Dados (Financeiro + Humano)
   const [stats, setStats] = useState({
@@ -52,12 +51,10 @@ const DashboardMaster: React.FC = () => {
   }, []);
 
   const fetchCoreData = async () => {
-    setLoading(true);
     try {
       // Busca de Membros
       const { data: members } = await supabase.from('athletes').select('id, status');
       
-      // Simulação de Dados Financeiros para Presidência (Até integração total)
       setStats(prev => ({
         ...prev,
         totalMembers: members?.length || 0,
@@ -66,8 +63,6 @@ const DashboardMaster: React.FC = () => {
       }));
     } catch (error) {
       console.error('[NEXUS ERROR]: Falha na sincronização de dados mestre', error);
-    } finally {
-      setLoading(false);
     }
   };
 
