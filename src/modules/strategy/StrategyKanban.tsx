@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, MoreHorizontal, Target, Zap, Clock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, MoreHorizontal, Target, Zap, Clock, ShieldCheck } from 'lucide-react';
 
 /**
- * Evolução Estratégica Operacional - Protocolo FAHUB
- * Ativação de lógica Kanban sem alteração de um único pixel visual.
+ * STRATEGY KANBAN - PROTOCOLO NEXUS
+ * Módulo de Gestão de Iniciativas Estratégicas (Dark Mode)
  */
 const StrategyKanban: React.FC = () => {
-  const navigate = useNavigate();
 
   // Estado operacional para simular a dinâmica de colunas
   const [columns, setColumns] = useState([
@@ -27,37 +25,50 @@ const StrategyKanban: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] pb-20">
-      {/* Header HUD Operacional - Mantendo Estética Master */}
-      <nav className="bg-white p-6 flex items-center justify-between shadow-sm mb-8 border-b border-slate-100">
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={() => navigate('/dashboard')} 
-            className="w-12 h-12 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 transition-all outline-none active:scale-95"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tighter uppercase italic leading-none">
-            Evolução <span className="text-emerald-500">Estratégica</span>
-          </h1>
-        </div>
-        <button 
-          onClick={handleAddIniciativa}
-          className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 shadow-lg hover:bg-slate-800 active:scale-95 transition-all outline-none"
-        >
-          <Plus size={16}/> Nova Iniciativa
-        </button>
-      </nav>
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500 pb-20">
+      
+      {/* HEADER DO MÓDULO */}
+      <div className="flex flex-col md:flex-row justify-between items-end md:items-center p-6 bg-[#0a0f1e]/50 border border-white/5 rounded-[2rem] backdrop-blur-sm">
+         <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-purple-500/10 rounded-lg">
+                 <ShieldCheck size={20} className="text-purple-500" />
+              </div>
+              <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">
+                 Evolução <span className="text-purple-500">Estratégica</span>
+              </h1>
+            </div>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic ml-1">
+              Diretrizes & OKRs da Gestão
+            </p>
+         </div>
 
-      <main className="max-w-[1400px] mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+         <button 
+           onClick={handleAddIniciativa}
+           className="mt-4 md:mt-0 flex items-center gap-3 px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black italic text-xs uppercase shadow-[0_0_15px_rgba(147,51,234,0.3)] hover:shadow-[0_0_25px_rgba(147,51,234,0.5)] transition-all"
+         >
+           <Plus size={16}/> Nova Iniciativa
+         </button>
+      </div>
+
+      {/* KANBAN BOARD */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {columns.map((col) => (
-          <div key={col.id} className="bg-slate-200/40 rounded-[2.5rem] p-6 min-h-[700px] border border-slate-200/50">
+          <div key={col.id} className="bg-[#0a0f1e]/40 rounded-[2.5rem] p-6 min-h-[600px] border border-white/5 backdrop-blur-sm">
+            
+            {/* Título da Coluna */}
             <div className="flex items-center justify-between mb-8 px-4">
-              <div className="flex items-center gap-2 text-slate-500 font-black uppercase text-[10px] italic tracking-widest">
-                <span className="text-emerald-500">{col.icon}</span>
+              <div className="flex items-center gap-3 text-slate-400 font-black uppercase text-[10px] italic tracking-widest">
+                <span className={`p-1.5 rounded-lg ${
+                    col.id === 1 ? 'bg-indigo-500/10 text-indigo-400' :
+                    col.id === 2 ? 'bg-amber-500/10 text-amber-400' :
+                    'bg-emerald-500/10 text-emerald-400'
+                }`}>
+                    {col.icon}
+                </span>
                 {col.title}
               </div>
-              <span className="bg-white px-3 py-1 rounded-lg text-[9px] font-black shadow-sm text-slate-600">
+              <span className="bg-[#050510] border border-white/10 px-3 py-1 rounded-lg text-[9px] font-black text-slate-500">
                 {col.tasks.length}
               </span>
             </div>
@@ -67,39 +78,44 @@ const StrategyKanban: React.FC = () => {
                 <div 
                   key={idx} 
                   onClick={() => alert(`Abrindo detalhes da iniciativa: ${task}`)}
-                  className="bg-white p-6 rounded-[2rem] shadow-sm border border-white hover:shadow-md hover:border-emerald-500/20 transition-all cursor-pointer group"
+                  className="bg-[#0a0f1e] p-6 rounded-[2rem] border border-white/5 hover:border-purple-500/30 hover:bg-[#1e1b4b]/20 transition-all cursor-pointer group relative overflow-hidden"
                 >
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-tighter italic">
+                  <div className="flex justify-between items-start mb-4 relative z-10">
+                    <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-tighter italic">
                       Prioridade Master
                     </span>
-                    <button className="text-slate-300 group-hover:text-slate-600 transition-colors">
+                    <button className="text-slate-600 group-hover:text-white transition-colors">
                       <MoreHorizontal size={16} />
                     </button>
                   </div>
-                  <p className="font-black text-slate-800 italic uppercase text-xs tracking-tight leading-tight">
+                  
+                  <p className="font-black text-slate-200 italic uppercase text-xs tracking-tight leading-tight relative z-10">
                     {task}
                   </p>
-                  <div className="mt-6 pt-4 border-t border-slate-50 flex justify-between items-center">
+                  
+                  <div className="mt-6 pt-4 border-t border-white/5 flex justify-between items-center relative z-10">
                     <div className="flex -space-x-2">
-                      <div className="w-6 h-6 rounded-full bg-slate-800 border-2 border-white flex items-center justify-center text-[7px] font-black text-white">JG</div>
+                      <div className="w-6 h-6 rounded-full bg-slate-800 border-2 border-[#0a0f1e] flex items-center justify-center text-[7px] font-black text-white">JG</div>
                     </div>
-                    <span className="text-[8px] font-black text-slate-400 uppercase italic">Update: Hoje</span>
+                    <span className="text-[8px] font-black text-slate-600 uppercase italic group-hover:text-purple-400 transition-colors">Update: Hoje</span>
                   </div>
+
+                  {/* Glow Effect no Hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 via-purple-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </div>
               ))}
               
-              {/* Slot Vazio Operacional para Visualização */}
+              {/* Botão Adicionar Item na Coluna */}
               <button 
                 onClick={handleAddIniciativa}
-                className="w-full py-4 border-2 border-dashed border-slate-300 rounded-[2rem] text-slate-400 text-[10px] font-black uppercase italic hover:bg-slate-50 hover:border-slate-400 transition-all mt-4"
+                className="w-full py-4 border-2 border-dashed border-white/5 rounded-[2rem] text-slate-600 text-[10px] font-black uppercase italic hover:bg-white/5 hover:border-white/20 hover:text-slate-300 transition-all mt-4"
               >
                 + Adicionar Item
               </button>
             </div>
           </div>
         ))}
-      </main>
+      </div>
     </div>
   );
 };
