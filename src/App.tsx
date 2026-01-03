@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-
 import DashboardLayout from './shared/components/layouts/DashboardLayout';
 
 /** 
- * PROTOCOLO NEXUS - APP ROUTER V2
- * Integração total com DashboardLayout para consistência visual.
+ * PROTOCOLO NEXUS - APP ROUTER V2.1
+ * Atualização: Inclusão de Rota de Estratégia (Kanban)
  */
 
 // 1. Módulos Core
@@ -20,20 +20,18 @@ import HumanCapital from './modules/people/HumanCapital';
 import MemberProfile360 from './modules/people/MemberProfile360';
 import AthletesList from './modules/athletes/AthletesList';
 
-// 4. Laboratórios & Labs
+// 4. Laboratórios & Labs & Estratégia
 import TryoutLab from './modules/tryout/TryoutLab';
 import CreativeLab from './modules/marketing/CreativeLab';
 import MarketingProjectsGoals from './modules/marketing/MarketingProjectsGoals';
 import SponsorLab from './modules/commercial/SponsorLab';
+import StrategyKanban from './modules/strategy/StrategyKanban'; // <--- NOVO IMPORT
 
 // 5. Configurações
 import EntitySettings from './modules/settings/EntitySettings';
 
 // WRAPPER DE PROTEÇÃO E LAYOUT
-// Este componente força o Layout em todas as rotas internas
 const NexusLayoutWrapper = () => {
-  // Aqui poderíamos verificar se existe 'nexus_persona'
-  // Se não existir, redirecionar para Login
   const isAuthenticated = !!localStorage.getItem('nexus_persona');
   
   if (!isAuthenticated) {
@@ -42,7 +40,7 @@ const NexusLayoutWrapper = () => {
 
   return (
     <DashboardLayout pageTitle="FAHUB NEXUS">
-      <Outlet /> {/* Aqui renderiza a página filha (Dashboard, Financeiro, etc) */}
+      <Outlet />
     </DashboardLayout>
   );
 };
@@ -61,8 +59,12 @@ const App: React.FC = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/configuracoes" element={<EntitySettings />} />
             
+            {/* ESTRATÉGIA (Correção do Container 04) */}
+            <Route path="/estrategia" element={<StrategyKanban />} />
+
             {/* NÓDULOS FINANCEIROS E LOGÍSTICOS */}
             <Route path="/financeiro" element={<FinanceConsolidated />} />
+            <Route path="/financeiro/*" element={<FinanceConsolidated />} /> {/* Fallback para sub-rotas financeiras */}
             <Route path="/agenda" element={<CalendarMaster />} />
             
             {/* GESTÃO DE CAPITAL HUMANO */}
