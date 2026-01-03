@@ -11,10 +11,6 @@ import {
 } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
 
-/** * CCO COMMAND CENTER - PROTOCOLO NEXUS
- * Gestão Comercial de Alta Densidade e Sponsor Lab integration.
- */
-
 interface Lead {
   id: string;
   company: string;
@@ -35,7 +31,7 @@ const DashboardCommercial: React.FC = () => {
   return (
     <div className="h-full flex flex-col relative animate-in fade-in duration-500 selection:bg-orange-500/30">
       
-      {/* HEADER DO MÓDULO - SKIN NEXUS */}
+      {/* HEADER DO MÓDULO */}
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 bg-[#0f172a]/40 p-6 rounded-3xl border border-white/5 backdrop-blur-sm">
         <div>
            <h1 className="text-3xl font-black italic text-white tracking-tighter uppercase">
@@ -51,7 +47,7 @@ const DashboardCommercial: React.FC = () => {
         </div>
       </div>
 
-      {/* GRID 2x2 - PROTOCOLO DE ALTA DISPONIBILIDADE */}
+      {/* GRID 2x2 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 min-h-0">
         
         {/* SALES PIPELINE */}
@@ -79,7 +75,7 @@ const DashboardCommercial: React.FC = () => {
           </div>
         </div>
 
-        {/* SPONSOR LAB (DEEP ANALYSIS) */}
+        {/* SPONSOR LAB */}
         <div 
           onClick={() => setExpandedCard('LAB')}
           className="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 hover:border-indigo-500 rounded-[2rem] p-8 cursor-pointer transition-all duration-500 group relative overflow-hidden flex flex-col justify-between backdrop-blur-sm shadow-[0_0_30px_rgba(99,102,241,0.05)]"
@@ -134,22 +130,45 @@ const DashboardCommercial: React.FC = () => {
               <span className="text-[9px] text-slate-600 font-bold italic uppercase tracking-widest">Próximo venc: 10/02</span>
           </div>
         </div>
-
       </div>
 
-      {/* OVERLAY DE EXPANSÃO - PROTOCOLO DE INTERFACE FULL-SCREEN */}
+      {/* OVERLAY DE EXPANSÃO */}
       {expandedCard && (
         <div className="fixed inset-0 z-[100] bg-[#020617]/95 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
            <div className="bg-[#0f172a] w-full max-w-5xl h-[85vh] rounded-[2.5rem] border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden">
-              
-              {/* Header do Overlay */}
               <div className="px-10 py-8 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
                  <h2 className="text-2xl font-black text-white flex items-center gap-4 italic uppercase tracking-tighter">
                     {expandedCard === 'LAB' ? <Zap className="text-indigo-500" /> : <TrendingUp className="text-orange-500" />}
                     {expandedCard === 'LAB' ? '🧪 Sponsor Lab: Deep Analysis' : `Módulo: ${expandedCard}`}
                  </h2>
-                 <button 
-                  onClick={() => setExpandedCard(null)} 
-                  className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all"
-                 >
-                    <X size={24}
+                 <button onClick={() => setExpandedCard(null)} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all">
+                    <X size={24} />
+                 </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-gradient-to-b from-transparent to-[#0a0a15]/50 flex flex-col items-center justify-center">
+                 {expandedCard === 'LAB' ? (
+                   <div className="text-center max-w-lg">
+                      <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-indigo-500/20">
+                        <Zap size={32} className="text-indigo-500 animate-pulse" />
+                      </div>
+                      <h3 className="text-white font-black text-xl uppercase italic tracking-tighter mb-4">Engenharia de Nódulos</h3>
+                      <button onClick={() => navigate('/sponsor-lab')} className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl uppercase tracking-[0.3em] text-xs">
+                        Iniciar Sponsor Lab 🧬
+                      </button>
+                   </div>
+                 ) : (
+                   <div className="text-center text-slate-500 font-black uppercase tracking-[0.3em] italic text-sm">
+                     Módulo em desenvolvimento no Protocolo Nexus
+                   </div>
+                 )}
+              </div>
+           </div>
+        </div>
+      )}
+
+      <JulesAgent context="DASHBOARD" />
+    </div>
+  );
+};
+
+export default DashboardCommercial;
