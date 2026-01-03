@@ -1,8 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Users, Calendar, ClipboardList, Target, 
-  Activity, ArrowUpRight, Shield, Zap
+  Users, 
+  Calendar, 
+  Target, 
+  Activity, 
+  ArrowUpRight, 
+  Shield 
 } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
 import EventTicker from '../../components/EventTicker';
@@ -10,20 +14,20 @@ import EventTicker from '../../components/EventTicker';
 /**
  * DASHBOARD TACTICAL - HEAD COACH VIEW
  * Protocolo Nexus: Command Center para Tomada de Decisão Tática.
- * Fundo: Deep Void (#050510) | Glassmorphism.
+ * CORREÇÃO: Limpeza de imports TS6133 e ajuste de tipagem TS2820.
  */
 
 const DashboardTactical: React.FC = () => {
   const navigate = useNavigate();
   
-  // ANCORA DE DADOS: No futuro, estes valores virão do usePerformanceData() ou Supabase.
+  // ANCORA DE DADOS: Mock tático para validação de interface
   const stats = {
     rosterSize: 55,
     activePlayers: 48,
     injuredPlayers: 4,
     nextEvent: { type: 'TREINO', time: '19:00', confirmed: 42 },
     tryoutCandidates: 12,
-    playbookInstall: 65 // % de instalação do plano tático
+    playbookInstall: 65 
   };
 
   const readiness = Math.round((stats.activePlayers / stats.rosterSize) * 100);
@@ -42,7 +46,6 @@ const DashboardTactical: React.FC = () => {
           </p>
         </div>
         
-        {/* Hud de Status Rápido de Unidades */}
         <div className="flex gap-3">
             <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl flex flex-col items-center min-w-[80px]">
                 <span className="text-[9px] text-slate-500 font-black uppercase">OFFENSE</span>
@@ -55,13 +58,12 @@ const DashboardTactical: React.FC = () => {
         </div>
       </div>
 
-      {/* Ticker de Eventos Globais */}
       <EventTicker />
 
       {/* 2. GRID DE COMANDO (4 Containers) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        {/* C1: ROSTER & HEALTH (Elenco) */}
+        {/* C1: ROSTER & HEALTH */}
         <div 
             onClick={() => navigate('/elenco')}
             className="group relative bg-white/5 border border-orange-500/20 hover:border-orange-500/50 rounded-[2.5rem] p-8 min-h-[240px] flex flex-col justify-between cursor-pointer transition-all hover:bg-white/10"
@@ -91,7 +93,7 @@ const DashboardTactical: React.FC = () => {
             </div>
         </div>
 
-        {/* C2: NEXT PRACTICE (Agenda) */}
+        {/* C2: NEXT PRACTICE */}
         <div 
             onClick={() => navigate('/agenda')}
             className="group relative bg-white/5 border border-blue-500/20 hover:border-blue-500/50 rounded-[2.5rem] p-8 min-h-[240px] flex flex-col justify-between cursor-pointer transition-all hover:bg-white/10"
@@ -117,7 +119,7 @@ const DashboardTactical: React.FC = () => {
             <p className="text-[10px] text-right text-slate-500 font-bold mt-1 uppercase">{stats.nextEvent.confirmed}/55 Confirmados</p>
         </div>
 
-        {/* C3: RECRUITING (Tryout Lab) */}
+        {/* C3: RECRUITING */}
         <div 
             onClick={() => navigate('/tryout-lab')}
             className="group relative bg-white/5 border border-emerald-500/20 hover:border-emerald-500/50 rounded-[2.5rem] p-8 min-h-[200px] flex flex-col justify-between cursor-pointer transition-all hover:bg-white/10"
@@ -141,7 +143,7 @@ const DashboardTactical: React.FC = () => {
             </div>
         </div>
 
-        {/* C4: PLAYBOOK & SCOUT (Estratégia) */}
+        {/* C4: ESTRATÉGIA */}
         <div 
             onClick={() => navigate('/estrategia')} 
             className="group relative bg-white/5 border border-purple-500/20 hover:border-purple-500/50 rounded-[2.5rem] p-8 min-h-[200px] flex flex-col justify-between cursor-pointer transition-all hover:bg-white/10"
@@ -167,7 +169,8 @@ const DashboardTactical: React.FC = () => {
 
       </div>
 
-      <JulesAgent context="HC_DASHBOARD" />
+      {/* CORREÇÃO TS2820: Contexto normalizado para "DASHBOARD" */}
+      <JulesAgent context="DASHBOARD" />
     </div>
   );
 };
