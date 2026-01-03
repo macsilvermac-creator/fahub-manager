@@ -1,18 +1,9 @@
-export type AthleteStatus = 'ACTIVE' | 'INJURED' | 'SUSPENDED' | 'INACTIVE';
-
 export interface Athlete {
   id: string;
-  name: string;
+  full_name: string;
+  birth_date: string;
   position: string;
-  number: number;
-  status: AthleteStatus;
-  
-  // Campos Opcionais (podem estar vazios)
-  height?: string;
-  weight?: string;
-  category?: string;
-  email?: string;
-  phone?: string;
-  photo_url?: string;
+  status: 'active' | 'inactive';
   created_at?: string;
+  entity_id?: string; // Vinculação com a tabela entities que vimos no seu Supabase
 }
