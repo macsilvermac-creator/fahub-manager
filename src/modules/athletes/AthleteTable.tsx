@@ -1,6 +1,6 @@
 import type { Athlete } from './types';
 import { supabase } from '../../lib/supabase';
-import { Trash2, ExternalLink, Calendar, ShieldAlert } from 'lucide-react';
+import { Trash2, ExternalLink, ShieldAlert } from 'lucide-react'; // Calendário removido (TS6133 resolvido)
 
 export interface AthleteTableProps {
   athletes: Athlete[];
@@ -8,10 +8,10 @@ export interface AthleteTableProps {
   canEdit: boolean;
 }
 
-const AthleteTable: React.FC<AthleteTableProps> = ({ athletes, onDeleteSuccess, canEdit }) => {
+export default function AthleteTable({ athletes, onDeleteSuccess, canEdit }: AthleteTableProps) {
   const handleDelete = async (id: string, name: string) => {
     if (!canEdit) return;
-    if (confirm(`Excluir atleta: ${name}?`)) {
+    if (confirm(`Remover ${name} do sistema?`)) {
       const { error } = await supabase.from('athletes').delete().eq('id', id);
       if (!error) onDeleteSuccess();
     }
@@ -22,29 +22,26 @@ const AthleteTable: React.FC<AthleteTableProps> = ({ athletes, onDeleteSuccess, 
       <table className="w-full text-left">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-200">
-            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Atleta</th>
-            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Posição</th>
-            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-right">Ações</th>
+            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Atleta</th>
+            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ações</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 bg-white">
           {athletes.map((athlete) => (
-            <tr key={athlete.id} className="hover:bg-slate-50">
-              <td className="px-6 py-4 font-bold text-slate-900 uppercase text-sm">
-                {athlete.full_name}
-              </td>
+            <tr key={athlete.id} className="hover:bg-slate-50/50 transition-colors">
               <td className="px-6 py-4">
-                <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded">
-                  {athlete.position || 'N/D'}
-                </span>
+                <div className="text-sm font-bold text-slate-900 uppercase">{athlete.full_name}</div>
+                <div className="text-[10px] text-slate-400 font-mono tracking-tighter">POS: {athlete.position || 'N/A'}</div>
               </td>
               <td className="px-6 py-4 text-right flex justify-end gap-2">
-                <button className="p-2 text-slate-400"><ExternalLink size={18} /></button>
+                <button className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"><ExternalLink size={18} /></button>
                 {canEdit ? (
-                  <button onClick={() => handleDelete(athlete.id, athlete.full_name)} className="p-2 text-slate-400 hover:text-red-600">
+                  <button onClick={() => handleDelete(athlete.id, athlete.full_name)} className="p-2 text-slate-400 hover:text-red-600 transition-colors">
                     <Trash2 size={18} />
                   </button>
-                ) : <ShieldAlert size={18} className="text-slate-200" />}
+                ) : (
+                  <div className="p-2 text-slate-200" title="Acesso Restrito"><ShieldAlert size={18} /></div>
+                )}
               </td>
             </tr>
           ))}
@@ -52,6 +49,4 @@ const AthleteTable: React.FC<AthleteTableProps> = ({ athletes, onDeleteSuccess, 
       </table>
     </div>
   );
-};
-
-export default AthleteTable;
+}
