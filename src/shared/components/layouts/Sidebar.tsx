@@ -1,7 +1,5 @@
 import { LayoutDashboard, Users, Settings, DollarSign, Calendar, LogOut, Shield } from 'lucide-react';
 import { NavLink, Link } from 'react-router-dom';
-// Nota: Se useUserRole não existir, pode remover e usar uma string fixa por enquanto.
-import { useUserRole } from '../../hooks/useUserRole'; 
 
 interface SidebarProps {
   isMobileOpen?: boolean;
@@ -9,11 +7,10 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isMobileOpen, closeMobile }: SidebarProps) => {
-  // Fallback seguro caso o hook não esteja implementado ainda
+  // Lemos direto do localStorage para evitar dependência de Contexto que pode não existir ainda
   const role = localStorage.getItem('nexus_persona') || 'VISITANTE';
 
   // Definição clara de quem vê o quê
-  // Adicionei roles genéricas para garantir que apareça algo
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['MASTER', 'PRESIDENTE', 'VICE_PRES', 'HC', 'gestor', 'VISITANTE'] },
     { icon: Calendar, label: 'Agenda', path: '/agenda', roles: ['MASTER', 'HC', 'ATHLETE', 'COORD_ATQ', 'gestor', 'atleta'] },
@@ -23,8 +20,7 @@ const Sidebar = ({ isMobileOpen, closeMobile }: SidebarProps) => {
     { icon: Settings, label: 'Configurações', path: '/configuracoes', roles: ['MASTER'] },
   ];
 
-  // Filtra os itens (Lógica simples: se a role do usuário estiver na lista do item, mostra)
-  // Se for MASTER, mostra tudo.
+  // Filtra os itens: Se for MASTER, mostra tudo. Senão, checa a lista.
   const filteredItems = menuItems.filter(item => 
     role === 'MASTER' || item.roles.includes(role)
   );
