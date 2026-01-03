@@ -4,7 +4,6 @@ import {
   Users, 
   Calendar, 
   Target, 
-  Activity, 
   ArrowUpRight, 
   Shield 
 } from 'lucide-react';
@@ -13,8 +12,8 @@ import EventTicker from '../../components/EventTicker';
 
 /**
  * DASHBOARD TACTICAL - HEAD COACH VIEW
- * FOCO: Interface Limpa com Sidebar Única (Provida pelo DashboardLayout).
- * CONFORMIDADE: Playbook Lab atribuído ao HC | Tryout Lab visual apenas.
+ * FOCO: Interface Limpa com Sidebar Única.
+ * CORREÇÃO: Remoção de 'Activity' (TS6133) para estabilização de build.
  */
 
 const DashboardTactical: React.FC = () => {
@@ -35,7 +34,7 @@ const DashboardTactical: React.FC = () => {
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 animate-in fade-in duration-500">
       
-      {/* 1. STATUS LINE (Topo Tático) - Sem Sidebar Interna */}
+      {/* 1. STATUS LINE (Topo Tático) */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-2">
         <div>
           <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">
@@ -63,7 +62,7 @@ const DashboardTactical: React.FC = () => {
       {/* 2. GRID DE COMANDO (4 Containers) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        {/* C1: ROSTER & HEALTH - Link direto para Elenco */}
+        {/* C1: ROSTER & HEALTH */}
         <div 
             onClick={() => navigate('/elenco')}
             className="group bg-white/5 border border-orange-500/20 hover:border-orange-500/50 rounded-[2.5rem] p-8 flex flex-col justify-between cursor-pointer transition-all"
@@ -78,12 +77,12 @@ const DashboardTactical: React.FC = () => {
             </div>
             <div className="flex gap-2 mt-4">
                 <span className="px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-lg text-[10px] font-black text-red-400 uppercase">
-                    {stats.injuredPlayers} DM
+                    {stats.injuredPlayers} DM / LESIONADOS
                 </span>
             </div>
         </div>
 
-        {/* C2: NEXT PRACTICE - Link para Agenda */}
+        {/* C2: NEXT PRACTICE */}
         <div 
             onClick={() => navigate('/agenda')}
             className="group bg-white/5 border border-blue-500/20 hover:border-blue-500/50 rounded-[2.5rem] p-8 flex flex-col justify-between cursor-pointer transition-all"
@@ -101,7 +100,7 @@ const DashboardTactical: React.FC = () => {
             </div>
         </div>
 
-        {/* C3: TRYOUT VISUAL - Somente visualização para o HC */}
+        {/* C3: TRYOUT VISUAL */}
         <div className="bg-white/5 border border-white/5 rounded-[2.5rem] p-8 flex flex-col justify-between opacity-80">
             <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-500"><Target size={20} /></div>
@@ -116,7 +115,7 @@ const DashboardTactical: React.FC = () => {
             </div>
         </div>
 
-        {/* C4: PLAYBOOK LAB - Exclusivo HC */}
+        {/* C4: PLAYBOOK LAB */}
         <div 
             onClick={() => navigate('/creative-lab')} 
             className="group bg-white/5 border border-purple-500/20 hover:border-purple-500/50 rounded-[2.5rem] p-8 flex flex-col justify-between cursor-pointer transition-all"
