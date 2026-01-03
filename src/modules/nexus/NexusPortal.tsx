@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 
 /**
  * NEXUS PORTAL - CORE SYSTEM
- * Interface de Injeção de Contexto e Seleção de Personas.
- * RESTAURAÇÃO: Mantendo a Dir. Financeira e Adicionando Dir. de Esportes.
+ * Protocolo de Injeção de Persona e Seleção de Skins.
+ * CORREÇÃO: Removida prop 'active' não utilizada para sanar erro TS6133.
  */
 const NexusPortal: React.FC = () => {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ const NexusPortal: React.FC = () => {
         
         {/* COLUNA 1: ENTIDADES */}
         <div className="flex flex-col gap-4">
-          <h2 className="text-[#64748b] text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1 italic">
+          <h2 className="text-[#64748b] text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1 italic font-bold">
             1. Entidades
           </h2>
           <div className="p-6 rounded-[2rem] border border-white/5 bg-[#0f172a]/50 backdrop-blur-sm flex flex-col gap-3">
@@ -44,21 +44,16 @@ const NexusPortal: React.FC = () => {
           </div>
         </div>
 
-        {/* COLUNA 2: CONSELHO ADMINISTRATIVO - RESTAURADA E AMPLIADA */}
+        {/* COLUNA 2: CONSELHO ADMINISTRATIVO */}
         <div className="flex flex-col gap-4">
-          <h2 className="text-[#475569] text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1 italic">
+          <h2 className="text-[#475569] text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1 italic font-bold">
             2. Conselho Administrativo
           </h2>
           <div className="p-6 rounded-[2rem] border border-white/5 bg-[#0f172a]/50 backdrop-blur-sm flex flex-col gap-3">
             <NexusButton label="Presidente" onClick={() => selectPersona('PRESIDENTE', '/dashboard')} />
             <NexusButton label="Vice-presidente" onClick={() => selectPersona('VICE_PRES', '/dashboard')} />
-            
-            {/* PERSONA RESTAURADA */}
             <NexusButton label="Diretora Financeira" onClick={() => selectPersona('CFO', '/financeiro')} highlight="finance" />
-            
-            {/* NOVA PERSONA ADICIONADA (SEM SUBSTITUIR) */}
-            <NexusButton label="Dir. de Esportes" onClick={() => selectPersona('DIR_ESPORTES', '/dashboard')} highlight="sports" active />
-            
+            <NexusButton label="Dir. de Esportes" onClick={() => selectPersona('DIR_ESPORTES', '/dashboard')} highlight="sports" />
             <NexusButton label="Diretor de Marketing" onClick={() => selectPersona('CMO', '/dashboard')} />
             <NexusButton label="Diretor Comercial" onClick={() => selectPersona('CCO', '/dashboard')} />
           </div>
@@ -66,7 +61,7 @@ const NexusPortal: React.FC = () => {
 
         {/* COLUNA 3: OPERACIONAL */}
         <div className="flex flex-col gap-4">
-          <h2 className="text-[#ea580c] text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1 italic">
+          <h2 className="text-[#ea580c] text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1 italic font-bold">
             3. Operacional
           </h2>
           <div className="p-6 rounded-[2rem] border border-white/5 bg-[#0f172a]/50 backdrop-blur-sm flex flex-col gap-3">
@@ -80,7 +75,7 @@ const NexusPortal: React.FC = () => {
 
         {/* COLUNA 4: USUÁRIOS */}
         <div className="flex flex-col gap-4">
-          <h2 className="text-[#22c55e] text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1 italic">
+          <h2 className="text-[#22c55e] text-[10px] font-black uppercase tracking-[0.3em] mb-2 pl-1 italic font-bold">
             4. Usuários
           </h2>
           <div className="p-6 rounded-[2rem] border border-white/5 bg-[#0f172a]/50 backdrop-blur-sm flex flex-col gap-3">
@@ -94,15 +89,15 @@ const NexusPortal: React.FC = () => {
   );
 };
 
+// Interface simplificada para resolver TS6133
 interface NexusButtonProps {
   label: string;
   onClick: () => void;
-  active?: boolean; 
   special?: boolean;
   highlight?: 'sports' | 'finance' | string;
 }
 
-const NexusButton: React.FC<NexusButtonProps> = ({ label, onClick, active, special, highlight }) => {
+const NexusButton: React.FC<NexusButtonProps> = ({ label, onClick, special, highlight }) => {
   let baseClass = "w-full py-4 px-6 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 transform hover:scale-[1.02] active:scale-95 border ";
   
   if (highlight === 'sports') {
