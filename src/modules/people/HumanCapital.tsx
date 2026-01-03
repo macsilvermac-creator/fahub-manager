@@ -10,7 +10,6 @@ import {
   Stethoscope,
   GraduationCap
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 /**
  * HUMAN CAPITAL - PROTOCOLO NEXUS
@@ -27,7 +26,7 @@ interface Member {
 }
 
 export default function HumanCapital() {
-  const navigate = useNavigate();
+  // Removido useNavigate não utilizado para corrigir erro de Build
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('ALL');
@@ -88,7 +87,7 @@ export default function HumanCapital() {
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       
-      {/* HEADER DO MÓDULO (Sem voltar, pois Sidebar já navega) */}
+      {/* HEADER DO MÓDULO */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center p-6 bg-[#0a0f1e]/50 border border-white/5 rounded-[2rem] backdrop-blur-sm">
          <div>
             <h1 className="text-2xl font-black text-white uppercase tracking-tighter italic">
