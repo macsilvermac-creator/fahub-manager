@@ -9,44 +9,54 @@ interface DashboardLayoutProps {
 }
 
 /**
- * DASHBOARD LAYOUT - WRAPPER MESTRE
- * Atualizado para Protocolo Nexus (Cyberpunk/Dark)
- * Remove o fundo branco e aplica a identidade visual #050510.
+ * DASHBOARD LAYOUT - ARQUITETURA SHELL (FLEXBOX MODEL)
+ * Padrão Enterprise: Elimina posicionamento absoluto/fixo para layout estrutural.
+ * O navegador calcula o espaço da Sidebar e ajusta o conteúdo automaticamente.
  */
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, pageTitle }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
   return (
-    // CONTAINER GLOBAL - Fundo Deep Void (#050510)
-    <div className="flex h-screen bg-[#050510] overflow-hidden text-slate-300 font-sans selection:bg-indigo-500/30">
+    // ROOT SHELL: Flex Container que segura toda a aplicação
+    // h-screen garante que a aplicação nunca ultrapasse a altura da janela (scroll interno)
+    <div className="flex h-screen w-full bg-[#050510] text-slate-300 font-sans overflow-hidden">
       
-      {/* Sidebar - Passamos o estado para controlar no mobile */}
-      {/* Certifique-se de que o componente Sidebar também use cores escuras internamente */}
-      <Sidebar 
-        isMobileOpen={isMobileMenuOpen} 
-        closeMobile={() => setIsMobileMenuOpen(false)} 
-      />
+      {/* 1. SIDEBAR DESKTOP (Bloco Sólido) */}
+      {/* 'hidden md:flex': Só existe no desktop */}
+      {/* 'w-64 flex-none': Largura rígida, nunca encolhe */}
+      <div className="hidden md:flex w-64 flex-col h-full border-r border-white/5 bg-[#0a0a16]">
+        <Sidebar isMobileOpen={false} />
+      </div>
 
-      {/* ÁREA DE CONTEÚDO */}
-      <div className="flex-1 flex flex-col overflow-hidden relative bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/10 via-[#050510] to-[#050510]">
+      {/* 2. SIDEBAR MOBILE (Overlay) */}
+      {/* Esta continua 'fixed' pois deve flutuar sobre o conteúdo no celular */}
+      <div className="md:hidden">
+        <Sidebar 
+          isMobileOpen={isMobileMenuOpen} 
+          closeMobile={() => setIsMobileMenuOpen(false)} 
+        />
+      </div>
+
+      {/* 3. ÁREA DE CONTEÚDO (Main Wrapper) */}
+      {/* 'flex-1': Ocupa todo o espaço que a Sidebar não usar */}
+      {/* 'flex-col': Organiza Header em cima e Conteúdo em baixo */}
+      {/* 'min-w-0': Fix crítico do Flexbox para evitar estouro de conteúdo horizontal */}
+      <div className="flex-1 flex flex-col min-w-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/10 via-[#050510] to-[#050510]">
         
-        {/* Header - Recebe a função de abrir o menu */}
+        {/* Header - Agora flui naturalmente dentro da coluna principal */}
         <Header 
           pageTitle={pageTitle} 
-          onToggleSidebar={toggleMobileMenu} 
+          onToggleSidebar={() => setIsMobileMenuOpen(true)} 
         />
 
-        {/* Conteúdo Principal (Main) */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 relative z-10">
-          {/* Container limitador para não esticar demais em telas ultrawide */}
-          <div className="max-w-7xl mx-auto min-h-full animate-in fade-in duration-500">
+        {/* Scroll Area - Apenas esta área rola, o Header e Sidebar ficam parados */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 scroll-smooth custom-scrollbar">
+          {/* Container de Largura Máxima para telas ultrawide */}
+          <div className="max-w-[1920px] mx-auto w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
             {children}
           </div>
         </main>
+
       </div>
     </div>
   );
