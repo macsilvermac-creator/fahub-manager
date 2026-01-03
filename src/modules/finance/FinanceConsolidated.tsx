@@ -1,9 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Landmark, Settings, FileSearch, 
-  Download, PieChart, Sparkles,
-  ArrowUpRight
+  Landmark, Sparkles, ArrowUpRight
 } from 'lucide-react';
 import JulesAgent from '../../lib/Jules';
 
