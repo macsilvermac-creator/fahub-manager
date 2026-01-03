@@ -1,137 +1,106 @@
-import React, { useState } from 'react';
-import { Plus, Users } from 'lucide-react';
-import { useAthletes } from './useAthletes';
-import AthleteTable from './AthleteTable';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase'; // Importando do seu arquivo de lib
+import { Plus, Users, Search, RefreshCw } from 'lucide-react';
 import AthleteForm from './AthleteForm';
-import DashboardSidebar from '../dashboard/components/DashboardSidebar';
-import JulesAgent from '../../lib/Jules';
-import type { Athlete } from './types';
+import AthleteTable from './AthleteTable';
+import { Athlete } from './types';
 
-/**
- * MÓDULO: ELENCO (ROSTER) - ORQUESTRADOR
- * Padrão: Protocolo Nexus (Dark Mode / Modular)
- * Lógica: Conectado ao Supabase via useAthletes
- */
-const AthletesList: React.FC = () => {
-  const { athletes, addAthlete, updateAthlete, deleteAthlete } = useAthletes();
-  
-  // Estados de Interface
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [editingAthlete, setEditingAthlete] = useState<Athlete | null>(null);
+export default function AthletesList() {
+  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // --- LÓGICA DE OPERAÇÃO ---
+  // 1. Função para buscar atletas (Refresh)
+  const fetchAthletes = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('athletes')
+      .select('*')
+      .order('full_name', { ascending: true });
 
-  const handleSave = (data: Omit<Athlete, 'id'>) => {
-    if (editingAthlete) {
-      updateAthlete(editingAthlete.id, data);
+    if (error) {
+      console.error('Erro ao buscar atletas:', error.message);
     } else {
-      addAthlete(data);
+      setAthletes(data || []);
     }
-    handleCloseForm();
+    setLoading(false);
   };
 
-  const handleNew = () => {
-    setEditingAthlete(null);
-    setShowForm(true);
-  };
+  useEffect(() => {
+    fetchAthletes();
+  }, []);
 
-  const handleEdit = (athlete: Athlete) => {
-    setEditingAthlete(athlete);
-    setShowForm(true);
-  };
-
-  const handleCloseForm = () => {
-    setShowForm(false);
-    setEditingAthlete(null);
-  };
+  // 2. Filtragem em tempo real
+  const filteredAthletes = athletes.filter(athlete =>
+    athlete.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    athlete.position?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="flex h-screen bg-[#020617] overflow-hidden text-white font-sans">
-      
-      {/* 1. NAVEGAÇÃO LATERAL (Integrada ao Protocolo) */}
-      <DashboardSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="p-6 bg-white rounded-lg shadow-sm">
+      {/* Header do Módulo */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <Users className="text-blue-600" size={28} /> 
+            Gestão de Atletas
+          </h1>
+          <p className="text-sm text-gray-500">Nexus Portal - Controle de elenco e registros</p>
+        </div>
 
-      {/* 2. CONTEÚDO PRINCIPAL */}
-      <div className="flex-1 flex flex-col overflow-y-auto relative">
-        
-        {/* HEADER DE COMANDO OPERACIONAL */}
-        <header className="p-4 md:p-6 border-b border-slate-800 bg-[#0f172a]/50 backdrop-blur sticky top-0 z-20 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            {/* Botão Mobile Menu */}
-            <button 
-              onClick={() => setSidebarOpen(true)} 
-              className="md:hidden p-2 text-gray-300 bg-slate-800 rounded-lg"
-            >
-              ☰
-            </button>
-            <div>
-              <h1 className="text-xl font-black italic text-white flex items-center gap-2 uppercase tracking-tighter">
-                <Users className="text-indigo-500" size={24} />
-                Gestão de Elenco <span className="text-slate-600">/ Roster</span>
-              </h1>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-mono">
-                Operação: <span className="text-indigo-400 font-bold">Unidade Esportiva</span> • Status: <span className="text-emerald-500">Online</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            {!showForm && (
-              <button 
-                onClick={handleNew}
-                className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white px-4 py-2 rounded-xl font-bold text-xs transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2 transform active:scale-95"
-              >
-                <Plus size={16} />
-                CADASTRAR ATLETA
-              </button>
-            )}
-          </div>
-        </header>
-
-        <main className="p-4 md:p-8 max-w-7xl mx-auto w-full pb-32">
-          
-          {/* ÁREA DE TRABALHO: WORKSHOP (FORMULÁRIO) */}
-          {showForm && (
-            <div className="mb-8 animate-fade-in-down">
-              <div className="bg-[#1e293b]/20 border border-indigo-500/30 rounded-2xl p-1 shadow-2xl backdrop-blur-sm">
-                <AthleteForm 
-                  initialData={editingAthlete}
-                  onSubmit={handleSave} 
-                  onCancel={handleCloseForm} 
-                />
-              </div>
-            </div>
-          )}
-
-          {/* LISTAGEM DE ALTA PERFORMANCE (TABELA) */}
-          <div className="relative">
-            {/* Overlay sutil para destacar a tabela no fundo escuro */}
-            <div className="absolute -inset-4 bg-indigo-500/5 blur-3xl rounded-full pointer-events-none"></div>
-            
-            <div className="bg-[#1e293b]/40 border border-slate-800 rounded-2xl overflow-hidden shadow-xl relative z-10">
-              <div className="p-4 border-b border-slate-800/50 bg-[#0f172a]/50 flex justify-between items-center">
-                <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
-                  Base de Dados Atletas ({athletes.length})
-                </h3>
-              </div>
-              
-              <AthleteTable 
-                athletes={athletes} 
-                onEdit={handleEdit}
-                onDelete={deleteAthlete}
-              />
-            </div>
-          </div>
-
-        </main>
-
-        {/* 4. INTELIGÊNCIA ARTIFICIAL (JULES) */}
-        <JulesAgent context="PEOPLE" />
-
+        <div className="flex gap-2 w-full md:w-auto">
+          <button 
+            onClick={fetchAthletes}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Atualizar lista"
+          >
+            <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+          </button>
+          <button 
+            onClick={() => setIsFormOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-sm"
+          >
+            <Plus size={20} /> Novo Atleta
+          </button>
+        </div>
       </div>
+
+      {/* Barra de Busca */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <input 
+          type="text"
+          placeholder="Buscar por nome ou posição..."
+          className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      {/* Tabela de Dados */}
+      {loading ? (
+        <div className="py-20 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+          <p className="mt-2 text-gray-500 font-medium">Carregando atletas do Nexus...</p>
+        </div>
+      ) : (
+        <AthleteTable 
+          athletes={filteredAthletes} 
+          onDeleteSuccess={fetchAthletes} 
+        />
+      )}
+
+      {/* Modal do Formulário (Aparece apenas quando isFormOpen é true) */}
+      {isFormOpen && (
+        <AthleteForm 
+          onClose={() => setIsFormOpen(false)} 
+          onSuccess={() => {
+            setIsFormOpen(false);
+            fetchAthletes();
+          }} 
+        />
+      )}
     </div>
   );
-};
-
-export default AthletesList;
+}
