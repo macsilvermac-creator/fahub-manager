@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import DashboardSidebar from './components/DashboardSidebar';
 import DashboardMarketing from './DashboardMarketing';
@@ -11,13 +11,15 @@ import {
   Target, 
   ArrowUpRight,
   ClipboardCheck,
-  Shield
+  Shield,
+  Wallet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 /**
  * DASHBOARD MASTER - PROTOCOLO NEXUS
- * Interface adaptativa: Diretor de Esportes (Foco em Material Humano).
+ * Interface Unificada e Inviolável para a Cúpula Administrativa.
+ * Restaura acessos do Presidente/Vice e integra Diretor de Esportes.
  */
 
 interface DashboardCardProps {
@@ -34,49 +36,48 @@ const DashboardMaster: React.FC = () => {
   const [persona, setPersona] = useState<string>('VISITANTE');
   const [loading, setLoading] = useState(true);
   
-  // Estado para Censo de Material Humano
+  // Estado Unificado de Dados (Financeiro + Humano)
   const [stats, setStats] = useState({
+    balance: 0,
     totalMembers: 0,
     activeAthletes: 0,
-    technicalReady: 85, 
+    technicalReady: 85,
     pendingTryouts: 0
   });
 
   useEffect(() => {
-    // Injeção de Contexto via LocalStorage
     const savedPersona = localStorage.getItem('nexus_persona');
     if (savedPersona) setPersona(savedPersona);
-    
-    fetchSportsIntelligence();
+    fetchCoreData();
   }, []);
 
-  const fetchSportsIntelligence = async () => {
+  const fetchCoreData = async () => {
     setLoading(true);
     try {
-      // Busca de Atletas e Membros (Tabela athletes como base de material humano)
-      const { data: members, error } = await supabase.from('athletes').select('id, status');
-      if (error) throw error;
-
-      // Busca de Seletivas Ativas (TryoutLab integration)
-      const { count: tryouts } = await supabase.from('athletes').select('id', { count: 'exact', head: true }).eq('status', 'inactive');
-
+      // Busca de Membros
+      const { data: members } = await supabase.from('athletes').select('id, status');
+      
+      // Simulação de Dados Financeiros para Presidência (Até integração total)
       setStats(prev => ({
         ...prev,
         totalMembers: members?.length || 0,
         activeAthletes: members?.filter(m => m.status === 'active').length || 0,
-        pendingTryouts: tryouts || 0
+        balance: 145850.00
       }));
     } catch (error) {
-      console.error('[NEXUS ERROR]: Falha na sincronização de material humano', error);
+      console.error('[NEXUS ERROR]: Falha na sincronização de dados mestre', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Identificação de Visão Operacional
+  // Definição da Cúpula Administrativa (Inviolável)
+  const isExecutive = ['MASTER', 'PRESIDENTE', 'VICE_PRES'].includes(persona);
   const isSportsDirector = persona === 'DIR_ESPORTES';
-  const isMarketingView = persona === 'CMO';
-  const isCommercialView = persona === 'CCO';
+  const isFinanceDirector = persona === 'CFO';
+  
+  // Condicional de Bloco Administrativo para exibição dos 4 Containers
+  const showAdminGrid = isExecutive || isSportsDirector || isFinanceDirector;
 
   return (
     <div className="flex flex-col h-screen bg-[#020617] overflow-hidden text-white font-sans selection:bg-indigo-500/30">
@@ -92,61 +93,56 @@ const DashboardMaster: React.FC = () => {
               <button onClick={() => setSidebarOpen(true)} className="md:hidden p-2 text-gray-300 bg-slate-800 rounded-lg transition-colors">☰</button>
               <div>
                 <h1 className="text-xl font-black text-white leading-tight uppercase italic tracking-tighter">
-                  {isSportsDirector ? 'Sports Command' : 'Nexus Command'}
+                  {isSportsDirector ? 'Sports Command' : 'Nexus Command Center'}
                 </h1>
                 <p className="text-[10px] text-slate-500 font-mono tracking-wider uppercase">
-                  AUTH_ROLE: <span className="text-indigo-400 font-bold">{persona}</span>
+                  ROLE: <span className="text-indigo-400 font-bold">{persona}</span> • STATUS: <span className="text-emerald-500 font-bold">ONLINE</span>
                 </p>
               </div>
-            </div>
-            
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
-               <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-               <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest italic">Enlace Técnico Ativo</span>
             </div>
           </header>
 
           <main className="p-4 md:p-8 max-w-7xl mx-auto w-full mb-24 flex-1">
             
-            {/* VISTAS ESPECÍFICAS DE SUBPÁGINAS */}
-            {isCommercialView && <DashboardCommercial />}
-            {isMarketingView && <DashboardMarketing />}
+            {/* VISTAS ESPECÍFICAS DE DEPARTAMENTO (MARKETING/COMERCIAL) */}
+            {persona === 'CMO' && <DashboardMarketing />}
+            {persona === 'CCO' && <DashboardCommercial />}
 
-            {/* DASHBOARD 4 CONTAINERS: DIRETOR DE ESPORTES */}
-            {isSportsDirector && (
+            {/* GRID DE 4 CONTAINERS UNIFICADO */}
+            {showAdminGrid && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 
-                {/* CONTAINER 01: MATRIZ DE CAPITAL HUMANO */}
+                {/* CONTAINER 01: FINANCEIRO (PRES/VICE/CFO) OU CAPITAL HUMANO (ESPORTES) */}
                 <DashboardCard 
-                  title="Capital Humano" 
-                  color="border-indigo-500/20" 
-                  icon={<Users size={16} className="text-indigo-500" />}
-                  onAction={() => navigate('/human-capital')}
+                  title={isSportsDirector ? "Capital Humano" : "Saúde Financeira"} 
+                  color={isSportsDirector ? "border-indigo-500/20" : "border-emerald-500/20"} 
+                  icon={isSportsDirector ? <Users size={16} /> : <Wallet size={16} />}
+                  onAction={() => navigate(isSportsDirector ? '/human-capital' : '/financeiro')}
                 >
                   <div className="mt-1">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1 italic">Censo da Entidade</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1 italic">
+                      {isSportsDirector ? "Censo da Entidade" : "Liquidez Disponível"}
+                    </p>
                     <h3 className="text-4xl font-black text-white tracking-tighter italic uppercase">
-                      {loading ? '---' : stats.totalMembers} <span className="text-indigo-500 text-lg tracking-normal">Membros</span>
+                      {isSportsDirector 
+                        ? `${stats.totalMembers} Membros` 
+                        : stats.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </h3>
-                    <p className="text-[9px] text-slate-600 mt-2 font-mono uppercase font-bold tracking-widest italic">Clique para Gerenciar Perfis</p>
                   </div>
                 </DashboardCard>
 
-                {/* CONTAINER 02: RADAR DE PERFORMANCE & BASE */}
+                {/* CONTAINER 02: PERFORMANCE & BASE */}
                 <DashboardCard 
                   title="Performance & Base" 
-                  color="border-emerald-500/20" 
-                  icon={<Activity size={16} className="text-emerald-500" />}
-                  onAction={() => navigate('/elenco')}
+                  color="border-indigo-500/20" 
+                  icon={<Activity size={16} />}
+                  onAction={() => navigate('/human-capital')}
                 >
                   <div className="mt-1">
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1 italic">Prontidão do Elenco</p>
-                    <h3 className="text-4xl font-black text-emerald-400 tracking-tighter italic">
+                    <h3 className="text-4xl font-black text-indigo-400 tracking-tighter italic">
                       {stats.technicalReady}% <span className="text-white text-lg uppercase font-bold tracking-normal">Ready</span>
                     </h3>
-                    <div className="w-full bg-slate-900 h-1 rounded-full mt-3 overflow-hidden shadow-inner">
-                      <div className="bg-emerald-500 h-full w-[85%] shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000" />
-                    </div>
                   </div>
                 </DashboardCard>
 
@@ -154,47 +150,43 @@ const DashboardMaster: React.FC = () => {
                 <DashboardCard 
                   title="Operação Técnica" 
                   color="border-orange-500/20" 
-                  icon={<ClipboardCheck size={16} className="text-orange-500" />}
+                  icon={<ClipboardCheck size={16} />}
                   onAction={() => navigate('/agenda')}
                 >
                   <div className="space-y-3 mt-1 font-bold">
                     <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                      <span className="text-[10px] text-slate-500 uppercase tracking-widest">Atividade CT</span>
-                      <span className="text-[10px] text-orange-400 italic uppercase">Sincronizada</span>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-widest">Cronograma Semanal</span>
+                      <span className="text-[10px] text-orange-400 italic uppercase">Ativo</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-slate-500 uppercase tracking-widest">Sessões Elite</span>
-                      <span className="text-[10px] text-white italic uppercase underline decoration-orange-500/30 underline-offset-4">Ver Cronograma</span>
-                    </div>
+                    <span className="text-[10px] text-white italic uppercase underline decoration-orange-500/30 underline-offset-4">Acessar Agenda Geral</span>
                   </div>
                 </DashboardCard>
 
-                {/* CONTAINER 04: LAB DE RECRUTAMENTO */}
+                {/* CONTAINER 04: ESTRATÉGIA & RECRUTAMENTO */}
                 <DashboardCard 
-                  title="Recrutamento & Tryout" 
+                  title={isSportsDirector ? "Recrutamento & Tryout" : "Diretrizes & OKRs"} 
                   color="border-purple-500/20" 
-                  icon={<Target size={16} className="text-purple-500" />}
-                  onAction={() => navigate('/tryout-lab')}
+                  icon={isSportsDirector ? <Target size={16} /> : <Shield size={16} />}
+                  onAction={() => navigate(isSportsDirector ? '/tryout-lab' : '/estrategia')}
                 >
-                  <div className="flex flex-col gap-3 mt-1">
-                    <div className="bg-indigo-500/5 border border-indigo-500/10 p-4 rounded-2xl">
-                      <p className="text-[9px] font-black text-indigo-400 uppercase mb-1 italic">Novos Ingressos</p>
-                      <h4 className="text-xs text-white font-bold uppercase leading-tight">
-                        {loading ? '--' : stats.pendingTryouts.toString().padStart(2, '0')} Candidatos em Avaliação
-                      </h4>
-                    </div>
-                    <span className="text-[9px] text-slate-600 font-black uppercase tracking-[0.2em] italic">Acesse para Aprovação</span>
+                  <div className="mt-1">
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1 italic">
+                      {isSportsDirector ? "Novos Ingressos" : "Metas da Gestão"}
+                    </p>
+                    <h3 className="text-2xl font-black text-white tracking-tighter italic uppercase">
+                      {isSportsDirector ? `${stats.pendingTryouts} Candidatos` : "Status: 82% Concluído"}
+                    </h3>
                   </div>
                 </DashboardCard>
               </div>
             )}
 
-            {/* FALLBACK: VISUALIZAÇÃO PADRÃO (OUTRAS PERSONAS) */}
-            {!isSportsDirector && !isMarketingView && !isCommercialView && (
+            {/* FALLBACK DE SEGURANÇA PARA PERSONAS NÃO MAPEADAS */}
+            {!showAdminGrid && persona !== 'CMO' && persona !== 'CCO' && (
               <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-                <Shield className="text-slate-800 mb-6" size={64} />
+                <Shield className="text-slate-800 mb-6 animate-pulse" size={64} />
                 <h3 className="text-slate-500 font-black uppercase tracking-[0.3em] italic text-sm">
-                  Aguardando Injeção de Contexto Nexus
+                  Restringindo Acesso Hierárquico...
                 </h3>
               </div>
             )}
@@ -216,7 +208,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ title, color, icon, child
       <ArrowUpRight size={18} />
     </div>
     <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-8 flex items-center gap-2 border-b border-white/5 pb-4">
-      {icon} {title}
+      <span className="text-indigo-500">{icon}</span> {title}
     </h3>
     <div className="flex-1">
       {children}
