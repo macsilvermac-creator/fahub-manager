@@ -5,6 +5,7 @@ import { Calendar, Plus, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
 /**
  * AGENDA MESTRE - PROTOCOLO NEXUS
  * Módulo Full-Screen integrado ao DashboardLayout
+ * Versão Final: Tipagem corrigida e Contexto Jules alinhado.
  */
 
 interface CalendarEvent {
@@ -286,6 +287,7 @@ const CalendarMaster: React.FC = () => {
         </div>
       )}
 
+      {/* AGORA SIM: CONTEXTO CORRETO */}
       <JulesAgent context="CALENDAR" /> 
     </div>
   );
