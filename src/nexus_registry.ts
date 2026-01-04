@@ -1,4 +1,4 @@
-import HC_Module from '../modules/hc-tactical';
+import HC_Module from './modules/hc-tactical';
 
 export const NEXUS_CAPABILITIES = [
   { 
