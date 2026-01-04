@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import DashboardLayout from './shared/components/layouts/DashboardLayout';
-import { supabase } from './lib/supabase'; // <--- IMPORTANTE: Conector de dados
+import { supabase } from './lib/supabase';
 
 /** 
  * PROTOCOLO NEXUS - APP ROUTER V2.2
@@ -15,7 +15,7 @@ import Dashboard from './modules/dashboard/Dashboard';
 // 2. Módulos Operacionais
 import FinanceConsolidated from './modules/finance/FinanceConsolidated';
 import CalendarMaster from './modules/calendar/CalendarMaster';
-import HC_Module from './modules/hc-tactical'; // <--- NOVO MÓDULO HC
+import HC_Module from './modules/hc-tactical'; // O Vite buscará o index.tsx automaticamente
 
 // 3. Módulos de Pessoas
 import HumanCapital from './modules/people/HumanCapital';
@@ -95,7 +95,7 @@ const App: React.FC = () => {
 
         </Route>
 
-        {/* CATCH-ALL */}
+        {/* CATCH-ALL: Redireciona para o Portal se a rota não existir */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
