@@ -1,10 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import DashboardLayout from './shared/components/layouts/DashboardLayout';
+import { supabase } from './lib/supabase'; // <--- IMPORTANTE: Conector de dados
 
 /** 
- * PROTOCOLO NEXUS - APP ROUTER V2.1
- * Atualização: Inclusão de Rota de Estratégia (Kanban)
+ * PROTOCOLO NEXUS - APP ROUTER V2.2
+ * Atualização: Injeção do Módulo HC Tactical (Nódulo 03)
  */
 
 // 1. Módulos Core
@@ -14,6 +15,7 @@ import Dashboard from './modules/dashboard/Dashboard';
 // 2. Módulos Operacionais
 import FinanceConsolidated from './modules/finance/FinanceConsolidated';
 import CalendarMaster from './modules/calendar/CalendarMaster';
+import HC_Module from './modules/hc-tactical'; // <--- NOVO MÓDULO HC
 
 // 3. Módulos de Pessoas
 import HumanCapital from './modules/people/HumanCapital';
@@ -25,7 +27,7 @@ import TryoutLab from './modules/tryout/TryoutLab';
 import CreativeLab from './modules/marketing/CreativeLab';
 import MarketingProjectsGoals from './modules/marketing/MarketingProjectsGoals';
 import SponsorLab from './modules/commercial/SponsorLab';
-import StrategyKanban from './modules/strategy/StrategyKanban'; // <--- NOVO IMPORT
+import StrategyKanban from './modules/strategy/StrategyKanban';
 
 // 5. Configurações
 import EntitySettings from './modules/settings/EntitySettings';
@@ -59,12 +61,25 @@ const App: React.FC = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/configuracoes" element={<EntitySettings />} />
             
-            {/* ESTRATÉGIA (Correção do Container 04) */}
+            {/* ESTRATÉGIA */}
             <Route path="/estrategia" element={<StrategyKanban />} />
+
+            {/* COMANDO TÁTICO (NOVO CUBO NEXUS) */}
+            <Route 
+              path="/hc-tactical" 
+              element={
+                <HC_Module 
+                  entityId={localStorage.getItem('entity_id') || '000-000-000'} 
+                  supabaseClient={supabase} 
+                  userPersona={localStorage.getItem('nexus_persona') || 'HC'} 
+                  onAction={(e, d) => console.log(`[NEXUS EVENT: ${e}]`, d)}
+                />
+              } 
+            />
 
             {/* NÓDULOS FINANCEIROS E LOGÍSTICOS */}
             <Route path="/financeiro" element={<FinanceConsolidated />} />
-            <Route path="/financeiro/*" element={<FinanceConsolidated />} /> {/* Fallback para sub-rotas financeiras */}
+            <Route path="/financeiro/*" element={<FinanceConsolidated />} />
             <Route path="/agenda" element={<CalendarMaster />} />
             
             {/* GESTÃO DE CAPITAL HUMANO */}
@@ -80,7 +95,7 @@ const App: React.FC = () => {
 
         </Route>
 
-        {/* CATCH-ALL: Redireciona para o Portal se a rota não existir */}
+        {/* CATCH-ALL */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

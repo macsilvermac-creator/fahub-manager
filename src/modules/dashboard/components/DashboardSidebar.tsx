@@ -6,7 +6,8 @@ import {
   Calendar, 
   Target, 
   ChevronLeft,
-  LogOut
+  LogOut,
+  Zap // <--- Novo ícone para o Comando Tático
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -14,7 +15,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
  * DASHBOARD SIDEBAR - PROTOCOLO NEXUS
  * Sistema de navegação lateral com controle de acesso por Persona.
  */
-
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -30,11 +30,23 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
     if (savedPersona) setPersona(savedPersona);
   }, []);
 
-  // Definição de Restrição: Diretor de Esportes não acessa o Financeiro
+  // Lógica de Permissões Nexus
   const isSportsDirector = persona === 'DIR_ESPORTES';
+  const isHC = persona === 'HC';
+  const isMaster = persona === 'MASTER';
 
   const menuItems = [
     { id: 'geral', label: 'Visão Geral', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
+    
+    // COMANDO TÁTICO: Visível apenas para HC e MASTER
+    { 
+      id: 'hc-tactical', 
+      label: 'Comando Tático', 
+      icon: <Zap size={20} />, 
+      path: '/hc-tactical', 
+      restricted: !isHC && !isMaster 
+    },
+
     { id: 'financeiro', label: 'Financeiro', icon: <Wallet size={20} />, path: '/financeiro', restricted: isSportsDirector },
     { id: 'elenco', label: 'Capital Humano', icon: <Users size={20} />, path: '/human-capital' },
     { id: 'agenda', label: 'Agenda / Operações', icon: <Calendar size={20} />, path: '/agenda' },
@@ -80,7 +92,7 @@ export default function DashboardSidebar({ isOpen, onClose }: SidebarProps) {
         {/* NAVIGATION LINKS */}
         <nav className="flex-1 px-4 space-y-2 mt-4">
           {menuItems.map((item) => (
-            // FILTRO CONDICIONAL: Se for restrito para a persona, não renderiza
+            // Só renderiza se não for restrito para a persona atual
             !item.restricted && (
               <button
                 key={item.id}
